@@ -1,0 +1,1 @@
+This branch is used for compatibility with the older versions of the app to check for update through the `app.json` file.
