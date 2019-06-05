@@ -1,18 +1,17 @@
 {
   "appInfos": {
     "appName": "视频",
-    "applicationId": "com.liuzhenlin.videoplayer",
+    "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 14,
     "targetSdkVersion": 28,
-    "versionCode": 28,
-    "versionName": "1.7",
-    "appLink": "https://raw.githubusercontent.com/ApksHolder/VideoPlayer/master/app-release.apk",
+    "versionCode": 29,
+    "versionName": "1.7.1",
+    "appLink": "https://raw.githubusercontent.com/ApksHolder/Videos/master/app-release.apk",
     "updateLogs": [
-      "1. 多个页面下拉刷新的支持",
-      "2. 首页视频按它们所在的不同文件夹进行收纳显示，页面更加直观简便",
-      "3. 更新应用时对多线程下载的支持",
-      "4. 用户反馈界面预览图片时，横竖屏切换跟随系统自动旋转的启用状态",
-      "5. 视频播放页面：新增“下一个”、“倍速”、“选集” 按钮；耳机线控的支持（单击暂停/播放、双击切换至下一视频、三击切换至上一个视频、拔掉时自动暂停播放中的视频）；全屏快进时视频不立即跳转，屏幕中央会显示要跳转位置的缩略图以供用户预览；加载时显示加载动画"
+      "1. 支持其它应用跳转到此应用进行音频播放",
+      "2. 视频播放界面：新增“分享”、“锁定”、“满屏观影”、“单个视频循环播放”、“音频后台播放”、“定时关闭”等功能",
+      "3. 国际化（对英文的支持）",
+      "4. 对（特）大字体的显示优化"
     ]
   },
   "author": "刘振林"
