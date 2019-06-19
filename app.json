@@ -4,14 +4,11 @@
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 14,
     "targetSdkVersion": 28,
-    "versionCode": 29,
-    "versionName": "1.7.1",
+    "versionCode": 30,
+    "versionName": "1.7.2",
     "appLink": "https://raw.githubusercontent.com/ApksHolder/Videos/master/app-release.apk",
     "updateLogs": [
-      "1. 支持其它应用跳转到此应用进行音频播放",
-      "2. 视频播放界面：新增“分享”、“锁定”、“满屏观影”、“单个视频循环播放”、“音频后台播放”、“定时关闭”等功能",
-      "3. 国际化（对英文的支持）",
-      "4. 对（特）大字体的显示优化"
+      "1. 若干bug修复"
     ]
   },
   "author": "刘振林"
