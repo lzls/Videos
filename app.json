@@ -4,11 +4,12 @@
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 14,
     "targetSdkVersion": 28,
-    "versionCode": 30,
-    "versionName": "1.7.2",
+    "versionCode": 31,
+    "versionName": "1.7.3",
     "appLink": "https://raw.githubusercontent.com/ApksHolder/Videos/master/app-release.apk",
     "updateLogs": [
-      "1. 若干bug修复"
+      "1. 修复在搜索视频时，列表中的同名视频可能会在列表刷新后遇到排序不一致的问题",
+      "2. 修复在Android 6.0及以下版本的系统中“音频后台播放”功能无效的bug"
     ]
   },
   "author": "刘振林"
