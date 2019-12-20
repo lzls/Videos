@@ -4,15 +4,11 @@
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 14,
     "targetSdkVersion": 28,
-    "versionCode": 33,
-    "versionName": "1.8",
+    "versionCode": 34,
+    "versionName": "1.8.1",
     "appLink": "https://raw.githubusercontent.com/ApksHolder/Videos/release/app-release.apk",
     "updateLogs": [
-      "1. 首页改版，支持输入链接播放在线视频",
-      "2. 支持循环播放视频列表",
-      "3. 支持切换播放引擎以获取最佳视听体验",
-      "4. 解决画中画关闭时导致的内存泄漏及其仍存留在最近历史中的问题",
-      "5. 音频播放模式开启时，通知栏显示播放控制器，方便用户在应用后台快速地对播放内容进行一些简单的控制"
+      "1. 修复单视频循环播放时，音频后台播放控制通知显示的剩余时长在视频第一次播完后出现负数的bug"
     ]
   },
   "author": "刘振林"
