@@ -4,12 +4,20 @@
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 14,
     "targetSdkVersion": 28,
-    "versionCode": 34,
-    "versionName": "1.8.1",
+    "versionCode": 35,
+    "versionName": "1.8.2",
     "appLink": "https://raw.githubusercontent.com/ApksHolder/Videos/release/app-release.apk",
     "updateLogs": [
-      "1. 修复单视频循环播放时，音频后台播放控制通知显示的剩余时长在视频第一次播完后出现负数的bug"
-    ]
+      "1. 应用更新提示对话框的弹出方式重新设定为仅在应用内弹出，以免对用户造成困扰",
+      "2. 解决在下载应用更新时，后续线程操作容易发生阻塞的问题（如，下拉刷新首页列表）",
+      "3. 解决在视频全屏播放时的某些情况下，状态栏显示后无法自动隐藏的问题",
+      "4. 修复由用户暂停的音/视频在其它应用的播放停止（重新获取到音频焦点）时，自动恢复播放的bug",
+      "5. 修复竖屏视频的截图显示大小不正确的问题",
+      "6. 修复更多播放操作窗口在少数情况下存在的关闭后无法开启或在横屏切换时自动打开的bug",
+      "7. 解决在软键盘弹出后，无法上下滑动意见反馈输入框内容的问题",
+      "8. 修复在选择图片文件后，部分图片因存在旋转角度的原因导致其显示异常的bug"
+    ],
+    "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
   },
   "author": "刘振林"
 }
