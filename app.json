@@ -4,8 +4,8 @@
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 14,
     "targetSdkVersion": 29,
-    "versionCode": 37,
-    "versionName": "1.9.1",
+    "versionCode": 38,
+    "versionName": "1.9.2",
     "appLink": "https://raw.githubusercontent.com/ApksHolder/Videos/release/app-release.apk",
     "appPartLinks": [
       "https://gitee.com/lzl_s/Videos-Server/raw/master/app/Android/app-release1.apk",
@@ -22,10 +22,11 @@
       "https://gitee.com/lzl_s/Videos-Server/raw/master/app/Android/app-release12.apk",
       "https://gitee.com/lzl_s/Videos-Server/raw/master/app/Android/app-release13.apk"
     ],
-    "appLength": 12626205,
-    "appSha1": "5c4350e25215f20ec55b80396bcc9973590a381b",
+    "appLength": 12632911,
+    "appSha1": "eb3e1086d444d26d6e8d97b812293d0ab25a90ae",
     "updateLogs": [
-      "1. 修复上版本的遗留bug以及对一些细节进行优化"
+      "1. 修复在视频缓冲期间，音频后台播放控制通知显示的剩余时长与视频实际所剩时长不一致的bug",
+      "2. 解决其它应用在很多时候无法选择此应用进行播放音、视频的问题"
     ],
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
   },
