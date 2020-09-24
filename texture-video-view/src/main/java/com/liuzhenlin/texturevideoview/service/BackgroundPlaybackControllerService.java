@@ -171,7 +171,7 @@ public class BackgroundPlaybackControllerService extends Service {
 
         String channelId = NotificationChannelManager.getPlaybackControlNotificationChannelId(this);
         mNotificationBuilder = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(getApplicationInfo().icon)
+                .setSmallIcon(R.drawable.ic_media_app_notification)
                 .setTicker(mMediaTitle)
                 .setStyle(new DecoratedMediaCustomViewStyle())
                 .setDefaults(0)
