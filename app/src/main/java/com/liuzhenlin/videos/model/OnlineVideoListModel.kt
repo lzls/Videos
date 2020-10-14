@@ -22,7 +22,7 @@ import java.net.URL
 /**
  * @author 刘振林
  */
-class OnlineVideoListModel(context: Context) : BaseModel<Array<TVGroup>?>(context) {
+class OnlineVideoListModel(context: Context) : BaseModel<Nothing, Array<TVGroup>?>(context) {
 
     override fun createAndStartLoader(): AsyncTask<*, *, *> {
         val loader = LoadTVsAsyncTask()
@@ -31,7 +31,7 @@ class OnlineVideoListModel(context: Context) : BaseModel<Array<TVGroup>?>(contex
     }
 
     @SuppressLint("StaticFieldLeak")
-    private inner class LoadTVsAsyncTask : Loader<Context, Unit>() {
+    private inner class LoadTVsAsyncTask : Loader<Context>() {
 
         override fun doInBackground(vararg ctxs: Context): Array<TVGroup>? {
             var json: StringBuilder? = null
