@@ -95,29 +95,35 @@ class OnlineVideoListModel(context: Context) : BaseModel<Nothing, Array<TVGroup>
                 conn?.disconnect()
             }
 
-            if (ioException != null) {
-                if (jsonFileOut != null) {
-                    jsonFile.failWrite(jsonFileOut)
+            if (!isCancelled) {
+                if (ioException != null) {
+                    if (jsonFileOut != null) {
+                        jsonFile.failWrite(jsonFileOut)
+                    }
+
+                    val jsonString = try {
+                        jsonFile.readFully().toString(Charsets.UTF_8)
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        null
+                    }
+                    if (jsonString?.isNotEmpty() == true) {
+                        json = StringBuilder(jsonString.length).append(jsonString)
+                    }
                 }
 
-                val jsonString = try {
-                    jsonFile.readFully().toString(Charsets.UTF_8)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    null
-                }
-                if (jsonString?.isNotEmpty() == true) {
-                    json = StringBuilder(jsonString.length).append(jsonString)
-                }
-            }
+                if (!isCancelled) {
+                    when {
+                        json != null ->
+                            return Gson().fromJson(json.toString(), Array<TVGroup>::class.java)
 
-            when {
-                json != null ->
-                    return Gson().fromJson(json.toString(), Array<TVGroup>::class.java)
-
-                ioException != null -> {
-                    Utils.runOnHandlerSync(InternalConsts.getMainThreadHandler()) {
-                        onLoadError(ioException) }
+                        ioException != null ->
+                            Utils.runOnHandlerSync(InternalConsts.getMainThreadHandler()) {
+                                if (!isCancelled) {
+                                    onLoadError(ioException)
+                                }
+                            }
+                    }
                 }
             }
 
