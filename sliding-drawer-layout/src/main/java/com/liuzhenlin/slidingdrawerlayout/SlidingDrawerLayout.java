@@ -377,7 +377,7 @@ public class SlidingDrawerLayout extends ViewGroup {
             if (clearFlag) {
                 super.cancel();
             } else {
-                final int flag = mFlags & (FLAG_ANIMATING_DRAWER_OPENING | FLAG_ANIMATING_DRAWER_CLOSURE);
+                int flag = mFlags & (FLAG_ANIMATING_DRAWER_OPENING | FLAG_ANIMATING_DRAWER_CLOSURE);
                 super.cancel();
                 mFlags |= flag;
             }
@@ -1437,17 +1437,17 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     @Override
-    protected void measureChild(View child, int parentWidthMeasureSpec,
-                                int parentHeightMeasureSpec) {
+    protected void measureChild(
+            View child, int parentWidthMeasureSpec, int parentHeightMeasureSpec) {
         measureChildWithMargins(child,
                 parentWidthMeasureSpec, 0,
                 parentHeightMeasureSpec, 0);
     }
 
     @Override
-    protected void measureChildWithMargins(View child, int parentWidthMeasureSpec,
-                                           int widthUsed, int parentHeightMeasureSpec,
-                                           int heightUsed) {
+    protected void measureChildWithMargins(
+            View child, int parentWidthMeasureSpec, int widthUsed,
+            int parentHeightMeasureSpec, int heightUsed) {
         // Child does not have any margin
         final int horizontalPaddings = getPaddingLeft() + getPaddingRight() + widthUsed;
         final int verticalPaddings = getPaddingTop() + getPaddingBottom() + heightUsed;
@@ -2565,8 +2565,9 @@ public class SlidingDrawerLayout extends ViewGroup {
          * @param drawer  the drawer currently being dragged
          * @param percent the scroll percentage of the dragged drawer
          */
-        void onScrollPercentChange(@NonNull SlidingDrawerLayout parent, @NonNull View drawer,
-                                   @FloatRange(from = 0.0, to = 1.0) float percent);
+        void onScrollPercentChange(
+                @NonNull SlidingDrawerLayout parent, @NonNull View drawer,
+                @FloatRange(from = 0.0, to = 1.0) float percent);
 
         /**
          * Callback to be called when the scroll state ({@code mFlags & SCROLL_STATE_MASK})
@@ -2576,8 +2577,8 @@ public class SlidingDrawerLayout extends ViewGroup {
          * @param drawer the drawer currently being dragged
          * @param state  the scroll state of the dragged drawer
          */
-        void onScrollStateChange(@NonNull SlidingDrawerLayout parent, @NonNull View drawer,
-                                 @ScrollState int state);
+        void onScrollStateChange(
+                @NonNull SlidingDrawerLayout parent, @NonNull View drawer, @ScrollState int state);
     }
 
     /**
@@ -2594,13 +2595,13 @@ public class SlidingDrawerLayout extends ViewGroup {
         }
 
         @Override
-        public void onScrollPercentChange(@NonNull SlidingDrawerLayout parent,
-                                          @NonNull View drawer, float percent) {
+        public void onScrollPercentChange(
+                @NonNull SlidingDrawerLayout parent, @NonNull View drawer, float percent) {
         }
 
         @Override
-        public void onScrollStateChange(@NonNull SlidingDrawerLayout parent,
-                                        @NonNull View drawer, int state) {
+        public void onScrollStateChange(
+                @NonNull SlidingDrawerLayout parent, @NonNull View drawer, int state) {
         }
     }
 
@@ -2866,8 +2867,8 @@ public class SlidingDrawerLayout extends ViewGroup {
         }
 
         @Override
-        public boolean onRequestSendAccessibilityEvent(ViewGroup host, View child,
-                                                       AccessibilityEvent event) {
+        public boolean onRequestSendAccessibilityEvent(
+                ViewGroup host, View child, AccessibilityEvent event) {
             if (CAN_HIDE_DESCENDANTS || includeChildForAccessibility(child)) {
                 return super.onRequestSendAccessibilityEvent(host, child, event);
             }
@@ -2879,8 +2880,8 @@ public class SlidingDrawerLayout extends ViewGroup {
          * seem to be a few elements that are not easily cloneable using the underlying API.
          * Leave it private here as it's not general-purpose useful.
          */
-        private void copyNodeInfoNoChildren(AccessibilityNodeInfoCompat dest,
-                                            AccessibilityNodeInfoCompat src) {
+        private void copyNodeInfoNoChildren(
+                AccessibilityNodeInfoCompat dest, AccessibilityNodeInfoCompat src) {
             //noinspection deprecation
             src.getBoundsInParent(tmpRect);
             //noinspection deprecation
@@ -2932,8 +2933,7 @@ public class SlidingDrawerLayout extends ViewGroup {
         }
 
         @Override
-        public void onInitializeAccessibilityNodeInfo(View child,
-                                                      AccessibilityNodeInfoCompat info) {
+        public void onInitializeAccessibilityNodeInfo(View child, AccessibilityNodeInfoCompat info) {
             super.onInitializeAccessibilityNodeInfo(child, info);
 
             if (!includeChildForAccessibility(child)) {

@@ -170,8 +170,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mSlidingDrawerLayout.setContentSensitiveEdgeSize(screenWidth);
         mSlidingDrawerLayout.addOnDrawerScrollListener(new SlidingDrawerLayout.SimpleOnDrawerScrollListener() {
             @Override
-            public void onScrollStateChange(@NonNull SlidingDrawerLayout parent,
-                                            @NonNull View drawer, int state) {
+            public void onScrollStateChange(
+                    @NonNull SlidingDrawerLayout parent, @NonNull View drawer, int state) {
                 parent.removeOnDrawerScrollListener(this);
 
                 mDrawerList = drawer.findViewById(R.id.list_drawer);
@@ -727,8 +727,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onScrollPercentChange(@NonNull SlidingDrawerLayout parent,
-                                      @NonNull View drawer, float percent) {
+    public void onScrollPercentChange(
+            @NonNull SlidingDrawerLayout parent, @NonNull View drawer, float percent) {
         mDrawerArrowDrawable.setProgress(percent);
 
         final boolean light = percent >= 0.5f;
@@ -740,8 +740,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onScrollStateChange(@NonNull SlidingDrawerLayout parent,
-                                    @NonNull View drawer, int state) {
+    public void onScrollStateChange(
+            @NonNull SlidingDrawerLayout parent, @NonNull View drawer, int state) {
         switch (state) {
             case SlidingDrawerLayout.SCROLL_STATE_TOUCH_SCROLL:
             case SlidingDrawerLayout.SCROLL_STATE_AUTO_SCROLL:

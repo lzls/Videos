@@ -26,8 +26,9 @@ public class Utils {
         return roundFloat(dipValue * scale);
     }
 
-    public static int getGradientColor(@ColorInt int startColor, @ColorInt int endColor,
-                                       @FloatRange(from = 0.0, to = 1.0) float percent) {
+    public static int getGradientColor(
+            @ColorInt int startColor, @ColorInt int endColor,
+            @FloatRange(from = 0.0, to = 1.0) float percent) {
         final int startA = Color.alpha(startColor);
         final int startR = Color.red(startColor);
         final int startG = Color.green(startColor);

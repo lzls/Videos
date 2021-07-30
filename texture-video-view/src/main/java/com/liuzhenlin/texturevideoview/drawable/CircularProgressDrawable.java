@@ -144,8 +144,8 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
     }
 
     /** Sets all parameters at once in dp. */
-    private void setSizeParameters(float centerRadius, float strokeWidth, float arrowWidth,
-                                   float arrowHeight) {
+    private void setSizeParameters(
+            float centerRadius, float strokeWidth, float arrowWidth, float arrowHeight) {
         final Ring ring = mRing;
         final DisplayMetrics metrics = mResources.getDisplayMetrics();
         final float screenDensity = metrics.density;

@@ -36,7 +36,8 @@ class LocalSearchedVideoListModel(context: Context) : BaseModel<Nothing, Mutable
             while (!isCancelled && videoCursor.moveToNext()) {
                 val video = dao.buildVideo(videoCursor)
                 if (video != null) {
-                    if (videos == null) videos = mutableListOf()
+                    if (videos == null)
+                        videos = mutableListOf()
                     videos.add(video)
                 }
             }

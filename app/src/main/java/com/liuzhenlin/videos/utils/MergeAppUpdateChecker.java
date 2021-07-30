@@ -277,14 +277,14 @@ public final class MergeAppUpdateChecker {
             return;
         }
 
-        final Dialog dialog = new AppCompatDialog(anchorActivity, R.style.DialogStyle_MinWidth_NoTitle);
+        Dialog dialog = new AppCompatDialog(anchorActivity, R.style.DialogStyle_MinWidth_NoTitle);
 
         View view = View.inflate(anchorActivity, R.layout.dialog_app_update_prompt, null);
 
         view.<TextView>findViewById(R.id.text_updateLogTitle)
                 .setText(mContext.getString(R.string.updateLog, mAppName, mVersionName));
 
-        final TextView tv = view.findViewById(R.id.text_updateLog);
+        TextView tv = view.findViewById(R.id.text_updateLog);
         tv.setText(mUpdateLog);
         tv.post(() -> TextViewUtils.setHangingIndents(tv, 4));
 

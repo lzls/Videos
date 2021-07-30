@@ -32,25 +32,23 @@ public class VideoUtils2 {
     private VideoUtils2() {
     }
 
-    public static void loadVideoThumbIntoImageView(@NonNull ImageView view,
-                                                   @NonNull Video video) {
+    public static void loadVideoThumbIntoImageView(
+            @NonNull ImageView view, @NonNull Video video) {
         loadVideoThumbIntoImageView(view, video.getPath());
     }
 
-    public static void loadVideoThumbIntoImageView(@NonNull ImageView view,
-                                                   @NonNull String path) {
+    public static void loadVideoThumbIntoImageView(
+            @NonNull ImageView view, @NonNull String path) {
         loadVideoThumbIntoFragmentImageView(null, view, path);
     }
 
-    public static void loadVideoThumbIntoFragmentImageView(@Nullable Fragment fragment,
-                                                           @NonNull ImageView view,
-                                                           @NonNull Video video) {
+    public static void loadVideoThumbIntoFragmentImageView(
+            @Nullable Fragment fragment, @NonNull ImageView view, @NonNull Video video) {
         loadVideoThumbIntoFragmentImageView(fragment, view, video.getPath());
     }
 
-    public static void loadVideoThumbIntoFragmentImageView(@Nullable Fragment fragment,
-                                                           @NonNull ImageView view,
-                                                           @NonNull String path) {
+    public static void loadVideoThumbIntoFragmentImageView(
+            @Nullable Fragment fragment, @NonNull ImageView view, @NonNull String path) {
         Context context = view.getContext();
 //        final float aspectRatio = (float) video.getWidth() / (float) video.getHeight();
         final int thumbWidth = App.getInstance(context).getVideoThumbWidth();

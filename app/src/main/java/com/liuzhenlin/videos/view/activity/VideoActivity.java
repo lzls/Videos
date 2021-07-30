@@ -1103,8 +1103,10 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
                 }
 
                 @Override
-                public void onLayoutChange(View v, int left, int top, int right, int bottom,
-                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                public void onLayoutChange(
+                        View v,
+                        int left, int top, int right, int bottom,
+                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
                     if (mVideoWidth == 0 || mVideoHeight == 0) return;
 
                     final float videoAspectRatio = (float) mVideoWidth / mVideoHeight;

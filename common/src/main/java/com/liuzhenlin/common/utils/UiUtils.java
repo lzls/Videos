@@ -35,8 +35,8 @@ public class UiUtils {
     private UiUtils() {
     }
 
-    public static void setWindowAlpha(@NonNull Window window,
-                                      @FloatRange(from = 0.0, to = 1.0) float alpha) {
+    public static void setWindowAlpha(
+            @NonNull Window window, @FloatRange(from = 0.0, to = 1.0) float alpha) {
         WindowManager.LayoutParams wmlp = window.getAttributes();
         wmlp.alpha = alpha;
         window.setAttributes(wmlp);

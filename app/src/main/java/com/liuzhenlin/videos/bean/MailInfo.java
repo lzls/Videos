@@ -58,10 +58,11 @@ public class MailInfo {
     public MailInfo() {
     }
 
-    public MailInfo(String mailServerHost, String mailServerPort,
-                    boolean validate, String userName, String password,
-                    String fromAddress, String toAddress,
-                    String title, String text, String textRelatedImagePath, String[] attachmentPaths) {
+    public MailInfo(
+            String mailServerHost, String mailServerPort,
+            boolean validate, String userName, String password,
+            String fromAddress, String toAddress,
+            String title, String text, String textRelatedImagePath, String[] attachmentPaths) {
         this.mailServerHost = mailServerHost;
         this.mailServerPort = mailServerPort;
         this.validate = validate;

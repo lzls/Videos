@@ -790,10 +790,11 @@ public class GestureImageView extends AppCompatImageView {
                 startX, startY, finalX, finalY, transitionX, transitionY);
     }
 
-    private void startImageOverScrollAndSpringBackInternal(float currScaleX, float currScaleY,
-                                                           float startX, float startY,
-                                                           float finalX, float finalY,
-                                                           float transitionX, float transitionY) {
+    private void startImageOverScrollAndSpringBackInternal(
+            float currScaleX, float currScaleY,
+            float startX, float startY,
+            float finalX, float finalY,
+            float transitionX, float transitionY) {
         final float absDx = Math.abs(transitionX - startX);
         final float absDy = Math.abs(transitionY - startY);
         final float addedDistance = absDx + absDy;
@@ -831,10 +832,10 @@ public class GestureImageView extends AppCompatImageView {
      * @param toY        the final translation y for the image to translate to
      * @param duration   the length of the animation, in milliseconds. This value cannot be negative.
      */
-    public void transformImage(float fromScaleX, float fromScaleY, float toScaleX, float toScaleY,
-                               float pivotX, float pivotY,
-                               float fromX, float fromY, float toX, float toY,
-                               int duration) {
+    public void transformImage(
+            float fromScaleX, float fromScaleY, float toScaleX, float toScaleY,
+            float pivotX, float pivotY, float fromX, float fromY, float toX, float toY,
+            int duration) {
         if (getDrawable() == null ||
                 fromScaleX == toScaleX && fromScaleY == toScaleY && fromX == toX && fromY == toY) {
             return;

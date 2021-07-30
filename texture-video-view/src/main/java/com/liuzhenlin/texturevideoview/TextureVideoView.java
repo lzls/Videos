@@ -720,7 +720,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     case STATE_SETTLING:
                         if (sDrawerOpenStateField != null) {
                             try {
-                                final int state = sDrawerOpenStateField.getInt(mDrawerView.getLayoutParams());
+                                int state = sDrawerOpenStateField.getInt(mDrawerView.getLayoutParams());
                                 if ((state & FLAG_IS_OPENING) != 0) {
                                     showControls(false);
                                     mPrivateFlags |= PFLAG_IGNORE_SHOW_CONTROLS_METHOD_CALLS;
@@ -2248,7 +2248,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         final int progress = videoPlayer.getVideoProgress();
         final int duration = videoPlayer.getNoNegativeVideoDuration();
-        final float videoAspectRatio = (float) videoPlayer.getVideoWidth() / videoPlayer.getVideoHeight();
+        final float videoAspectRatio = (float)
+                videoPlayer.getVideoWidth() / videoPlayer.getVideoHeight();
         final Uri videoUri = videoPlayer.mVideoUri;
 
         final int defaultRange = VideoClipView.DEFAULT_MAX_CLIP_DURATION
@@ -2271,9 +2272,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         final int[] interval = new int[2];
 
-        final ViewGroup view;
-        mClipView = view = (ViewGroup) LayoutInflater.from(mContext)
+        final ViewGroup view = (ViewGroup) LayoutInflater.from(mContext)
                 .inflate(R.layout.layout_video_clip, mContentView, false);
+        mClipView = view;
         final View cutoutShortVideoButton = view.findViewById(R.id.btn_cutoutShortVideo);
         final View cutoutGifButton = view.findViewById(R.id.btn_cutoutGif);
         final View cancelButton = view.findViewById(R.id.btn_cancel);
@@ -2378,7 +2379,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         final MediaSourceFactory factory =
                 canUseExoPlayer() && videoPlayer instanceof ExoVideoPlayer
                         ? ((ExoVideoPlayer) videoPlayer).obtainMediaSourceFactory(videoUri) : null;
-        final VideoClipPlayer player = new VideoClipPlayer(mContext, holder, videoUri, mExoUserAgent, factory);
+        final VideoClipPlayer player =
+                new VideoClipPlayer(mContext, holder, videoUri, mExoUserAgent, factory);
         final Runnable trackProgressRunnable = new Runnable() {
             @Override
             public void run() {
@@ -3334,9 +3336,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         void showMoreView() {
             if (mMoreView != null) return;
 
-            View view;
-            mMoreView = view = LayoutInflater.from(mContext).inflate(
+            View view = LayoutInflater.from(mContext).inflate(
                     R.layout.drawer_view_more, mDrawerView, false);
+            mMoreView = view;
             SwitchCompat svb = view.findViewById(R.id.btn_stretchVideo);
             SwitchCompat lsvb = view.findViewById(R.id.btn_loopSingleVideo);
             SwitchCompat aatpibb = view.findViewById(R.id.btn_allowAudioToPlayInBackground);
@@ -3447,12 +3449,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 refreshVideoProgress(progress, false);
 
                 if (translateAnimator == null) {
-                    final View target = mmr == null ? mSeekingTextProgressFrame : mSeekingVideoThumbText;
-                    final boolean rtl = Utils.isLayoutRtl(mContentView);
-                    final float end = !rtl && progress > start || rtl && progress < start ?
+                    View target = mmr == null ? mSeekingTextProgressFrame : mSeekingVideoThumbText;
+                    boolean rtl = Utils.isLayoutRtl(mContentView);
+                    float end = !rtl && progress > start || rtl && progress < start ?
                             mSeekingViewHorizontalOffset : -mSeekingViewHorizontalOffset;
-                    ValueAnimator ta;
-                    translateAnimator = ta = ValueAnimator.ofFloat(0, end);
+                    ValueAnimator ta = ValueAnimator.ofFloat(0, end);
+                    translateAnimator = ta;
                     ta.addListener(animatorListener);
                     ta.addUpdateListener(
                             animation -> target.setTranslationX((float) animation.getAnimatedValue()));
@@ -3539,8 +3541,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         @TargetApi(Build.VERSION_CODES.O)
                         @Override
                         public void onAnimationStart(Animator animation, boolean isReverse) {
-                            final boolean isThumbVisible = mSeekingVideoThumbText.getVisibility() == VISIBLE;
-                            final boolean isFadeAnimation = animation == fadeAnimator;
+                            boolean isThumbVisible = mSeekingVideoThumbText.getVisibility() == VISIBLE;
+                            boolean isFadeAnimation = animation == fadeAnimator;
 
                             Animator other = isFadeAnimation ? translateAnimator : fadeAnimator;
                             if (other == null || !other.isRunning()) {
@@ -3556,8 +3558,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         @TargetApi(Build.VERSION_CODES.O)
                         @Override
                         public void onAnimationEnd(Animator animation, boolean isReverse) {
-                            final boolean isThumbVisible = mSeekingVideoThumbText.getVisibility() == VISIBLE;
-                            final boolean isFadeAnimation = animation == fadeAnimator;
+                            boolean isThumbVisible = mSeekingVideoThumbText.getVisibility() == VISIBLE;
+                            boolean isFadeAnimation = animation == fadeAnimator;
 
                             Animator other = isFadeAnimation ? translateAnimator : fadeAnimator;
                             if (other == null || !other.isRunning()) {

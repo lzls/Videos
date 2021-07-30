@@ -36,8 +36,9 @@ public class MailUtil {
     private MailUtil() {
     }
 
-    public static void sendMail(@NonNull Context context, String title, String text,
-                                @Nullable String textRelatedImagePath, @Nullable String... attachmentPaths) {
+    public static void sendMail(
+            @NonNull Context context, String title, String text,
+            @Nullable String textRelatedImagePath, @Nullable String... attachmentPaths) {
         MailInfo mailInfo = new MailInfo(HOST, PORT, true, USER_NAME, FROM_PSW,
                 FROM_ADDR, TO_ADDR, title, text, textRelatedImagePath, attachmentPaths);
         new SendMailAsyncTask(context)

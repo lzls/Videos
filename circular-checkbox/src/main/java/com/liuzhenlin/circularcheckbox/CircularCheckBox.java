@@ -556,8 +556,7 @@ public class CircularCheckBox extends View implements Checkable {
         mAnimator = ValueAnimator.ofPropertyValuesHolder(
                 PropertyValuesHolder.ofFloat(
                         PROPERTY_DRAWING_RING_OUTER_CIRCLE_SCALE, 1.0f, 0.8f, 1.0f),
-                holder
-        );
+                holder);
         mAnimator.setInterpolator(sLinearInterpolator);
         mAnimator.setDuration(mDuration);
         final Animator.AnimatorListener listener = new AnimatorListenerAdapter() {

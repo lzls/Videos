@@ -66,7 +66,8 @@ class LocalVideoListModel(context: Context) : BaseModel<Nothing, MutableList<Vid
             while (!isCancelled && videoCursor.moveToNext()) {
                 val video = dao.buildVideo(videoCursor)
                 if (video != null) {
-                    if (videos == null) videos = LinkedList()
+                    if (videos == null)
+                        videos = LinkedList()
                     videos.add(video)
                 }
             }

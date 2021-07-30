@@ -165,7 +165,8 @@ public class VideoUtils {
     }
 
     @NonNull
-    public static int[] correctedVideoSize(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+    public static int[] correctedVideoSize(
+            int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
         int videoW = width;
         int videoH = height;
 

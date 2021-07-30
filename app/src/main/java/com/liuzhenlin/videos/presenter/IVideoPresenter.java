@@ -26,7 +26,8 @@ public interface IVideoPresenter extends IPresenter<IVideoView> {
     int PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED = 1 << 1;
 
     boolean initPlaylist(@Nullable Bundle savedInstanceState, @NonNull Intent intent);
-    boolean initPlaylistAndRecordCurrentVideoProgress(@Nullable Bundle savedInstanceState, @NonNull Intent intent);
+    boolean initPlaylistAndRecordCurrentVideoProgress(
+            @Nullable Bundle savedInstanceState, @NonNull Intent intent);
     void saveData(@NonNull Bundle outState);
 
     void playCurrentVideo();

@@ -24,16 +24,21 @@ public class ShareUtils {
     private ShareUtils() {
     }
 
-    public static void shareText(@NonNull Context context,
-                                 @NonNull String text, @NonNull String mimeType /* MIME type of the text */) {
+    public static void shareText(
+            @NonNull Context context,
+            @NonNull String text,
+            @NonNull String mimeType /* MIME type of the text */) {
         Intent it = new Intent(Intent.ACTION_SEND);
         it.putExtra(Intent.EXTRA_TEXT, text);
         it.setType(mimeType);
         context.startActivity(Intent.createChooser(it, context.getString(R.string.share)));
     }
 
-    public static void shareFile(@NonNull Context context, @NonNull String authority,
-                                 @NonNull File file, @NonNull String defMimeType /* default file MIME type */) {
+    public static void shareFile(
+            @NonNull Context context,
+            @NonNull String authority,
+            @NonNull File file,
+            @NonNull String defMimeType /* default file MIME type */) {
         Intent it = new Intent().setAction(Intent.ACTION_SEND);
         Uri uri;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

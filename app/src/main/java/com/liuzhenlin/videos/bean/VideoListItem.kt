@@ -45,8 +45,13 @@ data class VideoDirectory(override var name: String = "",
 
         other as VideoDirectory
 
-        if (!(name == other.name && path == other.path && size == other.size && isTopped == other.isTopped)) return false
-        if (videos.size != other.videos.size) return false
+        if (!(name == other.name && path == other.path
+                    && size == other.size && isTopped == other.isTopped)) {
+            return false
+        }
+        if (videos.size != other.videos.size) {
+            return false
+        }
         for (i in videos.indices) {
             if (!videos[i].allEqual(other.videos[i])) return false
         }

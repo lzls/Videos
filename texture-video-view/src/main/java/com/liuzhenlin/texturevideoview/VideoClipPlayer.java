@@ -32,9 +32,12 @@ import java.io.IOException;
 
     private final IVideoClipPlayer IMPL;
 
-    public VideoClipPlayer(@NonNull Context context, @NonNull SurfaceHolder surfaceHolder,
-                           @NonNull Uri videoUri, @NonNull String userAgent,
-                           @Nullable MediaSourceFactory mediaSourceFactory) {
+    public VideoClipPlayer(
+            @NonNull Context context,
+            @NonNull SurfaceHolder surfaceHolder,
+            @NonNull Uri videoUri,
+            @NonNull String userAgent,
+            @Nullable MediaSourceFactory mediaSourceFactory) {
         /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             IMPL = new VideoClipPlayerApi17Impl(context, surfaceHolder, videoUri);
         } else*/ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -96,8 +99,10 @@ import java.io.IOException;
         int mSeekOnPlay;
         boolean mPlaying;
 
-        VideoClipPlayerApi17Impl(@NonNull Context context, @NonNull SurfaceHolder surfaceHolder,
-                                 @NonNull Uri videoUri) {
+        VideoClipPlayerApi17Impl(
+                @NonNull Context context,
+                @NonNull SurfaceHolder surfaceHolder,
+                @NonNull Uri videoUri) {
             mContext = context;
             mSurfaceHolder = surfaceHolder;
             mVideoUri = videoUri;
@@ -226,9 +231,12 @@ import java.io.IOException;
         SimpleExoPlayer mExoPlayer;
         int mSeekOnPlay;
 
-        VideoClipPlayerApi16Impl(@NonNull Context context, @NonNull SurfaceHolder surfaceHolder,
-                                 @NonNull Uri videoUri, @NonNull String userAgent,
-                                 @Nullable MediaSourceFactory mediaSourceFactory) {
+        VideoClipPlayerApi16Impl(
+                @NonNull Context context,
+                @NonNull SurfaceHolder surfaceHolder,
+                @NonNull Uri videoUri,
+                @NonNull String userAgent,
+                @Nullable MediaSourceFactory mediaSourceFactory) {
             mContext = context.getApplicationContext();
             mSurfaceHolder = surfaceHolder;
             if (mediaSourceFactory == null) {
@@ -318,8 +326,10 @@ import java.io.IOException;
         boolean mPlayWhenPrepared;
         boolean mPlaying;
 
-        VideoClipPlayerBaseImpl(@NonNull Context context, @NonNull SurfaceHolder surfaceHolder,
-                                @NonNull Uri videoUri) {
+        VideoClipPlayerBaseImpl(
+                @NonNull Context context,
+                @NonNull SurfaceHolder surfaceHolder,
+                @NonNull Uri videoUri) {
             mContext = context;
             mSurfaceHolder = surfaceHolder;
             mVideoUri = videoUri;

@@ -38,14 +38,14 @@ class DbOpenHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE " + TABLE_VIDEOS + "("
                 + VIDEOS_COL_ID + " long PRIMARY KEY, "
                 + VIDEOS_COL_PROGRESS + " int NOT NULL DEFAULT 0, "
-                + VIDEOS_COL_IS_TOPPED + " int NOT NULL DEFAULT 0" +
-                        " CHECK(" + VIDEOS_COL_IS_TOPPED + " IN (0,1)))");
+                + VIDEOS_COL_IS_TOPPED + " int NOT NULL DEFAULT 0 " +
+                        "CHECK(" + VIDEOS_COL_IS_TOPPED + " IN (0,1)))");
         db.execSQL("CREATE TABLE " + TABLE_VIDEODIRS + "("
-                + VIDEODIRS_COL_NAME + " text NOT NULL" +
-                        " CHECK(LENGTH(" + VIDEODIRS_COL_NAME + ") > 0), "
+                + VIDEODIRS_COL_NAME + " text NOT NULL " +
+                        "CHECK(LENGTH(" + VIDEODIRS_COL_NAME + ") > 0), "
                 + VIDEODIRS_COL_PATH + " text PRIMARY KEY COLLATE NOCASE, "
-                + VIDEODIRS_COL_IS_TOPPED + " int NOT NULL DEFAULT 0" +
-                        " CHECK(" + VIDEODIRS_COL_IS_TOPPED + " IN (0,1)))");
+                + VIDEODIRS_COL_IS_TOPPED + " int NOT NULL DEFAULT 0 " +
+                        "CHECK(" + VIDEODIRS_COL_IS_TOPPED + " IN (0,1)))");
         //@formatter:on
     }
 

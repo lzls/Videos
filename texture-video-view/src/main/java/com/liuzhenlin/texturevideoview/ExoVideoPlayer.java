@@ -444,8 +444,9 @@ public class ExoVideoPlayer extends VideoPlayer {
         restartVideo(restoreTrackSelections, false, true);
     }
 
-    private void restartVideo(boolean restoreTrackSelections, boolean restorePlaybackPosition,
-                              boolean playWhenPrepared) {
+    private void restartVideo(
+            boolean restoreTrackSelections, boolean restorePlaybackPosition,
+            boolean playWhenPrepared) {
         if (!restorePlaybackPosition) {
             // First, resets mSeekOnPlay to TIME_UNSET in case the ExoPlayer object is released.
             // This ensures the video to be started at its beginning position the next time it resumes.

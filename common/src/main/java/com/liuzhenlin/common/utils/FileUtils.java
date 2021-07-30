@@ -118,9 +118,11 @@ public class FileUtils {
         }
     }
 
-    public static int splitFile(@NonNull String directory,
-                                @NonNull String fileName, @NonNull String extension,
-                                long filePartLengthLimit) {
+    public static int splitFile(
+            @NonNull String directory,
+            @NonNull String fileName,
+            @NonNull String extension,
+            long filePartLengthLimit) {
         final File file = new File(directory, fileName + extension);
         final long length = file.length();
         final int splitCount = (int) Math.ceil((double) length / filePartLengthLimit);
@@ -238,10 +240,13 @@ public class FileUtils {
     }
 
     @Nullable
-    public static File saveBitmapToDisk(@NonNull Context context,
-                                        @NonNull Bitmap bitmap, @NonNull Bitmap.CompressFormat format,
-                                        @IntRange(from = 0, to = 100) int quality,
-                                        @NonNull String directory, @NonNull String fileName) {
+    public static File saveBitmapToDisk(
+            @NonNull Context context,
+            @NonNull Bitmap bitmap,
+            @NonNull Bitmap.CompressFormat format,
+            @IntRange(from = 0, to = 100) int quality,
+            @NonNull String directory,
+            @NonNull String fileName) {
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
             File dirFile = new File(directory);
             if (!dirFile.exists()) {
@@ -287,8 +292,11 @@ public class FileUtils {
         return null;
     }
 
-    public static void recordMediaFileToDatabaseAndScan(@NonNull Context context, @NonNull Uri mediaUri,
-                                                        @NonNull File file, @Nullable String mimeType) {
+    public static void recordMediaFileToDatabaseAndScan(
+            @NonNull Context context,
+            @NonNull Uri mediaUri,
+            @NonNull File file,
+            @Nullable String mimeType) {
         context = context.getApplicationContext();
         final String fileName = file.getName();
         final String filePath = file.getAbsolutePath();

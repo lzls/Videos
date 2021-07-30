@@ -36,7 +36,8 @@ public class Executors {
     /**
      * An {@link Executor} to be used with async task with no limit on the queue size.
      */
-    public static final ThreadPoolExecutor THREAD_POOL_EXECUTOR = ParallelThreadExecutor.getSingleton();
+    public static final ThreadPoolExecutor THREAD_POOL_EXECUTOR =
+            ParallelThreadExecutor.getSingleton();
 
     /**
      * An {@link Executor} that executes tasks one at a time in serial order.

@@ -28,8 +28,9 @@ public abstract class ScreenNotchSwitchObserver extends ContentObserver {
     private final boolean mNotchSupportOnEMUI;
     private final boolean mNotchSupportOnMIUI;
 
-    public ScreenNotchSwitchObserver(@Nullable Handler handler, @NonNull Context context,
-                                     boolean notchSupportOnEMUI, boolean notchSupportOnMIUI) {
+    public ScreenNotchSwitchObserver(
+            @Nullable Handler handler, @NonNull Context context,
+            boolean notchSupportOnEMUI, boolean notchSupportOnMIUI) {
         super(handler);
         mContext = context.getApplicationContext();
         mNotchSupportOnEMUI = notchSupportOnEMUI;

@@ -855,9 +855,9 @@ public class SwipeRefreshLayout extends ViewGroup
     // NestedScrollingParent 3
 
     @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                               int dxUnconsumed, int dyUnconsumed, @ViewCompat.NestedScrollType int type,
-                               @NonNull int[] consumed) {
+    public void onNestedScroll(
+            @NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
+            @ViewCompat.NestedScrollType int type, @NonNull int[] consumed) {
         if (type != ViewCompat.TYPE_TOUCH) {
             return;
         }
@@ -931,8 +931,9 @@ public class SwipeRefreshLayout extends ViewGroup
     }
 
     @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                               int dxUnconsumed, int dyUnconsumed, int type) {
+    public void onNestedScroll(
+            @NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
+            int type) {
         onNestedScroll(target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, type,
                 mNestedScrollingV2ConsumedCompat);
     }
@@ -1016,8 +1017,8 @@ public class SwipeRefreshLayout extends ViewGroup
     }
 
     @Override
-    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                               int dxUnconsumed, int dyUnconsumed) {
+    public void onNestedScroll(
+            @NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed) {
         onNestedScroll(target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 ViewCompat.TYPE_TOUCH, mNestedScrollingV2ConsumedCompat);
     }
@@ -1035,9 +1036,10 @@ public class SwipeRefreshLayout extends ViewGroup
     // NestedScrollingChild 3
 
     @Override
-    public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                                     int dyUnconsumed, @Nullable int[] offsetInWindow, @ViewCompat.NestedScrollType int type,
-                                     @NonNull int[] consumed) {
+    public void dispatchNestedScroll(
+            int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
+            @Nullable int[] offsetInWindow, @ViewCompat.NestedScrollType int type,
+            @NonNull int[] consumed) {
         if (type == ViewCompat.TYPE_TOUCH) {
             mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed,
                     dyUnconsumed, offsetInWindow, type, consumed);
@@ -1064,15 +1066,16 @@ public class SwipeRefreshLayout extends ViewGroup
     }
 
     @Override
-    public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                                        int dyUnconsumed, int[] offsetInWindow, int type) {
+    public boolean dispatchNestedScroll(
+            int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
+            int[] offsetInWindow, int type) {
         return type == ViewCompat.TYPE_TOUCH && mNestedScrollingChildHelper.dispatchNestedScroll(
                 dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow, type);
     }
 
     @Override
-    public boolean dispatchNestedPreScroll(int dx, int dy, int[] consumed, int[] offsetInWindow,
-                                           int type) {
+    public boolean dispatchNestedPreScroll(
+            int dx, int dy, int[] consumed, int[] offsetInWindow, int type) {
         return type == ViewCompat.TYPE_TOUCH && dispatchNestedPreScroll(dx, dy, consumed,
                 offsetInWindow);
     }
@@ -1105,8 +1108,9 @@ public class SwipeRefreshLayout extends ViewGroup
     }
 
     @Override
-    public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                                        int dyUnconsumed, int[] offsetInWindow) {
+    public boolean dispatchNestedScroll(
+            int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
+            int[] offsetInWindow) {
         return mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
                 dxUnconsumed, dyUnconsumed, offsetInWindow);
     }
@@ -1367,8 +1371,7 @@ public class SwipeRefreshLayout extends ViewGroup
         }
     };
 
-    private void startScaleDownReturnToStartAnimation(int from,
-                                                      Animation.AnimationListener listener) {
+    private void startScaleDownReturnToStartAnimation(int from, Animation.AnimationListener listener) {
         mFrom = from;
         mStartingScale = mCircleView.getScaleX();
         mScaleDownToStartAnimation = new Animation() {

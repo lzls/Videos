@@ -56,7 +56,8 @@ public class BitmapUtils {
     }
 
     @Nullable
-    public static Bitmap decodeRotatedBitmapFormFile(@NonNull String path, @Nullable BitmapFactory.Options opts) {
+    public static Bitmap decodeRotatedBitmapFormFile(
+            @NonNull String path, @Nullable BitmapFactory.Options opts) {
         Bitmap raw = BitmapFactory.decodeFile(path, opts);
 
         if (raw != null) {
@@ -129,7 +130,8 @@ public class BitmapUtils {
     }
 
     @NonNull
-    public static Bitmap createScaledBitmap(@NonNull Bitmap src, int reqWidth, int reqHeight, boolean recycleInput) {
+    public static Bitmap createScaledBitmap(
+            @NonNull Bitmap src, int reqWidth, int reqHeight, boolean recycleInput) {
         // 记录src的宽高
         final int width = src.getWidth();
         final int height = src.getHeight();
@@ -155,7 +157,8 @@ public class BitmapUtils {
     }
 
     @NonNull
-    public static Bitmap createRoundCornerBitmap(@NonNull Bitmap src, /* px */ float connerRadius, boolean recycleInput) {
+    public static Bitmap createRoundCornerBitmap(
+            @NonNull Bitmap src, /* px */ float connerRadius, boolean recycleInput) {
         Bitmap out = Bitmap.createBitmap(src.getWidth(), src.getHeight(), Bitmap.Config.ARGB_8888);
 
         Canvas canvas = new Canvas(out);

@@ -74,7 +74,8 @@ public class Utils {
      * See {@link #roundDecimalToString(double, int, int, boolean)
      *             roundDecimalToString(value, minFractionDigits, maxFractionDigits, false)}
      */
-    public static String roundDecimalToString(double value, int minFractionDigits, int maxFractionDigits) {
+    public static String roundDecimalToString(
+            double value, int minFractionDigits, int maxFractionDigits) {
         return roundDecimalToString(value, minFractionDigits, maxFractionDigits, false);
     }
 
@@ -88,9 +89,8 @@ public class Utils {
      * @param groupingUsed      see the parameter of {@link NumberFormat#setGroupingUsed(boolean)}
      * @return the equivalent string representation of the rounded decimal.
      */
-    public static String roundDecimalToString(double value,
-                                              int minFractionDigits, int maxFractionDigits,
-                                              boolean groupingUsed) {
+    public static String roundDecimalToString(
+            double value, int minFractionDigits, int maxFractionDigits, boolean groupingUsed) {
         NumberFormat nf = NumberFormat.getNumberInstance();
         nf.setGroupingUsed(groupingUsed);
         nf.setMinimumFractionDigits(minFractionDigits);
@@ -136,8 +136,8 @@ public class Utils {
      * @param label   User-visible label for the copied text
      * @param text    The text to copy from
      */
-    public static void copyPlainTextToClipboard(@NonNull Context context,
-                                                @Nullable String label, @Nullable String text) {
+    public static void copyPlainTextToClipboard(
+            @NonNull Context context, @Nullable String label, @Nullable String text) {
         ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
         // 创建纯文本型ClipData
         ClipData cd = ClipData.newPlainText(label, text);
