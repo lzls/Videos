@@ -3995,6 +3995,15 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     }
 
     @Override
+    void onVideoSourceUpdate() {
+        if (canAccessBackgroundPlaybackControllerService()) {
+            //noinspection ConstantConditions
+            sBgPlaybackControllerServiceConn.service.onMediaSourceUpdate(
+                    mVideoPlayer.getVideoProgress(), mVideoPlayer.getVideoDuration());
+        }
+    }
+
+    @Override
     void onVideoSizeChanged(int width, int height) {
         checkButtonsAbilities();
         if (width != 0 && height != 0) {

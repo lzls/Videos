@@ -334,6 +334,12 @@ public class BackgroundPlaybackControllerService extends Service {
             postNotificationIfForeground();
         }
 
+        public void onMediaSourceUpdate(long progress, long duration) {
+            mMediaProgress = progress;
+            mMediaDuration = duration;
+            postNotificationIfForeground();
+        }
+
         public void onMediaPlay(long progress) {
             mIsPlaying = true;
             mMediaProgress = progress;

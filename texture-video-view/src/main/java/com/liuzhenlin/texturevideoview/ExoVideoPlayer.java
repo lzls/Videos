@@ -299,6 +299,7 @@ public class ExoVideoPlayer extends VideoPlayer {
                     }
                     final long duration = mExoPlayer.getDuration();
                     onVideoDurationChanged(duration == C.TIME_UNSET ? TIME_UNSET : (int) duration);
+                    onVideoSourceUpdate();
                 }
 
                 @SuppressWarnings("deprecation")

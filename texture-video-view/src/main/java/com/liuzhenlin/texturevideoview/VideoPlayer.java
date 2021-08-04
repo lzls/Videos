@@ -619,6 +619,12 @@ public abstract class VideoPlayer implements IVideoPlayer {
         }
     }
 
+    protected void onVideoSourceUpdate() {
+        if (mVideoView != null) {
+            mVideoView.onVideoSourceUpdate();
+        }
+    }
+
     protected void onVideoSizeChanged(int width, int height) {
         if (mVideoWidth != width || mVideoHeight != height) {
             mVideoWidth = width;

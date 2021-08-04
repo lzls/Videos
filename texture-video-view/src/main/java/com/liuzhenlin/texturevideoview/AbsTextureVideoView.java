@@ -107,6 +107,8 @@ public abstract class AbsTextureVideoView extends DrawerLayout {
 
     /*package*/ abstract void onVideoDurationChanged(int duration);
 
+    /*package*/ abstract void onVideoSourceUpdate();
+
     /*package*/ abstract void onVideoSizeChanged(int width, int height);
 
     /*package*/ abstract void onVideoStarted();
