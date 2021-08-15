@@ -107,7 +107,7 @@ public class GestureImageView extends AppCompatImageView {
     private static final int PFLAG_LONG_CLICK_CONSUMED = 1 << 4;
 
     /** Square of the distance to travel before drag may begin */
-    protected final float mTouchSlopSquare;
+    private float mTouchSlopSquare;
 
     /** Last known pointer id for touch events */
     private int mActivePointerId = ViewDragHelper.INVALID_POINTER;
@@ -198,6 +198,7 @@ public class GestureImageView extends AppCompatImageView {
                 .GestureImageView_imageGesturesEnabled, true));
         setMoveUnmagnifiedImageViaSingleFingerAllowed(ta.getBoolean(R.styleable
                 .GestureImageView_moveUnmagnifiedImageViaSingleFingerAllowed, false));
+        setTouchSensitivity(ta.getFloat(R.styleable.GestureImageView_touchSensitivity, 1.0f));
         ta.recycle();
 
         OnImageGestureListener listener = new OnImageGestureListener();
@@ -205,8 +206,6 @@ public class GestureImageView extends AppCompatImageView {
         mScaleGestureDetector = new ScaleGestureDetector(context, listener);
 
         final float dp = getResources().getDisplayMetrics().density;
-        final float touchSlop = ViewConfiguration.getTouchSlop() * dp;
-        mTouchSlopSquare = touchSlop * touchSlop;
         mMaximumFlingVelocity = ViewConfiguration.getMaximumFlingVelocity() * dp;
         mMinimumFlingVelocity = 200f * dp;
         mHalfOfMaxFlingDistance = mMaximumFlingVelocity * RATIO_FLING_OFFSET_TO_VELOCITY / 2f;
@@ -265,6 +264,35 @@ public class GestureImageView extends AppCompatImageView {
             mPrivateFlags |= PFLAG_MOVE_UNMAGNIFIED_IMAGE_VIA_SINGLE_FINGER_ALLOWED;
         else
             mPrivateFlags &= ~PFLAG_MOVE_UNMAGNIFIED_IMAGE_VIA_SINGLE_FINGER_ALLOWED;
+    }
+
+    /**
+     * Sets the sensitivity used for detecting the start of a swipe.
+     *
+     * @param sensitivity Multiplier for how sensitive we should be about detecting the start of
+     *                    a drag. Smaller values are less sensitive. 1.0f is normal.
+     */
+    public void setTouchSensitivity(float sensitivity) {
+        final float dp = getResources().getDisplayMetrics().density;
+        final float touchSlop = ViewConfiguration.getTouchSlop() * dp / sensitivity;
+        mTouchSlopSquare = touchSlop * touchSlop;
+    }
+
+    /**
+     * Gets the sensitivity used for detecting the start of a swipe.
+     * Larger values are more sensitive. 1.0f is normal.
+     */
+    public float getTouchSensitivity() {
+        final float dp = getResources().getDisplayMetrics().density;
+        final float normalTouchSlop = ViewConfiguration.getTouchSlop() * dp;
+        return (float) (Math.sqrt(mTouchSlopSquare) / normalTouchSlop);
+    }
+
+    /**
+     * @return Square of the distance in dips a touch can wander before we think the user is scrolling.
+     */
+    protected float getTouchSlopSquare() {
+        return mTouchSlopSquare;
     }
 
     @Override

@@ -3,5 +3,6 @@
     <declare-styleable name="GestureImageView">
         <attr name="imageGesturesEnabled" format="boolean" />
         <attr name="moveUnmagnifiedImageViaSingleFingerAllowed" format="boolean" />
+        <attr name="touchSensitivity" format="float" />
     </declare-styleable>
 </resources>
