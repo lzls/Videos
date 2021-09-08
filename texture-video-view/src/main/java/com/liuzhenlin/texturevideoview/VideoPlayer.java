@@ -42,6 +42,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.liuzhenlin.common.utils.Utils.combineInts;
+import static com.liuzhenlin.common.utils.Utils.putIntToCombinedInts;
+import static com.liuzhenlin.common.utils.Utils.takeIntFromCombinedInts;
+
 /**
  * Base implementation class to be extended, for you to create an {@link IVideoPlayer} component
  * that can be used for the {@link AbsTextureVideoView} widget to play media contents.
@@ -146,16 +150,11 @@ public abstract class VideoPlayer implements IVideoPlayer {
      */
     private static final int TRACK_SELECTION_UNSPECIFIED = -2;
 
-    // Bit shifts to get the cached video, audio, and subtitle track selections.
-    private static final int VIDEO_TRACK_SELECTION_MASK_SHIFT = 0;
-    private static final int AUDIO_TRACK_SELECTION_MASK_SHIFT = 8;
-    private static final int SUBTITLE_TRACK_SELECTION_MASK_SHIFT = 16;
-
     // Masks for use with {@link #mTrackSelections} to get the video, audio, subtitle track selections
     // previously saved for the played video.
-    private static final int VIDEO_TRACK_SELECTION_MASK = 0x000000ff;
-    private static final int AUDIO_TRACK_SELECTION_MASK = 0x0000ff00;
-    private static final int SUBTITLE_TRACK_SELECTION_MASK = 0xffff0000;
+    private static final int VIDEO_TRACK_SELECTION_MASK = 0x000003ff;
+    private static final int AUDIO_TRACK_SELECTION_MASK = 0x000ffc00;
+    private static final int SUBTITLE_TRACK_SELECTION_MASK = 0xfff00000;
 
     /**
      * Maximum cache size in bytes.
@@ -208,7 +207,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
      * the same video again.
      */
     protected void restoreTrackSelections() {
-        final int videoTrack = getVideoTrackSelection();
+        final int videoTrack = getTrackSelection(VIDEO_TRACK_SELECTION_MASK);
         switch (videoTrack) {
             case TRACK_SELECTION_UNSPECIFIED:
                 break;
@@ -223,7 +222,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
                 break;
         }
 
-        final int audioTrack = getAudioTrackSelection();
+        final int audioTrack = getTrackSelection(AUDIO_TRACK_SELECTION_MASK);
         switch (audioTrack) {
             case TRACK_SELECTION_UNSPECIFIED:
                 break;
@@ -238,7 +237,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
                 break;
         }
 
-        final int subtitleTrack = getSubtitleTrackSelection();
+        final int subtitleTrack = getTrackSelection(SUBTITLE_TRACK_SELECTION_MASK);
         switch (subtitleTrack) {
             case TRACK_SELECTION_UNSPECIFIED:
                 break;
@@ -268,13 +267,16 @@ public abstract class VideoPlayer implements IVideoPlayer {
                 // Update the cached track selections only when there are available tracks for
                 // each track type
                 if (hasTrack(TrackInfo.TRACK_TYPE_VIDEO)) {
-                    setVideoTrackSelection(getSelectedTrackIndex(TrackInfo.TRACK_TYPE_VIDEO));
+                    setTrackSelection(getSelectedTrackIndex(TrackInfo.TRACK_TYPE_VIDEO),
+                            VIDEO_TRACK_SELECTION_MASK);
                 }
                 if (hasTrack(TrackInfo.TRACK_TYPE_AUDIO)) {
-                    setAudioTrackSelection(getSelectedTrackIndex(TrackInfo.TRACK_TYPE_AUDIO));
+                    setTrackSelection(getSelectedTrackIndex(TrackInfo.TRACK_TYPE_AUDIO),
+                            AUDIO_TRACK_SELECTION_MASK);
                 }
                 if (hasTrack(TrackInfo.TRACK_TYPE_SUBTITLE)) {
-                    setSubtitleTrackSelection(getSelectedTrackIndex(TrackInfo.TRACK_TYPE_SUBTITLE));
+                    setTrackSelection(getSelectedTrackIndex(TrackInfo.TRACK_TYPE_SUBTITLE),
+                            SUBTITLE_TRACK_SELECTION_MASK);
                 }
                 break;
         }
@@ -282,43 +284,18 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
     @SuppressWarnings("SameParameterValue")
     private void setTrackSelections(int videoTrack, int audioTrack, int subtitleTrack) {
-        mTrackSelections =
-                ((videoTrack << VIDEO_TRACK_SELECTION_MASK_SHIFT) & VIDEO_TRACK_SELECTION_MASK)
-                        | ((audioTrack << AUDIO_TRACK_SELECTION_MASK_SHIFT) & AUDIO_TRACK_SELECTION_MASK)
-                        | ((subtitleTrack << SUBTITLE_TRACK_SELECTION_MASK_SHIFT) & SUBTITLE_TRACK_SELECTION_MASK);
+        mTrackSelections = combineInts(
+                new int[]{videoTrack, audioTrack, subtitleTrack},
+                new int[]{VIDEO_TRACK_SELECTION_MASK, AUDIO_TRACK_SELECTION_MASK,
+                        SUBTITLE_TRACK_SELECTION_MASK});
     }
 
-    private void setVideoTrackSelection(int selection) {
-        mTrackSelections = (mTrackSelections & ~VIDEO_TRACK_SELECTION_MASK) |
-                ((selection << VIDEO_TRACK_SELECTION_MASK_SHIFT) & VIDEO_TRACK_SELECTION_MASK);
+    private void setTrackSelection(int selection, int selectionMask) {
+        mTrackSelections = putIntToCombinedInts(mTrackSelections, selection, selectionMask);
     }
 
-    private byte getVideoTrackSelection() {
-        // Casting a video track selection from int to byte preserves the sign bit
-        return (byte) ((mTrackSelections & VIDEO_TRACK_SELECTION_MASK)
-                >> VIDEO_TRACK_SELECTION_MASK_SHIFT);
-    }
-
-    private void setAudioTrackSelection(int selection) {
-        mTrackSelections = (mTrackSelections & ~AUDIO_TRACK_SELECTION_MASK) |
-                ((selection << AUDIO_TRACK_SELECTION_MASK_SHIFT) & AUDIO_TRACK_SELECTION_MASK);
-    }
-
-    private byte getAudioTrackSelection() {
-        // Casting an audio track selection from int to byte preserves the sign bit
-        return (byte) ((mTrackSelections & AUDIO_TRACK_SELECTION_MASK)
-                >> AUDIO_TRACK_SELECTION_MASK_SHIFT);
-    }
-
-    private void setSubtitleTrackSelection(int selection) {
-        mTrackSelections = (mTrackSelections & ~SUBTITLE_TRACK_SELECTION_MASK) |
-                ((selection << SUBTITLE_TRACK_SELECTION_MASK_SHIFT) & SUBTITLE_TRACK_SELECTION_MASK);
-    }
-
-    private short getSubtitleTrackSelection() {
-        // Casting a subtitle track selection from int to short preserves the sign bit
-        return (short) ((mTrackSelections & SUBTITLE_TRACK_SELECTION_MASK)
-                >> SUBTITLE_TRACK_SELECTION_MASK_SHIFT);
+    private int getTrackSelection(int selectionMask) {
+        return takeIntFromCombinedInts(mTrackSelections, selectionMask);
     }
 
     /**

@@ -31,6 +31,37 @@ public class Utils {
     private Utils() {
     }
 
+    /**
+     * Combines some integers under different bit masks in one integer (32 bits)
+     */
+    public static int combineInts(int[] ints, int[] masks) {
+        int result = 0;
+        for (int i = 0; i < ints.length; i++) {
+            result |= (ints[i] << Integer.numberOfTrailingZeros(masks[i])) & masks[i];
+        }
+        return result;
+    }
+
+    /**
+     * Puts an integer to the integer combining a set of integers or replace an existing one
+     * under the same bit mask.
+     */
+    public static int putIntToCombinedInts(int ints, int val, int mask) {
+        return (ints & ~mask) | ((val << Integer.numberOfTrailingZeros(mask)) & mask);
+    }
+
+    /**
+     * Retrieves an integer from the integer combining a set of integers or zero if not exists.
+     */
+    public static int takeIntFromCombinedInts(int ints, int mask) {
+        int maskShift = Integer.numberOfTrailingZeros(mask);
+        int origin = (ints & mask) >>> maskShift;
+        int signMaskShift = Integer.bitCount(mask) - 1;
+        int singMask = 1 << signMaskShift;
+        int sign = origin & singMask;
+        return (sign > 0 ? ~(mask >>> maskShift) : 0) | origin;
+    }
+
     /** Lightweight choice to {@link Math#round(float)} */
     public static int roundFloat(float value) {
         return (int) (value > 0 ? value + 0.5f : value - 0.5f);
