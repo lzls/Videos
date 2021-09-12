@@ -17,7 +17,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.DisplayCutout;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,8 +42,7 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.observer.RotationObserver;
-import com.liuzhenlin.common.observer.ScreenNotchSwitchObserver;
-import com.liuzhenlin.common.utils.DisplayCutoutUtils;
+import com.liuzhenlin.common.utils.DisplayCutoutManager;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
@@ -388,7 +386,7 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
     }
 
     private final class PicturePreviewDialog extends Dialog implements DialogInterface.OnDismissListener,
-            View.OnClickListener, View.OnLongClickListener {
+            View.OnClickListener, View.OnLongClickListener, DisplayCutoutManager.OnNotchSwitchListener {
         final Context mContext = FeedbackActivity.this;
         final Window mParentWindow;
         final Window mWindow;
@@ -404,12 +402,7 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
         boolean mIsRotationEnabled;
         int mScreenOrientation = SCREEN_ORIENTATION_PORTRAIT;
 
-        boolean mIsNotchSupport;
-        boolean mIsNotchSupportOnMIUI;
-        boolean mIsNotchSupportOnEMUI;
-        boolean mIsNotchHidden;
-        int mNotchHeight;
-        ScreenNotchSwitchObserver mNotchSwitchObserver;
+        DisplayCutoutManager mDisplayCutoutManager;
 
         PicturePreviewDialog(List<Bitmap> pictures, int currentItem) {
             super(FeedbackActivity.this, R.style.DialogStyle_PicturePreview);
@@ -493,8 +486,8 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
         @Override
         public void onDismiss(DialogInterface dialog) {
             mPicturePreviewDialog = null;
-            if (mNotchSwitchObserver != null) {
-                mNotchSwitchObserver.stopObserver();
+            if (mDisplayCutoutManager != null) {
+                mDisplayCutoutManager.dispose();
             }
             mOnOrientationChangeListener.setEnabled(false);
             mRotationObserver.stopObserver();
@@ -559,81 +552,39 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
 
         // 使View占用刘海区（如果有）
         void setLayoutInDisplayCutout() {
-            View parentDecorView = mParentWindow.getDecorView();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                DisplayCutout dc = parentDecorView.getRootWindowInsets().getDisplayCutout();
-                if (dc != null) {
-                    mIsNotchSupport = true;
-                    if (OSHelper.isEMUI()) {
-                        mIsNotchSupportOnEMUI = true;
-                    } else if (OSHelper.isMIUI()) {
-                        mIsNotchSupportOnMIUI = true;
-                    }
-                    mNotchHeight = dc.getSafeInsetTop();
-                    DisplayCutoutUtils.setLayoutInDisplayCutoutSinceP(mWindow, true);
-                }
-            } else if (OSHelper.isEMUI()) {
-                if (DisplayCutoutUtils.hasNotchInScreenForEMUI(mContext)) {
-                    mIsNotchSupport = mIsNotchSupportOnEMUI = true;
-                    mNotchHeight = DisplayCutoutUtils.getNotchSizeForEMUI(mContext)[1];
-                    DisplayCutoutUtils.setLayoutInDisplayCutoutForEMUI(mWindow, true);
-                }
-            } else if (OSHelper.isColorOS()) {
-                if (DisplayCutoutUtils.hasNotchInScreenForColorOS(mContext)) {
-                    mIsNotchSupport = true;
-                    mNotchHeight = DisplayCutoutUtils.getNotchSizeForColorOS()[1];
-                }
-            } else if (OSHelper.isFuntouchOS()) {
-                if (DisplayCutoutUtils.hasNotchInScreenForFuntouchOS(mContext)) {
-                    mIsNotchSupport = true;
-                    mNotchHeight = DisplayCutoutUtils.getNotchHeightForFuntouchOS(mContext);
-                }
-            } else if (OSHelper.isMIUI()) {
-                if (DisplayCutoutUtils.hasNotchInScreenForMIUI()) {
-                    mIsNotchSupport = mIsNotchSupportOnMIUI = true;
-                    mNotchHeight = DisplayCutoutUtils.getNotchHeightForMIUI(mContext);
-                    DisplayCutoutUtils.setLayoutInDisplayCutoutForMIUI(mWindow, true);
-                }
-            }
-            if (mIsNotchSupportOnEMUI || mIsNotchSupportOnMIUI) {
-                mNotchSwitchObserver = new ScreenNotchSwitchObserver(
-                        parentDecorView.getHandler(), mContext,
-                        mIsNotchSupportOnEMUI, mIsNotchSupportOnMIUI) {
-                    boolean first = true;
-
-                    @Override
-                    public void onNotchChange(boolean selfChange, boolean hidden) {
-                        if (first || mIsNotchHidden != hidden) {
-                            first = false;
-                            mIsNotchHidden = hidden;
-                            adjustVisibleRegion();
-                        }
-                    }
-                };
-                mNotchSwitchObserver.startObserver();
-            } else {
-                adjustVisibleRegion();
-            }
+            mDisplayCutoutManager = new DisplayCutoutManager(mParentWindow, mWindow);
+            mDisplayCutoutManager.setLayoutInDisplayCutout(true);
+            mDisplayCutoutManager.addOnNotchSwitchListener(this);
+            adjustVisibleRegion();
         }
 
         void adjustVisibleRegion() {
-            if (!mIsNotchSupport) {
+            if (!mDisplayCutoutManager.isNotchSupport()) {
                 return;
             }
+
+            boolean isNotchSupportOnEMUI = mDisplayCutoutManager.isNotchSupportOnEMUI();
+            boolean isNotchHidden = mDisplayCutoutManager.isNotchHidden();
+            int notchHeight = mDisplayCutoutManager.getNotchHeight();
             switch (mScreenOrientation) {
                 case SCREEN_ORIENTATION_PORTRAIT:
-                    mGalleryViewPager.setPadding(0, mNotchHeight, 0, 0);
+                    mGalleryViewPager.setPadding(0, notchHeight, 0, 0);
                     break;
                 case SCREEN_ORIENTATION_LANDSCAPE:
                     mGalleryViewPager.setPadding(
-                            mIsNotchSupportOnEMUI && mIsNotchHidden ? 0 : mNotchHeight, 0,
+                            isNotchSupportOnEMUI && isNotchHidden ? 0 : notchHeight, 0,
                             0, 0);
                     break;
                 case SCREEN_ORIENTATION_REVERSE_LANDSCAPE:
                     mGalleryViewPager.setPadding(0, 0,
-                            mIsNotchSupportOnEMUI && mIsNotchHidden ? 0 : mNotchHeight, 0);
+                            isNotchSupportOnEMUI && isNotchHidden ? 0 : notchHeight, 0);
                     break;
             }
+        }
+
+        @Override
+        public void onNotchChange(boolean hidden) {
+            adjustVisibleRegion();
         }
     }
 }

@@ -24,7 +24,6 @@ import android.transition.ChangeBounds;
 import android.transition.TransitionManager;
 import android.util.Log;
 import android.util.Rational;
-import android.view.DisplayCutout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,10 +47,8 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.observer.RotationObserver;
-import com.liuzhenlin.common.observer.ScreenNotchSwitchObserver;
-import com.liuzhenlin.common.utils.DisplayCutoutUtils;
+import com.liuzhenlin.common.utils.DisplayCutoutManager;
 import com.liuzhenlin.common.utils.FileUtils;
-import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
@@ -84,7 +81,8 @@ import static com.liuzhenlin.texturevideoview.utils.Utils.canUseExoPlayer;
 /**
  * @author 刘振林
  */
-public class VideoActivity extends SwipeBackActivity implements IVideoView {
+public class VideoActivity extends SwipeBackActivity implements IVideoView,
+        DisplayCutoutManager.OnNotchSwitchListener {
 
     private static WeakReference<VideoActivity> sActivityInPiP;
 
@@ -100,24 +98,19 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
 
     @Synthetic int mPrivateFlags;
 
-    private static final int PFLAG_SCREEN_NOTCH_SUPPORT = 1;
-    private static final int PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI = 1 << 1;
-    private static final int PFLAG_SCREEN_NOTCH_SUPPORT_ON_MIUI = 1 << 2;
-    private static final int PFLAG_SCREEN_NOTCH_HIDDEN = 1 << 3;
+    private static final int PFLAG_SCREEN_NOTCH_HIDDEN = 1;
 
-    private static final int PFLAG_DEVICE_SCREEN_ROTATION_ENABLED = 1 << 4;
-    private static final int PFLAG_SCREEN_ORIENTATION_LOCKED = 1 << 5;
-    private static final int PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE = 1 << 6;
+    private static final int PFLAG_DEVICE_SCREEN_ROTATION_ENABLED = 1 << 1;
+    private static final int PFLAG_SCREEN_ORIENTATION_LOCKED = 1 << 2;
+    private static final int PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE = 1 << 3;
 
-    private static final int PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN = 1 << 7;
+    private static final int PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN = 1 << 4;
 
-    private static final int PFLAG_STOPPED = 1 << 8;
+    private static final int PFLAG_STOPPED = 1 << 5;
 
     private static int sStatusHeight;
     private static int sStatusHeightInLandscapeOfNotchSupportDevice;
-    private int mNotchHeight;
-    @Nullable
-    private ScreenNotchSwitchObserver mNotchSwitchObserver;
+    private DisplayCutoutManager mDisplayCutoutManager;
 
     private RotationObserver mRotationObserver;
     @Synthetic OnOrientationChangeListener mOnOrientationChangeListener;
@@ -199,6 +192,13 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         void cancel() {
             mHandler.removeCallbacks(runnable);
         }
+    }
+
+    private DisplayCutoutManager getDisplayCutoutManager() {
+        if (mDisplayCutoutManager == null) {
+            mDisplayCutoutManager = new DisplayCutoutManager(getWindow());
+        }
+        return mDisplayCutoutManager;
     }
 
     @Nullable
@@ -508,9 +508,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         mPrivateFlags &= ~PFLAG_STOPPED;
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPictureInPictureMode()) {
-            if (mNotchSwitchObserver != null) {
-                mNotchSwitchObserver.startObserver();
-            }
+            observeNotchSwitch(true);
             setAutoRotationEnabled(true);
         }
 
@@ -522,41 +520,9 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         super.onAttachedToWindow();
         Window window = getWindow();
         View decorView = window.getDecorView();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            DisplayCutout dc = decorView.getRootWindowInsets().getDisplayCutout();
-            if (dc != null) {
-                mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT;
-                if (OSHelper.isEMUI()) {
-                    mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI;
-                } else if (OSHelper.isMIUI()) {
-                    mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT_ON_MIUI;
-                }
-                mNotchHeight = dc.getSafeInsetTop();
-                DisplayCutoutUtils.setLayoutInDisplayCutoutSinceP(window, true);
-            }
-        } else if (OSHelper.isEMUI()) {
-            if (DisplayCutoutUtils.hasNotchInScreenForEMUI(this)) {
-                mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT | PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI;
-                mNotchHeight = DisplayCutoutUtils.getNotchSizeForEMUI(this)[1];
-                DisplayCutoutUtils.setLayoutInDisplayCutoutForEMUI(window, true);
-            }
-        } else if (OSHelper.isColorOS()) {
-            if (DisplayCutoutUtils.hasNotchInScreenForColorOS(this)) {
-                mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT;
-                mNotchHeight = DisplayCutoutUtils.getNotchSizeForColorOS()[1];
-            }
-        } else if (OSHelper.isFuntouchOS()) {
-            if (DisplayCutoutUtils.hasNotchInScreenForFuntouchOS(this)) {
-                mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT;
-                mNotchHeight = DisplayCutoutUtils.getNotchHeightForFuntouchOS(this);
-            }
-        } else if (OSHelper.isMIUI()) {
-            if (DisplayCutoutUtils.hasNotchInScreenForMIUI()) {
-                mPrivateFlags |= PFLAG_SCREEN_NOTCH_SUPPORT | PFLAG_SCREEN_NOTCH_SUPPORT_ON_MIUI;
-                mNotchHeight = DisplayCutoutUtils.getNotchHeightForMIUI(this);
-                DisplayCutoutUtils.setLayoutInDisplayCutoutForMIUI(window, true);
-            }
-        }
+
+        getDisplayCutoutManager().setLayoutInDisplayCutout(true);
+        observeNotchSwitch(true);
 
         if (Utils.isLayoutRtl(decorView)) {
             getSwipeBackLayout().setEnabledEdges(SwipeBackLayout.EDGE_RIGHT);
@@ -564,24 +530,6 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         setFullscreenMode(mVideoView.isInFullscreenMode());
 
         mHandler = decorView.getHandler();
-
-        final boolean notchSupportOnEMUI = (mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI) != 0;
-        final boolean notchSupportOnMIUI = (mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT_ON_MIUI) != 0;
-        if (notchSupportOnEMUI || notchSupportOnMIUI) {
-            mNotchSwitchObserver = new ScreenNotchSwitchObserver(mHandler, this,
-                    notchSupportOnEMUI, notchSupportOnMIUI) {
-                @Override
-                public void onNotchChange(boolean selfChange, boolean hidden) {
-                    //noinspection DoubleNegation
-                    if (hidden != ((mPrivateFlags & PFLAG_SCREEN_NOTCH_HIDDEN) != 0)) {
-                        mPrivateFlags ^= PFLAG_SCREEN_NOTCH_HIDDEN;
-                        resizeVideoView();
-                    }
-                }
-            };
-            mNotchSwitchObserver.startObserver();
-        }
-
         mRotationObserver = new RotationObserver(mHandler, this) {
             @Override
             public void onRotationChange(boolean selfChange, boolean enabled) {
@@ -607,6 +555,21 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         setAutoRotationEnabled(true);
     }
 
+    private void observeNotchSwitch(boolean observe) {
+        if (mDisplayCutoutManager != null) {
+            if (observe) {
+                mDisplayCutoutManager.addOnNotchSwitchListener(this);
+                if (mDisplayCutoutManager.isNotchHidden()
+                        ^ ((mPrivateFlags & PFLAG_SCREEN_NOTCH_HIDDEN) != 0)) {
+                    mPrivateFlags ^= PFLAG_SCREEN_NOTCH_HIDDEN;
+                    resizeVideoView();
+                }
+            } else {
+                mDisplayCutoutManager.removeOnNotchSwitchListener(this);
+            }
+        }
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
@@ -618,9 +581,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPictureInPictureMode()) {
-            if (mNotchSwitchObserver != null) {
-                mNotchSwitchObserver.stopObserver();
-            }
+            observeNotchSwitch(false);
             setAutoRotationEnabled(false);
         }
 
@@ -752,10 +713,11 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
 
                 final boolean fullscreen = orientation != SCREEN_ORIENTATION_PORTRAIT;
                 if (fullscreen == mVideoView.isInFullscreenMode()) {
+                    DisplayCutoutManager displayCutoutManager = getDisplayCutoutManager();
                     //@formatter:off
-                    if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) == 0
-                            || (mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI) != 0
-                                    && (mPrivateFlags & PFLAG_SCREEN_NOTCH_HIDDEN) != 0) {
+                    if (!displayCutoutManager.isNotchSupport()
+                            || displayCutoutManager.isNotchSupportOnEMUI()
+                                    && displayCutoutManager.isNotchHidden()) {
                     //@formatter:on
                         if (mVideoView.isControlsShowing()) {
                             mVideoView.showControls(true, false);
@@ -783,10 +745,10 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         //@formatter:off
         mVideoView.setFullscreenMode(fullscreen,
             fullscreen && (
-                   (mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) == 0
+                   !getDisplayCutoutManager().isNotchSupport()
                 || (mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) == 0
-                          ) ? ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) == 0) ?
-                                sStatusHeight : sStatusHeightInLandscapeOfNotchSupportDevice
+                          ) ? getDisplayCutoutManager().isNotchSupport() ?
+                                sStatusHeightInLandscapeOfNotchSupportDevice : sStatusHeight
                             : 0);
         //@formatter:on
         if (mVideoView.isControlsShowing()) {
@@ -812,12 +774,20 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
         setFullscreenMode(fullscreen);
     }
 
+    @Override
+    public void onNotchChange(boolean hidden) {
+        mPrivateFlags = (mPrivateFlags &~ PFLAG_SCREEN_NOTCH_HIDDEN)
+                | (hidden ? PFLAG_SCREEN_NOTCH_HIDDEN : 0);
+        resizeVideoView();
+    }
+
     @Synthetic void resizeVideoView() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode()) {
             setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             return;
         }
 
+        DisplayCutoutManager displayCutoutManager = getDisplayCutoutManager();
         switch (mScreenOrientation) {
             case SCREEN_ORIENTATION_PORTRAIT:
                 final boolean layoutIsFullscreen = mVideoView.isInFullscreenMode();
@@ -832,14 +802,15 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
                 if (layoutIsFullscreen) {
                     setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT);
-                    if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) != 0) {
+                    if (displayCutoutManager.isNotchSupport()) {
                         /*
                          * setPadding () has no effect on DrawerLayout, such as:
                          *
                          * mVideoView.setPadding(0, mNotchHeight, 0, 0);
                          */
                         for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                            UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, mNotchHeight, 0, 0);
+                            UiUtils.setViewMargins(mVideoView.getChildAt(i),
+                                    0, displayCutoutManager.getNotchHeight(), 0, 0);
                         }
                     }
                 } else {
@@ -848,7 +819,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
                     final int minLayoutHeight = Utils.roundFloat((float) screenWidth / 16f * 9f);
 
                     setVideoViewSize(screenWidth, minLayoutHeight);
-                    if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) != 0) {
+                    if (displayCutoutManager.isNotchSupport()) {
 //                        mVideoView.setPadding(0, 0, 0, 0);
                         for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
                             UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
@@ -859,34 +830,36 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
             case SCREEN_ORIENTATION_LANDSCAPE:
                 setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT);
-                if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI) != 0
-                        && (mPrivateFlags & PFLAG_SCREEN_NOTCH_HIDDEN) != 0) {
+                if (displayCutoutManager.isNotchSupportOnEMUI()
+                        && displayCutoutManager.isNotchHidden()) {
 //                    mVideoView.setPadding(0, 0, 0, 0);
                     for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
                         UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
                     }
-                } else if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) != 0) {
+                } else if (displayCutoutManager.isNotchSupport()) {
 //                    mVideoView.setPadding(mNotchHeight, 0, 0, 0);
                     for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
                         //noinspection SuspiciousNameCombination
-                        UiUtils.setViewMargins(mVideoView.getChildAt(i), mNotchHeight, 0, 0, 0);
+                        UiUtils.setViewMargins(mVideoView.getChildAt(i),
+                                displayCutoutManager.getNotchHeight(), 0, 0, 0);
                     }
                 }
                 break;
             case SCREEN_ORIENTATION_REVERSE_LANDSCAPE:
                 setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT);
-                if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT_ON_EMUI) != 0
-                        && (mPrivateFlags & PFLAG_SCREEN_NOTCH_HIDDEN) != 0) {
+                if (displayCutoutManager.isNotchSupportOnEMUI()
+                        && displayCutoutManager.isNotchHidden()) {
 //                    mVideoView.setPadding(0, 0, 0, 0);
                     for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
                         UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
                     }
-                } else if ((mPrivateFlags & PFLAG_SCREEN_NOTCH_SUPPORT) != 0) {
+                } else if (displayCutoutManager.isNotchSupport()) {
 //                    mVideoView.setPadding(0, 0, mNotchHeight, 0);
                     for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
                         //noinspection SuspiciousNameCombination
-                        UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, mNotchHeight, 0);
+                        UiUtils.setViewMargins(mVideoView.getChildAt(i),
+                                0, 0, displayCutoutManager.getNotchHeight(), 0);
                     }
                 }
                 break;
@@ -1062,9 +1035,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
 
             sActivityInPiP = new WeakReference<>(this);
 
-            if (mNotchSwitchObserver != null) {
-                mNotchSwitchObserver.stopObserver();
-            }
+            observeNotchSwitch(false);
             setAutoRotationEnabled(false);
 
             mStatusBarView.setVisibility(View.GONE);
@@ -1159,9 +1130,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView {
                 return;
             }
 
-            if (mNotchSwitchObserver != null) {
-                mNotchSwitchObserver.startObserver();
-            }
+            observeNotchSwitch(true);
             setAutoRotationEnabled(true);
 
             mStatusBarView.setVisibility(View.VISIBLE);
