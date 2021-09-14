@@ -11,6 +11,7 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -352,6 +353,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
      * where the video seek bar is dragged as we stop tracking touch on it.
      */
     private static final int PFLAG_DISALLOW_PLAYBACK_POSITION_SEEK_ON_STOP_TRACKING_TOUCH = 1 << 10;
+
+    /** Flag indicating whether we are in the process of cutting the played video. */
+    private static final int PFLAG_CUTTING_VIDEO = 1 << 11;
 
     @ViewMode
     private int mViewMode = VIEW_MODE_DEFAULT;
@@ -823,7 +827,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         }
 
         if (isInFullscreenMode()) {
-            if (isLocked()) {
+            if (isLocked$()) {
                 mVideoSeekBar = (SeekBar) LayoutInflater.from(mContext).inflate(
                         R.layout.bottom_controls_fullscreen_locked, root, false);
                 root.addView(mVideoSeekBar);
@@ -960,7 +964,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     }
 
     private void adjustToggleState(boolean playing) {
-        if (!isLocked()) {
+        if (!isLocked$()) {
             if (playing) {
                 mToggleButton.setImageResource(R.drawable.ic_pause_white_32dp);
                 mToggleButton.setContentDescription(mStringPause);
@@ -1362,7 +1366,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 }
             } else {
                 mTitleText.setText(null);
-                if (isLocked()) {
+                if (isLocked$()) {
                     setLocked(false, false);
                     if (isControlsShowing()) {
                         // Removes the PFLAG_CONTROLS_SHOWING flag first, since our controls
@@ -1376,7 +1380,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     mCameraButton.setVisibility(GONE);
                     mVideoCameraButton.setVisibility(GONE);
                     cancelVideoPhotoCapture();
-                    hideClipView(true /* usually true */);
+                    // Hope this will never happen while video clipping is really going on
+                    // as this view is going to be non-fullscreen and we are forcibly hiding
+                    // the clipping view...
+                    hideClipView(true /* usually true */, true);
                     // Only closes the playlist when this view is out of fullscreen mode
                     if (mPlayList.getVisibility() == VISIBLE && isDrawerVisible(mDrawerView)) {
                         closeDrawer(mDrawerView);
@@ -1447,7 +1454,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 }
             }
 
-            if (isLocked()) {
+            if (isLocked$()) {
                 if (stretched) {
                     setViewMode(VIEW_MODE_VIDEO_STRETCHED_LOCKED_FULLSCREEN, true);
                 } else {
@@ -1612,7 +1619,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         cancelVideoPhotoCapture();
-        hideClipView(false);
+        hideClipView(false, true);
 
         mMsgHandler.removeMessages(MsgHandler.MSG_HIDE_BRIGHTNESS_OR_VOLUME_FRAME);
         mBrightnessOrVolumeFrame.setVisibility(GONE);
@@ -1649,7 +1656,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     @Override
     public boolean onBackPressed() {
         if (mClipView != null) {
-            hideClipView(true);
+            hideClipView(true, false /* not allowed when cutting has started */);
             return true;
         } else if (isDrawerVisible(mDrawerView)) {
             closeDrawer(mDrawerView);
@@ -1694,6 +1701,13 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
      * Returns whether or not the current view is locked.
      */
     public boolean isLocked() {
+        // Account for the PFLAG_CUTTING_VIDEO flag, so fullscreen mode will be very likely
+        // that it remains the same when the video clipping is actually going on
+        // and the device orientation changes.
+        return (mPrivateFlags & (PFLAG_LOCKED | PFLAG_CUTTING_VIDEO)) != 0;
+    }
+
+    @Synthetic boolean isLocked$() {
         return (mPrivateFlags & PFLAG_LOCKED) != 0;
     }
 
@@ -1712,7 +1726,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
      *                This only makes sense when this view is currently in fullscreen mode.
      */
     public void setLocked(boolean locked, boolean animate) {
-        if (locked != isLocked()) {
+        if (locked != isLocked$()) {
             final boolean fullscreen = isInFullscreenMode();
             final boolean showing = isControlsShowing();
             if (fullscreen && showing) {
@@ -1810,7 +1824,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         if ((mPrivateFlags & PFLAG_CONTROLS_SHOWING) == 0) {
             mPrivateFlags |= PFLAG_CONTROLS_SHOWING;
-            final boolean unlocked = !isLocked();
+            final boolean unlocked = !isLocked$();
             if (animate) {
                 beginControlsFadingTransition(true, unlocked);
             }
@@ -1849,7 +1863,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         if ((mPrivateFlags & PFLAG_CONTROLS_SHOWING) != 0) {
             mPrivateFlags &= ~PFLAG_CONTROLS_SHOWING;
-            final boolean unlocked = !isLocked();
+            final boolean unlocked = !isLocked$();
             if (animate) {
                 beginControlsFadingTransition(false, unlocked);
             }
@@ -1946,7 +1960,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     }
 
     @Synthetic void checkCameraButtonsVisibilities() {
-        boolean show = isControlsShowing() && isInFullscreenMode() && !isLocked();
+        boolean show = isControlsShowing() && isInFullscreenMode() && !isLocked$();
         if (show && isSpinnerPopupShowing()) {
             final int[] location = new int[2];
 
@@ -1982,7 +1996,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     private void checkButtonsAbilities() {
         VideoPlayer vp = mVideoPlayer;
         if (isInFullscreenMode()) {
-            if (!isLocked()) {
+            if (!isLocked$()) {
                 checkCameraButtonAbility();
                 mVideoCameraButton.setEnabled(vp != null
                         && vp.mVideoWidth != 0 && vp.mVideoHeight != 0
@@ -2295,19 +2309,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 cutoutShortVideoButton.setSelected(false);
 
             } else if (v == cancelButton) {
-                hideClipView(true);
+                hideClipView(true, true /* cutting hasn't started */);
 
             } else if (v == okButton) {
-                hideClipView(true);
-
-                /*
-                 * Below code blocks for cutting out the desired short video or GIF.
-                 * This should normally be done on a worker thread rather than the main thread that
-                 * blocks the UI from updating itself till the op completes, but here we do it on
-                 * the main thread just for temporary convenience as the code undoubtedly needs
-                 * to be improved at some point in the future.
-                 */
-
                 final boolean cutoutShortVideo = cutoutShortVideoButton.isSelected();
                 if (!cutoutShortVideo) {
                     UiUtils.showUserCancelableSnackbar(this,
@@ -2315,53 +2319,75 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     return;
                 }
 
-                final String srcPath = FileUtils.UriResolver.getPath(mContext, videoUri);
-                if (srcPath == null) {
-                    Log.e(TAG, "Failed to resolve the path of the video being clipped.");
-                    UiUtils.showUserCancelableSnackbar(this,
-                            R.string.clippingFailed, Snackbar.LENGTH_SHORT);
-                    return;
-                }
-
-                //noinspection ConstantConditions
-                final String destDirectory = obtainAppExternalFilesDir()
-                        + "/clips/" + (cutoutShortVideo ? "ShortVideos" : "GIFs");
-                //noinspection ConstantConditions
-                final String destName = mTitle + "_"
-                        + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS") //@formatter:off
-                                .format(System.currentTimeMillis()) //@formatter:on
-                        + (cutoutShortVideo ? ".mp4" : ".gif");
-                final String destPath = destDirectory + "/" + destName;
-                File destFile = null;
-                //noinspection ConstantConditions,StatementWithEmptyBody
-                if (cutoutShortVideo) {
-                    try {
-                        destFile = VideoUtils.clip(srcPath, destPath, interval[0], interval[1]);
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    ViewGroup overlay = (ViewGroup) LayoutInflater.from(mContext)
+                            .inflate(R.layout.layout_clipping_overlay, view, false);
+                    overlay.measure(MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+                            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
+                    overlay.layout(0, 0, view.getWidth(), view.getHeight());
+                    view.getOverlay().add(overlay);
                 } else {
-                    // TODO: the logic of cutting out a GIF
+                    ProgressDialog dialog = new ProgressDialog(mContext);
+                    dialog.setMessage(mResources.getText(R.string.clippingPleaseWait));
+                    dialog.setCancelable(false);
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.show();
+                    view.setTag(dialog);
                 }
-                if (destFile == null) {
-                    UiUtils.showUserCancelableSnackbar(this,
-                            R.string.clippingFailed, Snackbar.LENGTH_SHORT);
-                } else //noinspection ConstantConditions
-                    if (cutoutShortVideo) {
-                        FileUtils.recordMediaFileToDatabaseAndScan(mContext,
-                                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                destFile, "video/mp4");
-                        UiUtils.showUserCancelableSnackbar(this,
-                                mResources.getString(R.string.shortVideoHasBeenSavedTo, destName, destDirectory),
-                                true, Snackbar.LENGTH_INDEFINITE);
+                mPrivateFlags |= PFLAG_CUTTING_VIDEO;
+                ParallelThreadExecutor.getSingleton().execute(() -> {
+                    final int resultCode;
+                    final String result;
+                    final String srcPath = FileUtils.UriResolver.getPath(mContext, videoUri);
+                    if (srcPath == null) {
+                        Log.e(TAG, "Failed to resolve the path of the video being clipped.");
+                        resultCode = -1;
+                        result = mResources.getString(R.string.clippingFailed);
                     } else {
-                        FileUtils.recordMediaFileToDatabaseAndScan(mContext,
-                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                destFile, "image/gif");
-                        UiUtils.showUserCancelableSnackbar(this,
-                                mResources.getString(R.string.gifHasBeenSavedTo, destName, destDirectory),
-                                true, Snackbar.LENGTH_INDEFINITE);
+                        //noinspection ConstantConditions
+                        final String destDirectory = obtainAppExternalFilesDir()
+                                + "/clips/" + (cutoutShortVideo ? "ShortVideos" : "GIFs");
+                        //noinspection ConstantConditions
+                        final String destName = mTitle + "_"
+                                + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS") //@formatter:off
+                                        .format(System.currentTimeMillis()) //@formatter:on
+                                + (cutoutShortVideo ? ".mp4" : ".gif");
+                        final String destPath = destDirectory + "/" + destName;
+                        File destFile = null;
+                        //noinspection ConstantConditions,StatementWithEmptyBody
+                        if (cutoutShortVideo) {
+                            try {
+                                destFile = VideoUtils.clip(srcPath, destPath, interval[0], interval[1]);
+                            } catch (Throwable t) {
+                                t.printStackTrace();
+                            }
+                        } else {
+                            // TODO: the logic of cutting out a GIF
+                        }
+                        if (destFile == null) {
+                            resultCode = -2;
+                            result = mResources.getString(R.string.clippingFailed);
+                        } else {
+                            resultCode = 0;
+                            //noinspection ConstantConditions
+                            if (cutoutShortVideo) {
+                                FileUtils.recordMediaFileToDatabaseAndScan(mContext,
+                                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                        destFile, "video/mp4");
+                                result = mResources.getString(
+                                        R.string.shortVideoHasBeenSavedTo, destName, destDirectory);
+                            } else {
+                                FileUtils.recordMediaFileToDatabaseAndScan(mContext,
+                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                        destFile, "image/gif");
+                                result = mResources.getString(
+                                        R.string.gifHasBeenSavedTo, destName, destDirectory);
+                            }
+                        }
                     }
+                    mMsgHandler.sendMessage(mMsgHandler.obtainMessage(
+                            MsgHandler.MSG_SHOW_VIDEO_CLIPPING_RESULT, resultCode, 0, result));
+                });
             }
         };
         cutoutShortVideoButton.setOnClickListener(listener);
@@ -2582,8 +2608,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         mContentView.addView(view);
     }
 
-    private void hideClipView(boolean fromUser) {
-        if (mClipView != null) {
+    @Synthetic void hideClipView(boolean fromUser, boolean force) {
+        if (mClipView != null && (force || (mPrivateFlags & PFLAG_CUTTING_VIDEO) == 0)) {
+            ProgressDialog dialog = (ProgressDialog) mClipView.getTag();
+            if (dialog != null) {
+                dialog.cancel();
+            }
             mContentView.removeView(mClipView);
             mClipView = null;
             if (mLoadClipThumbsTask != null) {
@@ -2632,7 +2662,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         final int videoDuration = videoPlayer == null ? 0 : videoPlayer.getNoNegativeVideoDuration();
         final String videoDurationString = videoPlayer == null ?
                 VideoPlayer.DEFAULT_STRING_VIDEO_DURATION : videoPlayer.mVideoDurationString;
-        if (!isLocked()) {
+        if (!isLocked$()) {
             if (isInFullscreenMode()) {
                 mVideoProgressDurationText.setText(
                         mResources.getString(R.string.progress_duration,
@@ -2726,12 +2756,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
             @Override
             public boolean onDown(MotionEvent e) {
-                return isLocked() || isSpinnerPopupShowing() /*|| isDrawerVisible(mDrawerView)*/;
+                return isLocked$() || isSpinnerPopupShowing() /*|| isDrawerVisible(mDrawerView)*/;
             }
 
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
-                if (isLocked() || isSpinnerPopupShowing()) {
+                if (isLocked$() || isSpinnerPopupShowing()) {
                     return true;
                 }
                 if (isDrawerVisible(mDrawerView)) {
@@ -2757,7 +2787,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 if (isSpinnerPopupShowing()) {
                     dismissSpinnerPopup();
 
-                } else if (mVideoPlayer != null && !(isLocked() || isDrawerVisible(mDrawerView))) {
+                } else if (mVideoPlayer != null && !(isLocked$() || isDrawerVisible(mDrawerView))) {
                     mVideoPlayer.toggle(true);
                 }
                 return true;
@@ -2770,17 +2800,20 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                return isLocked() || isSpinnerPopupShowing() /*|| isDrawerVisible(mDrawerView)*/;
+                return isLocked$() || isSpinnerPopupShowing() /*|| isDrawerVisible(mDrawerView)*/;
             }
 
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                return isLocked() /*|| isSpinnerPopupShowing() || isDrawerVisible(mDrawerView)*/;
+                return isLocked$() /*|| isSpinnerPopupShowing() || isDrawerVisible(mDrawerView)*/;
             }
         });
 
         @Override
         public boolean shouldInterceptTouchEvent(@NonNull MotionEvent ev) {
+            if ((mPrivateFlags & PFLAG_CUTTING_VIDEO) != 0) {
+                return true;
+            }
             if (isSpinnerPopupShowing()) {
                 // If the spinner's popup is showing, let content view intercept the touch events to
                 // prevent the user from pressing the buttons ('play/pause', 'skip next', 'back', etc.)
@@ -2790,7 +2823,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }
             // No child of the content view but the 'unlock' button can receive touch events when
             // this view is locked.
-            if (isLocked()) {
+            if (isLocked$()) {
                 final float x = ev.getX();
                 final float y = ev.getY();
                 final View lub = mLockUnlockButton;
@@ -2928,7 +2961,11 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         }
 
         boolean onTouchContent(MotionEvent event) {
-            if (detector.onTouchEvent(event) || isLocked()) {
+            if ((mPrivateFlags & PFLAG_CUTTING_VIDEO) != 0) {
+                return true;
+            }
+
+            if (detector.onTouchEvent(event) || isLocked$()) {
                 return true;
             }
 
@@ -3767,6 +3804,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         static final int MSG_HIDE_CAPTURED_PHOTO_VIEW = 3;
         static final int MSG_CHECK_CAMERA_BUTTONS_VISIBILITIES = 4;
         static final int MSG_REFRESH_VIDEO_PROGRESS = 5;
+        static final int MSG_SHOW_VIDEO_CLIPPING_RESULT = 6;
 
         final WeakReference<TextureVideoView> videoViewRef;
 
@@ -3805,9 +3843,24 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         sendEmptyMessageDelayed(MSG_REFRESH_VIDEO_PROGRESS, 1000 - progress % 1000);
                     }
                     videoView.refreshVideoProgress(progress);
+                    break;
                 }
-                break;
-
+                case MSG_SHOW_VIDEO_CLIPPING_RESULT: {
+                    videoView.mPrivateFlags &= ~PFLAG_CUTTING_VIDEO;
+                    // Skip showing result if clipping view was forcibly hidden
+                    // when this view was detached from the window
+                    if (ViewCompat.isAttachedToWindow(videoView)) {
+                        videoView.hideClipView(true, true);
+                        if (msg.arg1 == 0) {
+                            UiUtils.showUserCancelableSnackbar(videoView,
+                                    (CharSequence) msg.obj, true, Snackbar.LENGTH_INDEFINITE);
+                        } else {
+                            UiUtils.showUserCancelableSnackbar(videoView,
+                                    (CharSequence) msg.obj, Snackbar.LENGTH_SHORT);
+                        }
+                    }
+                    break;
+                }
                 case BackgroundPlaybackControllerService.MSG_PLAY:
                     if (videoPlayer != null) {
                         videoPlayer.play(true);

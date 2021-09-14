@@ -22,10 +22,11 @@
         视频片段播放进度</string>
     <string name="canTakeUpToXSecondsXSecondsSelected">最多可截取%d秒，已选%d秒</string>
     <string name="gifClippingIsNotYetSupported">暂不支持截取GIF！</string>
+    <string name="clippingPleaseWait">裁剪中，请稍等…</string>
+    <string name="clippingFailed">裁剪失败</string>
     <string name="shortVideoHasBeenSavedTo">短视频“%s”已保存至“%s”</string>
     <string name="gifHasBeenSavedTo">GIF“%s”已保存至“%s”</string>
     <string name="seconds">秒</string>
-    <string name="clippingFailed">裁剪失败</string>
     <string name="play">播放</string>
     <string name="pause">暂停</string>
     <string name="fastForward">快进</string>

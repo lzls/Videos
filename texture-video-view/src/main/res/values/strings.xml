@@ -25,10 +25,11 @@
     <string name="canTakeUpToXSecondsXSecondsSelected" tools:ignore="PluralsCandidate">
         You can take up to %d seconds. %d seconds is selected.</string>
     <string name="gifClippingIsNotYetSupported">GIF clipping is not yet supported!</string>
+    <string name="clippingPleaseWait">Clipping, please wait…</string>
+    <string name="clippingFailed">Clipping failed</string>
     <string name="shortVideoHasBeenSavedTo">Short video \"%s\" has been saved to \"%s\"</string>
     <string name="gifHasBeenSavedTo">GIF \"%s\" has been saved to \"%s\"</string>
     <string name="seconds"> seconds </string>
-    <string name="clippingFailed">Clipping failed</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="fastForward">Fast Forward</string>
