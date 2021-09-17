@@ -146,18 +146,56 @@ public class UiUtils {
         showUserCancelableSnackbar(view, text, false, duration);
     }
 
+    // Statically caching the Snackbar to be shown here is 1) in order to fix when a Snackbar is
+    // already being displayed, creating a new Snackbar inside a method and calling its show() will
+    // cause the displaying Snackbar to be hidden and that the Snackbar to be shown may have no
+    // opportunity.
+    // The specific reason is: SnackbarManager is a singleton class. Snackbar.show() calls the show()
+    // method of SnackbarManager on the way, and uses a weak reference to refer to the managerCallback
+    // in Snackbar for the SnackbarRecord instance created in the show() method, that is, to
+    // indirectly and weakly hold Snackbar. When we call Snackbar.make().show(), if there is already
+    // a Snackbar currently being displayed, it will be cancelled first. This process is a series
+    // of handler.sendMessage() steps, and finally when the onDismissed() callback method of
+    // SnackbarManager is reached, the next SnackBar will be displayed. Since we usually directly
+    // write Snackbar.make().show() in a method, we will not hold any reference to the Snakebar
+    // object after the method ends, it will only be held by a weak reference then. At this time, the
+    // Snackbar referred from the nextSnackbar obtained in the onDismissed() callback method of the
+    // SnackbarManager may have been recycled by the gc... So it won’t show up. That’s pretty nasty.
+    //
+    // 2) By the way, this can also play a role in reusing the Snackbar when it is already showing
+    //    and if we want.
+    @Synthetic static Snackbar sCurrentSnackbar;
+    private static final boolean REUSE_SNACKBAR = false;
+
     public static void showUserCancelableSnackbar(
             @NonNull View view,
             @NonNull CharSequence text,
             boolean shownTextSelectable,
             @Snackbar.Duration int duration) {
-        Snackbar snackbar = Snackbar.make(view, text, duration);
+        Snackbar snackbar;
+        if (sCurrentSnackbar == null || !REUSE_SNACKBAR) {
+            snackbar = Snackbar.make(view, text, duration);
+            sCurrentSnackbar = snackbar;
 
-        TextView snackbarText = snackbar.getView().findViewById(R.id.snackbar_text);
-        snackbarText.setMaxLines(Integer.MAX_VALUE);
-        snackbarText.setTextIsSelectable(shownTextSelectable);
+            TextView snackbarText = snackbar.getView().findViewById(R.id.snackbar_text);
+            snackbarText.setMaxLines(Integer.MAX_VALUE);
+            snackbarText.setTextIsSelectable(shownTextSelectable);
 
-        snackbar.setAction(R.string.undo, v -> snackbar.dismiss());
+            snackbar.setAction(R.string.undo, v -> snackbar.dismiss());
+            snackbar.addCallback(new Snackbar.Callback() {
+                @Override
+                public void onDismissed(Snackbar transientBottomBar, int event) {
+                    super.onDismissed(transientBottomBar, event);
+                    if (sCurrentSnackbar == transientBottomBar) {
+                        sCurrentSnackbar = null;
+                    }
+                }
+            });
+        } else {
+            snackbar = sCurrentSnackbar;
+            snackbar.setText(text);
+            snackbar.setDuration(duration);
+        }
         snackbar.show();
     }
 
