@@ -12,7 +12,6 @@ import android.os.Environment;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.multidex.MultiDex;
 
 import com.bumptech.glide.Glide;
 import com.liuzhenlin.common.utils.SystemBarUtils;
@@ -41,12 +40,6 @@ public class App extends Application {
 //    static {
 //        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 //    }
-
-    @Override
-    protected void attachBaseContext(Context base) {
-        super.attachBaseContext(base);
-        MultiDex.install(base);
-    }
 
     @Override
     public void onCreate() {

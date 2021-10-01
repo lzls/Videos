@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.liuzhenlin.videos"
-        minSdkVersion 14
+        minSdkVersion 16
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 40
         versionName "1.9.4"
@@ -58,6 +58,8 @@ dependencies {
     implementation 'com.sun.mail:android-activation:1.6.7'
 
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
+
+    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.0'
 
     testImplementation "junit:junit:$rootProject.ext.testJunitVersion"
     androidTestImplementation "androidx.test.ext:junit:$rootProject.ext.androidTestJunitVersion"

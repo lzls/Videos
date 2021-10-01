@@ -72,6 +72,7 @@ import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.MergeAppUpdateChecker;
 import com.liuzhenlin.videos.view.fragment.LocalVideosFragment;
 import com.liuzhenlin.videos.view.fragment.OnlineVideosFragment;
+import com.taobao.sophix.SophixManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -127,6 +128,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
+        // 有新的热更新补丁可用时，加载...
+        SophixManager.getInstance().queryAndLoadNewPatch();
+
+//        // 打开应用时自动检测更新（有悬浮窗权限时才去检查，不然弹不出更新提示对话框）
+//        checkUpdateIfPermissionGranted(false);
+        checkUpdate(false);
+
         mIsTheLatestVersion = getString(R.string.isTheLatestVersion);
         mFindNewVersion = getString(R.string.findNewVersion);
     }
@@ -365,14 +373,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (d instanceof BitmapDrawable) {
             ((BitmapDrawable) d).getBitmap().recycle();
         }
-    }
-
-    @Override
-    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-//        // 打开应用时自动检测更新（有悬浮窗权限时才去检查，不然弹不出更新提示对话框）
-//        checkUpdateIfPermissionGranted(false);
-        checkUpdate(false);
     }
 
     @Override
