@@ -105,6 +105,47 @@ public class BitmapUtils {
         return out;
     }
 
+    /**
+     * 创建以 {@link android.widget.ImageView.ScaleType#CENTER_CROP CENTER_CROP} 方式缩放后的图片
+     */
+    @NonNull
+    public static Bitmap centerCroppedBitmap(
+            @NonNull Bitmap src, int viewWidth, int viewHeight, boolean limitOutBmpSizeToViews,
+            boolean recycleInput) {
+        final int width = src.getWidth();
+        final int height = src.getHeight();
+
+        if (width == viewWidth && height == viewHeight) {
+            return src;
+        }
+
+        final float aspectRatio = (float) width / height;
+        final float viewAspectRatio = (float) viewWidth / viewHeight;
+        final int retX, retY;
+        if (aspectRatio > viewAspectRatio) {
+            retX = Utils.roundFloat(height * viewAspectRatio);
+            retY = height;
+        } else {
+            retX = width;
+            retY = Utils.roundFloat(width / viewAspectRatio);
+        }
+        final int x = width > retX ? Utils.roundFloat((width - retX) / 2f) : 0;
+        final int y = height > retY ? Utils.roundFloat((height - retY) / 2f) : 0;
+        final Bitmap out;
+        if (limitOutBmpSizeToViews && (retX > viewWidth || retY > viewHeight)) {
+            Matrix matrix = new Matrix();
+            matrix.postScale((float) viewWidth / retX, (float) viewHeight / retY);
+            out = Bitmap.createBitmap(src, x, y, retX, retY, matrix, true);
+        } else {
+            out = Bitmap.createBitmap(src, x, y, retX, retY, null, false);
+        }
+
+        if (recycleInput && out != src) {
+            src.recycle();
+        }
+        return out;
+    }
+
     public static Bitmap createScaledBitmap(String path, int reqWidth, int reqHeight) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;

@@ -333,14 +333,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (bitmap == null) {
                 return;
             }
+            final int drawerWidth = activity.mDrawerImage.getWidth();
+            final int drawerHeight = activity.mDrawerImage.getHeight();
+            final Bitmap centerCroppedBitmap = BitmapUtils.centerCroppedBitmap(
+                    bitmap, drawerWidth, drawerHeight, true, true);
             Executors.MAIN_EXECUTOR.post(() -> {
                 if (activity.isFinishing() || mImagePath.equals(activity.mDrawerImage.getTag())) {
-                    activity.recycleBmpIfNotDrawerImage(bitmap);
+                    activity.recycleBmpIfNotDrawerImage(centerCroppedBitmap);
                     return;
                 }
 
                 activity.recycleDrawerImage();
-                activity.mDrawerImage.setImageBitmap(bitmap);
+                activity.mDrawerImage.setImageBitmap(centerCroppedBitmap);
                 activity.mDrawerImage.setTag(mImagePath);
 
                 AppPrefs asp = AppPrefs.getSingleton(activity);
@@ -353,7 +357,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     asp.setDrawerBackgroundPath(mImagePath);
 
                     final boolean lightBackground = ColorUtils.isLightColor(
-                            BitmapUtils.getDominantColor(bitmap, Color.WHITE));
+                            BitmapUtils.getDominantColor(centerCroppedBitmap, Color.WHITE));
                     activity.setLightDrawerStatus(lightBackground);
                     activity.mDrawerListAdapter.setLightDrawerListForeground(!lightBackground);
                 }
