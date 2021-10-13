@@ -101,6 +101,7 @@ import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.ParallelThreadExecutor;
 import com.liuzhenlin.common.utils.ScreenUtils;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.TimeUtil;
 import com.liuzhenlin.common.utils.TransitionListenerAdapter;
 import com.liuzhenlin.common.utils.URLUtils;
@@ -1263,8 +1264,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     public <VH extends RecyclerView.ViewHolder> void setPlayListAdapter(@Nullable PlayListAdapter<VH> adapter) {
         if (adapter != null && mPlayList.getLayoutManager() == null) {
             mPlayList.setLayoutManager(new LinearLayoutManager(mContext));
-            mPlayList.addItemDecoration(
-                    new DividerItemDecoration(mContext, DividerItemDecoration.VERTICAL));
+            DividerItemDecoration itemDivider =
+                    new DividerItemDecoration(mContext, DividerItemDecoration.VERTICAL);
+            itemDivider.setDrawable(ThemeUtils.getListDivider(mContext, true));
+            mPlayList.addItemDecoration(itemDivider);
         }
         mPlayList.setAdapter(adapter);
     }

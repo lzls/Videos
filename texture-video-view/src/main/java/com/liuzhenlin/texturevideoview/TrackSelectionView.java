@@ -6,6 +6,7 @@
 package com.liuzhenlin.texturevideoview;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +26,7 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.liuzhenlin.common.utils.ComparableSparseArray;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.texturevideoview.bean.TrackInfo;
 
@@ -73,6 +75,9 @@ public class TrackSelectionView extends LinearLayout {
         return trackGroups;
     }
 
+    @Synthetic final Drawable mListDivider;
+    @Synthetic final Drawable mListChoiceIndicatorSingle;
+
     public TrackSelectionView(Context context) {
         this(context, null);
     }
@@ -86,6 +91,9 @@ public class TrackSelectionView extends LinearLayout {
         setBackgroundResource(R.color.bg_popup_dark);
         setOrientation(VERTICAL);
         View.inflate(context, R.layout.view_track_selection, this);
+
+        mListDivider = ThemeUtils.getListDivider(context, false);
+        mListChoiceIndicatorSingle = ThemeUtils.getListChoiceIndicatorSingle(context, true);
 
         mViewPager = findViewById(R.id.viewpager2);
         mViewPager.setAdapter(new PagerAdapter());
@@ -246,8 +254,11 @@ public class TrackSelectionView extends LinearLayout {
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
                 recyclerView = itemView.findViewById(R.id.rv_track_list);
-                recyclerView.addItemDecoration(
-                        new DividerItemDecoration(itemView.getContext(), DividerItemDecoration.VERTICAL));
+                Context context = itemView.getContext();
+                DividerItemDecoration itemDivider =
+                        new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
+                itemDivider.setDrawable(mListDivider);
+                recyclerView.addItemDecoration(itemDivider);
             }
         }
     }
@@ -376,6 +387,8 @@ public class TrackSelectionView extends LinearLayout {
                 super(itemView);
                 checkedText = itemView.findViewById(R.id.checkedtext_trackSelection);
                 checkedText.setOnClickListener(TrackListAdapter.this);
+                checkedText.setCheckMarkDrawable(
+                        mListChoiceIndicatorSingle.getConstantState().newDrawable());
             }
         }
     }

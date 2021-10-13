@@ -12,7 +12,6 @@ import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -41,6 +40,7 @@ import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.utils.FileUtils
+import com.liuzhenlin.common.utils.ThemeUtils
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
@@ -913,7 +913,9 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     val selection = v.tag as Int
 
                     init {
-                        mInteractionCallback.setLightStatus(true)
+                        if (!ThemeUtils.isNightMode(contextThemedFirst)) {
+                            mInteractionCallback.setLightStatus(true)
+                        }
                         mInteractionCallback.setSideDrawerEnabled(false)
                         mInteractionCallback.isRefreshLayoutEnabled = false
                         mRecyclerView.isItemDraggable = false
@@ -1174,6 +1176,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
         val video: Video
 
         val colon = getString(R.string.colon)
+        val textColorPrimary = ContextCompat.getColor(context, R.color.textColorPrimary)
         if (item is Video) {
             view = View.inflate(context, R.layout.dialog_video_details, null)
 
@@ -1181,27 +1184,27 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
             thumbTextView = view.findViewById(R.id.text_videoName)
             var ss = SpannableString(getString(R.string.name, item.name))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             thumbTextView.text = ss
 
             val videoSizeText = view.findViewById<TextView>(R.id.text_videoSize)
             ss = SpannableString(getString(
                     R.string.size, FileUtils.formatFileSize(item.size.toDouble())))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videoSizeText.text = ss
 
             val videoResolutionText = view.findViewById<TextView>(R.id.text_videoResolution)
             ss = SpannableString(getString(
                     R.string.resolution, VideoUtils2.formatVideoResolution(item.width, item.height)))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videoResolutionText.text = ss
 
             val videoPathText = view.findViewById<TextView>(R.id.text_videoPath)
             ss = SpannableString(getString(R.string.path, item.path))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videoPathText.text = ss
         } else /* if (item is VideoDirectory) */ {
@@ -1218,26 +1221,26 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     if (item.name.equals(dirname, ignoreCase = true)) R.string.name
                     else R.string.alias
                     , item.name))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             thumbTextView.text = ss
 
             val videodirSizeText = view.findViewById<TextView>(R.id.text_videodirSize)
             ss = SpannableString(getString(
                     R.string.size, FileUtils.formatFileSize(item.size.toDouble())))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videodirSizeText.text = ss
 
             val videoCountText = view.findViewById<TextView>(R.id.text_videoCount)
             ss = SpannableString(getString(R.string.videoCount, videos.size))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videoCountText.text = ss
 
             val videodirPathText = view.findViewById<TextView>(R.id.text_videodirPath)
             ss = SpannableString(getString(R.string.path, path))
-            ss.setSpan(ForegroundColorSpan(Color.BLACK),
+            ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videodirPathText.text = ss
         }

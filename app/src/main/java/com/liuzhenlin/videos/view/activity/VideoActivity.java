@@ -940,7 +940,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView,
             actions.add(createPipAction(R.drawable.ic_fast_forward_white_24dp,
                     mFastForward, PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD));
         } else {
-            RemoteAction action = createPipAction(R.drawable.ic_fast_forward_lightgray_24dp,
+            RemoteAction action = createPipAction(R.drawable.ic_fast_forward_darkerlightgray_24dp,
                     mFastForward, PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD);
             action.setEnabled(false);
             actions.add(action);
@@ -1234,9 +1234,9 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView,
         @Override
         public void highlightItemIfSelected(boolean selected) {
             itemView.setSelected(selected);
-            videoNameText.setTextColor(selected ? Consts.COLOR_ACCENT : Color.WHITE);
-            videoProgressDurationText.setTextColor(
-                    selected ? Consts.COLOR_ACCENT : 0x80FFFFFF);
+            videoNameText.setTextColor(
+                    selected ? Consts.COLOR_ACCENT : Consts.TEXT_COLOR_PRIMARY_LIGHT);
+            videoProgressDurationText.setTextColor(selected ? Consts.COLOR_ACCENT : 0x80FFFFFF);
         }
     }
 

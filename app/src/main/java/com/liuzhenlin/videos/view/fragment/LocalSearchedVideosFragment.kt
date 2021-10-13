@@ -25,6 +25,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -461,7 +462,8 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                 if (holder.selectorView.tag == null) {
                     holder.selectorView.tag = holder.selectorView.background
                 }
-                holder.selectorView.setBackgroundColor(COLOR_SELECTOR)
+                holder.selectorView.setBackgroundColor(
+                        ContextCompat.getColor(holder.itemView.context, R.color.selectorColor))
             } else {
                 ViewCompat.setBackground(holder.selectorView,
                         holder.selectorView.tag as Drawable? ?: return)

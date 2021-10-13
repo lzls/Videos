@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="@dimen/actionbarHeight"
-    android:background="@android:color/white"
+    android:background="@color/themeColor"
     android:gravity="center_vertical"
     tools:ignore="Overdraw">
 

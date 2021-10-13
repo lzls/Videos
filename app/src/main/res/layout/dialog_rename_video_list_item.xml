@@ -29,7 +29,7 @@
             android:layout_weight="1"
             android:text="@string/rename"
             android:textSize="@dimen/title_text_size"
-            android:textColor="@android:color/black"
+            android:textColor="@color/textColorPrimary"
             android:textAlignment="center"
             android:gravity="center"
             android:includeFontPadding="false" />

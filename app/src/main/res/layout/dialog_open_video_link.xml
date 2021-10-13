@@ -54,7 +54,7 @@
             android:background="@drawable/selector_dialog_button"
             android:text="@string/cancel"
             android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/gray" />
+            android:textColor="@color/cancelBtnTextColor" />
 
         <TextView
             android:id="@+id/btn_ok_openVideoLinkDialog"
@@ -67,6 +67,6 @@
             android:background="@drawable/selector_dialog_button"
             android:text="@string/ok"
             android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/colorAccent" />
+            android:textColor="@color/okBtnTextColor" />
     </RelativeLayout>
 </LinearLayout>

@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatDialog
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
@@ -25,7 +26,6 @@ import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.FloatingMenu
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
-import com.liuzhenlin.videos.COLOR_SELECTOR
 import com.liuzhenlin.videos.R
 import com.liuzhenlin.videos.bean.TV
 import com.liuzhenlin.videos.bean.TVGroup
@@ -271,7 +271,8 @@ class OnlineVideosFragment : Fragment(), View.OnClickListener,
             childHolder.nameText.text = tv.name
             // 高亮长按后选中的childView
             if (tv === selectedTV) {
-                childView.setBackgroundColor(COLOR_SELECTOR)
+                childView.setBackgroundColor(
+                        ContextCompat.getColor(parent.context, R.color.selectorColor))
             } else {
                 ViewCompat.setBackground(childView, null)
             }

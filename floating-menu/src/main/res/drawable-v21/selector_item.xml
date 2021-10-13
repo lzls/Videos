@@ -7,7 +7,7 @@
                 android:drawable="@color/rippleSelectorColor"
                 android:state_pressed="true" />
             <item
-                android:drawable="@android:color/white"
+                android:drawable="@color/itemBackgroundColor"
                 android:state_pressed="false" />
         </selector>
     </item>

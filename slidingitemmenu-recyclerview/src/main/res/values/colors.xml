@@ -3,4 +3,5 @@
     <color name="color_selector">#E0E0E0</color>
     <color name="color_rippleSelector">#E6E6E6</color>
     <color name="color_ripple">#C9C9C9</color>
+    <color name="color_itemBackground">@android:color/white</color>
 </resources>

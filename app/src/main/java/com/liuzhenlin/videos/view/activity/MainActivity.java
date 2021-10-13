@@ -49,7 +49,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
-import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.adapter.BaseAdapter2;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.ColorUtils;
@@ -59,6 +58,7 @@ import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.TextViewUtils;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.view.ScrollDisableListView;
 import com.liuzhenlin.common.view.ScrollDisableViewPager;
@@ -77,6 +77,10 @@ import com.taobao.sophix.SophixManager;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+
+import static com.liuzhenlin.common.Consts.EMPTY_STRING;
+import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_DARK;
+import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_LIGHT;
 
 /**
  * @author 刘振林
@@ -111,9 +115,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Synthetic ScrollDisableListView mDrawerList;
     @Synthetic DrawerListAdapter mDrawerListAdapter;
     @Synthetic ImageView mDrawerImage;
-    private boolean mIsDrawerStatusLight = true;
-    @Synthetic boolean mIsDrawerListForegroundLight = false;
-    private float mOldDrawerScrollPercent;
+    @Synthetic boolean mIsDrawerStatusLight;
+    @Synthetic boolean mIsDrawerListForegroundLight;
+    private float mDrawerScrollPercent;
 
     private static final int REQUEST_CODE_CHOSE_DRAWER_BACKGROUND_PICTURE = 7;
     private static final int REQUEST_CODE_APPLY_FOR_FLOATING_WINDOW_PERMISSION = 8;
@@ -204,8 +208,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // 用户从存储卡中删除了该路径下的图片或其路径已改变
                 } else {
                     asp.setDrawerBackgroundPath(null);
-                    asp.setLightDrawerStatus(true);
-                    asp.setLightDrawerListForeground(false);
+                    asp.setLightDrawerStatus(false, true);
+                    asp.setLightDrawerStatus(true, false);
+                    asp.setLightDrawerListForeground(false, false);
+                    asp.setLightDrawerListForeground(true, true);
                 }
             }
         });
@@ -298,12 +304,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Synthetic void setLightDrawerStatus(boolean light) {
-        if (mIsDrawerStatusLight != light) {
-            mIsDrawerStatusLight = light;
-            AppPrefs.getSingleton(this).setLightDrawerStatus(light);
-            if (mSlidingDrawerLayout.hasOpenedDrawer()) {
-                setLightStatus(light);
-            }
+        mIsDrawerStatusLight = light;
+        AppPrefs.getSingleton(this).setLightDrawerStatus(light);
+        if (mDrawerScrollPercent >= 0.5f) {
+            setLightStatus(light);
         }
     }
 
@@ -356,8 +360,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } else {
                     asp.setDrawerBackgroundPath(mImagePath);
 
+                    final int defColor = ThemeUtils.isNightMode(activity) ? Color.BLACK : Color.WHITE;
                     final boolean lightBackground = ColorUtils.isLightColor(
-                            BitmapUtils.getDominantColor(centerCroppedBitmap, Color.WHITE));
+                            BitmapUtils.getDominantColor(centerCroppedBitmap, defColor));
                     activity.setLightDrawerStatus(lightBackground);
                     activity.mDrawerListAdapter.setLightDrawerListForeground(!lightBackground);
                 }
@@ -456,18 +461,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         final String[] mDrawerListItems;
 
+        final Context mContext = MainActivity.this;
+
         @ColorInt
-        int mTextColor = Color.BLACK;
+        int mTextColor;
         @ColorInt
-        int mSubTextColor = Color.GRAY;
+        int mSubTextColor;
         @ColorInt
         static final int SUBTEXT_HIGHLIGHT_COLOR = Color.RED;
 
         final Drawable mForwardDrawable;
 //        final Drawable mLightDrawerListDivider = ContextCompat.getDrawable(
-//                MainActivity.this, R.drawable.divider_light_drawer_list);
+//                mContext, R.drawable.divider_light_drawer_list);
 //        final Drawable mDarkDrawerListDivider = ContextCompat.getDrawable(
-//                MainActivity.this, R.drawable.divider_dark_drawer_list);
+//                mContext, R.drawable.divider_dark_drawer_list);
 
         DrawerListAdapter() {
             mDrawerListItems = new String[sDrawerListItemIDs.length];
@@ -475,25 +482,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mDrawerListItems[i] = getString(sDrawerListItemIDs[i]);
             }
 
-            Drawable temp = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_forward);
+            Drawable temp = ContextCompat.getDrawable(mContext, R.drawable.ic_forward);
             //noinspection ConstantConditions
             mForwardDrawable = DrawableCompat.wrap(temp);
             DrawableCompat.setTintList(mForwardDrawable, null);
 
-//            mDrawerList.setDivider(mDarkDrawerListDivider);
+            final boolean nightMode = ThemeUtils.isNightMode(mContext);
+            mIsDrawerStatusLight = !nightMode;
+            mIsDrawerListForegroundLight = !nightMode;
+            applyDrawerForeground(nightMode);
         }
 
         void setLightDrawerListForeground(boolean light) {
+            AppPrefs.getSingleton(mContext).setLightDrawerListForeground(light);
+            applyDrawerForeground(light);
+        }
+
+        void applyDrawerForeground(boolean light) {
             if (mIsDrawerListForegroundLight != light) {
                 mIsDrawerListForegroundLight = light;
-                AppPrefs.getSingleton(MainActivity.this).setLightDrawerListForeground(light);
 
                 if (light) {
-                    mTextColor = Color.WHITE;
+                    mTextColor = TEXT_COLOR_PRIMARY_LIGHT;
                     mSubTextColor = 0xFFE0E0E0;
                     DrawableCompat.setTint(mForwardDrawable, Color.LTGRAY);
                 } else {
-                    mTextColor = Color.BLACK;
+                    mTextColor = TEXT_COLOR_PRIMARY_DARK;
                     mSubTextColor = Color.GRAY;
                     // 清除tint
                     DrawableCompat.setTintList(mForwardDrawable, null);
@@ -553,7 +567,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         SUBTEXT_HIGHLIGHT_COLOR : mSubTextColor);
                 vh.subText.setCompoundDrawables(null, null, null, null);
             } else {
-                vh.subText.setText(Consts.EMPTY_STRING);
+                vh.subText.setText(EMPTY_STRING);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                     vh.subText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             null, null, mForwardDrawable, null);
@@ -736,11 +750,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mDrawerArrowDrawable.setProgress(percent);
 
         final boolean light = percent >= 0.5f;
-        if ((light && mOldDrawerScrollPercent < 0.5f || !light && mOldDrawerScrollPercent >= 0.5f)
+        if ((light && mDrawerScrollPercent < 0.5f || !light && mDrawerScrollPercent >= 0.5f)
                 && AppPrefs.getSingleton(this).isLightDrawerStatus()) {
             setLightStatus(light);
         }
-        mOldDrawerScrollPercent = percent;
+        mDrawerScrollPercent = percent;
     }
 
     @Override

@@ -13,9 +13,9 @@
         android:paddingRight="10dp"
         android:paddingTop="7dp"
         android:paddingBottom="7dp"
-        android:background="@color/gray_rgb230"
+        android:background="@color/videolistOptionsPopupTitleBgColor"
         android:textSize="@dimen/primary_text_size"
-        android:textColor="@android:color/black"
+        android:textColor="@color/textColorPrimary"
         android:singleLine="true"
         android:ellipsize="marquee"
         android:focusable="true"
@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:paddingTop="7dp"
         android:paddingBottom="8dp"
-        android:background="@android:color/white"
+        android:background="@color/themeColor"
         android:orientation="horizontal">
 
         <TextView
@@ -39,10 +39,10 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             app:drawableTopCompat="@drawable/ic_delete_white_27dp"
-            app:drawableTint="@color/color_selector_dark_gray"
+            app:drawableTint="@color/color_selector_gray_video_option_btn"
             android:text="@string/delete"
             android:textSize="@dimen/icon_bottom_text_size"
-            android:textColor="@color/color_selector_black"
+            android:textColor="@color/color_selector_text_color_primary"
             android:textAlignment="center"
             android:gravity="center" />
 
@@ -52,10 +52,10 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             app:drawableTopCompat="@drawable/ic_edit_white_27dp"
-            app:drawableTint="@color/color_selector_dark_gray"
+            app:drawableTint="@color/color_selector_gray_video_option_btn"
             android:text="@string/rename"
             android:textSize="@dimen/icon_bottom_text_size"
-            android:textColor="@color/color_selector_black"
+            android:textColor="@color/color_selector_text_color_primary"
             android:textAlignment="center"
             android:gravity="center" />
 
@@ -65,10 +65,10 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             app:drawableTopCompat="@drawable/ic_share_white_27dp"
-            app:drawableTint="@color/color_selector_dark_gray"
+            app:drawableTint="@color/color_selector_gray_video_option_btn"
             android:text="@string/share"
             android:textSize="@dimen/icon_bottom_text_size"
-            android:textColor="@color/color_selector_black"
+            android:textColor="@color/color_selector_text_color_primary"
             android:textAlignment="center"
             android:gravity="center" />
 
@@ -78,10 +78,10 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             app:drawableTopCompat="@drawable/ic_info_white_27dp"
-            app:drawableTint="@color/color_selector_dark_gray"
+            app:drawableTint="@color/color_selector_gray_video_option_btn"
             android:text="@string/details"
             android:textSize="@dimen/icon_bottom_text_size"
-            android:textColor="@color/color_selector_black"
+            android:textColor="@color/color_selector_text_color_primary"
             android:textAlignment="center"
             android:gravity="center" />
     </LinearLayout>

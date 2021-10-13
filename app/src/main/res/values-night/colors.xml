@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="themeColor">@color/gray_rgb31</color>
+    <color name="textColorPrimary">@color/primary_text_default_material_dark</color> <!-- #ffffff -->
+    <color name="textColorPrimary_translucent">#80ffffff</color>
+    <color name="textColorPrimary_inverse">@color/primary_text_default_material_light</color> <!-- #de000000 -->
+    <color name="textColorSecondary">@color/secondary_text_default_material_dark</color> <!-- #b3ffffff -->
+
+    <color name="toppedItemBgColor">@color/gray_rgb15</color>
+    <color name="mainTitlePopupBtnStrokeColor">@color/gray_rgb66</color>
+    <color name="videolistOptionsPopupTitleBgColor">@color/gray_rgb39</color>
+    <color name="searchViewPlateBgColor">@color/gray_rgb39</color>
+    <color name="feedbackWindowBgColor">@color/gray_rgb47</color>
+    <color name="pictureGridItemBgColor">@color/gray_rgb47</color>
+    <color name="dialogBtnPressedColor">#1fffffff</color>
+    <color name="cancelBtnTextColor">@color/darkerLightGray</color>
+    <color name="grayVideoOptionBtnColor">@color/lighterGray</color>
+    <color name="grayVideoOptionBtnColor_translucent">#80dddddd</color>
+</resources>

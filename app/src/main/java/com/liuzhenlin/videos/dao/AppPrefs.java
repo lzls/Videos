@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.liuzhenlin.common.utils.Singleton;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.videos.Files;
 
 /**
@@ -20,11 +21,14 @@ import com.liuzhenlin.videos.Files;
  */
 public final class AppPrefs {
 
+    private final Context mContext;
     private final SharedPreferences mSP;
 
     private static final String DRAWER_BACKGROUND_PATH = "drawerBackgroundPath";
     private static final String IS_LIGHT_DRAWER_STATUS = "isLightDrawerStatus";
     private static final String IS_LIGHT_DRAWER_LIST_FOREGROUND = "isLightDrawerListForeground";
+    private static final String KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND =
+            "_nightUIWithNoDrawerBackground";
 
     private static final Singleton<Context, AppPrefs> sAppPrefsSingleton =
             new Singleton<Context, AppPrefs>() {
@@ -41,8 +45,8 @@ public final class AppPrefs {
     }
 
     private AppPrefs(Context context) {
-        context = context.getApplicationContext();
-        mSP = context.getSharedPreferences(Files.SHARED_PREFS, Context.MODE_PRIVATE);
+        mContext = context.getApplicationContext();
+        mSP = mContext.getSharedPreferences(Files.SHARED_PREFS, Context.MODE_PRIVATE);
     }
 
     @Nullable
@@ -55,18 +59,52 @@ public final class AppPrefs {
     }
 
     public boolean isLightDrawerStatus() {
-        return mSP.getBoolean(IS_LIGHT_DRAWER_STATUS, true);
+        String key = IS_LIGHT_DRAWER_STATUS;
+        // FIXME: we can use the app context here for convenience only under the premise of
+        //  the day/night mode is throughout the whole app, otherwise a themed context is required
+        final boolean nightMode = ThemeUtils.isNightMode(mContext);
+        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
+            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+        }
+        return mSP.getBoolean(key, !nightMode);
     }
 
     public void setLightDrawerStatus(boolean light) {
-        mSP.edit().putBoolean(IS_LIGHT_DRAWER_STATUS, light).apply();
+        // FIXME: we can use the app context here for convenience only under the premise of
+        //  the day/night mode is throughout the whole app, otherwise a themed context is required
+        setLightDrawerStatus(ThemeUtils.isNightMode(mContext), light);
+    }
+
+    public void setLightDrawerStatus(boolean nightMode, boolean light) {
+        String key = IS_LIGHT_DRAWER_STATUS;
+        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
+            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+        }
+        mSP.edit().putBoolean(key, light).apply();
     }
 
     public boolean isLightDrawerListForeground() {
-        return mSP.getBoolean(IS_LIGHT_DRAWER_LIST_FOREGROUND, false);
+        String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
+        // FIXME: we can use the app context here for convenience only under the premise of
+        //  the day/night mode is throughout the whole app, otherwise a themed context is required
+        final boolean nightMode = ThemeUtils.isNightMode(mContext);
+        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
+            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+        }
+        return mSP.getBoolean(key, nightMode);
     }
 
     public void setLightDrawerListForeground(boolean light) {
-        mSP.edit().putBoolean(IS_LIGHT_DRAWER_LIST_FOREGROUND, light).apply();
+        // FIXME: we can use the app context here for convenience only under the premise of
+        //  the day/night mode is throughout the whole app, otherwise a themed context is required
+        setLightDrawerListForeground(ThemeUtils.isNightMode(mContext), light);
+    }
+
+    public void setLightDrawerListForeground(boolean nightMode, boolean light) {
+        String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
+        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
+            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+        }
+        mSP.edit().putBoolean(key, light).apply();
     }
 }

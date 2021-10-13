@@ -46,6 +46,7 @@ import com.liuzhenlin.common.utils.DisplayCutoutManager;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
 import com.liuzhenlin.galleryviewer.GalleryViewPager;
@@ -95,31 +96,32 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feedback);
 
+        boolean lightStatus = !ThemeUtils.isNightMode(this);
         Window window = getWindow();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 SystemBarUtils.setTransparentStatus(window);
-                SystemBarUtils.setLightStatus(window, true);
+                SystemBarUtils.setLightStatus(window, lightStatus);
                 // MIUI6...
             } else {
                 final boolean isMIUI6Later = OSHelper.getMiuiVersion() >= 6;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                         && isMIUI6Later) {
                     SystemBarUtils.setTransparentStatus(window);
-                    SystemBarUtils.setLightStatusForMIUI(window, true);
+                    SystemBarUtils.setLightStatusForMIUI(window, lightStatus);
                 } else if (isMIUI6Later) {
                     SystemBarUtils.setTranslucentStatus(window, true);
-                    SystemBarUtils.setLightStatusForMIUI(window, true);
+                    SystemBarUtils.setLightStatusForMIUI(window, lightStatus);
                     // FlyMe4...
                 } else {
                     final boolean isFlyMe4Later = OSHelper.isFlyme4OrLater();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                             && isFlyMe4Later) {
                         SystemBarUtils.setTransparentStatus(window);
-                        SystemBarUtils.setLightStatusForFlyme(window, true);
+                        SystemBarUtils.setLightStatusForFlyme(window, lightStatus);
                     } else if (isFlyMe4Later) {
                         SystemBarUtils.setTranslucentStatus(window, true);
-                        SystemBarUtils.setLightStatusForFlyme(window, true);
+                        SystemBarUtils.setLightStatusForFlyme(window, lightStatus);
                         // Other Systems
                     } else {
                         SystemBarUtils.setTranslucentStatus(window, true);

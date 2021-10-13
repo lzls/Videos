@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="themeColor">@android:color/white</color>
     <!-- 状态栏默认使用 colorPrimaryDark -->
     <color name="colorPrimaryDark">#757DE8</color> <!-- Indigo material 500 (light) -->
     <!-- ActionBar默认使用该颜色，Toolbar导航栏的底色 -->
     <color name="colorPrimary">#29B6F6</color> <!-- Light Blue material 400 -->
     <color name="colorAccent">#00B0FF</color> <!-- Light Blue material A400 -->
     <color name="colorAccent_translucent">#8000B0FF</color>
+    <color name="textColorPrimary">@color/primary_text_default_material_light</color> <!-- #de000000 -->
+    <color name="textColorPrimary_translucent">#6F000000</color>
+    <color name="textColorPrimary_inverse">@color/primary_text_default_material_dark</color> <!-- #ffffff -->
+    <color name="textColorSecondary">@color/secondary_text_default_material_light</color> <!-- #8a000000 -->
 
     <color name="lightBlue">#00B0FF</color> <!-- Light Blue material A400 -->
     <color name="pink">#FF4081</color> <!-- Pink material A200 -->
@@ -14,8 +19,28 @@
     <color name="darkGray_translucent">#80444444</color>
     <color name="darkGray">#444444</color>
     <color name="gray">#888888</color>
-    <color name="lightGray">#AAAAAA</color>
+    <color name="lightGray">#CCCCCC</color>
+    <color name="lighterGray">#DDDDDD</color> <!-- @android:color/lighter_gray -->
+    <color name="darkerLightGray">#AAAAAA</color> <!-- @android:color/darker_gray -->
+    <color name="darkLightGray_translucent">#80AAAAAA</color>
+    <color name="gray_rgb15">#0F0F0F</color>
+    <color name="gray_rgb31">#1F1F1F</color>
+    <color name="gray_rgb39">#272727</color>
+    <color name="gray_rgb47">#2F2F2F</color>
+    <color name="gray_rgb66">#424242</color>
     <color name="gray_rgb230">#E6E6E6</color>
     <color name="gray_rgb240">#F0F0F0</color>
     <color name="gray_rgb242">#F2F2F2</color>
+
+    <color name="toppedItemBgColor">@color/gray_rgb242</color>
+    <color name="mainTitlePopupBtnStrokeColor">@color/gray_rgb230</color>
+    <color name="videolistOptionsPopupTitleBgColor">@color/gray_rgb230</color>
+    <color name="searchViewPlateBgColor">@color/gray_rgb240</color>
+    <color name="feedbackWindowBgColor">@color/gray_rgb240</color>
+    <color name="pictureGridItemBgColor">#10000000</color>
+    <color name="dialogBtnPressedColor">#0F000000</color>
+    <color name="cancelBtnTextColor">@color/gray</color>
+    <color name="okBtnTextColor">@color/colorAccent</color>
+    <color name="grayVideoOptionBtnColor">@color/darkGray</color>
+    <color name="grayVideoOptionBtnColor_translucent">@color/darkGray_translucent</color>
 </resources>

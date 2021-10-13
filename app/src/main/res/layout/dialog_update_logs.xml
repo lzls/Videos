@@ -42,6 +42,6 @@
             android:background="@drawable/selector_dialog_button"
             android:text="@string/ok"
             android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/colorAccent" />
+            android:textColor="@color/okBtnTextColor" />
     </FrameLayout>
 </LinearLayout>

@@ -9,9 +9,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp"
-        android:background="@android:color/white"
+        android:background="@color/themeColor"
         android:textSize="@dimen/primary_text_size"
-        android:textColor="@android:color/black"
+        android:textColor="@color/textColorPrimary"
         android:gravity="center_horizontal" />
 
     <include layout="@layout/divider_horizontal_opaque" />
@@ -24,7 +24,7 @@
         android:background="@drawable/selector_item"
         android:text="@string/confirm"
         android:textSize="@dimen/secondary_text_size"
-        android:textColor="@color/colorAccent"
+        android:textColor="@color/okBtnTextColor"
         android:gravity="center_horizontal" />
 
     <include layout="@layout/divider_horizontal_opaque" />
@@ -37,6 +37,6 @@
         android:background="@drawable/selector_item"
         android:text="@string/cancel"
         android:textSize="@dimen/secondary_text_size"
-        android:textColor="@color/gray"
+        android:textColor="@color/cancelBtnTextColor"
         android:gravity="center_horizontal" />
 </LinearLayout>

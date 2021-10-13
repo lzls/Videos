@@ -42,12 +42,17 @@ internal const val RESULT_CODE_GET_PICTURE = 5
 
 internal const val TOLERANCE_VIDEO_DURATION = 100 // ms
 
-private val _COLOR_SELECTOR by lazy(LazyThreadSafetyMode.NONE) {
-    ContextCompat.getColor(App.getInstanceUnsafe()!!, R.color.selectorColor) }
-@JvmField
-internal val COLOR_SELECTOR = _COLOR_SELECTOR
-
 private val _COLOR_ACCENT by lazy(LazyThreadSafetyMode.NONE) {
     ContextCompat.getColor(App.getInstanceUnsafe()!!, R.color.colorAccent) }
 @JvmField
 internal val COLOR_ACCENT = _COLOR_ACCENT
+
+private val _TEXT_COLOR_PRIMARY_LIGHT by lazy(LazyThreadSafetyMode.NONE) {
+    ContextCompat.getColor(App.getInstanceUnsafe()!!, R.color.primary_text_default_material_dark) }
+@JvmField
+internal val TEXT_COLOR_PRIMARY_LIGHT = _TEXT_COLOR_PRIMARY_LIGHT
+
+private val _TEXT_COLOR_PRIMARY_DARK by lazy(LazyThreadSafetyMode.NONE) {
+    ContextCompat.getColor(App.getInstanceUnsafe()!!, R.color.primary_text_default_material_light) }
+@JvmField
+internal val TEXT_COLOR_PRIMARY_DARK = _TEXT_COLOR_PRIMARY_DARK

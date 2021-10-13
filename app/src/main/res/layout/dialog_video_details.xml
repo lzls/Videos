@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:text="@string/videoDetails"
         android:textSize="@dimen/title_text_size"
-        android:textColor="@android:color/black"
+        android:textColor="@color/textColorPrimary"
         android:textAlignment="viewStart"
         android:gravity="start" />
 
@@ -75,6 +75,6 @@
             android:background="@drawable/selector_dialog_button"
             android:text="@string/ok"
             android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/colorAccent" />
+            android:textColor="@color/okBtnTextColor" />
     </FrameLayout>
 </LinearLayout>

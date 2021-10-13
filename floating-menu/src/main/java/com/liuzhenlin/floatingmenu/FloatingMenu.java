@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.content.res.XmlResourceParser;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -22,6 +21,7 @@ import androidx.annotation.MenuRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.widget.ThemeUtils;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
@@ -216,7 +216,9 @@ public class FloatingMenu extends PopupWindow {
             textView.setClickable(true);
             textView.setText(menuItem.getText());
             textView.setTextSize(15);
-            textView.setTextColor(Color.BLACK);
+            //noinspection RestrictedApi
+            textView.setTextColor(
+                    ThemeUtils.getThemeAttrColor(mContext, android.R.attr.textColorPrimary));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 textView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             }

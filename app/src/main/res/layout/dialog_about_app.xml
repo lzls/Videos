@@ -37,7 +37,7 @@
         android:layout_marginTop="15dp"
         android:text="@string/copyright"
         android:textSize="14.5sp"
-        android:textColor="@android:color/black"
+        android:textColor="@color/textColorPrimary"
         android:textAlignment="viewStart"
         android:gravity="start" />
 
@@ -54,6 +54,6 @@
             android:background="@drawable/selector_dialog_button"
             android:text="@string/ok"
             android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/colorAccent" />
+            android:textColor="@color/okBtnTextColor" />
     </FrameLayout>
 </LinearLayout>

@@ -28,6 +28,7 @@ import android.widget.Checkable;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 /**
  * A circular CheckBox with animation for Android
@@ -45,8 +46,6 @@ public class CircularCheckBox extends View implements Checkable {
     private final PointF mRawCenterPoint = new PointF();
     private final PointF mCenterPoint = new PointF();
 
-    private static final int COLOR_STROKE = 0xFF_DFDFDF;
-    private static final int COLOR_SOLID_UNCHECKED = Color.WHITE;
     private static final int COLOR_RING_CHECKED = 0xFF_FF4081;
     private static final int COLOR_TICK = Color.WHITE;
 
@@ -226,9 +225,9 @@ public class CircularCheckBox extends View implements Checkable {
         super(context, attrs, defStyleAttr);
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.CircularCheckBox);
         mStrokeColor = ta.getColor(R.styleable
-                .CircularCheckBox_color_stroke, COLOR_STROKE);
+                .CircularCheckBox_color_stroke, getColor(R.color.strokeColor));
         mUncheckedSolidPaint.setColor(ta.getColor(R.styleable
-                .CircularCheckBox_color_solid_unchecked, COLOR_SOLID_UNCHECKED));
+                .CircularCheckBox_color_solid_unchecked, getColor(R.color.uncheckSolidColor)));
         mCheckedRingColor = ta.getColor(R.styleable
                 .CircularCheckBox_color_ring_checked, COLOR_RING_CHECKED);
         mTickPaint.setColor(ta.getColor(R.styleable.CircularCheckBox_color_tick, COLOR_TICK));
@@ -252,6 +251,10 @@ public class CircularCheckBox extends View implements Checkable {
 
         setFocusable(true);
         setClickable(true);
+    }
+
+    private int getColor(int id) {
+        return ContextCompat.getColor(getContext(), id);
     }
 
     @Override
