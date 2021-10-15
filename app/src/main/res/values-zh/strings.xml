@@ -35,6 +35,7 @@
     <string name="downloadingUpdates">正在下载更新…</string>
     <string name="drawerBackground">抽屉背景</string>
     <string name="drawerSettings">抽屉设置</string>
+    <string name="darkTheme">深色主题</string>
     <string name="findNewVersion">发现新版本</string>
     <string name="findNewVersion_title">发现新版本</string>
     <plurals name="findSomeVideos">
@@ -101,6 +102,9 @@
     <string name="setForeground">设置前景</string>
     <string name="setLightStatus">设置亮色状态栏</string>
     <string name="setLightTexts">设置亮色字体</string>
+    <string name="followsSystem">跟随系统</string>
+    <string name="turnOff">关闭</string>
+    <string name="turnOn">开启</string>
     <string name="severalItemsHaveBeenSelected">已选择%d项</string>
     <string name="share">分享</string>
     <string name="size">大小：%s</string>

@@ -52,7 +52,6 @@ import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
-import com.liuzhenlin.swipeback.SwipeBackActivity;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
 import com.liuzhenlin.texturevideoview.ExoVideoPlayer;
 import com.liuzhenlin.texturevideoview.IVideoPlayer;
@@ -81,7 +80,7 @@ import static com.liuzhenlin.texturevideoview.utils.Utils.canUseExoPlayer;
 /**
  * @author 刘振林
  */
-public class VideoActivity extends SwipeBackActivity implements IVideoView,
+public class VideoActivity extends BaseActivity implements IVideoView,
         DisplayCutoutManager.OnNotchSwitchListener {
 
     private static WeakReference<VideoActivity> sActivityInPiP;
@@ -239,7 +238,7 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView,
                 UiUtils.showUserCancelableSnackbar(preactivity.getWindow().getDecorView(),
                         R.string.cannotPlayThisVideo, Snackbar.LENGTH_LONG);
             }
-            finish();
+            scrollToFinish();
         }
     }
 
@@ -397,13 +396,13 @@ public class VideoActivity extends SwipeBackActivity implements IVideoView,
                 if (mVideoView.isInFullscreenMode()) {
                     setFullscreenModeManually(false);
                 } else {
-                    finish();
+                    scrollToFinish();
                 }
             }
 
             @Override
             public void onBackgroundPlaybackControllerClose() {
-                finish();
+                scrollToFinish();
             }
 
             public void onViewModeChange(int oldMode, int newMode, boolean layoutMatches) {

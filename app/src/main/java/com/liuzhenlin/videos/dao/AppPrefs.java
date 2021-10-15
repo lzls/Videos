@@ -11,9 +11,10 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.liuzhenlin.common.utils.Singleton;
-import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.Files;
 
 /**
@@ -29,6 +30,8 @@ public final class AppPrefs {
     private static final String IS_LIGHT_DRAWER_LIST_FOREGROUND = "isLightDrawerListForeground";
     private static final String KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND =
             "_nightUIWithNoDrawerBackground";
+
+    private static final String DEFAULT_NIGHT_MODE = "defaultNightMode";
 
     private static final Singleton<Context, AppPrefs> sAppPrefsSingleton =
             new Singleton<Context, AppPrefs>() {
@@ -60,9 +63,7 @@ public final class AppPrefs {
 
     public boolean isLightDrawerStatus() {
         String key = IS_LIGHT_DRAWER_STATUS;
-        // FIXME: we can use the app context here for convenience only under the premise of
-        //  the day/night mode is throughout the whole app, otherwise a themed context is required
-        final boolean nightMode = ThemeUtils.isNightMode(mContext);
+        final boolean nightMode = App.isNightMode();
         if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
             key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
         }
@@ -70,9 +71,7 @@ public final class AppPrefs {
     }
 
     public void setLightDrawerStatus(boolean light) {
-        // FIXME: we can use the app context here for convenience only under the premise of
-        //  the day/night mode is throughout the whole app, otherwise a themed context is required
-        setLightDrawerStatus(ThemeUtils.isNightMode(mContext), light);
+        setLightDrawerStatus(App.isNightMode(), light);
     }
 
     public void setLightDrawerStatus(boolean nightMode, boolean light) {
@@ -85,9 +84,7 @@ public final class AppPrefs {
 
     public boolean isLightDrawerListForeground() {
         String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
-        // FIXME: we can use the app context here for convenience only under the premise of
-        //  the day/night mode is throughout the whole app, otherwise a themed context is required
-        final boolean nightMode = ThemeUtils.isNightMode(mContext);
+        final boolean nightMode = App.isNightMode();
         if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
             key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
         }
@@ -95,9 +92,7 @@ public final class AppPrefs {
     }
 
     public void setLightDrawerListForeground(boolean light) {
-        // FIXME: we can use the app context here for convenience only under the premise of
-        //  the day/night mode is throughout the whole app, otherwise a themed context is required
-        setLightDrawerListForeground(ThemeUtils.isNightMode(mContext), light);
+        setLightDrawerListForeground(App.isNightMode(), light);
     }
 
     public void setLightDrawerListForeground(boolean nightMode, boolean light) {
@@ -106,5 +101,13 @@ public final class AppPrefs {
             key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
         }
         mSP.edit().putBoolean(key, light).apply();
+    }
+
+    public void setDefaultNightMode(int mode) {
+        mSP.edit().putInt(DEFAULT_NIGHT_MODE, mode).apply();
+    }
+
+    public int getDefaultNightMode() {
+        return mSP.getInt(DEFAULT_NIGHT_MODE, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
     }
 }

@@ -30,6 +30,7 @@
         <activity
             android:name=".view.activity.RequireExternalStoragePermissionActivity"
             android:theme="@style/ActivityStyle_Translucent"
+            android:configChanges="uiMode"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -58,7 +59,7 @@
         <activity
             android:name=".view.activity.VideoActivity"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
             android:supportsPictureInPicture="true"
             android:launchMode="singleTask"
             tools:ignore="LockedOrientationActivity" />
@@ -66,14 +67,14 @@
         <activity
             android:name=".view.activity.MainActivity"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|orientation"
+            android:configChanges="keyboardHidden|screenSize|orientation|uiMode"
             tools:ignore="LockedOrientationActivity" />
 
         <activity
             android:name=".view.activity.FeedbackActivity"
             android:theme="@style/AppTheme.NoWindowBackground"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|orientation"
+            android:configChanges="keyboardHidden|screenSize|orientation|uiMode"
             android:launchMode="singleTop"
             android:windowSoftInputMode="stateHidden"
             tools:ignore="LockedOrientationActivity" />

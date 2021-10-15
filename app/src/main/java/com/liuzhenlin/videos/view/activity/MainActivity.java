@@ -35,7 +35,7 @@ import android.widget.TextView;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.appcompat.graphics.drawable.DrawerArrowDrawable;
 import androidx.appcompat.widget.PopupMenu;
@@ -85,7 +85,7 @@ import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_LIGHT;
 /**
  * @author 刘振林
  */
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+public class MainActivity extends BaseActivity implements View.OnClickListener,
         AdapterView.OnItemClickListener, SlidingDrawerLayout.OnDrawerScrollListener,
         LocalVideosFragment.InteractionCallback {
 
@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         this$ = this;
 
+        setAsNonSwipeBackActivity();
         setContentView(R.layout.activity_main);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             Window window = getWindow();
@@ -455,6 +456,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             R.string.updateLogs,
             R.string.userFeedback,
             R.string.drawerSettings,
+            R.string.darkTheme,
     };
 
     private final class DrawerListAdapter extends BaseAdapter2 {
@@ -611,6 +613,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.string.drawerSettings:
                 showDrawerSettingsMenu(view);
                 break;
+            case R.string.darkTheme:
+                showThemePicker(view);
+                break;
         }
     }
 
@@ -733,6 +738,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 default:
                     return false;
             }
+        });
+    }
+
+    private void showThemePicker(View anchor) {
+        PopupMenu ppm = new PopupMenu(this, anchor);
+        Menu menu = ppm.getMenu();
+        int nightMode = AppCompatDelegate.getDefaultNightMode();
+        if (nightMode != AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
+            menu.add(Menu.NONE, R.id.followsSystem, Menu.NONE, R.string.followsSystem);
+        }
+        if (nightMode != AppCompatDelegate.MODE_NIGHT_NO) {
+            menu.add(Menu.NONE, R.id.turnOff, Menu.NONE, R.string.turnOff);
+        }
+        if (nightMode != AppCompatDelegate.MODE_NIGHT_YES) {
+            menu.add(Menu.NONE, R.id.turnOn, Menu.NONE, R.string.turnOn);
+        }
+        ppm.setGravity(Gravity.END);
+        ppm.show();
+        ppm.setOnMenuItemClickListener(item -> {
+            int mode;
+            switch (item.getItemId()) {
+                case R.id.followsSystem:
+                    mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+                    break;
+                case R.id.turnOff:
+                    mode = AppCompatDelegate.MODE_NIGHT_NO;
+                    break;
+                case R.id.turnOn:
+                    mode = AppCompatDelegate.MODE_NIGHT_YES;
+                    break;
+                default:
+                    return false;
+            }
+            AppPrefs.getSingleton(this).setDefaultNightMode(mode);
+            AppCompatDelegate.setDefaultNightMode(mode);
+            return true;
         });
     }
 

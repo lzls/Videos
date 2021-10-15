@@ -36,6 +36,7 @@
     <string name="downloadingUpdates">Downloading Updates…</string>
     <string name="drawerBackground">Drawer background</string>
     <string name="drawerSettings">Drawer Settings</string>
+    <string name="darkTheme">Dark Theme</string>
     <string name="findNewVersion">Find new version</string>
     <string name="findNewVersion_title">Find New Version</string>
     <plurals name="findSomeVideos">
@@ -110,6 +111,9 @@
     <string name="setForeground">Set foreground</string>
     <string name="setLightStatus">Set light status</string>
     <string name="setLightTexts">Set light texts</string>
+    <string name="followsSystem">Follows system</string>
+    <string name="turnOff">Turn off</string>
+    <string name="turnOn">Turn on</string>
     <string name="severalItemsHaveBeenSelected" tools:ignore="PluralsCandidate">%d items selected</string>
     <string name="share">Share</string>
     <string name="size">Size: %s</string>

@@ -14,7 +14,6 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.liuzhenlin.videos.R;
 
@@ -28,7 +27,7 @@ import pub.devrel.easypermissions.PermissionRequest;
 /**
  * @author 刘振林
  */
-public class RequireExternalStoragePermissionActivity extends AppCompatActivity
+public class RequireExternalStoragePermissionActivity extends BaseActivity
         implements EasyPermissions.PermissionCallbacks, EasyPermissions.RationaleCallbacks {
     private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION = 6;
 
@@ -51,6 +50,8 @@ public class RequireExternalStoragePermissionActivity extends AppCompatActivity
                         ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                         : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         super.onCreate(savedInstanceState);
+
+        setAsNonSwipeBackActivity();
 
         checkStoragePermission();
     }

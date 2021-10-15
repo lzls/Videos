@@ -12,11 +12,13 @@ import android.os.Environment;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.bumptech.glide.Glide;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
+import com.liuzhenlin.videos.dao.AppPrefs;
 
 import java.io.File;
 
@@ -37,6 +39,8 @@ public class App extends Application {
 
     private volatile int mVideoThumbWidth = -1;
 
+    private static volatile boolean sNightMode;
+
 //    static {
 //        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 //    }
@@ -47,6 +51,7 @@ public class App extends Application {
         sApp = this;
         mStatusHeight = SystemBarUtils.getStatusHeight(this);
         registerComponentCallbacks(Glide.get(this));
+        AppCompatDelegate.setDefaultNightMode(AppPrefs.getSingleton(this).getDefaultNightMode());
     }
 
     @NonNull
@@ -182,5 +187,13 @@ public class App extends Application {
             }
         }
         return mVideoThumbWidth;
+    }
+
+    public static void cacheNightMode(boolean nightMode) {
+        sNightMode = nightMode;
+    }
+
+    public static boolean isNightMode() {
+        return sNightMode;
     }
 }

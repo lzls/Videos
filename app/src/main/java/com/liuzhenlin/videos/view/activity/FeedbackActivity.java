@@ -50,7 +50,6 @@ import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
 import com.liuzhenlin.galleryviewer.GalleryViewPager;
-import com.liuzhenlin.swipeback.SwipeBackActivity;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.Consts;
@@ -69,7 +68,7 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAI
 /**
  * @author 刘振林
  */
-public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView, View.OnClickListener {
+public class FeedbackActivity extends BaseActivity implements IFeedbackView, View.OnClickListener {
 
     @Synthetic EditText mEnterProblemsOrAdviceEditor;
     @Synthetic TextView mWordCountIndicator;
@@ -288,7 +287,7 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
                 break;
             case R.id.btn_saveFeedback:
                 saveUserFilledData(true);
-                finish();
+                scrollToFinish();
                 break;
 
             case R.id.btn_commit:
@@ -301,7 +300,7 @@ public class FeedbackActivity extends SwipeBackActivity implements IFeedbackView
                 saveUserFilledData(true);
             case R.id.btn_notSave:
                 mConfirmSaveDataDialog.cancel();
-                finish();
+                scrollToFinish();
                 break;
         }
     }
