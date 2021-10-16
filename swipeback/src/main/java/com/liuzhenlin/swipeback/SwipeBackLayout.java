@@ -493,6 +493,15 @@ public class SwipeBackLayout extends FrameLayout {
         return true;
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        // This view will never draw and the onViewPositionChanged() will not be called anymore...
+        // Aborts all motion in progress and snaps to the end of any animation, in case
+        // the previous content view will not be laid back to its original position.
+        mDragHelper.abort();
+    }
+
     private final class ViewDragCallback extends ViewDragHelper.Callback {
         ViewDragCallback() {
         }
