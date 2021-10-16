@@ -106,6 +106,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     private static final int PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN = 1 << 4;
 
     private static final int PFLAG_STOPPED = 1 << 5;
+    private static final int PFLAG_ACTIVITY_DESTROYED_AND_STILL_IN_PIP = 1 << 6;
 
     private static int sStatusHeight;
     private static int sStatusHeightInLandscapeOfNotchSupportDevice;
@@ -163,10 +164,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
     @Synthetic ProgressBar mVideoProgressInPiP;
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @Synthetic RefreshVideoProgressInPiPTask mRefreshVideoProgressInPiPTask;
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private final class RefreshVideoProgressInPiPTask {
         RefreshVideoProgressInPiPTask() {
         }
@@ -193,6 +192,25 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
+    private static final int VERSION_SUPPORTS_PIP = Build.VERSION_CODES.O;
+
+    @Synthetic static boolean supportsPictureInPictureMode() {
+        return Build.VERSION.SDK_INT >= VERSION_SUPPORTS_PIP;
+    }
+
+    @Override
+    public boolean isInPictureInPictureMode() {
+        return supportsPictureInPictureMode() && super.isInPictureInPictureMode();
+    }
+
+    @RequiresApi(VERSION_SUPPORTS_PIP)
+    @Synthetic PictureInPictureParams.Builder getPipParamsBuilder() {
+        if (mPipParamsBuilder == null) {
+            mPipParamsBuilder = new PictureInPictureParams.Builder();
+        }
+        return mPipParamsBuilder;
+    }
+
     private DisplayCutoutManager getDisplayCutoutManager() {
         if (mDisplayCutoutManager == null) {
             mDisplayCutoutManager = new DisplayCutoutManager(getWindow());
@@ -211,7 +229,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.attachBaseContext(newBase);
         mLockOrientation = getString(R.string.lockScreenOrientation);
         mUnlockOrientation = getString(R.string.unlockScreenOrientation);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (supportsPictureInPictureMode()) {
             mPlay = getString(R.string.play);
             mPause = getString(R.string.pause);
             mFastForward = getString(R.string.fastForward);
@@ -275,7 +293,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 mStatusBarView.setLayoutParams(lp);
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (supportsPictureInPictureMode()) {
                 mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
             }
         }
@@ -312,7 +330,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                     mVideoHeight = mVideoPlayer.getVideoHeight();
                 }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode()) {
+                if (isInPictureInPictureMode()) {
                     // We are playing the video now. In PiP mode, we want to show several
                     // action items to fast rewind, pause and fast forward the video.
                     updatePictureInPictureActions(PIP_ACTION_FAST_REWIND
@@ -328,7 +346,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             public void onVideoStopped() {
                 // The video stopped or reached the playlist end. In PiP mode, we want to show some
                 // action items to fast rewind, play and fast forward the video.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode()) {
+                if (isInPictureInPictureMode()) {
                     int actions = PIP_ACTION_FAST_REWIND | PIP_ACTION_PLAY;
                     if (!(mVideoPlayer.getPlaybackState() == IVideoPlayer.PLAYBACK_STATE_COMPLETED
                             && !mVideoView.canSkipToNext())) {
@@ -340,7 +358,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             @Override
             public void onVideoDurationChanged(int duration) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (supportsPictureInPictureMode()) {
                     if (mVideoProgressInPiP.getMax() != duration) {
                         mVideoProgressInPiP.setMax(duration);
                     }
@@ -409,12 +427,9 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 switch (newMode) {
                     case TextureVideoView.VIEW_MODE_MINIMUM:
                         if (!layoutMatches
-                                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                                && supportsPictureInPictureMode()
                                 && mVideoWidth != 0 && mVideoHeight != 0) {
-                            if (mPipParamsBuilder == null) {
-                                mPipParamsBuilder = new PictureInPictureParams.Builder();
-                            }
-                            enterPictureInPictureMode(mPipParamsBuilder
+                            enterPictureInPictureMode(getPipParamsBuilder()
                                     .setAspectRatio(new Rational(mVideoWidth, mVideoHeight))
                                     .build());
                         }
@@ -506,7 +521,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.onRestart();
         mPrivateFlags &= ~PFLAG_STOPPED;
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPictureInPictureMode()) {
+        if (!isInPictureInPictureMode()) {
             observeNotchSwitch(true);
             setAutoRotationEnabled(true);
         }
@@ -519,9 +534,12 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.onAttachedToWindow();
         Window window = getWindow();
         View decorView = window.getDecorView();
+        boolean inPictureInPictureMode = isInPictureInPictureMode();
 
         getDisplayCutoutManager().setLayoutInDisplayCutout(true);
-        observeNotchSwitch(true);
+        if (!inPictureInPictureMode) {
+            observeNotchSwitch(true);
+        }
 
         if (Utils.isLayoutRtl(decorView)) {
             getSwipeBackLayout().setEnabledEdges(SwipeBackLayout.EDGE_RIGHT);
@@ -551,7 +569,17 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 }
             }
         };
-        setAutoRotationEnabled(true);
+        if (!inPictureInPictureMode) {
+            setAutoRotationEnabled(true);
+        }
+
+        // Fix onPictureInPictureModeChanged not called when this activity is recreated due to
+        // any configuration we do not handle changed, which can lead to state inconsistencies
+        // and crashes.
+        if (inPictureInPictureMode && sActivityInPiP == null) {
+            //noinspection NewApi
+            onPictureInPictureModeChanged(true);
+        }
     }
 
     private void observeNotchSwitch(boolean observe) {
@@ -579,7 +607,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             mPresenter.recordCurrVideoProgress();
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPictureInPictureMode()) {
+        if (!isInPictureInPictureMode()) {
             observeNotchSwitch(false);
             setAutoRotationEnabled(false);
         }
@@ -590,7 +618,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     public void finish() {
         mPresenter.recordCurrVideoProgressAndSetResult();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (supportsPictureInPictureMode()) {
             // finish() does not remove the activity in PIP mode from the recents stack.
             // Only finishAndRemoveTask() does this.
             finishAndRemoveTask();
@@ -611,8 +639,16 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.onDestroy();
         mPresenter.detachFromView(this);
         if (sActivityInPiP != null && sActivityInPiP.get() == this) {
-            sActivityInPiP.clear();
-            sActivityInPiP = null;
+            // Fix onPictureInPictureModeChanged not called when this activity is going to be
+            // recreated due to any configuration we do not handle changed, which can lead to
+            // the previous instance to leak for mReceiver is still registered on it, etc.
+            if (isInPictureInPictureMode()) {
+                mPrivateFlags |= PFLAG_ACTIVITY_DESTROYED_AND_STILL_IN_PIP;
+                onPictureInPictureModeChanged(false);
+            } else {
+                sActivityInPiP.clear();
+                sActivityInPiP = null;
+            }
         }
         if (mHandler != null) {
             mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable, null);
@@ -781,7 +817,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @Synthetic void resizeVideoView() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode()) {
+        if (isInPictureInPictureMode()) {
             setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             return;
         }
@@ -920,7 +956,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     /**
      * Update the action items in Picture-in-Picture mode.
      */
-    @RequiresApi(Build.VERSION_CODES.O)
+    @RequiresApi(VERSION_SUPPORTS_PIP)
     @Synthetic void updatePictureInPictureActions(int pipActions) {
         List<RemoteAction> actions = new LinkedList<>();
         if ((pipActions & PIP_ACTION_FAST_REWIND) != 0) {
@@ -944,10 +980,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             action.setEnabled(false);
             actions.add(action);
         }
-        mPipParamsBuilder.setActions(actions);
-
         // This is how you can update action items (or aspect ratio) for Picture-in-Picture mode.
-        setPictureInPictureParams(mPipParamsBuilder.build());
+        setPictureInPictureParams(getPipParamsBuilder().setActions(actions).build());
     }
 
     /**
@@ -978,7 +1012,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @SuppressLint("SwitchIntDef")
-    @RequiresApi(Build.VERSION_CODES.O)
+    @RequiresApi(VERSION_SUPPORTS_PIP)
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode);
@@ -1099,9 +1133,9 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                                     + "    " + "size / 2.5dp = " + size / progressMaxHeight);
                         }
 
-                        mPipParamsBuilder.setAspectRatio(
-                                new Rational(width, height + progressHeight));
-                        setPictureInPictureParams(mPipParamsBuilder.build());
+                        setPictureInPictureParams(getPipParamsBuilder()
+                                .setAspectRatio(new Rational(width, height + progressHeight))
+                                .build());
 
                         cachedVideoAspectRatio = videoAspectRatio;
                         cachedSize = size;
@@ -1123,9 +1157,15 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             mVideoView.removeOnLayoutChangeListener(mOnPipLayoutChangeListener);
             mOnPipLayoutChangeListener = null;
 
-            // We closed the picture-in-picture window by clicking the 'close' button
             if ((mPrivateFlags & PFLAG_STOPPED) != 0) {
-                finish();
+                if ((mPrivateFlags & PFLAG_ACTIVITY_DESTROYED_AND_STILL_IN_PIP) == 0) {
+                    // We have closed the picture-in-picture window by clicking the 'close' button.
+                    // Remove the pip activity task too, so that it will not be kept
+                    // in the recents list.
+                    finish();
+                }
+                // If the above condition doesn't hold, this activity is destroyed or may be in
+                // the recreation process...
                 return;
             }
 
