@@ -3,9 +3,15 @@ package com.liuzhenlin.swipeback;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityOptions;
+import android.content.Context;
+import android.content.res.TypedArray;
 import android.os.Build;
+import android.view.Window;
 
+import androidx.annotation.AnyRes;
+import androidx.annotation.AttrRes;
 import androidx.annotation.FloatRange;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.lang.reflect.Method;
@@ -125,6 +131,46 @@ public class Utils {
                             translucentConversionListener, ActivityOptions.class)
                     .invoke(activity,
                             null, getActivityOptions.invoke(activity));
+        }
+    }
+
+    /**
+     * Determines whether the current Window is translucent or floating by default, according to
+     * the {@link android.R.attr#windowIsFloating} and {@link android.R.attr#windowIsTranslucent}
+     * attributes set in its theme.
+     */
+    public static boolean isWindowTranslucentOrFloatingTheme(Window window) {
+        try {
+            @SuppressLint("PrivateApi")
+            Class<?> styleableClass =
+                    window.getContext().getClassLoader()
+                            .loadClass("com.android.internal.R$styleable");
+            return getWindowStyleBoolean(window, styleableClass, "Window_windowIsTranslucent", false)
+                    || getWindowStyleBoolean(window, styleableClass, "Window_windowIsFloating", false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private static boolean getWindowStyleBoolean(
+            Window window,
+            Class<?> styleableClass,
+            String attrIndexName,
+            @SuppressWarnings("SameParameterValue") boolean defValue) throws Exception {
+        return window
+                .getWindowStyle()
+                .getBoolean(styleableClass.getField(attrIndexName).getInt(styleableClass), defValue);
+    }
+
+    /** Resolves the resource ID from the provided theme attribute. */
+    @AnyRes
+    public static int getThemeAttrRes(@NonNull Context context, @AttrRes int attr) {
+        TypedArray ta = context.getTheme().obtainStyledAttributes(new int[]{attr});
+        try {
+            return ta.getResourceId(0, 0);
+        } finally {
+            ta.recycle();
         }
     }
 }

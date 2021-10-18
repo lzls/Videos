@@ -56,4 +56,35 @@ public class SwipeBackActivity extends AppCompatActivity implements ISwipeBackAc
     public Activity getPreviousActivity() {
         return null;
     }
+
+    @Override
+    public void finish() {
+        abortUserSwipeBack();
+        super.finish();
+    }
+
+    @Override
+    public void finishAffinity() {
+        abortUserSwipeBack();
+        super.finishAffinity();
+    }
+
+    @Override
+    public void finishAndRemoveTask() {
+        abortUserSwipeBack();
+        super.finishAndRemoveTask();
+    }
+
+    /**
+     * Aborts all motion in progress and snaps to the end of any animation, in case
+     * the previous content view will not be laid back to its original position
+     * when one of the flavors of {@link #finish} is called to close the activity.
+     * If aborted, the window may be converted back to opaque again so that the window animations
+     * will work normally on the current outgoing activity and the next incoming one.
+     */
+    private void abortUserSwipeBack() {
+        if (mSwipeBackLayout != null) {
+            mSwipeBackLayout.mDragHelper.abort();
+        }
+    }
 }

@@ -3,7 +3,6 @@ package com.liuzhenlin.swipeback;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -15,6 +14,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.Window;
 import android.widget.FrameLayout;
 
 import androidx.annotation.ColorInt;
@@ -42,7 +42,7 @@ public class SwipeBackLayout extends FrameLayout {
     @Nullable
     /*synthetic*/ ISwipeBackFragment mFragment;
 
-    /*synthetic*/ final ViewDragHelper mDragHelper;
+    /*package*/ final ViewDragHelper mDragHelper;
 
     public static final int EDGE_LEFT = ViewDragHelper.EDGE_LEFT;
     public static final int EDGE_RIGHT = ViewDragHelper.EDGE_RIGHT;
@@ -100,6 +100,8 @@ public class SwipeBackLayout extends FrameLayout {
      * @see #setPreviousContentScrollable(boolean)
      */
     private static final int FLAG_PREVIOUS_CONTENT_SCROLLABLE = 1 << 3;
+
+    private static final int FLAG_WINDOW_IS_TRANSLUCENT = 1 << 4;
 
     /**
      * The set of listeners to be sent events through
@@ -174,16 +176,17 @@ public class SwipeBackLayout extends FrameLayout {
      * Attach this layout to the given 'activity'
      */
     public void attachToActivity(ISwipeBackActivity activity) {
-        mActivity = activity;
-        TypedArray a = ((Activity) activity).getTheme().obtainStyledAttributes(new int[]{
-                android.R.attr.windowBackground
-        });
-        final int background = a.getResourceId(0, 0);
-        a.recycle();
+        Activity host = (Activity) activity;
+        Window window = host.getWindow();
+        ViewGroup decor = (ViewGroup) window.getDecorView();
 
-        ViewGroup decor = (ViewGroup) ((Activity) activity).getWindow().getDecorView();
+        mActivity = activity;
+        if (Utils.isWindowTranslucentOrFloatingTheme(window)) {
+            mViewFlags |= FLAG_WINDOW_IS_TRANSLUCENT;
+        }
         mContentView = decor.getChildAt(0);
-        mContentView.setBackgroundResource(background);
+        mContentView.setBackgroundResource(
+                Utils.getThemeAttrRes(host, android.R.attr.windowBackground));
 
         decor.removeView(mContentView);
         addView(mContentView);
@@ -620,9 +623,12 @@ public class SwipeBackLayout extends FrameLayout {
                         if (prefragment != null)
                             prefragment.setTransitionEnabled(true);
 
-                    } else if (mActivity != null && !((Activity) mActivity).isFinishing()) {
-                        ((Activity) mActivity).finish();
-                        ((Activity) mActivity).overridePendingTransition(0, 0);
+                    } else if (mActivity != null) {
+                        Activity activity = (Activity) mActivity;
+                        if (!activity.isFinishing()) {
+                            activity.finish();
+                        }
+                        activity.overridePendingTransition(0, 0);
                     }
                 } else {
                     mTrackingEdge = NO_TRACKING_EDGE;
@@ -630,9 +636,13 @@ public class SwipeBackLayout extends FrameLayout {
                     // content view back to ensure it will be shown normally after user presses
                     // the return key to finish current activity.
                     layPreviousContentBack();
-//                    if (mActivity != null) {
-//                        Utils.convertActivityToOpaque((Activity) mActivity);
-//                    }
+                    // Convert the Activity back to opaque if it was previously so.
+                    if (mActivity != null) {
+                        Activity activity = (Activity) mActivity;
+                        if ((mViewFlags & FLAG_WINDOW_IS_TRANSLUCENT) == 0) {
+                            Utils.convertActivityToOpaque(activity);
+                        }
+                    }
                 }
             }
         }
@@ -649,7 +659,9 @@ public class SwipeBackLayout extends FrameLayout {
             // Or else convert the background of the activity that contains it
             // to transparency, then the previous activity will be visible.
         } else {
-            Utils.convertActivityToTranslucent((Activity) mActivity);
+            if ((mViewFlags & FLAG_WINDOW_IS_TRANSLUCENT) == 0) {
+                Utils.convertActivityToTranslucent((Activity) mActivity);
+            }
         }
     }
 
