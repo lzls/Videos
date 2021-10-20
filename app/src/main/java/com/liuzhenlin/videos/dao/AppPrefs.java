@@ -22,6 +22,7 @@ import com.liuzhenlin.videos.Files;
  */
 public final class AppPrefs {
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final Context mContext;
     private final SharedPreferences mSP;
 

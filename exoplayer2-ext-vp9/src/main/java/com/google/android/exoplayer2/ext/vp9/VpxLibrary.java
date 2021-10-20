@@ -49,9 +49,7 @@ public final class VpxLibrary {
     VpxLibrary.exoMediaCryptoType = exoMediaCryptoType;
   }
 
-  /**
-   * Returns whether the underlying library is available, loading it if necessary.
-   */
+  /** Returns whether the underlying library is available, loading it if necessary. */
   public static boolean isAvailable() {
     return LOADER.isAvailable();
   }
@@ -71,14 +69,11 @@ public final class VpxLibrary {
     return isAvailable() ? vpxGetBuildConfig() : null;
   }
 
-  /**
-   * Returns true if the underlying libvpx library supports high bit depth.
-   */
+  /** Returns true if the underlying libvpx library supports high bit depth. */
   public static boolean isHighBitDepthSupported() {
     //noinspection ConstantConditions
     String config = getBuildConfig();
-    int indexHbd = config != null
-        ? config.indexOf("--enable-vp9-highbitdepth") : -1;
+    int indexHbd = config != null ? config.indexOf("--enable-vp9-highbitdepth") : -1;
     return indexHbd >= 0;
   }
 
@@ -92,6 +87,8 @@ public final class VpxLibrary {
   }
 
   private static native String vpxGetVersion();
+
   private static native String vpxGetBuildConfig();
+
   public static native boolean vpxIsSecureDecodeSupported();
 }

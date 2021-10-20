@@ -148,8 +148,8 @@ public final class VpxDecoder
     if (result != NO_ERROR) {
       if (result == DRM_ERROR) {
         String message = "Drm error: " + vpxGetErrorMessage(vpxDecContext);
-        DecryptionException cause = new DecryptionException(
-            vpxGetErrorCode(vpxDecContext), message);
+        DecryptionException cause =
+            new DecryptionException(vpxGetErrorCode(vpxDecContext), message);
         return new VpxDecoderException(message, cause);
       } else {
         return new VpxDecoderException("Decode error: " + vpxGetErrorMessage(vpxDecContext));
@@ -212,6 +212,7 @@ public final class VpxDecoder
       boolean disableLoopFilter, boolean enableRowMultiThreadMode, int threads);
 
   private native long vpxClose(long context);
+
   private native long vpxDecode(long context, ByteBuffer encoded, int length);
 
   private native long vpxSecureDecode(
@@ -242,5 +243,6 @@ public final class VpxDecoder
   private native int vpxReleaseFrame(long context, VideoDecoderOutputBuffer outputBuffer);
 
   private native int vpxGetErrorCode(long context);
+
   private native String vpxGetErrorMessage(long context);
 }

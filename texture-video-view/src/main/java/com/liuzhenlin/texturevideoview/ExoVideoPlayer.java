@@ -24,12 +24,11 @@ import androidx.collection.SimpleArrayMap;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -41,7 +40,9 @@ import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
+import com.google.android.exoplayer2.source.rtsp.RtspMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
+import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
@@ -255,12 +256,8 @@ public class ExoVideoPlayer extends VideoPlayer {
         if (mExoPlayer == null && mVideoUri != null
                 && !(mVideoView != null && surface == null)
                 && (mInternalFlags & $FLAG_VIDEO_PAUSED_BY_USER) == 0) {
-            RenderersFactory renderersFactory = new DefaultRenderersFactory(mContext)
-                    .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
             mTrackSelector = new DefaultTrackSelector(mContext);
-            mExoPlayer = new SimpleExoPlayer.Builder(mContext, renderersFactory)
-                    .setTrackSelector(mTrackSelector)
-                    .build();
+            mExoPlayer = Utils.newSimpleExoPlayer(mContext, mTrackSelector);
             mExoPlayer.setVideoSurface(surface);
             mExoPlayer.setAudioAttributes(sDefaultAudioAttrs, false);
             setPlaybackSpeed(mUserPlaybackSpeed);
@@ -311,11 +308,12 @@ public class ExoVideoPlayer extends VideoPlayer {
                 }
 
                 @Override
-                public void onPlayerError(@NonNull ExoPlaybackException error) {
+                public void onPlayerError(@NonNull PlaybackException error) {
                     Log.e(TAG, "playback error", error);
                     // Show video error toast
                     final int stringRes;
-                    if (error.type == ExoPlaybackException.TYPE_SOURCE) {
+                    if (error instanceof ExoPlaybackException
+                            && ((ExoPlaybackException) error).type == ExoPlaybackException.TYPE_SOURCE) {
                         stringRes = R.string.failedToLoadThisVideo;
                     } else {
                         stringRes = R.string.unknownErrorOccurredWhenVideoIsPlaying;
@@ -340,10 +338,12 @@ public class ExoVideoPlayer extends VideoPlayer {
                             width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
                     ExoVideoPlayer.this.onVideoSizeChanged(videoSize[0], videoSize[1]);
                 }
-            });
-            mExoPlayer.addTextOutput(cues -> {
-                if (mVideoView != null) {
-                    mVideoView.showSubtitles(cues);
+
+                @Override
+                public void onCues(@NonNull List<Cue> cues) {
+                    if (mVideoView != null) {
+                        mVideoView.showSubtitles(cues);
+                    }
                 }
             });
             startVideo(true);
@@ -366,14 +366,6 @@ public class ExoVideoPlayer extends VideoPlayer {
             mVideoView.cancelDraggingVideoSeekBar(false);
         }
         if (mVideoUri != null) {
-            if (playWhenPrepared) {
-                mInternalFlags |= $FLAG_PLAY_WHEN_PREPARED;
-            } else {
-                mInternalFlags &= ~$FLAG_PLAY_WHEN_PREPARED;
-            }
-
-            setPlaybackState(PLAYBACK_STATE_PREPARING);
-
             MediaSource mediaSource = obtainMediaSourceFactory(mVideoUri).createMediaSource(mVideoUri);
             if (mSubtitles != null && !mSubtitles.isEmpty()) {
                 int size = mSubtitles.size();
@@ -384,13 +376,23 @@ public class ExoVideoPlayer extends VideoPlayer {
                     String[] subtitleData = mSubtitles.valueAt(i);
                     mediaSources[i + 1] = getSubtitleSourceFactory().createMediaSource(
                             subtitleUri,
-                            Format.createTextSampleFormat(null, subtitleData[0], 0, subtitleData[1]),
+                            new Format.Builder()
+                                    .setSampleMimeType(subtitleData[0])
+                                    .setLanguage(subtitleData[1])
+                                    .build(),
                             C.TIME_UNSET);
                 }
-                mExoPlayer.prepare(new MergingMediaSource(mediaSources));
+                mExoPlayer.setMediaSource(new MergingMediaSource(mediaSources));
             } else {
-                mExoPlayer.prepare(mediaSource);
+                mExoPlayer.setMediaSource(mediaSource);
             }
+            if (playWhenPrepared) {
+                mInternalFlags |= $FLAG_PLAY_WHEN_PREPARED;
+            } else {
+                mInternalFlags &= ~$FLAG_PLAY_WHEN_PREPARED;
+            }
+            setPlaybackState(PLAYBACK_STATE_PREPARING);
+            mExoPlayer.prepare();
         } else {
             setPlaybackState(PLAYBACK_STATE_IDLE);
         }
@@ -422,6 +424,13 @@ public class ExoVideoPlayer extends VideoPlayer {
                 }
                 return mTmpMediaSourceFactory =
                         new HlsMediaSource.Factory(getDefaultDataSourceFactory());
+
+            case C.TYPE_RTSP:
+                if (mTmpMediaSourceFactory instanceof RtspMediaSource.Factory) {
+                    return mTmpMediaSourceFactory;
+                }
+                return mTmpMediaSourceFactory =
+                        new RtspMediaSource.Factory().setUserAgent(getUserAgent());
 
             case C.TYPE_OTHER:
                 if (mTmpMediaSourceFactory instanceof ProgressiveMediaSource.Factory) {
@@ -472,8 +481,13 @@ public class ExoVideoPlayer extends VideoPlayer {
     private void resetExoPlayer() {
         if (getPlaybackState() != PLAYBACK_STATE_IDLE) {
             resetTracks(true);
-            mExoPlayer.stop(true);
+            stopExoPlayer(true);
         }
+    }
+
+    private void stopExoPlayer(boolean reset) {
+        //noinspection deprecation
+        mExoPlayer.stop(reset);
     }
 
     @Override
@@ -513,8 +527,7 @@ public class ExoVideoPlayer extends VideoPlayer {
                 // Retries the failed playback after error occurred
                 mInternalFlags |= $FLAG_PLAY_WHEN_PREPARED;
                 setPlaybackState(PLAYBACK_STATE_PREPARING);
-                //noinspection deprecation
-                mExoPlayer.retry();
+                mExoPlayer.prepare();
                 break;
 
             case PLAYBACK_STATE_COMPLETED:
@@ -604,7 +617,7 @@ public class ExoVideoPlayer extends VideoPlayer {
                     mInternalFlags = mInternalFlags & ~$FLAG_VIDEO_PAUSED_BY_USER
                             | (fromUser ? $FLAG_VIDEO_PAUSED_BY_USER : 0);
                 }
-                mExoPlayer.stop(false);
+                stopExoPlayer(false);
             }
             mExoPlayer.release();
             mExoPlayer = null;

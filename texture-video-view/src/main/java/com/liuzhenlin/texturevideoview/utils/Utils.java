@@ -5,6 +5,7 @@
 
 package com.liuzhenlin.texturevideoview.utils;
 
+import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.text.TextUtils;
@@ -14,7 +15,16 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.RenderersFactory;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.analytics.AnalyticsCollector;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.exoplayer2.util.Clock;
 import com.liuzhenlin.texturevideoview.IVideoPlayer;
 import com.liuzhenlin.texturevideoview.bean.TrackInfo;
 
@@ -123,6 +133,32 @@ public class Utils {
             default:
                 return C.TRACK_TYPE_UNKNOWN;
         }
+    }
+
+    /** Creates a new {@link SimpleExoPlayer} instance using all default arguments. */
+    @NonNull
+    public static SimpleExoPlayer newSimpleExoPlayer(@NonNull Context context) {
+        return newSimpleExoPlayer(context, null);
+    }
+
+    /**
+     * Creates a new {@link SimpleExoPlayer} instance using the given {@code trackSelector}
+     * or just {@code null} to specify the default one.
+     */
+    @NonNull
+    public static SimpleExoPlayer newSimpleExoPlayer(
+            @NonNull Context context, @Nullable TrackSelector trackSelector) {
+        RenderersFactory renderersFactory = new DefaultRenderersFactory(context)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
+        return new SimpleExoPlayer.Builder(
+                context,
+                renderersFactory,
+                trackSelector == null ? new DefaultTrackSelector(context) : trackSelector,
+                /* mediaSourceFactory= */ null,
+                /* loadControl= */ new DefaultLoadControl(),
+                /* bandwidthMeter= */ DefaultBandwidthMeter.getSingletonInstance(context),
+                /* analyticsCollector= */ new AnalyticsCollector(Clock.DEFAULT)
+        ).build();
     }
 
     /**

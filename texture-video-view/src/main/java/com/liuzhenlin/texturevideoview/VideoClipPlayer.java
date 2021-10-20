@@ -22,6 +22,7 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.liuzhenlin.texturevideoview.utils.Utils;
 
 import java.io.IOException;
 
@@ -296,7 +297,7 @@ import java.io.IOException;
         @Override
         public void create() {
             if (mExoPlayer == null) {
-                mExoPlayer = new SimpleExoPlayer.Builder(mContext).build();
+                mExoPlayer = Utils.newSimpleExoPlayer(mContext);
                 mExoPlayer.setVideoSurfaceHolder(mSurfaceHolder);
                 mExoPlayer.setAudioAttributes(VideoPlayer.sDefaultAudioAttrs, true);
                 mExoPlayer.setMediaSource(mMediaSource);
