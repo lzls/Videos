@@ -5,12 +5,14 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.service.notification.StatusBarNotification;
 import android.transition.Transition;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -21,6 +23,7 @@ import android.view.ViewParent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 
@@ -158,6 +161,40 @@ public class Utils {
         } else {
             action.run();
         }
+    }
+
+    /**
+     * Runs the given action on the {@code handler}'s thread once the specified {@code condition}
+     * meets.
+     */
+    public static void postTillConditionMeets(
+            @NonNull Handler handler, @NonNull Runnable action, @NonNull Condition condition) {
+        if (Thread.currentThread() == handler.getLooper().getThread()) {
+            if (condition.meets()) {
+                action.run();
+                return;
+            }
+        }
+        handler.post(() -> postTillConditionMeets(handler, action, condition));
+    }
+
+    /**
+     * Checks if any notifications that have the same {@code id} and {@code tag}
+     * have not yet been dismissed by the user or
+     * {@link NotificationManager#cancel(String, int) cancel}ed by the app.
+     */
+    @RequiresApi(Build.VERSION_CODES.M)
+    public static boolean hasNotification(
+            @NonNull NotificationManager nm, int id, @Nullable String tag) {
+        StatusBarNotification[] ns = nm.getActiveNotifications();
+        if (ns != null) {
+            for (StatusBarNotification n : ns) {
+                if (n.getId() == id && ObjectsCompat.equals(n.getTag(), tag)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -69,6 +70,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import kotlin.collections.ArraysKt;
+
+import static com.liuzhenlin.common.utils.Utils.hasNotification;
+import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
 /**
  * @author 刘振林
@@ -406,7 +410,7 @@ public final class MergeAppUpdateChecker {
         private CancelAppUpdateReceiver mReceiver;
 
         @Synthetic final AtomicBoolean mCanceled = new AtomicBoolean();
-        private volatile boolean mRunning;
+        @Synthetic volatile boolean mRunning;
 
         @Nullable
         @Override
@@ -458,6 +462,9 @@ public final class MergeAppUpdateChecker {
                     if (mApk.length() == mApkLength
                             && ObjectsCompat.equals(FileUtils.getFileSha1(mApk), sha1)) {
                         if (!mCanceled.get()) {
+                            if (Configs.DEBUG_APP_UPDATE) {
+                                Log.d(TAG, "Stop service when request apk is already downloaded.");
+                            }
                             stopServiceAndShowInstallAppPrompt();
                         }
                         return;
@@ -511,10 +518,13 @@ public final class MergeAppUpdateChecker {
         @Override
         public void onDestroy() {
             super.onDestroy();
+            if (Configs.DEBUG_APP_UPDATE) {
+                Log.d(TAG, "Service is destroyed.");
+            }
 
             if (!mCanceled.getAndSet(true)) {
                 if (mRunning) {
-                    cancel();
+                    cancel(true);
                 }
             }
 
@@ -522,14 +532,17 @@ public final class MergeAppUpdateChecker {
             mReceiver = null;
         }
 
-        void cancel() {
+        void cancel(boolean removeNotificationNow) {
+            if (Configs.DEBUG_APP_UPDATE) {
+                Log.d(TAG, "Cancel tasks that are still active.");
+            }
             for (DownloadAppPartTask task : mDownloadAppPartTasks) {
                 task.cancel(false);
             }
 
             deleteApkParts();
 
-            stopService();
+            stopService(removeNotificationNow);
         }
 
         private void deleteApkParts() {
@@ -543,24 +556,59 @@ public final class MergeAppUpdateChecker {
             }
         }
 
-        @Synthetic void stopService() {
+        @Synthetic void stopService(boolean removeNotificationNow) {
             mRunning = false;
-            stopForeground(false);
+            if (Configs.DEBUG_APP_UPDATE) {
+                Log.d(TAG, "Waiting for any progress notification to complete to be sent. "
+                        + "removeNotificationNow=" + removeNotificationNow);
+            }
+            // Sync always to wait for any progress notification to complete to be sent...
             //noinspection SynchronizeOnNonFinalField
             synchronized (mNotificationManager) {
-                mNotificationManager.cancel(ID_NOTIFICATION);
+                if (removeNotificationNow) {
+                    stopForeground(false);
+                    mNotificationManager.cancel(ID_NOTIFICATION);
+                }
             }
             getHandler().sendEmptyMessage(H.MSG_STOP_UPDATE_APP_SERVICE);
         }
 
         @Synthetic void stopServiceAndShowInstallAppPrompt() {
-            stopService();
-            // Double post here! Because the Context's stopService method will asynchronously cancel
-            // the notification with id ID_NOTIFICATION, we need to make sure the notification
-            // to be showed to remind the user to install the downloaded app will not be canceled
-            // as the service dies.
+            stopService(false);
+
+            // Postpone showing a notification to remind the user to install the downloaded app,
+            // because the Context's stopService method will asynchronously cancel
+            // the notification with id ID_NOTIFICATION, resulting in the pending notification
+            // to be canceled as the service dies.
             Handler handler = getHandler();
-            handler.post(() -> handler.post(() -> showInstallAppPromptNotification(mApk)));
+            handler.post(() -> {
+                Runnable action = () -> {
+                    if (Configs.DEBUG_APP_UPDATE) {
+                        Log.d(TAG, "Show app installation prompt notification now.");
+                    }
+                    showInstallAppPromptNotification(mApk);
+                };
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (Configs.DEBUG_APP_UPDATE) {
+                        Log.d(TAG, "Start checking if any notifications use id " + ID_NOTIFICATION);
+                    }
+                    postTillConditionMeets(handler, action,
+                            () -> !hasNotification(mNotificationManager, ID_NOTIFICATION, null));
+                } else {
+                    if (Configs.DEBUG_APP_UPDATE) {
+                        Log.d(TAG, "Postpone showing app installation prompt notification for "
+                                + Configs.DELAY_SEND_NOTIFICATION_WITH_JUST_STOPPED_FOREGROUND_SERVICE_ID
+                                + " milliseconds.");
+                    }
+                    // FIXME: the upcoming prompt notification may still be canceled by
+                    //        ActivityManagerService though this is a small probability
+                    //        event, since it is running on the server process and we can't
+                    //        ensure the action will only be performed after it cancels
+                    //        the notification with the same id.
+                    handler.postDelayed(action,
+                            Configs.DELAY_SEND_NOTIFICATION_WITH_JUST_STOPPED_FOREGROUND_SERVICE_ID);
+                }
+            });
         }
 
         void showInstallAppPromptNotification(File apk) {
@@ -606,7 +654,7 @@ public final class MergeAppUpdateChecker {
         @Synthetic void onConnectionTimeout() {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
-                    cancel();
+                    cancel(false);
                     Toast.makeText(mContext,
                             R.string.connectionTimeout, Toast.LENGTH_SHORT).show();
                 });
@@ -616,7 +664,7 @@ public final class MergeAppUpdateChecker {
         @Synthetic void onReadTimeout() {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
-                    cancel();
+                    cancel(false);
                     Toast.makeText(mContext,
                             R.string.readTimeout, Toast.LENGTH_SHORT).show();
                 });
@@ -626,7 +674,7 @@ public final class MergeAppUpdateChecker {
         @Synthetic void onDownloadError() {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
-                    cancel();
+                    cancel(false);
                     Toast.makeText(mContext,
                             R.string.downloadError, Toast.LENGTH_SHORT).show();
                 });
@@ -698,11 +746,11 @@ public final class MergeAppUpdateChecker {
 
             @SuppressWarnings("SynchronizeOnNonFinalField")
             private void notifyProgressUpdated(int progress) {
+                float progressPercent = (float) progress / (float) mApkLength * 100f;
                 RemoteViews nv = createNotificationView();
                 nv.setProgressBar(R.id.progress, mApkLength, progress, false);
                 nv.setTextViewText(R.id.text_percentProgress,
-                        mContext.getString(R.string.percentProgress,
-                                (float) progress / (float) mApkLength * 100f));
+                        mContext.getString(R.string.percentProgress, progressPercent));
                 nv.setTextViewText(R.id.text_charsequenceProgress,
                         mContext.getString(R.string.charsequenceProgress,
                                 FileUtils.formatFileSize(progress),
@@ -715,9 +763,13 @@ public final class MergeAppUpdateChecker {
                             .setCustomBigContentView(nv)
                             .build();
                 }
-                // 确保下载被取消后不再有任何通知被弹出...
+                // Ensures no more progress notification to be sent when download is canceled...
                 synchronized (mNotificationManager) {
-                    if (!mCanceled.get()) {
+                    if (mRunning && !mCanceled.get()) {
+                        if (Configs.DEBUG_APP_UPDATE) {
+                            Log.d(TAG, "Post a new progress notification into the status bar. "
+                                    + "progressPercent=" + progressPercent);
+                        }
                         mNotificationManager.notify(ID_NOTIFICATION, n);
                     }
                 }
@@ -731,6 +783,9 @@ public final class MergeAppUpdateChecker {
                     Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                         FileUtils.mergeFiles(mApkParts, mApk, true);
                         if (!mCanceled.get()) {
+                            if (Configs.DEBUG_APP_UPDATE) {
+                                Log.d(TAG, "All download tasks are completed. Stop service now...");
+                            }
                             stopServiceAndShowInstallAppPrompt();
                         }
                     });
@@ -746,6 +801,9 @@ public final class MergeAppUpdateChecker {
 
             @Override
             public void onReceive(Context context, Intent intent) {
+                if (Configs.DEBUG_APP_UPDATE) {
+                    Log.d(TAG, "User cancels updating app and service is going to be stopped...");
+                }
                 MergeAppUpdateChecker.getSingleton(context)
                         .mH.sendEmptyMessage(H.MSG_STOP_UPDATE_APP_SERVICE);
             }
