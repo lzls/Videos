@@ -22,6 +22,7 @@ import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.ShareUtils;
 import com.liuzhenlin.texturevideoview.TextureVideoView;
 import com.liuzhenlin.videos.Consts;
+import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
@@ -265,7 +266,7 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
     public void onCurrentVideoStarted() {
         Video video = mVideos[mVideoIndex];
         int progress = video.getProgress();
-        if (progress > 0 && progress < video.getDuration() - Consts.TOLERANCE_VIDEO_DURATION) {
+        if (progress > 0 && progress < video.getDuration() - Configs.TOLERANCE_VIDEO_DURATION) {
             if (mView != null) {
                 mView.seekPositionOnVideoStarted(progress);
             }

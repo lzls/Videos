@@ -21,7 +21,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.App;
-import com.liuzhenlin.videos.Consts;
+import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
 
@@ -144,7 +144,7 @@ public class VideoUtils2 {
         final String slong = chinese ? "时长" : "long";
         final String lessThanAMinute = chinese ? "小于1分钟" : "Less than a minute";
 
-        if (progress >= duration - Consts.TOLERANCE_VIDEO_DURATION) {
+        if (progress >= duration - Configs.TOLERANCE_VIDEO_DURATION) {
             result.append(haveFinishedWatching).append(separator);
         } else {
             final int totalSeconds = progress / 1000;

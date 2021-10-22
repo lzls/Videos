@@ -186,7 +186,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
         if (sMediaButtonEventReceiverComponent == null) {
             sMediaButtonEventReceiverComponent = new ComponentName(context, MediaButtonEventReceiver.class);
         }
-        if (InternalConsts.DEBUG_LISTENER) {
+        if (InternalConfigs.DEBUG_LISTENER) {
             final String videoPlayerTextualRepresentation =
                     getClass().getName() + "@" + Integer.toHexString(hashCode());
             addOnPlaybackStateChangeListener((oldState, newState) -> {

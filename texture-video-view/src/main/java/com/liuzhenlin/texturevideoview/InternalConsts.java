@@ -19,11 +19,6 @@ public class InternalConsts {
     private InternalConsts() {
     }
 
-    /*package*/ static final boolean DEBUG = false;
-
-    @SuppressWarnings("PointlessBooleanExpression")
-    /*package*/ static final boolean DEBUG_LISTENER = DEBUG && false;
-
     @RestrictTo(LIBRARY)
     public static final String EXTRA_MESSENGER = "messenger";
     @RestrictTo(LIBRARY)

@@ -49,6 +49,7 @@ import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
+import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.R;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -202,7 +203,7 @@ public final class MergeAppUpdateChecker {
                 JsonObject appInfos = JsonParser.parseString(json).getAsJsonObject()
                         .get("appInfos").getAsJsonObject();
 
-                final boolean findNewVersion = Consts.DEBUG_APP_UPDATE
+                final boolean findNewVersion = Configs.DEBUG_APP_UPDATE
                         || appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
                 // 检测到版本更新
                 if (findNewVersion) {

@@ -12,10 +12,6 @@ import androidx.core.content.ContextCompat
  * @author 刘振林
  */
 
-@Suppress("SimplifyBooleanWithConstants")
-@JvmField
-internal val DEBUG_APP_UPDATE = BuildConfig.DEBUG && false
-
 internal const val KEY_DIRECTORY_PATH = "directoryPath"
 internal const val KEY_VIDEODIR = "videodir"
 internal const val KEY_VIDEO = "video"
@@ -39,8 +35,6 @@ internal const val RESULT_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT = 4
 
 internal const val REQUEST_CODE_GET_PICTURE = 5
 internal const val RESULT_CODE_GET_PICTURE = 5
-
-internal const val TOLERANCE_VIDEO_DURATION = 100 // ms
 
 private val _COLOR_ACCENT by lazy(LazyThreadSafetyMode.NONE) {
     ContextCompat.getColor(App.getInstanceUnsafe()!!, R.color.colorAccent) }
