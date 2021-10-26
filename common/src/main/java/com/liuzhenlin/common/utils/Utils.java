@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
-import android.transition.Transition;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,6 +25,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
+import androidx.transition.Transition;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
@@ -290,7 +290,6 @@ public class Utils {
      * the transition) for the given Transition object to skip the others while it is running on a
      * view hierarchy.
      */
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
     public static void includeChildrenForTransition(
             @NonNull Transition transition, @NonNull ViewGroup parent, @Nullable View... children) {
         outsider:

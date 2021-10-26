@@ -40,11 +40,6 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
-import android.transition.ChangeBounds;
-import android.transition.Fade;
-import android.transition.Transition;
-import android.transition.TransitionManager;
-import android.transition.TransitionSet;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -90,6 +85,12 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.ChangeBounds;
+import androidx.transition.Fade;
+import androidx.transition.Transition;
+import androidx.transition.TransitionListenerAdapter;
+import androidx.transition.TransitionManager;
+import androidx.transition.TransitionSet;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
@@ -103,7 +104,6 @@ import com.liuzhenlin.common.utils.ParallelThreadExecutor;
 import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.TimeUtil;
-import com.liuzhenlin.common.utils.TransitionListenerAdapter;
 import com.liuzhenlin.common.utils.URLUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
@@ -1733,7 +1733,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             final boolean fullscreen = isInFullscreenMode();
             final boolean showing = isControlsShowing();
             if (fullscreen && showing) {
-                if (animate && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                if (animate) {
                     Fade fade = new Fade();
                     Utils.includeChildrenForTransition(fade, mContentView,
                             mTopControlsFrame,
@@ -1886,20 +1886,18 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     }
 
     private void beginControlsFadingTransition(boolean in, boolean unlocked) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Transition transition = new Fade(in ? Fade.IN : Fade.OUT);
-            if (unlocked) {
-                Utils.includeChildrenForTransition(transition, mContentView,
-                        mTopControlsFrame,
-                        mLockUnlockButton, mCameraButton, mVideoCameraButton,
-                        mBottomControlsFrame);
-            } else {
-                Utils.includeChildrenForTransition(transition, mContentView,
-                        mLockUnlockButton,
-                        mBottomControlsFrame);
-            }
-            TransitionManager.beginDelayedTransition(mContentView, transition);
+        Transition transition = new Fade(in ? Fade.IN : Fade.OUT);
+        if (unlocked) {
+            Utils.includeChildrenForTransition(transition, mContentView,
+                    mTopControlsFrame,
+                    mLockUnlockButton, mCameraButton, mVideoCameraButton,
+                    mBottomControlsFrame);
+        } else {
+            Utils.includeChildrenForTransition(transition, mContentView,
+                    mLockUnlockButton,
+                    mBottomControlsFrame);
         }
+        TransitionManager.beginDelayedTransition(mContentView, transition);
     }
 
     private void showTextureView(boolean show) {
@@ -2012,26 +2010,19 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
     @Synthetic void hideCapturedPhotoView(boolean share) {
         if (mCapturedPhotoView != null) {
-            Transition transition = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                transition = (Transition) mCapturedPhotoView.getTag();
-                transition.addListener(new TransitionListenerAdapter() {
-                    @Override
-                    public void onTransitionEnd(Transition transition) {
-                        // Recycling of the bitmap captured for the playing video MUST ONLY be done
-                        // after the transition ends, in case we use a recycled bitmap for drawing.
-                        mCapturedBitmap.recycle();
-                        mCapturedBitmap = null;
-                    }
-                });
-                TransitionManager.beginDelayedTransition(mContentView, transition);
-            }
+            Transition transition = (Transition) mCapturedPhotoView.getTag();
+            transition.addListener(new TransitionListenerAdapter() {
+                @Override
+                public void onTransitionEnd(@NonNull Transition transition) {
+                    // Recycling of the bitmap captured for the playing video MUST ONLY be done
+                    // after the transition ends, in case we use a recycled bitmap for drawing.
+                    mCapturedBitmap.recycle();
+                    mCapturedBitmap = null;
+                }
+            });
+            TransitionManager.beginDelayedTransition(mContentView, transition);
             mContentView.removeView(mCapturedPhotoView);
             mCapturedPhotoView = null;
-            if (transition == null) {
-                mCapturedBitmap.recycle();
-                mCapturedBitmap = null;
-            }
 
             if (share && mEventListener != null) {
                 mEventListener.onShareCapturedVideoPhoto(mSavedPhoto);
@@ -2092,10 +2083,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     || aspectRatio < 1 && oldAspectRatio < 1) {
                 capturedPhotoViewValid = true;
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    TransitionManager.beginDelayedTransition(
-                            content, (Transition) mCapturedPhotoView.getTag());
-                }
+                TransitionManager.beginDelayedTransition(
+                        content, (Transition) mCapturedPhotoView.getTag());
                 mCapturedPhotoView.setVisibility(INVISIBLE);
             } else {
                 capturedPhotoViewValid = false;
@@ -2150,10 +2139,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
                             View cpv = mCapturedPhotoView;
                             if (capturedPhotoViewValid) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                    TransitionManager.beginDelayedTransition(
-                                            content, (Transition) cpv.getTag());
-                                }
+                                TransitionManager.beginDelayedTransition(
+                                        content, (Transition) cpv.getTag());
                                 cpv.setVisibility(VISIBLE);
                             } else {
                                 mCapturedPhotoView = cpv = LayoutInflater.from(mContext).inflate(
@@ -2202,13 +2189,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             }
 
                             if (!capturedPhotoViewValid) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                    Transition transition = new Fade();
-                                    Utils.includeChildrenForTransition(transition, content);
-                                    TransitionManager.beginDelayedTransition(content, transition);
-
-                                    cpv.setTag(transition);
-                                }
+                                Transition transition = new Fade();
+                                Utils.includeChildrenForTransition(transition, content);
+                                TransitionManager.beginDelayedTransition(content, transition);
+                                cpv.setTag(transition);
                                 content.addView(cpv);
                             }
                             mMsgHandler.sendEmptyMessageDelayed(
@@ -2596,16 +2580,14 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }
         });
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Transition transition = new Fade();
-            Utils.includeChildrenForTransition(transition, mContentView,
-                    mTopControlsFrame,
-                    mLockUnlockButton, mCameraButton, mVideoCameraButton,
-                    mBottomControlsFrame,
-                    view);
-            transition.excludeTarget(sv, true);
-            TransitionManager.beginDelayedTransition(mContentView, transition);
-        }
+        Transition transition = new Fade();
+        Utils.includeChildrenForTransition(transition, mContentView,
+                mTopControlsFrame,
+                mLockUnlockButton, mCameraButton, mVideoCameraButton,
+                mBottomControlsFrame,
+                view);
+        transition.excludeTarget(sv, true);
+        TransitionManager.beginDelayedTransition(mContentView, transition);
         videoPlayer.pause(true);
         showControls(false, false);
         mContentView.addView(view);

@@ -20,8 +20,6 @@ import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.transition.ChangeBounds;
-import android.transition.TransitionManager;
 import android.util.Log;
 import android.util.Rational;
 import android.view.LayoutInflater;
@@ -41,6 +39,8 @@ import androidx.core.graphics.drawable.IconCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+import androidx.transition.ChangeBounds;
+import androidx.transition.TransitionManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.util.Synthetic;
@@ -828,8 +828,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 final boolean layoutIsFullscreen = mVideoView.isInFullscreenMode();
                 final boolean lastLayoutIsFullscreen =
                         (mPrivateFlags & PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN) != 0;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
-                        && (mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) != 0
+                if ((mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) != 0
                         && layoutIsFullscreen != lastLayoutIsFullscreen) {
                     TransitionManager.beginDelayedTransition(mVideoView, new ChangeBounds());
                 }
