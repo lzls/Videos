@@ -104,6 +104,7 @@ import com.liuzhenlin.common.utils.ParallelThreadExecutor;
 import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.TimeUtil;
+import com.liuzhenlin.common.utils.TransitionUtils;
 import com.liuzhenlin.common.utils.URLUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
@@ -1735,13 +1736,14 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             if (fullscreen && showing) {
                 if (animate) {
                     Fade fade = new Fade();
-                    Utils.includeChildrenForTransition(fade, mContentView,
+                    TransitionUtils.includeChildrenForTransition(fade, mContentView,
                             mTopControlsFrame,
                             mLockUnlockButton, mCameraButton, mVideoCameraButton,
                             mBottomControlsFrame);
 
                     ChangeBounds cb = new ChangeBounds();
-                    Utils.includeChildrenForTransition(cb, mContentView, mBottomControlsFrame);
+                    TransitionUtils.includeChildrenForTransition(cb, mContentView,
+                            mBottomControlsFrame);
 
                     TransitionManager.beginDelayedTransition(mContentView,
                             new TransitionSet().addTransition(fade).addTransition(cb));
@@ -1830,6 +1832,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             final boolean unlocked = !isLocked$();
             if (animate) {
                 beginControlsFadingTransition(true, unlocked);
+            } else {
+                // End any running transitions if no pending transition is required, to stop
+                // the controls to be shown from still gradually being invisible.
+                endControlsRunningFadingTransition();
             }
             if (unlocked) {
                 mTopControlsFrame.setVisibility(VISIBLE);
@@ -1869,6 +1875,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             final boolean unlocked = !isLocked$();
             if (animate) {
                 beginControlsFadingTransition(false, unlocked);
+            } else {
+                // End any running transitions if no pending transition is required, to stop
+                // the controls to be hidden from still gradually being visible.
+                endControlsRunningFadingTransition();
             }
             if (unlocked) {
                 mTopControlsFrame.setVisibility(GONE);
@@ -1888,16 +1898,20 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     private void beginControlsFadingTransition(boolean in, boolean unlocked) {
         Transition transition = new Fade(in ? Fade.IN : Fade.OUT);
         if (unlocked) {
-            Utils.includeChildrenForTransition(transition, mContentView,
+            TransitionUtils.includeChildrenForTransition(transition, mContentView,
                     mTopControlsFrame,
                     mLockUnlockButton, mCameraButton, mVideoCameraButton,
                     mBottomControlsFrame);
         } else {
-            Utils.includeChildrenForTransition(transition, mContentView,
+            TransitionUtils.includeChildrenForTransition(transition, mContentView,
                     mLockUnlockButton,
                     mBottomControlsFrame);
         }
         TransitionManager.beginDelayedTransition(mContentView, transition);
+    }
+
+    private void endControlsRunningFadingTransition() {
+        TransitionUtils.endRunningTransitions(mContentView);
     }
 
     private void showTextureView(boolean show) {
@@ -2190,7 +2204,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
                             if (!capturedPhotoViewValid) {
                                 Transition transition = new Fade();
-                                Utils.includeChildrenForTransition(transition, content);
+                                TransitionUtils.includeChildrenForTransition(transition, content);
                                 TransitionManager.beginDelayedTransition(content, transition);
                                 cpv.setTag(transition);
                                 content.addView(cpv);
@@ -2581,7 +2595,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         });
 
         Transition transition = new Fade();
-        Utils.includeChildrenForTransition(transition, mContentView,
+        TransitionUtils.includeChildrenForTransition(transition, mContentView,
                 mTopControlsFrame,
                 mLockUnlockButton, mCameraButton, mVideoCameraButton,
                 mBottomControlsFrame,

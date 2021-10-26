@@ -776,6 +776,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         // Disable 'swipe back' in full screen mode
         getSwipeBackLayout().setGestureEnabled(!fullscreen);
 
+        final boolean lastFullscreen = mVideoView.isInFullscreenMode();
+
         showSystemBars(!fullscreen);
         //@formatter:off
         mVideoView.setFullscreenMode(fullscreen,
@@ -786,7 +788,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                                 sStatusHeightInLandscapeOfNotchSupportDevice : sStatusHeight
                             : 0);
         //@formatter:on
-        if (mVideoView.isControlsShowing()) {
+        if (lastFullscreen != fullscreen || mVideoView.isControlsShowing()) {
             mVideoView.showControls(true, false);
         }
         resizeVideoView();

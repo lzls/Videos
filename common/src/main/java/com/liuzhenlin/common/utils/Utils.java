@@ -25,7 +25,6 @@ import androidx.annotation.RequiresApi;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
-import androidx.transition.Transition;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
@@ -283,24 +282,5 @@ public class Utils {
      */
     public static int getAbsoluteHorizontalGravity(@NonNull View parent, int gravity) {
         return getAbsoluteGravity(parent, gravity) & Gravity.HORIZONTAL_GRAVITY_MASK;
-    }
-
-    /**
-     * Includes a set of children of the given `parent` ViewGroup (not necessary to be the root of
-     * the transition) for the given Transition object to skip the others while it is running on a
-     * view hierarchy.
-     */
-    public static void includeChildrenForTransition(
-            @NonNull Transition transition, @NonNull ViewGroup parent, @Nullable View... children) {
-        outsider:
-        for (int i = 0, childCount = parent.getChildCount(); i < childCount; i++) {
-            View child = parent.getChildAt(i);
-            if (children != null) {
-                for (View child2 : children) {
-                    if (child2 == child) continue outsider;
-                }
-            }
-            transition.excludeTarget(child, true);
-        }
     }
 }
