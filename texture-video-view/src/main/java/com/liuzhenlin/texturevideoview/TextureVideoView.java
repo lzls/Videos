@@ -85,7 +85,6 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.transition.ChangeBounds;
 import androidx.transition.Fade;
 import androidx.transition.Transition;
 import androidx.transition.TransitionListenerAdapter;
@@ -97,6 +96,7 @@ import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.transition.MaterialSharedAxis;
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.FileUtils;
@@ -488,7 +488,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     @Synthetic File mSavedPhoto;
     @Synthetic AsyncTask<Void, Void, File> mSaveCapturedPhotoTask;
 
-    private View mClipView;
+    @Synthetic View mClipView;
     @Synthetic AsyncTask<Void, Bitmap, Void> mLoadClipThumbsTask;
 
     private ListPopupWindow mSpinnerListPopup;
@@ -1735,18 +1735,19 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             final boolean showing = isControlsShowing();
             if (fullscreen && showing) {
                 if (animate) {
-                    Fade fade = new Fade();
-                    TransitionUtils.includeChildrenForTransition(fade, mContentView,
+                    Transition topAndMiddle = new MaterialSharedAxis(MaterialSharedAxis.Y, locked);
+                    TransitionUtils.includeChildrenForTransition(topAndMiddle, mContentView,
                             mTopControlsFrame,
                             mLockUnlockButton, mCameraButton, mVideoCameraButton,
                             mBottomControlsFrame);
 
-                    ChangeBounds cb = new ChangeBounds();
-                    TransitionUtils.includeChildrenForTransition(cb, mContentView,
+                    Transition bottom = new MaterialSharedAxis(MaterialSharedAxis.Y, !locked);
+                    TransitionUtils.includeChildrenForTransition(bottom, mContentView,
                             mBottomControlsFrame);
 
                     TransitionManager.beginDelayedTransition(mContentView,
-                            new TransitionSet().addTransition(fade).addTransition(cb));
+                            new TransitionSet().addTransition(topAndMiddle).addTransition(bottom));
+
                 }
                 showControls(false, false);
             }
@@ -2591,20 +2592,33 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 player.pause();
                 player.release();
                 vcv.removeCallbacks(trackProgressRunnable);
+
+                // According to our code, a null mClipView indicates that the clipping view
+                // is being removed from the content, so that we must remove this callback now,
+                // because this callback will be called many times during the transition targets
+                // sliding in on the Z axis. This can avoid accidentally closing the video
+                // to be played and this issue is a little difficult to figure out.
+                if (mClipView == null) {
+                    holder.removeCallback(this);
+                }
             }
         });
 
-        Transition transition = new Fade();
+        beginContentTransitionBeforeAddingOrRemovingClipView(view, true);
+        videoPlayer.pause(true);
+        showControls(false, false);
+        mContentView.addView(view);
+    }
+
+    private void beginContentTransitionBeforeAddingOrRemovingClipView(View clipView, boolean adding) {
+        Transition transition = new MaterialSharedAxis(MaterialSharedAxis.Z, adding);
         TransitionUtils.includeChildrenForTransition(transition, mContentView,
                 mTopControlsFrame,
                 mLockUnlockButton, mCameraButton, mVideoCameraButton,
                 mBottomControlsFrame,
-                view);
-        transition.excludeTarget(sv, true);
+                clipView);
+        transition.excludeTarget(R.id.surfaceView, true);
         TransitionManager.beginDelayedTransition(mContentView, transition);
-        videoPlayer.pause(true);
-        showControls(false, false);
-        mContentView.addView(view);
     }
 
     @Synthetic void hideClipView(boolean fromUser, boolean force) {
@@ -2613,8 +2627,15 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             if (dialog != null) {
                 dialog.cancel();
             }
-            mContentView.removeView(mClipView);
+
+            // Cache mClipView and set it to null in advance since we will check it in the
+            // previously registered SurfaceHolder.Callback soon after, to see whether the
+            // clipping view is being removed from the content.
+            View clipView = mClipView;
             mClipView = null;
+            beginContentTransitionBeforeAddingOrRemovingClipView(clipView, false);
+
+            mContentView.removeView(clipView);
             if (mLoadClipThumbsTask != null) {
                 mLoadClipThumbsTask.cancel(false);
                 mLoadClipThumbsTask = null;
@@ -2623,7 +2644,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             if (mVideoPlayer != null) {
                 mVideoPlayer.play(fromUser);
             }
-            showControls(true); // Make sure the controls will be showed immediately
+            showControls(true, false); // Make sure the controls will be showed immediately
         }
     }
 
