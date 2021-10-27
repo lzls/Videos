@@ -67,6 +67,13 @@ public class GestureImageView extends AppCompatImageView {
     /*synthetic*/ float mDoubleTapMagnifiedImageScale;
 
     /**
+     * A threshold, the minimum ratio of the ratio of the view width to the picture width to
+     * the ratio of the view height to the picture height, that a picture to be considered as
+     * a long picture must exceed.
+     */
+    protected static final float PIIIC_THRESHOLD = 1.1f;
+
+    /**
      * A multiplier of the maximum scale for the image {@link #mImageMaxScale}, means that
      * the image can be temporarily over-scaled to a scale
      * {@value #IMAGE_OVERSCALE_TIMES_ON_MAXIMIZED} times the maximum one by the user.
@@ -320,29 +327,31 @@ public class GestureImageView extends AppCompatImageView {
         mFitCenterImageScale = Math.min(mFitWidthImageScale, (float) height / imgHeight);
         mImageMinScale = mFitCenterImageScale / 5f;
         mImageMaxScale = mFitCenterImageScale * 5f;
-        if (mFitWidthImageScale == mFitCenterImageScale) {
-            mDoubleTapMagnifiedImageScale = mImageMaxScale / 2f;
-        } else /*if (fitWidthScale > fitCenterScale)*/ {
+
+        final boolean piiic = mFitWidthImageScale >= mFitCenterImageScale * PIIIC_THRESHOLD;
+        if (piiic) {
             mDoubleTapMagnifiedImageScale = mFitWidthImageScale;
             // Make sure the mImageMaxScale is not less than 3 times that of mDoubleTapMagnifiedImageScale,
             // preferring to have the maximum scale for the image 5 times larger than mFitCenterImageScale.
             if (mImageMaxScale < mDoubleTapMagnifiedImageScale * 3f) {
                 mImageMaxScale = mDoubleTapMagnifiedImageScale * 3f;
             }
+        } else {
+            mDoubleTapMagnifiedImageScale = mImageMaxScale / 2f;
         }
 
         // We need to ensure below will work normally if an other image has been set for this view,
         // so just reset the current matrix to its initial state.
         mImageMatrix.reset();
-        if (mFitWidthImageScale == mFitCenterImageScale) {
+        if (piiic) {
+            // Scales the image to fit exactly the width of the view with the top edge showed to the user
+            mImageMatrix.postScale(mFitWidthImageScale, mFitWidthImageScale, 0, 0);
+        } else {
             // Translates the image to the center of the current view
             mImageMatrix.postTranslate((width - imgWidth) / 2f, (height - imgHeight) / 2f);
             // Proportionally scales the image to make its width equal its available width
             // or/and height equal its available height.
             mImageMatrix.postScale(mFitWidthImageScale, mFitWidthImageScale, width / 2f, height / 2f);
-        } else /*if (fitWidthScale > fitCenterScale)*/ {
-            // Scales the image to fit exactly the width of the view with the top edge showed to the user
-            mImageMatrix.postScale(mFitWidthImageScale, mFitWidthImageScale, 0, 0);
         }
         setImageMatrix(mImageMatrix);
     }
