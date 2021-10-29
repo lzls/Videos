@@ -43,7 +43,9 @@ import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.ThemeUtils
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
+import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
+import com.liuzhenlin.common.windowhost.FocusObservableDialog
 import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
 import com.liuzhenlin.swipeback.SwipeBackFragment
@@ -1139,11 +1141,11 @@ class LocalVideoListFragment : SwipeBackFragment(),
                 .placeholder(R.drawable.ic_default_thumb)
                 .into(thumbImage)
 
-        val editText = view.findViewById<EditText>(R.id.editor_rename)
+        val editText =
+            view.findViewById<OnBackPressedPreImeEventInterceptableEditText>(R.id.editor_rename)
         editText.hint = name
         editText.setText(name.replace(postfix, EMPTY_STRING))
-        editText.setSelection(editText.text.length)
-        editText.post { UiUtils.showSoftInput(editText) }
+        editText.setSelection(editText.text!!.length)
         editText.tag = postfix
 
         val cancelButton = view.findViewById<TextView>(R.id.btn_cancel_renameVideoListItemDialog)
@@ -1153,15 +1155,19 @@ class LocalVideoListFragment : SwipeBackFragment(),
         completeButton.setOnClickListener(this)
         completeButton.tag = editText
 
-        mRenameItemDialog = AppCompatDialog(context, R.style.DialogStyle_MinWidth_NoTitle)
-        mRenameItemDialog!!.setContentView(view)
-        mRenameItemDialog!!.show()
-        mRenameItemDialog!!.setCancelable(true)
-        mRenameItemDialog!!.setCanceledOnTouchOutside(false)
-        mRenameItemDialog!!.setOnDismissListener {
-            mRenameItemDialog = null
-            glideRequestManager.clear(thumbImage)
-        }
+        mRenameItemDialog = FocusObservableDialog(context, R.style.DialogStyle_MinWidth_NoTitle)
+            .apply {
+                setContentView(view)
+                show()
+                setCancelable(true)
+                setCanceledOnTouchOutside(false)
+                setOnDismissListener {
+                    mRenameItemDialog = null
+                    glideRequestManager.clear(thumbImage)
+                }
+
+                UiUtils.showSoftInputForEditingViewsAccordingly(this, editText)
+            }
 
         val window = mRenameItemDialog!!.window!!
         val decorView = window.decorView as ViewGroup

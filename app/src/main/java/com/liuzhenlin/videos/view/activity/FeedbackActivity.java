@@ -201,7 +201,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             @Override
             public void onScrollStateChange(int edge, int state) {
                 if (oldState == SwipeBackLayout.STATE_IDLE && state != SwipeBackLayout.STATE_IDLE) {
-                    UiUtils.hideSoftInput(window);
+                    UiUtils.hideSoftInput(window, true);
                 }
                 oldState = state;
             }

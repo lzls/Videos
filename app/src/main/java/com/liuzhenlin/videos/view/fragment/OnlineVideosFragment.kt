@@ -14,16 +14,17 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.app.AppCompatDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.textfield.TextInputEditText
 import com.liuzhenlin.common.utils.URLUtils
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
+import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableTextInputEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
+import com.liuzhenlin.common.windowhost.FocusObservableDialog
 import com.liuzhenlin.floatingmenu.FloatingMenu
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
 import com.liuzhenlin.videos.R
@@ -140,8 +141,8 @@ class OnlineVideosFragment : Fragment(), View.OnClickListener,
 
             R.id.btn_cancel_openVideoLinkDialog -> mOpenVideoLinkDialog!!.cancel()
             R.id.btn_ok_openVideoLinkDialog -> {
-                val linkTil = mOpenVideoLinkDialog!!.window!!.decorView.tag as TextInputLayout
-                val link = linkTil.editText!!.text.trim().toString()
+                val linkTiet = mOpenVideoLinkDialog!!.window!!.decorView.tag as TextInputEditText
+                val link = linkTiet.text!!.trim().toString()
                 if (link.isEmpty()) {
                     Toast.makeText(v.context,
                             R.string.pleaseInputVideoLinkFirst, Toast.LENGTH_SHORT).show()
@@ -149,7 +150,7 @@ class OnlineVideosFragment : Fragment(), View.OnClickListener,
                 }
                 if (link.matches(URLUtils.PATTERN_WEB_URL.toRegex())) {
                     v.context.playVideo(link,
-                            (linkTil.tag as TextInputLayout).editText!!.text.trim().toString()
+                            (linkTiet.tag as TextInputEditText).text!!.trim().toString()
                                     .run {
                                         if (isEmpty()) null else this
                                     })
@@ -161,21 +162,25 @@ class OnlineVideosFragment : Fragment(), View.OnClickListener,
     }
 
     private fun showOpenVideoLinkDialog() {
-        val dialog = AppCompatDialog(contextThemedFirst, R.style.DialogStyle_MinWidth_NoTitle)
+        val dialog = FocusObservableDialog(contextThemedFirst, R.style.DialogStyle_MinWidth_NoTitle)
         dialog.setContentView(R.layout.dialog_open_video_link)
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(false)
         dialog.show()
 
-        val til_videoTitle = dialog.findViewById<TextInputLayout>(R.id.textinput_videoTitle)!!
-        til_videoTitle.postDelayed({ UiUtils.showSoftInput(til_videoTitle) }, 256)
+        val tiet_videoTitle =
+            dialog.findViewById<OnBackPressedPreImeEventInterceptableTextInputEditText>(
+                R.id.textinput_videoTitle)!!
 
-        val til_videoLink = dialog.findViewById<TextInputLayout>(R.id.textinput_videoLink)!!
-        til_videoLink.tag = til_videoTitle
+        val tiet_videoLink = dialog.findViewById<
+                OnBackPressedPreImeEventInterceptableTextInputEditText>(R.id.textinput_videoLink)!!
+        tiet_videoLink.tag = tiet_videoTitle
+
+        UiUtils.showSoftInputForEditingViewsAccordingly(dialog, tiet_videoTitle, tiet_videoLink)
 
         dialog.findViewById<View>(R.id.btn_cancel_openVideoLinkDialog)!!.setOnClickListener(this)
         dialog.findViewById<View>(R.id.btn_ok_openVideoLinkDialog)!!.setOnClickListener(this)
-        dialog.window!!.decorView.tag = til_videoLink
+        dialog.window!!.decorView.tag = tiet_videoLink
         dialog.setOnDismissListener { mOpenVideoLinkDialog = null }
         mOpenVideoLinkDialog = dialog
     }

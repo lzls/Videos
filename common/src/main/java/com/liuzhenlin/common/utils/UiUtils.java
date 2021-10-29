@@ -25,6 +25,8 @@ import androidx.core.view.ViewCompat;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.liuzhenlin.common.R;
+import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableView;
+import com.liuzhenlin.common.windowhost.FocusObservableWindowHost;
 
 import java.lang.reflect.Field;
 
@@ -72,29 +74,129 @@ public class UiUtils {
         }
     }
 
-    public static void showSoftInput(@NonNull View view) {
-        InputMethodManager imm = (InputMethodManager)
-                view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null && (view.hasFocus() || view.requestFocus())) {
-            imm.showSoftInput(view, 0);
+    public static void showSoftInputForEditingViewsAccordingly(
+            @NonNull FocusObservableWindowHost editingViewsWindowHost,
+            @NonNull OnBackPressedPreImeEventInterceptableView... editingViews) {
+        final boolean[] hasFocusedView = {false};
+        for (OnBackPressedPreImeEventInterceptableView editingView : editingViews) {
+            View editView = (View) editingView;
+            editView.setFocusableInTouchMode(true);
+            if (editView.hasFocus()) {
+                hasFocusedView[0] = true;
+            }
+
+            ShowSoftInputJob showSoftInputJob =
+                    new ShowSoftInputJob(editingViewsWindowHost, editView);
+            if (editingViewsWindowHost.hasWindowFocus() && editView.hasFocus()) {
+                showSoftInputJob.schedule();
+            }
+            editingViewsWindowHost.addOnWindowFocusChangedListener(hasFocus -> {
+                if (hasFocus && editView.hasFocus()) {
+                    showSoftInputJob.schedule();
+                } else {
+                    showSoftInputJob.cancel();
+//                    hideSoftInput(editView, false);
+                }
+            });
+            editView.setOnFocusChangeListener((v, hasFocus) -> {
+                hasFocusedView[0] = hasFocus;
+                if (hasFocus) {
+                    if (editingViewsWindowHost.hasWindowFocus()) {
+                        showSoftInputJob.schedule();
+                    }
+                } else {
+                    showSoftInputJob.cancel();
+                    v.post(() -> {
+                        if (!hasFocusedView[0]) {
+                            hideSoftInput(v, false);
+                        }
+                    });
+                }
+            });
+            editingView.setOnBackPressedPreImeListener(() -> {
+                showSoftInputJob.cancel();
+                return hideSoftInput(editView, true);
+            });
         }
     }
 
-    public static void hideSoftInput(@NonNull Window window) {
-        View focus = window.getCurrentFocus();
-        if (focus != null) {
-            hideSoftInput(focus);
-        }
-    }
+    private static final class ShowSoftInputJob implements Runnable {
 
-    public static void hideSoftInput(@NonNull View focus) {
-        if (focus.hasFocus()) {
-            InputMethodManager imm = (InputMethodManager)
-                    focus.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null && imm.hideSoftInputFromWindow(focus.getWindowToken(), 0)) {
-                focus.clearFocus();
+        final FocusObservableWindowHost host;
+        final View view;
+
+        int retryTimes;
+        static final int MAX_SHOW_SOFT_INPUT_RETRY_TIMES = 10;
+
+        boolean pending = false;
+
+        ShowSoftInputJob(FocusObservableWindowHost host, View view) {
+            this.host = host;
+            this.view = view;
+        }
+
+        @Override
+        public void run() {
+            if (retryTimes++ <= MAX_SHOW_SOFT_INPUT_RETRY_TIMES
+                    && host.hasWindowFocus() && view.hasFocus()
+                    && !showSoftInput(view, false)) {
+                view.post(this);
+            }
+            pending = false;
+        }
+
+        void schedule() {
+            retryTimes = 0;
+            if (!pending) {
+                pending = true;
+                view.post(this);
             }
         }
+
+        void cancel() {
+            if (pending) {
+                view.removeCallbacks(this);
+                pending = false;
+            }
+        }
+    }
+
+    public static boolean showSoftInput(@NonNull View view, boolean takeFocus) {
+        InputMethodManager imm = (InputMethodManager)
+                view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            if (imm.showSoftInput(view, 0)) {
+                if (takeFocus && !view.hasFocus()) {
+                    view.requestFocus();
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean hideSoftInput(@NonNull Window window, boolean clearTargetViewFocus) {
+        View focus = window.getCurrentFocus();
+        if (focus != null) {
+            return hideSoftInput(focus, clearTargetViewFocus);
+        }
+        return false;
+    }
+
+    public static boolean hideSoftInput(@NonNull View view, boolean clearFocusIfViewIsTheTarget) {
+        InputMethodManager imm = (InputMethodManager)
+                view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            final boolean viewIsInputMethodTarget = imm.isActive(view);
+            final boolean softInputHidden = imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            if (softInputHidden
+                    && clearFocusIfViewIsTheTarget && viewIsInputMethodTarget
+                    && view.isFocused()) {
+                view.clearFocus();
+            }
+            return softInputHidden;
+        }
+        return false;
     }
 
     public static boolean isSoftInputShown(@NonNull Window window) {

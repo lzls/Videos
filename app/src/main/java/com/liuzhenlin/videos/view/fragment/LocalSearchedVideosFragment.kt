@@ -180,7 +180,7 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
     override fun onTouch(v: View, event: MotionEvent) = when {
         v === view -> {
             if (event.action == MotionEvent.ACTION_UP) {
-                UiUtils.hideSoftInput(mSearchSrcEditText)
+                UiUtils.hideSoftInput(mSearchSrcEditText, true)
                 requireFragmentManager().popBackStackImmediate()
             }
             false
@@ -190,7 +190,7 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                 mDownX = Utils.roundFloat(event.rawX)
                 mDownY = Utils.roundFloat(event.rawY)
 
-                UiUtils.hideSoftInput(mSearchSrcEditText)
+                UiUtils.hideSoftInput(mSearchSrcEditText, true)
                 mRecyclerView.requestFocus()
             }
             false
@@ -200,7 +200,7 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
 
     override fun onClick(v: View) = when {
         v.id == R.id.btn_cancelSearch -> {
-            UiUtils.hideSoftInput(mSearchSrcEditText)
+            UiUtils.hideSoftInput(mSearchSrcEditText, true)
             requireFragmentManager().popBackStackImmediate()
             Unit
         }

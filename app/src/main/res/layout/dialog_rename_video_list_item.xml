@@ -52,7 +52,7 @@
         android:src="@drawable/ic_default_thumb"
         android:contentDescription="@string/videoThumbnail" />
 
-    <EditText
+    <com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
         android:id="@+id/editor_rename"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -62,5 +62,10 @@
         android:textSize="@dimen/primary_text_size"
         android:singleLine="true"
         android:gravity="center_horizontal"
-        tools:ignore="Autofill,HardcodedText" />
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        tools:ignore="Autofill,HardcodedText">
+
+        <requestFocus />
+    </com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText>
 </LinearLayout>
