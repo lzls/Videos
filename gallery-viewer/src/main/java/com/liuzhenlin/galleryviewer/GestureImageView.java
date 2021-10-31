@@ -5,8 +5,6 @@
 
 package com.liuzhenlin.galleryviewer;
 
-import android.animation.PropertyValuesHolder;
-import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -29,6 +27,8 @@ import android.view.animation.Interpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
+import androidx.core.util.Predicate;
+import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 
 /**
@@ -138,57 +138,18 @@ public class GestureImageView extends AppCompatImageView {
      */
     protected static final float RATIO_FLING_OFFSET_TO_VELOCITY = 1f / 10f;
 
-    /** Maximum image translation distance a fling gesture can produce */
-    private final float mHalfOfMaxFlingDistance; // 400 dp
-
     /**
      * The distance by which this magnified image will be over-translated when we fling it
      * to some end, as measured in pixels.
      */
     /*package*/ final float mImageOverTranslation; // 25dp
 
-    /*synthetic*/ float mOverTranslationX, mOverTranslationY;
-    private final Runnable mImageSpringBackRunnable = new Runnable() {
-        @Override
-        public void run() {
-            // Ensures the over-translation animation to be finished before we bounce the image back
-            if (mImageTransformer != null && mImageTransformer.isRunning()) {
-                mImageTransformer.end();
-            }
-
-            mImageMatrix.getValues(mImageMatrixValues);
-            final float scaleX = mImageMatrixValues[Matrix.MSCALE_X];
-            final float scaleY = mImageMatrixValues[Matrix.MSCALE_Y];
-            final float transX = mImageMatrixValues[Matrix.MTRANS_X];
-            final float transY = mImageMatrixValues[Matrix.MTRANS_Y];
-            transformImage(scaleX, scaleY, scaleX, scaleY, 0, 0,
-                    transX, transY, transX - mOverTranslationX, transY - mOverTranslationY,
-                    DEFAULT_DURATION_TRANSFORM_IMAGE);
-        }
-    };
-
     protected static final Interpolator sDecelerateInterpolator = new DecelerateInterpolator();
 
-    /** Minimum time that {@link #mImageTransformer} will last for, in milliseconds. */
-    private static final int BASE_DURATION_TRANSFORM_IMAGE = 128;
-    /** Maximum time that {@link #mImageTransformer} can last for, in milliseconds. */
-    private static final int MAX_DURATION_TRANSFORM_IMAGE = 300;
     /** Frequently used duration for the image transformation animator */
     public static final int DEFAULT_DURATION_TRANSFORM_IMAGE = 256; // ms
 
-    private static final String PROPERTY_IMAGE_SCALES = "image_scales";
-    private static final String PROPERTY_IMAGE_TRANSLATIONS = "image_translations";
-
-    /*synthetic*/ ValueAnimator mImageTransformer;
-    private PointF mFromScales, mToScales;
-    private PointF mFromTranslations, mToTranslations;
-    private float mLastAnimatedTransX, mLastAnimatedTransY;
-
-    /**
-     * The scaling pivot point (relative to current view) of the image
-     * while {@link #mImageTransformer} is running to scale it.
-     */
-    private PointF mImageScalingPivot;
+    private ImageTransformer mImageTransformer;
 
     public GestureImageView(Context context) {
         this(context, null);
@@ -215,8 +176,14 @@ public class GestureImageView extends AppCompatImageView {
         final float dp = getResources().getDisplayMetrics().density;
         mMaximumFlingVelocity = ViewConfiguration.getMaximumFlingVelocity() * dp;
         mMinimumFlingVelocity = 200f * dp;
-        mHalfOfMaxFlingDistance = mMaximumFlingVelocity * RATIO_FLING_OFFSET_TO_VELOCITY / 2f;
         mImageOverTranslation = 25f * dp;
+    }
+
+    private ImageTransformer getImageTransformer() {
+        if (mImageTransformer == null) {
+            mImageTransformer = new ImageTransformer(getContext());
+        }
+        return mImageTransformer;
     }
 
     /**
@@ -317,8 +284,8 @@ public class GestureImageView extends AppCompatImageView {
         if (d == null) return;
 
         // Gets the available width and height for the image
-        final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
+        final int width = getDrawingWidth();
+        final int height = getDrawingHeight();
         // Gets the width and height of the image
         final int imgWidth = d.getIntrinsicWidth();
         final int imgHeight = d.getIntrinsicHeight();
@@ -466,8 +433,8 @@ public class GestureImageView extends AppCompatImageView {
                         break;
                     }
 
-                    final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-                    final int height = getHeight() - getPaddingTop() - getPaddingBottom();
+                    final int width = getDrawingWidth();
+                    final int height = getDrawingHeight();
 
                     resolveImageBounds(mImageMatrix);
                     mImageMatrix.getValues(mImageMatrixValues);
@@ -486,7 +453,8 @@ public class GestureImageView extends AppCompatImageView {
                         computeImageTranslationByOnScaled(mTmpMatrix, mTmpPointF);
                         mTmpPointF.offset(translationX, translationY);
 
-                        transformImage(scaleX, scaleY, mImageMaxScale, mImageMaxScale,
+                        startImageScaleAndTranslate(
+                                scaleX, scaleY, mImageMaxScale, mImageMaxScale,
                                 width / 2f, height / 2f,
                                 translationX, translationY, mTmpPointF.x, mTmpPointF.y,
                                 DEFAULT_DURATION_TRANSFORM_IMAGE);
@@ -503,7 +471,8 @@ public class GestureImageView extends AppCompatImageView {
                         computeImageTranslationByOnScaled(mTmpMatrix, mTmpPointF);
                         mTmpPointF.offset(translationX, translationY);
 
-                        transformImage(scaleX, scaleY, mFitCenterImageScale, mFitCenterImageScale,
+                        startImageScaleAndTranslate(
+                                scaleX, scaleY, mFitCenterImageScale, mFitCenterImageScale,
                                 mImageBounds.left, mImageBounds.top,
                                 translationX, translationY, mTmpPointF.x, mTmpPointF.y,
                                 DEFAULT_DURATION_TRANSFORM_IMAGE);
@@ -519,58 +488,17 @@ public class GestureImageView extends AppCompatImageView {
                     // touching the screen.
                     if ((Math.abs(vx) >= mMinimumFlingVelocity
                             || Math.abs(vy) >= mMinimumFlingVelocity)) {
-                        final float imgWidth = mImageBounds.width();
-                        final float imgHeight = mImageBounds.height();
-
-                        float dx = vx * RATIO_FLING_OFFSET_TO_VELOCITY;
-                        float dy = vy * RATIO_FLING_OFFSET_TO_VELOCITY;
-                        /*
-                         * Adjust dx and dy to make the image translated under our control
-                         * (finally let it fit current view).
-                         *
-                         * @see #computeImageTranslationByOnScaled(Matrix)
-                         */
-                        float overTranslationX = 0, overTranslationY = 0;
-                        if (imgWidth > width) {
-                            if (mImageBounds.left + dx >= 0) {
-                                if (mImageBounds.left < 0)
-                                    overTranslationX = mImageOverTranslation;
-                                dx = -mImageBounds.left + overTranslationX;
-                            } else if (mImageBounds.right + dx <= width) {
-                                if (mImageBounds.right > width)
-                                    overTranslationX = -mImageOverTranslation;
-                                dx = width - mImageBounds.right + overTranslationX;
-                            }
-                        } else {
-                            dx = (width + imgWidth) / 2f - mImageBounds.right;
-                        }
-                        if (imgHeight > height) {
-                            if (mImageBounds.top + dy >= 0) {
-                                if (mImageBounds.top < 0)
-                                    overTranslationY = mImageOverTranslation;
-                                dy = -mImageBounds.top + overTranslationY;
-                            } else if (mImageBounds.bottom + dy <= height) {
-                                if (mImageBounds.bottom > height)
-                                    overTranslationY = -mImageOverTranslation;
-                                dy = height - mImageBounds.bottom + overTranslationY;
-                            }
-                        } else {
-                            dy = (height + imgHeight) / 2f - mImageBounds.bottom;
-                        }
-
-                        final float transitionX = translationX + dx;
-                        final float transitionY = translationY + dy;
-                        final float finalX = transitionX - overTranslationX;
-                        final float finalY = transitionY - overTranslationY;
-                        startImageOverScrollAndSpringBackInternal(scaleX, scaleY,
-                                translationX, translationY, finalX, finalY, transitionX, transitionY);
+                        cancelImageTransformations();
+                        getImageTransformer().fling(translationX, translationY, vx, vy,
+                                width, height, mImageBounds.width(), mImageBounds.height());
                         break;
                     }
                     // Not else!
                     // Here regard it as a normal scroll
                     computeImageTranslationByOnScaled(mImageMatrix, mTmpPointF);
                     mTmpPointF.offset(translationX, translationY);
-                    transformImage(scaleX, scaleY, scaleX, scaleY, 0, 0,
+                    startImageScaleAndTranslate(
+                            scaleX, scaleY, scaleX, scaleY, 0, 0,
                             translationX, translationY, mTmpPointF.x, mTmpPointF.y,
                             DEFAULT_DURATION_TRANSFORM_IMAGE);
                     break;
@@ -671,7 +599,6 @@ public class GestureImageView extends AppCompatImageView {
 
         @Override
         public boolean onDoubleTap(MotionEvent e) {
-            cancelImageTransformations();
             ensureImageMatrix();
 
             mImageMatrix.getValues(mImageMatrixValues);
@@ -698,7 +625,8 @@ public class GestureImageView extends AppCompatImageView {
             computeImageTranslationByOnScaled(mTmpMatrix, mTmpPointF);
             mTmpPointF.offset(translationX, translationY);
 
-            transformImage(scaleX, scaleY, toScaleX, toScaleY, pivotX, pivotY,
+            startImageScaleAndTranslate(
+                    scaleX, scaleY, toScaleX, toScaleY, pivotX, pivotY,
                     translationX, translationY, mTmpPointF.x, mTmpPointF.y,
                     DEFAULT_DURATION_TRANSFORM_IMAGE);
             return true;
@@ -761,8 +689,8 @@ public class GestureImageView extends AppCompatImageView {
      * @param out    A PointF to receive the horizontal and the vertical displacements
      */
     public void computeImageTranslationByOnScaled(@NonNull Matrix matrix, @NonNull PointF out) {
-        final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
+        final int width = getDrawingWidth();
+        final int height = getDrawingHeight();
 
         float dx = 0, dy = 0;
         resolveImageBounds(matrix);
@@ -806,52 +734,62 @@ public class GestureImageView extends AppCompatImageView {
      *                     is finished and springback is about to happen.
      * @param transitionDy Displacement of the image along the y axis in all when overscroll
      *                     is finished and springback is about to happen.
+     * @deprecated Use {@link #startImageOverScrollAndSpringBack(float, float, int)} instead.
+     * The {@code dx} and {@code dy} currently are ignored.
      */
+    @Deprecated()
     public void startImageOverScrollAndSpringBack(
             float dx, float dy, float transitionDx, float transitionDy) {
-        if (getDrawable() == null) return;
-
-        cancelImageTransformations();
-
-        getImageMatrix().getValues(mImageMatrixValues);
-        final float scaleX = mImageMatrixValues[Matrix.MSCALE_X];
-        final float scaleY = mImageMatrixValues[Matrix.MSCALE_Y];
-        final float startX = mImageMatrixValues[Matrix.MTRANS_X];
-        final float startY = mImageMatrixValues[Matrix.MTRANS_Y];
-        final float finalX = startX + dx;
-        final float finalY = startY + dy;
-        final float transitionX = startX + transitionDx;
-        final float transitionY = startY + transitionDy;
-
-        startImageOverScrollAndSpringBackInternal(scaleX, scaleY,
-                startX, startY, finalX, finalY, transitionX, transitionY);
+        startImageOverScrollAndSpringBack(transitionDx, transitionDy,
+                DEFAULT_DURATION_TRANSFORM_IMAGE);
     }
 
-    private void startImageOverScrollAndSpringBackInternal(
-            float currScaleX, float currScaleY,
-            float startX, float startY,
-            float finalX, float finalY,
-            float transitionX, float transitionY) {
-        final float absDx = Math.abs(transitionX - startX);
-        final float absDy = Math.abs(transitionY - startY);
-        final float addedDistance = absDx + absDy;
-        final float xweight = absDx / addedDistance;
-        final float yweight = absDy / addedDistance;
-        final float xduration = Math.min(MAX_DURATION_TRANSFORM_IMAGE,
-                (1 + absDx / mHalfOfMaxFlingDistance) * BASE_DURATION_TRANSFORM_IMAGE);
-        final float yduration = Math.min(MAX_DURATION_TRANSFORM_IMAGE,
-                (1 + absDy / mHalfOfMaxFlingDistance) * BASE_DURATION_TRANSFORM_IMAGE);
-        final int duration = (int) (xduration * xweight + yduration * yweight + 0.5f);
-
-        transformImage(currScaleX, currScaleY, currScaleX, currScaleY, 0, 0,
-                startX, startY, transitionX, transitionY,
-                duration);
-
-        mOverTranslationX = transitionX - finalX;
-        mOverTranslationY = transitionY - finalY;
-        if (mOverTranslationX != 0 || mOverTranslationY != 0) {
-            postDelayed(mImageSpringBackRunnable, duration);
+    /**
+     * Call this when you want to make the image spring back into a valid coordinate range
+     * following an overscroll.
+     *
+     * @param dx       Total displacement of the image along the x axis when overscroll is finished
+     *                 and springback is about to happen.
+     * @param dy       Total displacement of the image along the y axis when overscroll is finished
+     *                 and springback is about to happen.
+     * @param duration specify how long the overscroll will last for, in milliseconds.
+     */
+    public void startImageOverScrollAndSpringBack(float dx, float dy, int duration) {
+        if (getDrawable() == null || dx == 0 && dy == 0) {
+            return;
         }
+
+        cancelImageTransformations();
+        ensureImageMatrix();
+
+        final int width = getDrawingWidth();
+        final int height = getDrawingHeight();
+
+        resolveImageBounds(mImageMatrix);
+        final float imgWidth = mImageBounds.width();
+        final float imgHeight = mImageBounds.height();
+
+        mImageMatrix.getValues(mImageMatrixValues);
+        final float startX = mImageMatrixValues[Matrix.MTRANS_X];
+        final float startY = mImageMatrixValues[Matrix.MTRANS_Y];
+        final float overscrollX = startX + dx;
+        final float overscrollY = startY + dy;
+
+        getImageTransformer().startOverScrollAndSpringBack(startX, startY, overscrollX, overscrollY,
+                width, height, imgWidth, imgHeight, duration);
+    }
+
+    /**
+     * @deprecated Use {@link #startImageScaleAndTranslate(float, float, float, float,
+     * float, float, float, float, float, float, int)} instead.
+     */
+    @Deprecated
+    public void transformImage(
+            float fromScaleX, float fromScaleY, float toScaleX, float toScaleY,
+            float pivotX, float pivotY, float fromX, float fromY, float toX, float toY,
+            int duration) {
+        startImageScaleAndTranslate(fromScaleX, fromScaleY, toScaleX, toScaleY,
+                pivotX, pivotY, fromX, fromY, toX, toY, duration);
     }
 
     /**
@@ -869,62 +807,218 @@ public class GestureImageView extends AppCompatImageView {
      * @param toY        the final translation y for the image to translate to
      * @param duration   the length of the animation, in milliseconds. This value cannot be negative.
      */
-    public void transformImage(
+    public void startImageScaleAndTranslate(
             float fromScaleX, float fromScaleY, float toScaleX, float toScaleY,
             float pivotX, float pivotY, float fromX, float fromY, float toX, float toY,
             int duration) {
-        if (getDrawable() == null ||
-                fromScaleX == toScaleX && fromScaleY == toScaleY && fromX == toX && fromY == toY) {
+        if (getDrawable() == null
+                || fromScaleX == toScaleX && fromScaleY == toScaleY && fromX == toX && fromY == toY) {
             return;
         }
-        initOrCancelTransformerIfNeeded();
+        cancelImageTransformations();
         ensureImageMatrix();
-        mFromScales.set(fromScaleX, fromScaleY);
-        mToScales.set(toScaleX, toScaleY);
-        mImageScalingPivot.set(pivotX, pivotY);
-        mFromTranslations.set(fromX, fromY);
-        mToTranslations.set(toX, toY);
-        mLastAnimatedTransX = fromX;
-        mLastAnimatedTransY = fromY;
-        mImageTransformer.setDuration(duration).start();
+        getImageTransformer().startScaleAndTranslate(fromScaleX, fromScaleY, toScaleX, toScaleY,
+                pivotX, pivotY, fromX, fromY, toX, toY, duration);
     }
 
-    private void initOrCancelTransformerIfNeeded() {
-        if (mImageTransformer != null) {
-            if (mImageTransformer.isRunning()) {
-                mImageTransformer.cancel();
-            }
+    /**
+     * Start translating image based on a fling gesture. The distance traveled will
+     * depend on the initial velocity of the fling.
+     */
+    public void flingImage(float velocityX, float velocityY) {
+        if (getDrawable() == null
+                || velocityX < mMinimumFlingVelocity && velocityY < mMinimumFlingVelocity) {
             return;
         }
 
-        mFromScales = new PointF();
-        mToScales = new PointF();
-        mImageScalingPivot = new PointF();
-        mFromTranslations = new PointF();
-        mToTranslations = new PointF();
-        mImageTransformer = ValueAnimator.ofPropertyValuesHolder(
-                PropertyValuesHolder.ofObject(PROPERTY_IMAGE_SCALES,
-                        new PointFEvaluator(), mFromScales, mToScales),
-                PropertyValuesHolder.ofObject(PROPERTY_IMAGE_TRANSLATIONS,
-                        new PointFEvaluator(), mFromTranslations, mToTranslations));
-        mImageTransformer.setInterpolator(sDecelerateInterpolator);
-        mImageTransformer.addUpdateListener(animation -> {
-            mImageMatrix.getValues(mImageMatrixValues);
-            final float scaleX = mImageMatrixValues[Matrix.MSCALE_X];
-            final float scaleY = mImageMatrixValues[Matrix.MSCALE_Y];
+        cancelImageTransformations();
+        ensureImageMatrix();
 
-            PointF scales = (PointF) animation.getAnimatedValue(PROPERTY_IMAGE_SCALES);
-            PointF translations = (PointF) animation.getAnimatedValue(PROPERTY_IMAGE_TRANSLATIONS);
-            mImageMatrix.postScale(scales.x / scaleX, scales.y / scaleY,
-                    mImageScalingPivot.x, mImageScalingPivot.y);
-            mImageMatrix.postTranslate(
-                    (translations.x - mLastAnimatedTransX) * (scales.x / mToScales.x),
-                    (translations.y - mLastAnimatedTransY) * (scales.y / mToScales.y));
-            setImageMatrix(mImageMatrix);
+        final int width = getDrawingWidth();
+        final int height = getDrawingHeight();
 
-            mLastAnimatedTransX = translations.x;
-            mLastAnimatedTransY = translations.y;
-        });
+        resolveImageBounds(mImageMatrix);
+        final float imgWidth = mImageBounds.width();
+        final float imgHeight = mImageBounds.height();
+
+        mImageMatrix.getValues(mImageMatrixValues);
+        final float startX = mImageMatrixValues[Matrix.MTRANS_X];
+        final float startY = mImageMatrixValues[Matrix.MTRANS_Y];
+
+        getImageTransformer().fling(startX, startY, velocityX, velocityY,
+                width, height, imgWidth, imgHeight);
+    }
+
+    private final class ImageTransformer implements Runnable {
+
+        private final GestureImageView mView = GestureImageView.this;
+
+        private final OverScroller mTranslator;
+        private final OverScroller mScaler;
+
+        private float mLastTransX, mLastTransY;
+        private float mLastScaleX, mLastScaleY;
+        private float mScalingPivotX, mScalingPivotY;
+
+        private Predicate<Void> mSpringBackJob;
+
+        private boolean mRunning;
+
+        ImageTransformer(Context context) {
+            mTranslator = new OverScroller(context, sDecelerateInterpolator);
+            mScaler = new OverScroller(context, sDecelerateInterpolator);
+        }
+
+        @Override
+        public void run() {
+            boolean continueRunning = false;
+
+            if (mScaler.computeScrollOffset()) {
+                mImageMatrix.postScale(
+                        mScaler.getCurrX() / mLastScaleX, mScaler.getCurrY() / mLastScaleY,
+                        mScalingPivotX, mScalingPivotY);
+
+                mLastScaleX = mScaler.getCurrX();
+                mLastScaleY = mScaler.getCurrY();
+
+                continueRunning = true;
+            }
+            if (mTranslator.computeScrollOffset()) {
+                mImageMatrix.postTranslate(
+                        (mTranslator.getCurrX() - mLastTransX)
+                                * (continueRunning ? mScaler.getCurrX() / mScaler.getFinalX() : 1f),
+                        (mTranslator.getCurrY() - mLastTransY)
+                                * (continueRunning ? mScaler.getCurrY() / mScaler.getFinalY() : 1f));
+
+                mLastTransX = mTranslator.getCurrX();
+                mLastTransY = mTranslator.getCurrY();
+
+                continueRunning = true;
+            } else {
+                Predicate<Void> springBackJob = mSpringBackJob;
+                if (springBackJob != null) {
+                    mSpringBackJob = null;
+                    if (springBackJob.test(null)) {
+                        run();
+                        return;
+                    }
+                }
+            }
+
+            mRunning = continueRunning;
+            if (continueRunning) {
+                setImageMatrix(mImageMatrix);
+                postOnAnimation();
+            }
+        }
+
+        void startOverScrollAndSpringBack(
+                float startX, float startY, float overscrollX, float overscrollY,
+                float viewWidth, float viewHeight, float imgWidth, float imgHeight,
+                int duration) {
+            mLastTransX = startX;
+            mLastTransY = startY;
+            mTranslator.startScroll(startX, startY,
+                    overscrollX - startX, overscrollY - startY, duration);
+
+            mSpringBackJob = unused -> {
+                float minX, maxX;
+                float minY, maxY;
+                if (imgWidth < viewWidth) {
+                    minX = (viewWidth - imgWidth) / 2;
+                    maxX = minX;
+                } else {
+                    minX = -(imgWidth - viewWidth);
+                    maxX = 0;
+                }
+                if (imgHeight < viewHeight) {
+                    minY = (viewHeight - imgHeight) / 2;
+                    maxY = minY;
+                } else {
+                    minY = -(imgHeight - viewHeight);
+                    maxY = 0;
+                }
+                return mTranslator.springBack(
+                        mTranslator.getCurrX(), mTranslator.getCurrY(), minX, maxX, minY, maxY);
+            };
+
+            postOnAnimation();
+        }
+
+        void startScaleAndTranslate(
+                float fromScaleX, float fromScaleY, float toScaleX, float toScaleY,
+                float pivotX, float pivotY, float fromX, float fromY, float toX, float toY,
+                int duration) {
+            mScalingPivotX = pivotX;
+            mScalingPivotY = pivotY;
+            mLastScaleX = fromScaleX;
+            mLastScaleY = fromScaleY;
+            mScaler.startScroll(fromScaleX, fromScaleY,
+                    toScaleX - fromScaleX, toScaleY - fromScaleY, duration);
+
+            mLastTransX = fromX;
+            mLastTransY = fromY;
+            mTranslator.startScroll(fromX, fromY, toX - fromX, toY - fromY, duration);
+
+            postOnAnimation();
+        }
+
+        void fling(
+                float startX, float startY, float velocityX, float velocityY,
+                float viewWidth, float viewHeight, float imgWidth, float imgHeight) {
+            float minX, maxX;
+            float minY, maxY;
+            if (imgWidth < viewWidth) {
+                minX = (viewWidth - imgWidth) / 2;
+                maxX = minX;
+            } else {
+                minX = -(imgWidth - viewWidth);
+                maxX = 0;
+            }
+            if (imgHeight < viewHeight) {
+                minY = (viewHeight - imgHeight) / 2;
+                maxY = minY;
+            } else {
+                minY = -(imgHeight - viewHeight);
+                maxY = 0;
+            }
+
+            mLastTransX = startX;
+            mLastTransY = startY;
+            mTranslator.fling(startX, startY, velocityX, velocityY, minX, maxX, minY, maxY,
+                    minX == maxX ? 0 : mImageOverTranslation,
+                    minY == maxY ? 0 : mImageOverTranslation);
+            postOnAnimation();
+        }
+
+        private void postOnAnimation() {
+            mRunning = true;
+            ViewCompat.postOnAnimation(mView, this::run);
+        }
+
+        void cancel() {
+            if (mRunning) {
+                mRunning = false;
+                mSpringBackJob = null;
+                mTranslator.forceFinished(true);
+                mScaler.forceFinished(true);
+                removeCallbacks(this::run);
+            }
+        }
+
+        void end() {
+            if (mRunning) {
+                mRunning = false;
+                if (mSpringBackJob != null) {
+                    mSpringBackJob.test(null);
+                    mSpringBackJob = null;
+                }
+                mTranslator.abortAnimation();
+                mScaler.abortAnimation();
+                run();
+                removeCallbacks(this::run);
+            }
+        }
     }
 
     /**
@@ -932,12 +1026,7 @@ public class GestureImageView extends AppCompatImageView {
      * after it is over-translated.
      */
     public void cancelImageTransformations() {
-        // May be that we have scheduled a Runnable to rebound this image after it is
-        // over-translated, which yet hasn't started and should be canceled.
-        removeCallbacks(mImageSpringBackRunnable);
-
-        // Also the animator should be canceled if running
-        if (mImageTransformer != null && mImageTransformer.isRunning()) {
+        if (mImageTransformer != null) {
             mImageTransformer.cancel();
         }
     }
@@ -978,5 +1067,15 @@ public class GestureImageView extends AppCompatImageView {
             out.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
             getImageMatrix().mapRect(out);
         }
+    }
+
+    /** Return the width of the visible drawing bounds for this view. */
+    protected int getDrawingWidth() {
+        return getWidth() - getPaddingLeft() - getPaddingRight();
+    }
+
+    /** Return the height of the visible drawing bounds for this view. */
+    protected int getDrawingHeight() {
+        return getHeight() - getPaddingTop() - getPaddingBottom();
     }
 }
