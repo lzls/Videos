@@ -402,7 +402,7 @@ public class GestureImageView extends AppCompatImageView {
                 } else {
                     // If we are allowed to move the image via single finger when it hasn't been
                     // zoomed in, then we can make it translated, or else it will not be moved
-                    // unless it has been enlarged or we are touching it using multiple fingers.
+                    // unless we are touching it using multiple fingers.
                     if ((mPrivateFlags & PFLAG_MOVE_UNMAGNIFIED_IMAGE_VIA_SINGLE_FINGER_ALLOWED) == 0
                             && event.getPointerCount() == 1) {
                         mImageMatrix.getValues(mImageMatrixValues);
@@ -410,10 +410,43 @@ public class GestureImageView extends AppCompatImageView {
                         final float scaleY = mImageMatrixValues[Matrix.MSCALE_Y];
                         if (scaleX <= mFitCenterImageScale && scaleY <= mFitCenterImageScale) break;
                     }
-                    final float dx = mTouchX[mTouchX.length - 1] - mTouchX[mTouchX.length - 2];
-                    final float dy = mTouchY[mTouchY.length - 1] - mTouchY[mTouchY.length - 2];
-                    mImageMatrix.postTranslate(dx, dy);
-                    setImageMatrix(mImageMatrix);
+
+                    final int width = getDrawingWidth();
+                    final int height = getDrawingHeight();
+
+                    resolveImageBounds(mImageMatrix);
+                    final float imgWidth = mImageBounds.width();
+                    final float imgHeight = mImageBounds.height();
+
+                    float dx = mTouchX[mTouchX.length - 1] - mTouchX[mTouchX.length - 2];
+                    float dy = mTouchY[mTouchY.length - 1] - mTouchY[mTouchY.length - 2];
+                    // Disallow an enlarged image to scroll in a case where the user prefers it
+                    // to be not moved in an undesired direction as the user is fast scrolling
+                    // the screen, which may eventually trigger a fling gesture.
+                    if (imgWidth > width || imgHeight > height) {
+                        if (imgWidth >= width) {
+                            if (mImageBounds.left + dx > 0) {
+                                dx = -mImageBounds.left;
+                            } else if (mImageBounds.right + dx < width) {
+                                dx = width - mImageBounds.right;
+                            }
+                        } else {
+                            dx = (width + imgWidth) / 2f - mImageBounds.right;
+                        }
+                        if (imgHeight >= height) {
+                            if (mImageBounds.top + dy > 0) {
+                                dy = -mImageBounds.top;
+                            } else if (mImageBounds.bottom + dy < height) {
+                                dy = height - mImageBounds.bottom;
+                            }
+                        } else {
+                            dy = (height + imgHeight) / 2f - mImageBounds.bottom;
+                        }
+                    }
+                    if (dx != 0 || dy != 0) {
+                        mImageMatrix.postTranslate(dx, dy);
+                        setImageMatrix(mImageMatrix);
+                    }
                 }
                 break;
 
