@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <declare-styleable name="GalleryViewPager">
+        <attr name="imageOverScrollEnabled" format="boolean" />
+    </declare-styleable>
+
     <declare-styleable name="GestureImageView">
         <attr name="imageGesturesEnabled" format="boolean" />
         <attr name="moveUnmagnifiedImageViaSingleFingerAllowed" format="boolean" />

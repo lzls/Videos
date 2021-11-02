@@ -1,6 +1,8 @@
 package com.liuzhenlin.galleryviewer;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -11,7 +13,9 @@ import android.view.ViewParent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
+import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 /**
@@ -22,11 +26,11 @@ public class GalleryViewPager extends ViewPager {
 
     protected final int mTouchSlop;
 
-    private int mActivePointerId = ViewDragHelper.INVALID_POINTER;
+    /*synthetic*/ int mActivePointerId = ViewDragHelper.INVALID_POINTER;
     private float mDownX;
     private float mDownY;
 
-    private VelocityTracker mVelocityTracker;
+    /*synthetic*/ VelocityTracker mVelocityTracker;
 
     /**
      * The minimum velocity to fling this view when the image in the current page is magnified
@@ -35,26 +39,52 @@ public class GalleryViewPager extends ViewPager {
      */
     private final float mMinimumFlingVelocityOnCurrImageMagnified; // 400 dp/s
 
+    protected final float mMaximumFlingVelocity;
+
     /** Position of the last selected page */
     /*synthetic*/ int mLastSelectedPageIndex;
+    /*synthetic*/ boolean mFirstLayout;
+    /*synthetic*/ boolean mImageOverScrollEnabled;
 
     private final OnPageChangeListener mInternalOnPageChangeListener = new SimpleOnPageChangeListener() {
         @Override
         public void onPageSelected(int position) {
-            if (mLastSelectedPageIndex != position && mItemCallback != null) {
+            if (!mFirstLayout && mLastSelectedPageIndex != position && mItemCallback != null) {
                 Object lastItem = mItemCallback.getItemAt(mLastSelectedPageIndex);
                 if (lastItem instanceof GestureImageView) {
                     ((GestureImageView) lastItem).reinitializeImage();
                 }
 
-//                Object currentItem = mItemCallback.getItemAt(position);
-//                if (currentItem instanceof GestureImageView) {
-//                    GestureImageView image = (GestureImageView) currentItem;
-//                    image.startImageOverScrollAndSpringBack(0, 0,
-//                            position > mLastSelectedPageIndex ?
-//                                    -image.mImageOverTranslation : image.mImageOverTranslation,
-//                            0);
-//                }
+                if (mImageOverScrollEnabled) {
+                    Object currentItem = mItemCallback.getItemAt(position);
+                    if (currentItem instanceof GestureImageView) {
+                        GestureImageView image = (GestureImageView) currentItem;
+                        boolean scrollPageLeft = position > mLastSelectedPageIndex;
+                        float dx = scrollPageLeft ?
+                                -image.mImageOverTranslation : image.mImageOverTranslation;
+                        float baseDuration = GestureImageView.DEFAULT_DURATION_TRANSFORM_IMAGE / 2f;
+                        float duration;
+                        if (mVelocityTracker != null) {
+                            mVelocityTracker.computeCurrentVelocity(1000, mMaximumFlingVelocity);
+                            float vx = mVelocityTracker.getXVelocity(mActivePointerId);
+                            if (vx > 0 && scrollPageLeft || vx < 0 && !scrollPageLeft) {
+                                vx = 0;
+                            }
+                            duration = baseDuration * (1 + (1 - Math.abs(vx) / mMaximumFlingVelocity));
+                        } else {
+                            duration = baseDuration * 2;
+                        }
+                        if (ViewCompat.isLaidOut(image)) {
+                            image.startImageOverScrollAndSpringBack(dx, 0, (int) duration);
+                        } else {
+                            image.post(() -> {
+                                if (mImageOverScrollEnabled && ViewCompat.isAttachedToWindow(image)) {
+                                    image.startImageOverScrollAndSpringBack(dx, 0, (int) duration);
+                                }
+                            });
+                        }
+                    }
+                }
             }
             mLastSelectedPageIndex = position;
         }
@@ -66,8 +96,15 @@ public class GalleryViewPager extends ViewPager {
 
     public GalleryViewPager(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.GalleryViewPager, 0, 0);
+        setImageOverScrollEnabled(ta.getBoolean(R.styleable.
+                GalleryViewPager_imageOverScrollEnabled, true));
+        ta.recycle();
+
+        final float dp = getResources().getDisplayMetrics().density;
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-        mMinimumFlingVelocityOnCurrImageMagnified = 400f * getResources().getDisplayMetrics().density;
+        mMinimumFlingVelocityOnCurrImageMagnified = 400f * dp;
+        mMaximumFlingVelocity = ViewConfiguration.getMaximumFlingVelocity() * dp;
         addOnPageChangeListener(mInternalOnPageChangeListener);
     }
 
@@ -75,6 +112,42 @@ public class GalleryViewPager extends ViewPager {
     public void clearOnPageChangeListeners() {
         super.clearOnPageChangeListeners();
         addOnPageChangeListener(mInternalOnPageChangeListener);
+    }
+
+    /**
+     * Returns whether a child {@link GestureImageView} can start to overscroll
+     * as it becomes the selected page.
+     */
+    public boolean isImageOverScrollEnabled() {
+        return mImageOverScrollEnabled;
+    }
+
+    /**
+     * Sets whether to enable the overscroll feature for a child {@link GestureImageView}
+     * to overscroll and spring itself back when it becomes the selected page.
+     */
+    public void setImageOverScrollEnabled(boolean enabled) {
+        mImageOverScrollEnabled = enabled;
+    }
+
+    @Override
+    public void setAdapter(@Nullable PagerAdapter adapter) {
+        super.setAdapter(adapter);
+        if (adapter != null) {
+            mFirstLayout = true;
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        mFirstLayout = true;
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        mFirstLayout = false;
     }
 
     @Override
@@ -134,9 +207,6 @@ public class GalleryViewPager extends ViewPager {
                     }
 
                     if (intercept) {
-                        mActivePointerId = ViewDragHelper.INVALID_POINTER;
-                        recycleVelocityTracker();
-
                         ViewParent parent = getParent();
                         if (parent != null) {
                             parent.requestDisallowInterceptTouchEvent(true);
@@ -155,6 +225,45 @@ public class GalleryViewPager extends ViewPager {
                 break;
         }
         return super.onInterceptTouchEvent(ev);
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        final int actionMasked = ev.getActionMasked();
+
+        if (actionMasked == MotionEvent.ACTION_DOWN) {
+            initOrClearVelocityTracker();
+        }
+        if (mVelocityTracker != null) {
+            mVelocityTracker.addMovement(ev);
+        }
+
+        final boolean handled;
+        switch (actionMasked) {
+            case MotionEvent.ACTION_POINTER_DOWN:
+                onPointerDown(ev);
+                handled = superOnTouchEvent(ev);
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                onSecondaryPointerUp(ev);
+                handled = superOnTouchEvent(ev);
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                handled = superOnTouchEvent(ev);
+                mActivePointerId = ViewDragHelper.INVALID_POINTER;
+                recycleVelocityTracker();
+                break;
+            default:
+                handled = superOnTouchEvent(ev);
+                break;
+        }
+        return handled;
+    }
+
+    private boolean superOnTouchEvent(MotionEvent ev) {
+        return super.onTouchEvent(ev);
     }
 
     private void onPointerDown(MotionEvent e) {
