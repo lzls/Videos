@@ -25,13 +25,13 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.RendererCapabilities;
+import com.google.android.exoplayer2.decoder.CryptoConfig;
 import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
-import com.google.android.exoplayer2.drm.ExoMediaCrypto;
+import com.google.android.exoplayer2.decoder.VideoDecoderOutputBuffer;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.DecoderVideoRenderer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 /** Decodes and renders video using libgav1 decoder. */
@@ -134,7 +134,7 @@ public class Libgav1VideoRenderer extends DecoderVideoRenderer {
         || !Gav1Library.isAvailable()) {
       return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_TYPE);
     }
-    if (format.exoMediaCryptoType != null) {
+    if (format.cryptoType != C.CRYPTO_TYPE_NONE) {
       return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_DRM);
     }
     return RendererCapabilities.create(
@@ -142,7 +142,7 @@ public class Libgav1VideoRenderer extends DecoderVideoRenderer {
   }
 
   @Override
-  protected Gav1Decoder createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
+  protected Gav1Decoder createDecoder(Format format, @Nullable CryptoConfig cryptoConfig)
       throws Gav1DecoderException {
     TraceUtil.beginSection("createGav1Decoder");
     int initialInputBufferSize =

@@ -31,7 +31,7 @@ import com.google.android.exoplayer2.audio.AudioSink;
 import com.google.android.exoplayer2.audio.AudioSink.SinkFormatSupport;
 import com.google.android.exoplayer2.audio.DecoderAudioRenderer;
 import com.google.android.exoplayer2.audio.DefaultAudioSink;
-import com.google.android.exoplayer2.drm.ExoMediaCrypto;
+import com.google.android.exoplayer2.decoder.CryptoConfig;
 import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
@@ -99,7 +99,7 @@ public final class FfmpegAudioRenderer extends DecoderAudioRenderer<FfmpegAudioD
         || (!sinkSupportsFormat(format, C.ENCODING_PCM_16BIT)
             && !sinkSupportsFormat(format, C.ENCODING_PCM_FLOAT))) {
       return C.FORMAT_UNSUPPORTED_SUBTYPE;
-    } else if (format.exoMediaCryptoType != null) {
+    } else if (format.cryptoType != C.CRYPTO_TYPE_NONE) {
       return C.FORMAT_UNSUPPORTED_DRM;
     } else {
       return C.FORMAT_HANDLED;
@@ -113,7 +113,7 @@ public final class FfmpegAudioRenderer extends DecoderAudioRenderer<FfmpegAudioD
   }
 
   @Override
-  protected FfmpegAudioDecoder createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
+  protected FfmpegAudioDecoder createDecoder(Format format, @Nullable CryptoConfig cryptoConfig)
       throws FfmpegDecoderException {
     TraceUtil.beginSection("createFfmpegAudioDecoder");
     int initialInputBufferSize =

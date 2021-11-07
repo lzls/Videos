@@ -19,7 +19,6 @@ import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.RenderersFactory;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.analytics.AnalyticsCollector;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
@@ -135,29 +134,29 @@ public class Utils {
         }
     }
 
-    /** Creates a new {@link SimpleExoPlayer} instance using all default arguments. */
+    /** Creates a new {@link ExoPlayer} instance using all default arguments. */
     @NonNull
-    public static SimpleExoPlayer newSimpleExoPlayer(@NonNull Context context) {
-        return newSimpleExoPlayer(context, null);
+    public static ExoPlayer newExoPlayer(@NonNull Context context) {
+        return newExoPlayer(context, null);
     }
 
     /**
-     * Creates a new {@link SimpleExoPlayer} instance using the given {@code trackSelector}
+     * Creates a new {@link ExoPlayer} instance using the given {@code trackSelector}
      * or just {@code null} to specify the default one.
      */
     @NonNull
-    public static SimpleExoPlayer newSimpleExoPlayer(
+    public static ExoPlayer newExoPlayer(
             @NonNull Context context, @Nullable TrackSelector trackSelector) {
         RenderersFactory renderersFactory = new DefaultRenderersFactory(context)
                 .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
-        return new SimpleExoPlayer.Builder(
+        return new ExoPlayer.Builder(
                 context,
                 renderersFactory,
-                trackSelector == null ? new DefaultTrackSelector(context) : trackSelector,
                 /* mediaSourceFactory= */ null,
-                /* loadControl= */ new DefaultLoadControl(),
-                /* bandwidthMeter= */ DefaultBandwidthMeter.getSingletonInstance(context),
-                /* analyticsCollector= */ new AnalyticsCollector(Clock.DEFAULT)
+                trackSelector == null ? new DefaultTrackSelector(context) : trackSelector,
+                new DefaultLoadControl(),
+                DefaultBandwidthMeter.getSingletonInstance(context),
+                new AnalyticsCollector(Clock.DEFAULT)
         ).build();
     }
 

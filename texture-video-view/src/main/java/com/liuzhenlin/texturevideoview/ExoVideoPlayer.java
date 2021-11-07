@@ -25,11 +25,12 @@ import androidx.collection.SimpleArrayMap;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
@@ -48,9 +49,10 @@ import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.video.VideoSize;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
 import com.liuzhenlin.common.receiver.MediaButtonEventHandler;
@@ -81,7 +83,7 @@ public class ExoVideoPlayer extends VideoPlayer {
 
     private String mUserAgent;
 
-    @Synthetic SimpleExoPlayer mExoPlayer;
+    @Synthetic ExoPlayer mExoPlayer;
     private DefaultTrackSelector mTrackSelector;
     private MediaSourceFactory mMediaSourceFactory;
     private MediaSourceFactory mTmpMediaSourceFactory;
@@ -158,7 +160,7 @@ public class ExoVideoPlayer extends VideoPlayer {
     /**
      * Sets a MediaSourceFactory for creating {@link com.google.android.exoplayer2.source.MediaSource}s
      * to play the provided media stream content (if any), or `null`, the MediaSourceFactory
-     * with {@link DefaultDataSourceFactory} will be created to read the media, based on
+     * with {@link DefaultDataSource.Factory} will be created to read the media, based on
      * the corresponding media stream type.
      *
      * @param factory a subclass instance of {@link MediaSourceFactory}
@@ -181,28 +183,36 @@ public class ExoVideoPlayer extends VideoPlayer {
      * @return the default {@link DataSource.Factory} created by this class, which will be used for
      *         various of {@link MediaSourceFactory}s (if the user specified one is not set).
      */
-    @SuppressWarnings("deprecation")
     @NonNull
     public DataSource.Factory getDefaultDataSourceFactory() {
         if (sDefaultDataSourceFactory == null) {
             sDefaultDataSourceFactory =
-                    new DefaultDataSourceFactory(
-                            mContext, new DefaultHttpDataSourceFactory(getUserAgent()));
-//            Cache cache = new SimpleCache(
-//                    new File(getBaseVideoCacheDirectory(), "exo"),
-//                    new LeastRecentlyUsedCacheEvictor(DEFAULT_MAXIMUM_CACHE_SIZE),
-//                    new ExoDatabaseProvider(mContext));
+                    new DefaultDataSource.Factory(
+                            mContext,
+                            new DefaultHttpDataSource.Factory().setUserAgent(getUserAgent()));
+//            Cache cache =
+//                    new SimpleCache(
+//                            new File(getBaseVideoCacheDirectory(), "exo"),
+//                            new LeastRecentlyUsedCacheEvictor(DEFAULT_MAXIMUM_CACHE_SIZE),
+//                            new StandaloneDatabaseProvider(mContext));
 //            DataSource.Factory upstreamFactory =
-//                    new DefaultDataSourceFactory(
-//                            mContext, new DefaultHttpDataSourceFactory(getUserAgent()));
+//                    new DefaultDataSource.Factory(
+//                            mContext,
+//                            new DefaultHttpDataSource.Factory().setUserAgent(getUserAgent()));
 //            DataSource.Factory cacheReadDataSourceFactory = new FileDataSource.Factory();
-//            CacheDataSinkFactory cacheWriteDataSourceFactory =
-//                    new CacheDataSinkFactory(cache, CacheDataSink.DEFAULT_FRAGMENT_SIZE, 1024);
-//            sDefaultDataSourceFactory = new CacheDataSourceFactory(
-//                    cache,
-//                    upstreamFactory, cacheReadDataSourceFactory, cacheWriteDataSourceFactory,
-//                    CacheDataSource.FLAG_BLOCK_ON_CACHE | CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR,
-//                    null);
+//            CacheDataSink.Factory cacheWriteDataSourceFactory =
+//                    new CacheDataSink.Factory()
+//                            .setCache(cache)
+//                            .setFragmentSize(CacheDataSink.DEFAULT_FRAGMENT_SIZE)
+//                            .setBufferSize(1024);
+//            sDefaultDataSourceFactory =
+//                    new CacheDataSource.Factory()
+//                            .setCache(cache)
+//                            .setUpstreamDataSourceFactory(upstreamFactory)
+//                            .setCacheReadDataSourceFactory(cacheReadDataSourceFactory)
+//                            .setCacheWriteDataSinkFactory(cacheWriteDataSourceFactory)
+//                            .setFlags(CacheDataSource.FLAG_BLOCK_ON_CACHE
+//                                    | CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
         }
         return sDefaultDataSourceFactory;
     }
@@ -257,7 +267,7 @@ public class ExoVideoPlayer extends VideoPlayer {
                 && !(mVideoView != null && surface == null)
                 && (mInternalFlags & $FLAG_VIDEO_PAUSED_BY_USER) == 0) {
             mTrackSelector = new DefaultTrackSelector(mContext);
-            mExoPlayer = Utils.newSimpleExoPlayer(mContext, mTrackSelector);
+            mExoPlayer = Utils.newExoPlayer(mContext, mTrackSelector);
             mExoPlayer.setVideoSurface(surface);
             mExoPlayer.setAudioAttributes(sDefaultAudioAttrs, false);
             setPlaybackSpeed(mUserPlaybackSpeed);
@@ -331,12 +341,13 @@ public class ExoVideoPlayer extends VideoPlayer {
                     }
                 }
 
-                @SuppressWarnings("deprecation")
                 @Override
-                public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-                    final int[] videoSize = VideoUtils.correctedVideoSize(
-                            width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
-                    ExoVideoPlayer.this.onVideoSizeChanged(videoSize[0], videoSize[1]);
+                public void onVideoSizeChanged(@NonNull VideoSize videoSize) {
+                    final int[] size = VideoUtils.correctedVideoSize(
+                            videoSize.width, videoSize.height,
+                            videoSize.unappliedRotationDegrees,
+                            videoSize.pixelWidthHeightRatio);
+                    ExoVideoPlayer.this.onVideoSizeChanged(size[0], size[1]);
                 }
 
                 @Override
@@ -360,12 +371,12 @@ public class ExoVideoPlayer extends VideoPlayer {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void startVideo(boolean playWhenPrepared) {
         if (mVideoView != null) {
             mVideoView.cancelDraggingVideoSeekBar(false);
         }
         if (mVideoUri != null) {
+            //noinspection deprecation
             MediaSource mediaSource = obtainMediaSourceFactory(mVideoUri).createMediaSource(mVideoUri);
             if (mSubtitles != null && !mSubtitles.isEmpty()) {
                 int size = mSubtitles.size();
@@ -375,9 +386,8 @@ public class ExoVideoPlayer extends VideoPlayer {
                     Uri subtitleUri = mSubtitles.keyAt(i);
                     String[] subtitleData = mSubtitles.valueAt(i);
                     mediaSources[i + 1] = getSubtitleSourceFactory().createMediaSource(
-                            subtitleUri,
-                            new Format.Builder()
-                                    .setSampleMimeType(subtitleData[0])
+                            new MediaItem.SubtitleConfiguration.Builder(subtitleUri)
+                                    .setMimeType(subtitleData[0])
                                     .setLanguage(subtitleData[1])
                                     .build(),
                             C.TIME_UNSET);

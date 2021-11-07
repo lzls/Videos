@@ -16,12 +16,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.liuzhenlin.texturevideoview.utils.Utils;
 
 import java.io.IOException;
@@ -229,7 +229,7 @@ import java.io.IOException;
         final SurfaceHolder mSurfaceHolder;
         final MediaSource mMediaSource;
 
-        SimpleExoPlayer mExoPlayer;
+        ExoPlayer mExoPlayer;
         int mSeekOnPlay;
 
         VideoClipPlayerApi16Impl(
@@ -242,7 +242,7 @@ import java.io.IOException;
             mSurfaceHolder = surfaceHolder;
             if (mediaSourceFactory == null) {
                 mediaSourceFactory = new ProgressiveMediaSource.Factory(
-                        new DefaultDataSourceFactory(context, userAgent));
+                        new DefaultHttpDataSource.Factory().setUserAgent(userAgent));
             }
             mMediaSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(videoUri));
         }
@@ -297,7 +297,7 @@ import java.io.IOException;
         @Override
         public void create() {
             if (mExoPlayer == null) {
-                mExoPlayer = Utils.newSimpleExoPlayer(mContext);
+                mExoPlayer = Utils.newExoPlayer(mContext);
                 mExoPlayer.setVideoSurfaceHolder(mSurfaceHolder);
                 mExoPlayer.setAudioAttributes(VideoPlayer.sDefaultAudioAttrs, true);
                 mExoPlayer.setMediaSource(mMediaSource);

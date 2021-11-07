@@ -8,8 +8,8 @@ android {
         //noinspection MinSdkTooLow
         minSdkVersion 11
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "2.0.1"
+        versionCode 7
+        versionName "2.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
