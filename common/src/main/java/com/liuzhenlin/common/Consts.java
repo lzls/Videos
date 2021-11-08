@@ -16,6 +16,8 @@ public class Consts {
     public static final String EMPTY_STRING = "";
     public static final String[] EMPTY_STRING_ARRAY = {};
 
+    public static final String APPLICATION_ID = "com.liuzhenlin.videos";
+
     public static Handler getMainThreadHandler() {
         return NoPreloadHolder.MAIN_THREAD_HANDLER;
     }

@@ -7,4 +7,5 @@
 
     <string name="share">分享</string>
     <string name="undo">取消</string>
+    <string name="noAppsCanPerformThisAction">没有应用可执行此操作</string>
 </resources>

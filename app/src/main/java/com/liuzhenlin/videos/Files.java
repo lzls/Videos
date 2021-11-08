@@ -5,6 +5,8 @@
 
 package com.liuzhenlin.videos;
 
+import com.liuzhenlin.common.Consts;
+
 /**
  * @author 刘振林
  */
@@ -17,5 +19,5 @@ public class Files {
     public static final String SAVED_FEEDBACK_PREFS = "SavedFeedback.sp";
 
     public static final String EXTERNAL_FILES_FOLDER = "videos_lzl";
-    public static final String PROVIDER_AUTHORITY = "com.liuzhenlin.videos.provider";
+    public static final String PROVIDER_AUTHORITY = Consts.APPLICATION_ID + ".provider";
 }

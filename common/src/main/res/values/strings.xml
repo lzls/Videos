@@ -13,4 +13,5 @@
 
     <string name="share">Share</string>
     <string name="undo">Undo</string>
+    <string name="noAppsCanPerformThisAction">No apps can perform this action</string>
 </resources>
