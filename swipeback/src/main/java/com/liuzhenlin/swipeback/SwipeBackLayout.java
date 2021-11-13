@@ -188,9 +188,9 @@ public class SwipeBackLayout extends FrameLayout {
         mContentView.setBackgroundResource(
                 Utils.getThemeAttrRes(host, android.R.attr.windowBackground));
 
-        decor.removeView(mContentView);
+        decor.removeViewAt(0);
         addView(mContentView);
-        decor.addView(this);
+        decor.addView(this, 0);
     }
 
     /**
