@@ -7,6 +7,7 @@ package com.liuzhenlin.common.utils;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -71,6 +72,26 @@ public class UiUtils {
         if (view.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
             RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) view.getLayoutParams();
             lp.addRule(verb, subject);
+        }
+    }
+
+    public static void fixZeroSizedViewCannotKeepFocusedInLayout(@NonNull View view) {
+        final boolean zeroWidth = view.getWidth() == 0;
+        final boolean zeroHeight = view.getHeight() == 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                && view.getContext().getApplicationInfo().targetSdkVersion >= Build.VERSION_CODES.P
+                && (zeroWidth || zeroHeight)) {
+            // A zero sized view can not keep focused during layout when targetSdk >= P, and
+            // this can result in a bug if the view size has not yet been really determined.
+            final int minAxisValue = Integer.MIN_VALUE;
+            if (zeroWidth) {
+                view.setLeft(minAxisValue);
+                view.setRight(minAxisValue + 1);
+            }
+            if (zeroHeight) {
+                view.setTop(minAxisValue);
+                view.setBottom(minAxisValue + 1);
+            }
         }
     }
 
