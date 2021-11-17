@@ -30,6 +30,7 @@ import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableView;
 import com.liuzhenlin.common.windowhost.FocusObservableWindowHost;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author 刘振林
@@ -92,6 +93,38 @@ public class UiUtils {
                 view.setTop(minAxisValue);
                 view.setBottom(minAxisValue + 1);
             }
+        }
+    }
+
+    private static Method sClearFocusInternalMethod;
+    private static boolean sIsClearFocusInternalMethodFetched;
+
+    public static void clearFocusNoRefocusInTouch(@NonNull View view) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            // Unsupported on platform versions 16 and 17...
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                && view.getContext().getApplicationInfo().targetSdkVersion >= Build.VERSION_CODES.P) {
+            view.clearFocus();
+            return;
+        }
+
+        try {
+            if (!sIsClearFocusInternalMethodFetched) {
+                sIsClearFocusInternalMethodFetched = true;
+                //noinspection SoonBlockedPrivateApi,JavaReflectionMemberAccess
+                sClearFocusInternalMethod =
+                        View.class.getDeclaredMethod(
+                                "clearFocusInternal", View.class, boolean.class, boolean.class);
+                sClearFocusInternalMethod.setAccessible(true);
+            }
+            if (sClearFocusInternalMethod != null) {
+                sClearFocusInternalMethod.invoke(view, view, true, !view.isInTouchMode());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

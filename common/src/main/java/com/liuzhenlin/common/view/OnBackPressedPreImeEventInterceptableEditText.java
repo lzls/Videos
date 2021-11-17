@@ -7,16 +7,15 @@ package com.liuzhenlin.common.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.FocusCompatEditText;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatEditText;
 
 import com.liuzhenlin.common.listener.OnBackPressedPreImeListener;
-import com.liuzhenlin.common.utils.UiUtils;
 
-public class OnBackPressedPreImeEventInterceptableEditText extends AppCompatEditText
+public class OnBackPressedPreImeEventInterceptableEditText extends FocusCompatEditText
         implements OnBackPressedPreImeEventInterceptableView {
 
     private OnBackPressedPreImeListener mOnBackPressedPreImeListener;
@@ -48,11 +47,5 @@ public class OnBackPressedPreImeEventInterceptableEditText extends AppCompatEdit
     public boolean onKeyPreIme(int keyCode, @NonNull KeyEvent event) {
         return OnBackPressedPreImeEventInterceptableView.super.onKeyPreIme(keyCode, event)
                 || super.onKeyPreIme(keyCode, event);
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-        UiUtils.fixZeroSizedViewCannotKeepFocusedInLayout(this);
     }
 }
