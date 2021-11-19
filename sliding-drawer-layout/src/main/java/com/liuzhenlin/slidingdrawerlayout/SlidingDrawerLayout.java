@@ -1384,6 +1384,10 @@ public class SlidingDrawerLayout extends ViewGroup {
                 | FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
                 | FLAG_START_DRAWER_WIDTH_PERCENTAGE_RESOLVED
                 | FLAG_END_DRAWER_WIDTH_PERCENTAGE_RESOLVED;
+        resolveRtlProperties(layoutDirection);
+    }
+
+    private void resolveRtlProperties(int layoutDirection) {
         resolveDrawerTouchAbilities(layoutDirection);
         resolveDrawerWidthPercentages(layoutDirection, true);
     }
@@ -1397,6 +1401,11 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int childCount = getChildCount();
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN) {
+            // Since onRtlPropertiesChanged() was not defined on JELLY_BEAN and lower version SDKs,
+            // call resolveRtlProperties manually instead.
+            resolveRtlProperties(layoutDirection);
+        }
         traverseAllChildren(childCount, layoutDirection);
 
         int maxWidth = 0;

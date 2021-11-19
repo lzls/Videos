@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -457,12 +458,24 @@ public class VideoClipView extends FrameLayout {
             resetProgressPercent(false);
         } else // Layout direction changes between left-to-right and right-to-left
             if (mLayoutDirection != layoutDirection) {
-                mLayoutDirection = layoutDirection;
                 // Swap the frame left offset with the right one
                 final float tmp = mFrameRightOffset;
                 mFrameRightOffset = mFrameLeftOffset;
                 mFrameLeftOffset = tmp;
             }
+        mLayoutDirection = layoutDirection;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN) {
+            // Since onRtlPropertiesChanged() was not defined on JELLY_BEAN and lower version SDKs
+            // and RTL layout direction is also not supported by them, so we should call
+            // onRtlPropertiesChanged() with arg LAYOUT_DIRECTION_LTR manually here.
+            //noinspection InlinedApi
+            onRtlPropertiesChanged(LAYOUT_DIRECTION_LTR);
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     @Override
