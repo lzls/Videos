@@ -2504,6 +2504,16 @@ public class SlidingDrawerLayout extends ViewGroup {
                         }
                     }
                 } else if (mScrollPercent == 0) {
+                    final boolean drawerWasOpened = (mFlags & FLAG_DRAWER_HAS_BEEN_OPENED) != 0;
+                    if (drawerWasOpened) {
+                        // Clear the FLAG_DRAWER_HAS_BEEN_OPENED flag first to fix a NPE crash
+                        // issue (null mShownDrawer accessed in addFocusables) occurred on
+                        // platform versions prior to JELLY_BEAN_MR2 (18) where the addFocusables
+                        // method will be called immediately when visibility changes from visible
+                        // to invisible for the focused shown drawer view below.
+                        mFlags &= ~FLAG_DRAWER_HAS_BEEN_OPENED;
+                    }
+
                     mShownDrawer = null;
                     mShownDrawerLayerType = LAYER_TYPE_NONE;
                     shownDrawer.setVisibility(INVISIBLE);
@@ -2513,8 +2523,7 @@ public class SlidingDrawerLayout extends ViewGroup {
                         lp.finalLeft = lp.startLeft;
                     }
 
-                    if ((mFlags & FLAG_DRAWER_HAS_BEEN_OPENED) != 0) {
-                        mFlags &= ~FLAG_DRAWER_HAS_BEEN_OPENED;
+                    if (drawerWasOpened) {
                         if (listeners != null) {
                             for (OnDrawerScrollListener listener : listeners)
                                 listener.onDrawerClosed(this, shownDrawer);
