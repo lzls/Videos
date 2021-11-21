@@ -434,7 +434,7 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
         }
 
         override fun loadItemImages(holder: ViewHolder) {
-            val video = mSearchedVideos[holder.adapterPosition - mAdapterWrapper.headersCount]
+            val video = mSearchedVideos[holder.bindingAdapterPosition - mAdapterWrapper.headersCount]
             VideoUtils2.loadVideoThumbIntoFragmentImageView(
                     this@LocalSearchedVideosFragment, holder.videoImage, video)
         }

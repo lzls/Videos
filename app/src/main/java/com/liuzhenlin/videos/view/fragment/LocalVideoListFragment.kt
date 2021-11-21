@@ -563,7 +563,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
         }
 
         override fun loadItemImages(holder: VideoListViewHolder) {
-            val item = mVideoListItems[holder.adapterPosition]
+            val item = mVideoListItems[holder.bindingAdapterPosition]
             when (holder.itemViewType) {
                 VIEW_TYPE_VIDEO -> {
                     val vh = holder as VideoViewHolder

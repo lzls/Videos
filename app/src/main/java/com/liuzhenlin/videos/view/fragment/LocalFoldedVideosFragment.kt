@@ -614,7 +614,7 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
         }
 
         override fun loadItemImages(holder: ViewHolder) {
-            val video = mVideos[holder.adapterPosition]
+            val video = mVideos[holder.bindingAdapterPosition]
             VideoUtils2.loadVideoThumbIntoFragmentImageView(
                     this@LocalFoldedVideosFragment, holder.videoImage, video)
         }

@@ -23,7 +23,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.annotation:annotation:1.2.0'
+    implementation "androidx.annotation:annotation:$rootProject.ext.androidxAnnotationVersion"
     implementation "com.google.android.exoplayer:exoplayer-core:$rootProject.ext.exoplayer2Version"
 
     testImplementation "junit:junit:$rootProject.ext.testJunitVersion"
