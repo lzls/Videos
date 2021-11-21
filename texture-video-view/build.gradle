@@ -44,11 +44,7 @@ dependencies {
     api project(exoplayer2ExtensionModulesPrefix + 'ffmpeg')
     api project(exoplayer2ExtensionModulesPrefix + 'vp9')
 
-    api 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8'
-//    api 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'
-//    api 'tv.danmaku.ijk.media:ijkplayer-arm64:0.8.8'
-//    api 'tv.danmaku.ijk.media:ijkplayer-x86:0.8.8'
-//    api 'tv.danmaku.ijk.media:ijkplayer-x86_64:0.8.8'
+    api project(':ijkplayer')
 
 //    api 'org.videolan.android:libvlc-all:3.2.5'
 

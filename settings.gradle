@@ -6,7 +6,8 @@ include ':app',
         ':swipeback',
         ':sliding-drawer-layout',
         ':slidingitemmenu-recyclerview',
-        ':texture-video-view'
+        ':texture-video-view',
+        ':ijkplayer'
 
 def exoplayer2ExtensionModulesFolder = 'exoplayer2-extensions'
 def exoplayer2ExtensionModulesPrefix = ':' + exoplayer2ExtensionModulesFolder + '-'
