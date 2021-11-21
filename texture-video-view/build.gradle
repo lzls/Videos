@@ -23,6 +23,8 @@ android {
     }
 }
 
+def exoplayer2ExtensionModulesPrefix = gradle.ext.exoplayer2ExtensionModulesPrefix
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
@@ -38,9 +40,9 @@ dependencies {
     api "com.google.android.exoplayer:exoplayer-smoothstreaming:$rootProject.ext.exoplayer2Version"
     api "com.google.android.exoplayer:exoplayer-rtsp:$rootProject.ext.exoplayer2Version"
     api "com.google.android.exoplayer:extension-rtmp:$rootProject.ext.exoplayer2Version"
-    api project(':exoplayer2-ext-av1')
-    api project(':exoplayer2-ext-vp9')
-    api project(':exoplayer2-ext-ffmpeg')
+    api project(exoplayer2ExtensionModulesPrefix + 'av1')
+    api project(exoplayer2ExtensionModulesPrefix + 'ffmpeg')
+    api project(exoplayer2ExtensionModulesPrefix + 'vp9')
 
     api 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8'
 //    api 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'

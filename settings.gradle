@@ -6,7 +6,20 @@ include ':app',
         ':swipeback',
         ':sliding-drawer-layout',
         ':slidingitemmenu-recyclerview',
-        ':texture-video-view',
-        ':exoplayer2-ext-av1',
-        ':exoplayer2-ext-vp9',
-        ':exoplayer2-ext-ffmpeg'
+        ':texture-video-view'
+
+def exoplayer2ExtensionModulesFolder = 'exoplayer2-extensions'
+def exoplayer2ExtensionModulesPrefix = ':' + exoplayer2ExtensionModulesFolder + '-'
+gradle.ext.exoplayer2ExtensionModulesPrefix = exoplayer2ExtensionModulesPrefix
+
+include(exoplayer2ExtensionModulesPrefix + 'av1')
+project(exoplayer2ExtensionModulesPrefix + 'av1').projectDir =
+        new File(rootDir, exoplayer2ExtensionModulesFolder + '/av1')
+
+include(exoplayer2ExtensionModulesPrefix + 'ffmpeg')
+project(exoplayer2ExtensionModulesPrefix + 'ffmpeg').projectDir =
+        new File(rootDir, exoplayer2ExtensionModulesFolder + '/ffmpeg')
+
+include(exoplayer2ExtensionModulesPrefix + 'vp9')
+project(exoplayer2ExtensionModulesPrefix + 'vp9').projectDir =
+        new File(rootDir, exoplayer2ExtensionModulesFolder + '/vp9')
