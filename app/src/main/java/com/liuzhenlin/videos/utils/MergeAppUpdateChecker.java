@@ -47,10 +47,10 @@ import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.common.utils.TextViewUtils;
-import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Configs;
+import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -451,7 +451,7 @@ public final class MergeAppUpdateChecker {
 
             Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                 //noinspection ConstantConditions
-                mApk = new File(App.getAppExternalFilesDir(),
+                mApk = new File(Files.getAppExternalFilesDir(),
                         intent.getStringExtra(EXTRA_APP_NAME) + " "
                                 + intent.getStringExtra(EXTRA_VERSION_NAME).replace(".", "_")
                                 + ".apk");

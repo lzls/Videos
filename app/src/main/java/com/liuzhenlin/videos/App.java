@@ -8,7 +8,6 @@ package com.liuzhenlin.videos;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Environment;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,8 +18,6 @@ import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
 import com.liuzhenlin.videos.dao.AppPrefs;
-
-import java.io.File;
 
 /**
  * @author 刘振林
@@ -62,16 +59,6 @@ public class App extends Application {
     @Nullable
     public static App getInstanceUnsafe() {
         return sApp;
-    }
-
-    @NonNull
-    public static File getAppExternalFilesDir() {
-        File dir = new File(Environment.getExternalStorageDirectory(), Files.EXTERNAL_FILES_FOLDER);
-        if (!dir.exists()) {
-            //noinspection ResultOfMethodCallIgnored
-            dir.mkdirs();
-        }
-        return dir;
     }
 
     public int getStatusHeightInPortrait() {

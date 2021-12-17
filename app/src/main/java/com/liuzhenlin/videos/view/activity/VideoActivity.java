@@ -61,6 +61,7 @@ import com.liuzhenlin.texturevideoview.VideoPlayer;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
+import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.presenter.IVideoPresenter;
@@ -475,7 +476,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             @NonNull
             @Override
             public String getAppExternalFilesDir() {
-                return App.getAppExternalFilesDir().getPath();
+                return Files.getAppExternalFilesDir().getPath();
             }
         });
     }

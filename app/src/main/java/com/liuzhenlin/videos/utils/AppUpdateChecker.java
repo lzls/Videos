@@ -46,10 +46,10 @@ import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.common.utils.TextViewUtils;
-import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Configs;
+import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -504,7 +504,7 @@ public final class AppUpdateChecker {
                     } else if (mApkLength <= 0) {
                         onDownloadError();
                     } else {
-                        mApk = new File(App.getAppExternalFilesDir(),
+                        mApk = new File(Files.getAppExternalFilesDir(),
                                 strings[INDEX_APP_NAME] + " "
                                         + strings[INDEX_VERSION_NAME].replace(".", "_")
                                         + ".apk");

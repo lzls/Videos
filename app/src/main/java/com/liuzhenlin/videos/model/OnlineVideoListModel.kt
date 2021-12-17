@@ -12,9 +12,9 @@ import androidx.core.util.AtomicFile
 import com.google.gson.Gson
 import com.liuzhenlin.common.Consts
 import com.liuzhenlin.common.utils.Executors
-import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.IOUtils
 import com.liuzhenlin.common.utils.Utils
+import com.liuzhenlin.videos.Files
 import com.liuzhenlin.videos.bean.TVGroup
 import java.io.*
 import java.net.HttpURLConnection
@@ -37,10 +37,7 @@ class OnlineVideoListModel(context: Context) : BaseModel<Nothing, Array<TVGroup>
         override fun doInBackground(vararg ctxs: Context): Array<TVGroup>? {
             var json: StringBuilder? = null
 
-            val jsonDirectory = File(FileUtils.getAppCacheDir(ctxs[0]), "data/json")
-            if (!jsonDirectory.exists()) {
-                jsonDirectory.mkdirs()
-            }
+            val jsonDirectory = Files.getJsonsCacheDir(ctxs[0])
             val jsonFile = AtomicFile(File(jsonDirectory, "tvs.json"))
 
             var ioException: IOException? = null
