@@ -37,12 +37,40 @@ public class MailUtil {
     }
 
     public static void sendMail(
-            @NonNull Context context, String title, String text,
+            @NonNull Context context, @NonNull String title, @NonNull String text,
             @Nullable String textRelatedImagePath, @Nullable String... attachmentPaths) {
-        MailInfo mailInfo = new MailInfo(HOST, PORT, true, USER_NAME, FROM_PSW,
+        sendMail(false, context, title, text, textRelatedImagePath, attachmentPaths);
+    }
+
+    public static void sendMailQuietly(
+            @NonNull Context context, @NonNull String title, @NonNull String text,
+            @Nullable String textRelatedImagePath, @Nullable String... attachmentPaths) {
+        sendMail(true, context, title, text, textRelatedImagePath, attachmentPaths);
+    }
+
+    public static boolean sendMailSync(
+            @NonNull Context context, @NonNull String title, @NonNull String text,
+            @Nullable String textRelatedImagePath, @Nullable String... attachmentPaths) {
+        MailInfo mailInfo = createMailInfo(title, text, textRelatedImagePath, attachmentPaths);
+        return new MultiMailSender(mailInfo).sendMail();
+    }
+
+    private static MailInfo createMailInfo(
+            String title, String text, String textRelatedImagePath, String[] attachmentPaths) {
+        return new MailInfo(HOST, PORT, true, USER_NAME, FROM_PSW,
                 FROM_ADDR, TO_ADDR, title, text, textRelatedImagePath, attachmentPaths);
-        new SendMailAsyncTask(context)
-                .executeOnExecutor(Executors.THREAD_POOL_EXECUTOR, mailInfo);
+    }
+
+    private static void sendMail(
+            boolean quiet, Context context,
+            String title, String text, String textRelatedImagePath, String... attachmentPaths) {
+        MailInfo mailInfo = createMailInfo(title, text, textRelatedImagePath, attachmentPaths);
+        if (quiet) {
+            Executors.THREAD_POOL_EXECUTOR.execute(() -> new MultiMailSender(mailInfo).sendMail());
+        } else {
+            new SendMailAsyncTask(context)
+                    .executeOnExecutor(Executors.THREAD_POOL_EXECUTOR, mailInfo);
+        }
     }
 
     private static final class SendMailAsyncTask extends AsyncTask<MailInfo, Void, Boolean>
@@ -69,22 +97,7 @@ public class MailUtil {
         @Override
         protected Boolean doInBackground(MailInfo... mailInfos) {
             MailInfo mailInfo = mailInfos[0];
-            MultiMailSender mms = new MultiMailSender(mailInfo);
-
-            final String imagePath = mailInfo.getTextRelatedImagePath();
-            final String[] attachmentPaths = mailInfo.getAttachmentPaths();
-
-            if (imagePath == null && (attachmentPaths == null || attachmentPaths.length == 0))
-                return mms.sendTextMail(); // 发送纯文本邮件(使用JavaMail)
-
-            else if (imagePath != null && (attachmentPaths == null || attachmentPaths.length == 0))
-                return mms.sendImageRelatedMail(); // 发送正文带图片引用的邮件
-
-            else if (imagePath == null)
-                return mms.sendAttachmentMail(); // 发送带附件的邮件
-
-            else // 发送正文带图片引用且包含附件的邮件
-                return mms.sendImageRelatedAndAttachmentMixedMail();
+            return new MultiMailSender(mailInfo).sendMail();
         }
 
         @Override

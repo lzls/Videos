@@ -77,6 +77,26 @@ public class MultiMailSender {
     }
 
     /**
+     * 根据MailInfo的内容自动选择发送何种电子邮件
+     */
+    public boolean sendMail() {
+        final String imagePath = mMailInfo.getTextRelatedImagePath();
+        final String[] attachmentPaths = mMailInfo.getAttachmentPaths();
+
+        if (imagePath == null && (attachmentPaths == null || attachmentPaths.length == 0))
+            return sendTextMail(); // 发送纯文本邮件(使用JavaMail)
+
+        else if (imagePath != null && (attachmentPaths == null || attachmentPaths.length == 0))
+            return sendImageRelatedMail(); // 发送正文带图片引用的邮件
+
+        else if (imagePath == null)
+            return sendAttachmentMail(); // 发送带附件的邮件
+
+        else // 发送正文带图片引用且包含附件的邮件
+            return sendImageRelatedAndAttachmentMixedMail();
+    }
+
+    /**
      * 发送纯文本邮件
      */
     public boolean sendTextMail() {
