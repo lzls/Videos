@@ -14,9 +14,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.bumptech.glide.Glide;
+import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
+import com.liuzhenlin.videos.crashhandler.CrashMailReporter;
+import com.liuzhenlin.videos.crashhandler.LogOnCrashHandler;
 import com.liuzhenlin.videos.dao.AppPrefs;
 
 /**
@@ -49,6 +52,9 @@ public class App extends Application {
         mStatusHeight = SystemBarUtils.getStatusHeight(this);
         registerComponentCallbacks(Glide.get(this));
         AppCompatDelegate.setDefaultNightMode(AppPrefs.getSingleton(this).getDefaultNightMode());
+
+        Executors.THREAD_POOL_EXECUTOR.execute(new CrashMailReporter(this)::send);
+        Thread.setDefaultUncaughtExceptionHandler(LogOnCrashHandler.INSTANCE.get(this));
     }
 
     @NonNull

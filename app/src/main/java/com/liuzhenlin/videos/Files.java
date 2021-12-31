@@ -48,4 +48,14 @@ public class Files {
         }
         return dir;
     }
+
+    @NonNull
+    public static File getCrashLogsDir(@NonNull Context context) {
+        File dir = new File(context.getFilesDir(), "crash/logs");
+        if (!dir.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            dir.mkdirs();
+        }
+        return dir;
+    }
 }

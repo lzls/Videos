@@ -16,6 +16,7 @@ import com.liuzhenlin.videos.dao.IVideoDirectoryDao
 import com.liuzhenlin.videos.dao.VideoListItemDao
 import java.io.File
 import java.util.*
+import java.util.regex.Pattern
 
 /**
  * @author 刘振林
@@ -204,6 +205,15 @@ fun Collection<Video>?.allVideoSize(): Long {
         size += video.size
     }
     return size
+}
+
+fun CharSequence?.equalsOrMatches(pattern: CharSequence?, equalsIgnoreCase: Boolean = false): Boolean {
+    if (this === pattern) return true
+    if (this != null && pattern != null) {
+        return this.contentEquals(pattern, equalsIgnoreCase)
+                || Pattern.matches(pattern.toString(), this)
+    }
+    return false
 }
 
 /**
