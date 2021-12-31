@@ -10,6 +10,7 @@ import android.content.Context
 import android.os.AsyncTask
 import androidx.core.util.AtomicFile
 import com.google.gson.Gson
+import com.liuzhenlin.common.Configs
 import com.liuzhenlin.common.Consts
 import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.common.utils.IOUtils
@@ -52,9 +53,9 @@ class OnlineVideoListModel(context: Context) : BaseModel<Nothing, Array<TVGroup>
 //                conn.connectTimeout = TIMEOUT_CONNECTION;
 //                conn.readTimeout = TIMEOUT_READ;
 
-                reader = BufferedReader(InputStreamReader(conn.inputStream, "utf-8"))
+                reader = BufferedReader(InputStreamReader(conn.inputStream, Configs.DEFAULT_CHARSET))
                 jsonFileOut = jsonFile.startWrite()
-                writer = BufferedWriter(OutputStreamWriter(jsonFileOut, "utf-8"))
+                writer = BufferedWriter(OutputStreamWriter(jsonFileOut, Configs.DEFAULT_CHARSET))
                 val buffer = CharArray(1024)
                 var len: Int
                 while (true) {

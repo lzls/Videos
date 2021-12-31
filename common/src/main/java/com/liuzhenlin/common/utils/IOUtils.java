@@ -19,6 +19,8 @@ package com.liuzhenlin.common.utils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.liuzhenlin.common.Configs;
+
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -112,14 +114,17 @@ public class IOUtils {
         return new BigInteger(1, digest.digest()).toString(16);
     }
 
-    /** Read through the specified input stream and convert it to a UTF-8 encoded string. */
+    /**
+     * Read through the specified input stream and convert it to a {@value Configs#DEFAULT_CHARSET}
+     * encoded string.
+     */
     @Nullable
     public static String decodeStringFromStream(@NonNull InputStream in) throws IOException {
         Reader reader = null;
         try {
             StringBuilder json = null;
             //noinspection CharsetObjectCanBeUsed
-            reader = new InputStreamReader(in, "utf-8");
+            reader = new InputStreamReader(in, Configs.DEFAULT_CHARSET);
             char[] buffer = new char[BUF_SIZE];
             int len;
             while ((len = reader.read(buffer)) != -1) {
