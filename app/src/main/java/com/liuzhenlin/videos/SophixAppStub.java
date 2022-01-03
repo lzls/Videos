@@ -28,15 +28,20 @@ public class SophixAppStub extends SophixApplication {
     static class RealApplicationStub {
     }
 
-    static {
-        System.loadLibrary("videos");
-    }
-
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         MultiDex.install(base);
+        loadVideosLib();
         initSophix();
+    }
+
+    // MUST load the library after MultiDex was called to install or ClassNotFoundException
+    // might be thrown.
+    private static void loadVideosLib() {
+        if (!VideosLibrary.isAvailable()) {
+            throw new RuntimeException("Failed to load videos native library.");
+        }
     }
 
     private void initSophix() {
