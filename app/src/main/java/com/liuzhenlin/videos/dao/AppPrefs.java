@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 
+import com.bumptech.glide.util.Synthetic;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.utils.AESUtils;
 import com.liuzhenlin.common.utils.Executors;
@@ -32,6 +33,9 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.security.GeneralSecurityException;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author 刘振林
@@ -40,7 +44,8 @@ public final class AppPrefs {
 
     @SuppressWarnings("FieldCanBeLocal")
     private final Context mContext;
-    private final SharedPreferences mSP;
+    @Synthetic final SharedPreferences mSP;
+    @Synthetic final ReadWriteLock mLock = new ReentrantReadWriteLock();
 
     private static final String DRAWER_BACKGROUND_PATH = "drawerBackgroundPath";
     private static final String IS_LIGHT_DRAWER_STATUS = "isLightDrawerStatus";
@@ -76,54 +81,34 @@ public final class AppPrefs {
         return mSP.getString(DRAWER_BACKGROUND_PATH, null);
     }
 
-    public void setDrawerBackgroundPath(@Nullable String path) {
-        mSP.edit().putString(DRAWER_BACKGROUND_PATH, path).apply();
-    }
-
     public boolean isLightDrawerStatus() {
-        String key = IS_LIGHT_DRAWER_STATUS;
-        final boolean nightMode = App.isNightMode();
-        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
-            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+        Lock readLock = mLock.readLock();
+        readLock.lock();
+        try {
+            String key = IS_LIGHT_DRAWER_STATUS;
+            boolean nightMode = App.isNightMode();
+            if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
+                key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+            }
+            return mSP.getBoolean(key, !nightMode);
+        } finally {
+            readLock.unlock();
         }
-        return mSP.getBoolean(key, !nightMode);
-    }
-
-    public void setLightDrawerStatus(boolean light) {
-        setLightDrawerStatus(App.isNightMode(), light);
-    }
-
-    public void setLightDrawerStatus(boolean nightMode, boolean light) {
-        String key = IS_LIGHT_DRAWER_STATUS;
-        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
-            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
-        }
-        mSP.edit().putBoolean(key, light).apply();
     }
 
     public boolean isLightDrawerListForeground() {
-        String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
-        final boolean nightMode = App.isNightMode();
-        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
-            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+        Lock readLock = mLock.readLock();
+        readLock.lock();
+        try {
+            String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
+            boolean nightMode = App.isNightMode();
+            if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
+                key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+            }
+            return mSP.getBoolean(key, nightMode);
+        } finally {
+            readLock.unlock();
         }
-        return mSP.getBoolean(key, nightMode);
-    }
-
-    public void setLightDrawerListForeground(boolean light) {
-        setLightDrawerListForeground(App.isNightMode(), light);
-    }
-
-    public void setLightDrawerListForeground(boolean nightMode, boolean light) {
-        String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
-        if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
-            key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
-        }
-        mSP.edit().putBoolean(key, light).apply();
-    }
-
-    public void setDefaultNightMode(int mode) {
-        mSP.edit().putInt(DEFAULT_NIGHT_MODE, mode).apply();
     }
 
     public int getDefaultNightMode() {
@@ -131,45 +116,149 @@ public final class AppPrefs {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public synchronized String getGUID() {
-        if (!mSP.contains(GUID)) {
-            String guid = null;
-            File guidFile = new File(Environment.getExternalStorageDirectory(), ".guid__lzls_videos");
-            if (guidFile.exists()) {
+    @NonNull
+    public String getGUID() {
+        Lock readLock = mLock.readLock();
+        Lock writeLock = mLock.writeLock();
+        try {
+            readLock.lock();
+            if (!mSP.contains(GUID)) {
+                // Must release read lock before acquiring write lock
+                readLock.unlock();
+                writeLock.lock();
                 try {
-                    String data = IOUtils.decodeStringFromStream(new FileInputStream(guidFile));
-                    if (data != null) {
-                        guid = AESUtils.decrypt(mContext, data);
+                    // Recheck state because another thread might have acquired write lock
+                    // and changed the state before we did.
+                    if (!mSP.contains(GUID)) {
+                        String guid = null;
+                        File guidFile = new File(
+                                Environment.getExternalStorageDirectory(), ".guid__lzls_videos");
+                        if (guidFile.exists()) {
+                            try {
+                                String data =
+                                        IOUtils.decodeStringFromStream(new FileInputStream(guidFile));
+                                if (data != null) {
+                                    guid = AESUtils.decrypt(mContext, data);
+                                }
+                            } catch (IOException | GeneralSecurityException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        if (TextUtils.isEmpty(guid)) {
+                            guid = UUID.randomUUID().toString();
+                            String finalGuid = guid;
+                            Executors.THREAD_POOL_EXECUTOR.execute(() -> {
+                                Writer writer = null;
+                                Exception ex = null;
+                                try {
+                                    writer = new OutputStreamWriter(
+                                            new FileOutputStream(guidFile), Configs.DEFAULT_CHARSET);
+                                    writer.write(AESUtils.encrypt(mContext, finalGuid));
+                                } catch (GeneralSecurityException | IOException e) {
+                                    ex = e;
+                                    e.printStackTrace();
+                                } finally {
+                                    IOUtils.closeSilently(writer);
+                                    if (ex == null) {
+                                        guidFile.setReadOnly();
+                                    } else {
+                                        guidFile.delete();
+                                    }
+                                }
+                            });
+                        }
+                        mSP.edit().putString(GUID, guid).apply();
                     }
-                } catch (IOException | GeneralSecurityException e) {
-                    e.printStackTrace();
+                } finally {
+                    // Downgrade by acquiring read lock before releasing write lock
+                    readLock.lock();
+                    writeLock.unlock(); // Unlock write, still hold read
                 }
             }
-            if (TextUtils.isEmpty(guid)) {
-                guid = UUID.randomUUID().toString();
-                String finalGuid = guid;
-                Executors.THREAD_POOL_EXECUTOR.execute(() -> {
-                    Writer writer = null;
-                    Exception ex = null;
-                    try {
-                        writer = new OutputStreamWriter(
-                                new FileOutputStream(guidFile), Configs.DEFAULT_CHARSET);
-                        writer.write(AESUtils.encrypt(mContext, finalGuid));
-                    } catch (GeneralSecurityException | IOException e) {
-                        ex = e;
-                        e.printStackTrace();
-                    } finally {
-                        IOUtils.closeSilently(writer);
-                        if (ex == null) {
-                            guidFile.setReadOnly();
-                        } else {
-                            guidFile.delete();
-                        }
-                    }
-                });
-            }
-            mSP.edit().putString(GUID, guid).apply();
+            return mSP.getString(GUID, Build.UNKNOWN);
+        } finally {
+            readLock.unlock();
         }
-        return mSP.getString(GUID, Build.UNKNOWN);
+    }
+
+    @NonNull
+    public Editor edit() {
+        return new Editor(this);
+    }
+
+    public static final class Editor {
+
+        private final AppPrefs mPrefs;
+        private final SharedPreferences.Editor mEditor;
+
+        Editor(AppPrefs prefs) {
+            mPrefs = prefs;
+            mEditor = prefs.mSP.edit();
+        }
+
+        public AppPrefs.Editor setDrawerBackgroundPath(@Nullable String path) {
+            mEditor.putString(DRAWER_BACKGROUND_PATH, path);
+            return this;
+        }
+
+        public AppPrefs.Editor setLightDrawerStatus(boolean light) {
+            setLightDrawerStatus(App.isNightMode(), light);
+            return this;
+        }
+
+        public AppPrefs.Editor setLightDrawerStatus(boolean nightMode, boolean light) {
+            Lock readLock = mPrefs.mLock.readLock();
+            readLock.lock();
+            try {
+                String key = IS_LIGHT_DRAWER_STATUS;
+                if (nightMode && !mPrefs.mSP.contains(DRAWER_BACKGROUND_PATH)) {
+                    key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+                }
+                mEditor.putBoolean(key, light);
+            } finally {
+                readLock.unlock();
+            }
+            return this;
+        }
+
+        public AppPrefs.Editor setLightDrawerListForeground(boolean light) {
+            setLightDrawerListForeground(App.isNightMode(), light);
+            return this;
+        }
+
+        public AppPrefs.Editor setLightDrawerListForeground(boolean nightMode, boolean light) {
+            Lock readLock = mPrefs.mLock.readLock();
+            readLock.lock();
+            try {
+                String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
+                if (nightMode && !mPrefs.mSP.contains(DRAWER_BACKGROUND_PATH)) {
+                    key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
+                }
+                mEditor.putBoolean(key, light);
+            } finally {
+                readLock.unlock();
+            }
+            return this;
+        }
+
+        public AppPrefs.Editor setDefaultNightMode(int mode) {
+            mEditor.putInt(DEFAULT_NIGHT_MODE, mode);
+            return this;
+        }
+
+        public AppPrefs.Editor clear() {
+            mEditor.clear();
+            return this;
+        }
+
+        public void apply() {
+            Lock writeLock = mPrefs.mLock.writeLock();
+            writeLock.lock();
+            try {
+                mEditor.apply();
+            } finally {
+                writeLock.unlock();
+            }
+        }
     }
 }

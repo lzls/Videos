@@ -208,11 +208,13 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                     setDrawerBackground(path);
                     // 用户从存储卡中删除了该路径下的图片或其路径已改变
                 } else {
-                    asp.setDrawerBackgroundPath(null);
-                    asp.setLightDrawerStatus(false, true);
-                    asp.setLightDrawerStatus(true, false);
-                    asp.setLightDrawerListForeground(false, false);
-                    asp.setLightDrawerListForeground(true, true);
+                    asp.edit()
+                            .setDrawerBackgroundPath(null)
+                            .setLightDrawerStatus(false, true)
+                            .setLightDrawerStatus(true, false)
+                            .setLightDrawerListForeground(false, false)
+                            .setLightDrawerListForeground(true, true)
+                            .apply();
                 }
             }
         });
@@ -306,7 +308,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
     @Synthetic void setLightDrawerStatus(boolean light) {
         mIsDrawerStatusLight = light;
-        AppPrefs.getSingleton(this).setLightDrawerStatus(light);
+        AppPrefs.getSingleton(this).edit().setLightDrawerStatus(light).apply();
         if (mDrawerScrollPercent >= 0.5f) {
             setLightStatus(light);
         }
@@ -359,7 +361,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                     activity.mDrawerListAdapter.setLightDrawerListForeground(
                             asp.isLightDrawerListForeground());
                 } else {
-                    asp.setDrawerBackgroundPath(mImagePath);
+                    asp.edit().setDrawerBackgroundPath(mImagePath).apply();
 
                     final int defColor = ThemeUtils.isNightMode(activity) ? Color.BLACK : Color.WHITE;
                     final boolean lightBackground = ColorUtils.isLightColor(
@@ -496,7 +498,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         }
 
         void setLightDrawerListForeground(boolean light) {
-            AppPrefs.getSingleton(mContext).setLightDrawerListForeground(light);
+            AppPrefs.getSingleton(mContext).edit().setLightDrawerListForeground(light).apply();
             applyDrawerForeground(light);
         }
 
@@ -771,7 +773,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 default:
                     return false;
             }
-            AppPrefs.getSingleton(this).setDefaultNightMode(mode);
+            AppPrefs.getSingleton(this).edit().setDefaultNightMode(mode).apply();
             AppCompatDelegate.setDefaultNightMode(mode);
             return true;
         });

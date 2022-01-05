@@ -85,7 +85,7 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
                 }
                 if (invalidPaths != null) {
                     mSavedPicturePaths.removeAll(invalidPaths);
-                    mFeedbackSPs.savePicturePaths(mSavedPicturePaths);
+                    mFeedbackSPs.edit().setPicturePaths(mSavedPicturePaths).apply();
                 }
             }
         } else {
@@ -146,9 +146,11 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
                     mGridAdapter.mPicturePaths.isEmpty() ?
                             null : new ArrayList<>(mGridAdapter.mPicturePaths));
 
-            mFeedbackSPs.saveText(mSavedFeedbackText);
-            mFeedbackSPs.saveContactWay(mSavedContactWay);
-            mFeedbackSPs.savePicturePaths(mSavedPicturePaths);
+            mFeedbackSPs.edit()
+                    .setText(mSavedFeedbackText)
+                    .setContactWay(mSavedContactWay)
+                    .setPicturePaths(mSavedPicturePaths)
+                    .apply();
 
             if (toastResultIfSaved && mView != null) {
                 mView.toastResultOnUserFilledDataSaved();
@@ -198,7 +200,7 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
                             null : mGridAdapter.mPicturePaths.toArray(Consts.EMPTY_STRING_ARRAY));
 
             // 提交反馈后，清除sp文件保存的数据
-            mFeedbackSPs.clear();
+            mFeedbackSPs.edit().clear().apply();
 
             // 重设临时缓存的数据
             mSavedFeedbackText = Consts.EMPTY_STRING;
