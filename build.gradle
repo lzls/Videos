@@ -17,8 +17,6 @@ buildscript {
 }
 
 allprojects {
-    group = 'com.liuzhenlin.videos'
-
     repositories {
         google()
         mavenCentral()
