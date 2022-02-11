@@ -1,0 +1,30 @@
+/*
+ * Created on 2022-2-11 5:35:39 PM.
+ * Copyright © 2022 刘振林. All rights reserved.
+ */
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        targetSdkVersion rootProject.ext.targetSdkVersion
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
+
+    testImplementation "junit:junit:$rootProject.ext.testJunitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$rootProject.ext.androidTestJunitVersion"
+}

@@ -1,14 +1,12 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
-android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
+apply from: "$rootDir/common_build.gradle"
 
+android {
     defaultConfig {
         applicationId "com.liuzhenlin.videos"
         minSdkVersion 16
-        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 41
         versionName "2.0"
 
@@ -19,15 +17,6 @@ android {
         ndk {
             abiFilters 'armeabi-v7a'/*, 'arm64-v8a'*/
         }
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
     }
 
     packagingOptions {
@@ -37,8 +26,6 @@ android {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     implementation project(':common')
@@ -60,7 +47,4 @@ dependencies {
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 
     implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.0'
-
-    testImplementation "junit:junit:$rootProject.ext.testJunitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$rootProject.ext.androidTestJunitVersion"
 }
