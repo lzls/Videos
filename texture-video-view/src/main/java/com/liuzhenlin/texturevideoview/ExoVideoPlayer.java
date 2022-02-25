@@ -11,7 +11,6 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Messenger;
 import android.util.Log;
 import android.view.Surface;
 import android.widget.Toast;
@@ -55,7 +54,6 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoSize;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
-import com.liuzhenlin.common.receiver.MediaButtonEventHandler;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.texturevideoview.bean.AudioTrackInfo;
@@ -359,8 +357,6 @@ public class ExoVideoPlayer extends VideoPlayer {
             });
             startVideo(true);
 
-            MediaButtonEventReceiver.setMediaButtonEventHandler(
-                    new MediaButtonEventHandler(new Messenger(new MsgHandler(this))));
             mHeadsetEventsReceiver = new HeadsetEventsReceiver(mContext) {
                 @Override
                 public void onHeadsetPluggedOutOrBluetoothDisconnected() {
@@ -576,6 +572,7 @@ public class ExoVideoPlayer extends VideoPlayer {
 
                         // Register MediaButtonEventReceiver every time the video starts, which
                         // will ensure it to be the sole receiver of MEDIA_BUTTON intents
+                        MediaButtonEventReceiver.setMediaButtonEventHandler(getMediaButtonEventHandler());
                         mAudioManager.registerMediaButtonEventReceiver(sMediaButtonEventReceiverComponent);
                         break;
 

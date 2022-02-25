@@ -12,6 +12,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Messenger;
 import android.view.Surface;
 import android.widget.Toast;
 
@@ -176,6 +177,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
                     .setContentType(C.CONTENT_TYPE_MOVIE)
                     .build();
 
+    private MediaButtonEventHandler mMediaButtonEventHandler;
     protected static ComponentName sMediaButtonEventReceiverComponent;
 
     protected HeadsetEventsReceiver mHeadsetEventsReceiver;
@@ -305,6 +307,15 @@ public abstract class VideoPlayer implements IVideoPlayer {
     @NonNull
     protected final File getBaseVideoCacheDirectory() {
         return new File(FileUtils.getAppCacheDir(mContext), "videos");
+    }
+
+    /** @return the handler to process events that the media button event receiver receives. */
+    protected MediaButtonEventHandler getMediaButtonEventHandler() {
+        if (mMediaButtonEventHandler == null) {
+            mMediaButtonEventHandler =
+                    new MediaButtonEventHandler(new Messenger(new MsgHandler(this)));
+        }
+        return mMediaButtonEventHandler;
     }
 
     /**

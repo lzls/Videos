@@ -10,7 +10,6 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Messenger;
 import android.util.Log;
 import android.view.Surface;
 import android.widget.Toast;
@@ -23,7 +22,6 @@ import androidx.annotation.RestrictTo;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
-import com.liuzhenlin.common.receiver.MediaButtonEventHandler;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
@@ -266,8 +264,6 @@ public class IjkVideoPlayer extends VideoPlayer {
             });
             startVideo();
 
-            MediaButtonEventReceiver.setMediaButtonEventHandler(
-                    new MediaButtonEventHandler(new Messenger(new MsgHandler(this))));
             mHeadsetEventsReceiver = new HeadsetEventsReceiver(mContext) {
                 @Override
                 public void onHeadsetPluggedOutOrBluetoothDisconnected() {
@@ -478,6 +474,7 @@ public class IjkVideoPlayer extends VideoPlayer {
 
                         // Register MediaButtonEventReceiver every time the video starts, which
                         // will ensure it to be the sole receiver of MEDIA_BUTTON intents
+                        MediaButtonEventReceiver.setMediaButtonEventHandler(getMediaButtonEventHandler());
                         mAudioManager.registerMediaButtonEventReceiver(sMediaButtonEventReceiverComponent);
                         break;
 
