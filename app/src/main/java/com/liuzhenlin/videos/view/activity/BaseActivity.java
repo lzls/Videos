@@ -5,6 +5,8 @@
 
 package com.liuzhenlin.videos.view.activity;
 
+import android.annotation.SuppressLint;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,9 +24,17 @@ import com.liuzhenlin.videos.App;
 public class BaseActivity extends SwipeBackActivity {
 
     private Configuration mConfig;
+
     private AppCompatDelegateProxy mDelegate;
+
     private int mThemeWindowAnimations;
+
     private static final boolean FINISH_AFTER_CONTENT_OUT_OF_SIGHT = false;
+
+    private boolean mStopped;
+    private boolean mDestroyedAndStillInPiP;
+    protected static final int SDK_VERSION_SUPPORTS_PIP = Build.VERSION_CODES.N;
+    protected static final int SDK_VERSION_SUPPORTS_RESIZABLE_PIP = Build.VERSION_CODES.O;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -99,5 +109,73 @@ public class BaseActivity extends SwipeBackActivity {
             }
         }
         super.onBackPressed();
+    }
+
+    @Override
+    public void finish() {
+        if (supportsPictureInPictureMode()) {
+            // finish() does not remove the activity in PIP mode from the recents stack.
+            // Only finishAndRemoveTask() does this.
+            finishAndRemoveTask();
+        } else {
+            super.finish();
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        mStopped = false;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mStopped = true;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isInPictureInPictureMode()) {
+            mDestroyedAndStillInPiP = true;
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+        if (!isInPictureInPictureMode) {
+            if (mStopped && !mDestroyedAndStillInPiP) {
+                // We have closed the picture-in-picture window by clicking the 'close' button.
+                // Remove the pip activity task too, so that it will not be kept
+                // in the recents list.
+                finish();
+            }
+            // If the above condition doesn't hold, this activity is destroyed or may be in
+            // the recreation process...
+        }
+    }
+
+    protected boolean shouldSupportResizablePipOnly() {
+        return false;
+    }
+
+    private boolean doesSdkVersionSupportPiP() {
+        return Build.VERSION.SDK_INT >=
+                (shouldSupportResizablePipOnly()
+                        ? SDK_VERSION_SUPPORTS_RESIZABLE_PIP : SDK_VERSION_SUPPORTS_PIP);
+    }
+
+    @SuppressLint("InlinedApi")
+    protected boolean supportsPictureInPictureMode() {
+        return doesSdkVersionSupportPiP()
+                && getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                && mDelegate.doesActivityManifestDefinedSupportPiP();
+    }
+
+    @Override
+    public boolean isInPictureInPictureMode() {
+        return doesSdkVersionSupportPiP() && super.isInPictureInPictureMode();
     }
 }

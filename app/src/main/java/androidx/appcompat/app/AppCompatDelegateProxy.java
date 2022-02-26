@@ -7,11 +7,15 @@ package androidx.appcompat.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,6 +46,9 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     private boolean mCreated;
 
     private static Method sIsActivityManifestHandlingUiModeMethod;
+
+    private boolean mActivityManifestDefinedSupportsPipChecked;
+    private boolean mActivityManifestDefinedSupportsPiP;
 
     public AppCompatDelegateProxy(@NonNull AppCompatDelegate delegate) {
         mDelegate = (AppCompatDelegateImpl) delegate;
@@ -236,6 +243,44 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public boolean doesActivityManifestDefinedSupportPiP() {
+        if (!mActivityManifestDefinedSupportsPipChecked && mDelegate.mHost instanceof Activity) {
+            final PackageManager pm = mDelegate.mContext.getPackageManager();
+            if (pm == null) {
+                // If we don't have a PackageManager, return false. Don't set
+                // the checked flag though so we still check again later
+                return false;
+            }
+            try {
+                int flags = 0;
+                // On newer versions of the OS we need to pass direct boot
+                // flags so that getActivityInfo doesn't crash under strict
+                // mode checks
+                if (Build.VERSION.SDK_INT >= 29) {
+                    flags = PackageManager.MATCH_DIRECT_BOOT_AUTO
+                            | PackageManager.MATCH_DIRECT_BOOT_AWARE
+                            | PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
+                } else if (Build.VERSION.SDK_INT >= 24) {
+                    flags = PackageManager.MATCH_DIRECT_BOOT_AWARE
+                            | PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
+                }
+                final ActivityInfo info = pm.getActivityInfo(
+                        new ComponentName(mDelegate.mContext, mDelegate.mHost.getClass()), flags);
+                mActivityManifestDefinedSupportsPiP =
+                        (info.flags & 0x400000 /* FLAG_SUPPORTS_PICTURE_IN_PICTURE */) != 0;
+            } catch (PackageManager.NameNotFoundException e) {
+                // This shouldn't happen but let's not crash because of it, we'll just log and
+                // return false (since most apps won't be handling it)
+                Log.d(TAG, "Exception while getting ActivityInfo", e);
+                mActivityManifestDefinedSupportsPiP = false;
+            }
+        }
+        // Flip the checked flag so we don't check again
+        mActivityManifestDefinedSupportsPipChecked = true;
+
+        return mActivityManifestDefinedSupportsPiP;
     }
 
     @Override

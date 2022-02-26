@@ -107,7 +107,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     private static final int PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN = 1 << 4;
 
     private static final int PFLAG_STOPPED = 1 << 5;
-    private static final int PFLAG_ACTIVITY_DESTROYED_AND_STILL_IN_PIP = 1 << 6;
 
     private static int sStatusHeight;
     private static int sStatusHeightInLandscapeOfNotchSupportDevice;
@@ -193,18 +192,12 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
-    private static final int VERSION_SUPPORTS_PIP = Build.VERSION_CODES.O;
-
-    @Synthetic static boolean supportsPictureInPictureMode() {
-        return Build.VERSION.SDK_INT >= VERSION_SUPPORTS_PIP;
-    }
-
     @Override
-    public boolean isInPictureInPictureMode() {
-        return supportsPictureInPictureMode() && super.isInPictureInPictureMode();
+    protected boolean shouldSupportResizablePipOnly() {
+        return true;
     }
 
-    @RequiresApi(VERSION_SUPPORTS_PIP)
+    @RequiresApi(SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
     @Synthetic PictureInPictureParams.Builder getPipParamsBuilder() {
         if (mPipParamsBuilder == null) {
             mPipParamsBuilder = new PictureInPictureParams.Builder();
@@ -334,6 +327,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 if (isInPictureInPictureMode()) {
                     // We are playing the video now. In PiP mode, we want to show several
                     // action items to fast rewind, pause and fast forward the video.
+                    //noinspection NewApi
                     updatePictureInPictureActions(PIP_ACTION_FAST_REWIND
                             | PIP_ACTION_PAUSE | PIP_ACTION_FAST_FORWARD);
 
@@ -353,6 +347,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                             && !mVideoView.canSkipToNext())) {
                         actions |= PIP_ACTION_FAST_FORWARD;
                     }
+                    //noinspection NewApi
                     updatePictureInPictureActions(actions);
                 }
             }
@@ -430,6 +425,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                         if (!layoutMatches
                                 && supportsPictureInPictureMode()
                                 && mVideoWidth != 0 && mVideoHeight != 0) {
+                            //noinspection NewApi
                             enterPictureInPictureMode(getPipParamsBuilder()
                                     .setAspectRatio(new Rational(mVideoWidth, mVideoHeight))
                                     .build());
@@ -619,13 +615,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     public void finish() {
         mPresenter.recordCurrVideoProgressAndSetResult();
-        if (supportsPictureInPictureMode()) {
-            // finish() does not remove the activity in PIP mode from the recents stack.
-            // Only finishAndRemoveTask() does this.
-            finishAndRemoveTask();
-        } else {
-            super.finish();
-        }
+        super.finish();
     }
 
     @Override
@@ -644,7 +634,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             // recreated due to any configuration we do not handle changed, which can lead to
             // the previous instance to leak for mReceiver is still registered on it, etc.
             if (isInPictureInPictureMode()) {
-                mPrivateFlags |= PFLAG_ACTIVITY_DESTROYED_AND_STILL_IN_PIP;
+                //noinspection NewApi
                 onPictureInPictureModeChanged(false);
             } else {
                 sActivityInPiP.clear();
@@ -958,7 +948,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     /**
      * Update the action items in Picture-in-Picture mode.
      */
-    @RequiresApi(VERSION_SUPPORTS_PIP)
+    @RequiresApi(SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
     @Synthetic void updatePictureInPictureActions(int pipActions) {
         List<RemoteAction> actions = new LinkedList<>();
         if ((pipActions & PIP_ACTION_FAST_REWIND) != 0) {
@@ -1014,7 +1004,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @SuppressLint("SwitchIntDef")
-    @RequiresApi(VERSION_SUPPORTS_PIP)
+    @RequiresApi(SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode);
@@ -1160,14 +1150,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             mOnPipLayoutChangeListener = null;
 
             if ((mPrivateFlags & PFLAG_STOPPED) != 0) {
-                if ((mPrivateFlags & PFLAG_ACTIVITY_DESTROYED_AND_STILL_IN_PIP) == 0) {
-                    // We have closed the picture-in-picture window by clicking the 'close' button.
-                    // Remove the pip activity task too, so that it will not be kept
-                    // in the recents list.
-                    finish();
-                }
-                // If the above condition doesn't hold, this activity is destroyed or may be in
-                // the recreation process...
+                // This case we have handled in super
                 return;
             }
 
