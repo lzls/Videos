@@ -5,7 +5,6 @@
 
 package com.liuzhenlin.videos.view.activity;
 
-import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -14,14 +13,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegateProxy;
 
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
-import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.swipeback.SwipeBackActivity;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
-import com.liuzhenlin.videos.App;
 
 public class BaseActivity extends SwipeBackActivity {
-
-    private Configuration mConfig;
 
     private AppCompatDelegateProxy mDelegate;
 
@@ -29,24 +24,12 @@ public class BaseActivity extends SwipeBackActivity {
 
     private static final boolean FINISH_AFTER_CONTENT_OUT_OF_SIGHT = false;
 
-    private boolean mStopped;
-    private boolean mDestroyedAndStillInPiP;
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Install decor first to get the default window animations coming from theme
         getWindow().getDecorView();
         mThemeWindowAnimations = getWindow().getAttributes().windowAnimations;
-
         super.onCreate(savedInstanceState);
-        mConfig = new Configuration(getResources().getConfiguration());
-
-        // Caches the night mode in global as far as possible early, under the promise of
-        // the same day/night mode throughout the whole app. The default night mode may not follow
-        // the system default, and so we can not just use the app context to see if this app
-        // is decorated with the dark theme. This should be called for each activity instead of
-        // just the first launched one, in case some of the activities are being recreated...
-        App.cacheNightMode(ThemeUtils.isNightMode(this));
     }
 
     @NonNull
@@ -56,19 +39,6 @@ public class BaseActivity extends SwipeBackActivity {
             mDelegate = new AppCompatDelegateProxy(super.getDelegate());
         }
         return mDelegate;
-    }
-
-    @Override
-    public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        // Be sure to update the Config from Resources here since it may have changed with
-        // the updated UI Mode
-        newConfig = getResources().getConfiguration();
-        int uiModeMask = Configuration.UI_MODE_NIGHT_MASK;
-        if ((mConfig.uiMode & uiModeMask) != (newConfig.uiMode & uiModeMask)) {
-            mDelegate.recreateHostWhenDayNightAppliedIfNeeded();
-        }
-        mConfig.setTo(newConfig);
     }
 
     /**
@@ -109,7 +79,7 @@ public class BaseActivity extends SwipeBackActivity {
 
     @Override
     public void finish() {
-        PictureInPictureHelper pipHelper = mDelegate.getPipHelper();
+        PictureInPictureHelper pipHelper = getDelegate().getPipHelper();
         if (pipHelper != null && pipHelper.supportsPictureInPictureMode()) {
             // finish() does not remove the activity in PIP mode from the recents stack.
             // Only finishAndRemoveTask() does this.
@@ -121,43 +91,14 @@ public class BaseActivity extends SwipeBackActivity {
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
-        mStopped = false;
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mStopped = true;
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (isInPictureInPictureMode()) {
-            mDestroyedAndStillInPiP = true;
-        }
-    }
-
-    @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode);
-        if (!isInPictureInPictureMode) {
-            if (mStopped && !mDestroyedAndStillInPiP) {
-                // We have closed the picture-in-picture window by clicking the 'close' button.
-                // Remove the pip activity task too, so that it will not be kept
-                // in the recents list.
-                finish();
-            }
-            // If the above condition doesn't hold, this activity is destroyed or may be in
-            // the recreation process...
-        }
+        getDelegate().onPictureInPictureModeChanged(isInPictureInPictureMode);
     }
 
     @Override
     public boolean isInPictureInPictureMode() {
-        PictureInPictureHelper pipHelper = mDelegate.getPipHelper();
+        PictureInPictureHelper pipHelper = getDelegate().getPipHelper();
         if (pipHelper != null) {
             return pipHelper.doesSdkVersionSupportPiP() && super.isInPictureInPictureMode();
         }

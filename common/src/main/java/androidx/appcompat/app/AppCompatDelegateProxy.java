@@ -22,16 +22,20 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.util.Consumer;
 
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
+import com.liuzhenlin.common.utils.ThemeUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static com.liuzhenlin.common.utils.PictureInPictureHelper.SDK_VERSION_SUPPORTS_PIP;
+
 @SuppressLint("RestrictedApi")
 public class AppCompatDelegateProxy extends AppCompatDelegate {
 
-    private final AppCompatDelegateImpl mDelegate;
+    private final AppCompatDelegate mDelegate;
 
     /**
      * Flag indicating whether we can return a different context from attachBaseContext().
@@ -42,6 +46,10 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
 
     private boolean mBaseContextAttached;
     private boolean mCreated;
+    private boolean mStopped;
+    private boolean mDestroyedAndStillInPiP;
+
+    private Configuration mConfig;
 
     private static Method sIsActivityManifestHandlingUiModeMethod;
 
@@ -49,7 +57,7 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     private PictureInPictureHelper mPipHelper;
 
     public AppCompatDelegateProxy(@NonNull AppCompatDelegate delegate) {
-        mDelegate = (AppCompatDelegateImpl) delegate;
+        mDelegate = delegate;
     }
 
     public void setPipHelper(@Nullable PictureInPictureHelper pipHelper) {
@@ -106,6 +114,33 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
         mBaseContextAttached = true;
         mDelegate.onCreate(savedInstanceState);
         mCreated = true;
+        doIfDelegateIsTheBase(baseDelegate -> {
+            mConfig = new Configuration(baseDelegate.mContext.getResources().getConfiguration());
+
+            //// Logic for app module...
+            // Caches the night mode in global as far as possible early, under the promise of
+            // the same day/night mode throughout the whole app. The default night mode may not follow
+            // the system default, and so we can not just use the app context to see if this app
+            // is decorated with the dark theme. This should be called for each activity instead of
+            // just the first launched one, in case some of the activities are being recreated...
+            if (baseDelegate.mHost instanceof Activity) {
+                try {
+                    Class<?> appClass = Class.forName("com.liuzhenlin.videos.App");
+                    if (appClass != null) {
+                        appClass.getMethod("cacheNightMode", boolean.class)
+                                .invoke(appClass, ThemeUtils.isNightMode((Context) baseDelegate.mHost));
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                } catch (NoSuchMethodException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override
@@ -116,16 +151,57 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         mDelegate.onConfigurationChanged(newConfig);
+        doIfDelegateIsTheBase(baseDelegate -> {
+            // Be sure to update the Config from Resources here since it may have changed with
+            // the updated UI Mode
+            Configuration config = baseDelegate.mContext.getResources().getConfiguration();
+            int uiModeMask = Configuration.UI_MODE_NIGHT_MASK;
+            if ((mConfig.uiMode & uiModeMask) != (config.uiMode & uiModeMask)) {
+                recreateHostWhenDayNightAppliedIfNeeded(baseDelegate);
+            }
+            mConfig.setTo(config);
+        });
+    }
+
+    private void recreateHostWhenDayNightAppliedIfNeeded(AppCompatDelegateImpl baseDelegate) {
+        if (!baseDelegate.mIsDestroyed
+                && mBaseContextAttached
+                && (sCanReturnDifferentContext || mCreated)
+                && baseDelegate.mHost instanceof Activity && !((Activity) baseDelegate.mHost).isChild()
+                && isActivityManifestHandlingUiMode()) {
+            ActivityCompat.recreate((Activity) baseDelegate.mHost);
+        }
+    }
+
+    private boolean isActivityManifestHandlingUiMode() {
+        try {
+            if (sIsActivityManifestHandlingUiModeMethod == null) {
+                sIsActivityManifestHandlingUiModeMethod = AppCompatDelegateImpl.class
+                        .getDeclaredMethod("isActivityManifestHandlingUiMode");
+                sIsActivityManifestHandlingUiModeMethod.setAccessible(true);
+            }
+            Boolean ret = (Boolean) sIsActivityManifestHandlingUiModeMethod.invoke(mDelegate);
+            return ret != null && ret;
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
     public void onStart() {
         mDelegate.onStart();
+        mStopped = false;
     }
 
     @Override
     public void onStop() {
         mDelegate.onStop();
+        mStopped = true;
     }
 
     @Override
@@ -177,6 +253,18 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     @Override
     public void onDestroy() {
         mDelegate.onDestroy();
+        if (mPipHelper != null && mPipHelper.doesSdkVersionSupportPiP()
+            || mPipHelper == null && Build.VERSION.SDK_INT >= SDK_VERSION_SUPPORTS_PIP) {
+            doIfDelegateIsTheBase(baseDelegate -> {
+                if (baseDelegate.mHost instanceof Activity) {
+                    Activity activity = (Activity) baseDelegate.mHost;
+                    //noinspection NewApi
+                    if (activity.isInPictureInPictureMode()) {
+                        mDestroyedAndStillInPiP = true;
+                    }
+                }
+            });
+        }
     }
 
     @Nullable
@@ -231,35 +319,6 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
         return mDelegate.applyDayNight();
     }
 
-    public void recreateHostWhenDayNightAppliedIfNeeded() {
-        if (!mDelegate.mIsDestroyed
-                && mBaseContextAttached
-                && (sCanReturnDifferentContext || mCreated)
-                && mDelegate.mHost instanceof Activity && !((Activity) mDelegate.mHost).isChild()
-                && isActivityManifestHandlingUiMode()) {
-            ActivityCompat.recreate((Activity) mDelegate.mHost);
-        }
-    }
-
-    private boolean isActivityManifestHandlingUiMode() {
-        try {
-            if (sIsActivityManifestHandlingUiModeMethod == null) {
-                sIsActivityManifestHandlingUiModeMethod = AppCompatDelegateImpl.class
-                        .getDeclaredMethod("isActivityManifestHandlingUiMode");
-                sIsActivityManifestHandlingUiModeMethod.setAccessible(true);
-            }
-            Boolean ret = (Boolean) sIsActivityManifestHandlingUiModeMethod.invoke(mDelegate);
-            return ret != null && ret;
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     @Override
     public int getLocalNightMode() {
         return mDelegate.getLocalNightMode();
@@ -269,5 +328,29 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     @Override
     public void setLocalNightMode(int mode) {
         mDelegate.setLocalNightMode(mode);
+    }
+
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        doIfDelegateIsTheBase(baseDelegate -> {
+            if (baseDelegate.mHost instanceof Activity) {
+                Activity activity = (Activity) baseDelegate.mHost;
+                if (!isInPictureInPictureMode) {
+                    if (mStopped && !mDestroyedAndStillInPiP) {
+                        // We have closed the picture-in-picture window by clicking the 'close' button.
+                        // Remove the pip activity task too, so that it will not be kept
+                        // in the recents list.
+                        activity.finish();
+                    }
+                    // If the above condition doesn't hold, this activity is destroyed or may be in
+                    // the recreation process...
+                }
+            }
+        });
+    }
+
+    private void doIfDelegateIsTheBase(Consumer<AppCompatDelegateImpl> consumer) {
+        if (mDelegate instanceof AppCompatDelegateImpl) {
+            consumer.accept((AppCompatDelegateImpl) mDelegate);
+        }
     }
 }
