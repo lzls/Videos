@@ -27,10 +27,6 @@
     <string name="shortVideoHasBeenSavedTo">短视频“%s”已保存至“%s”</string>
     <string name="gifHasBeenSavedTo">GIF“%s”已保存至“%s”</string>
     <string name="seconds">秒</string>
-    <string name="play">播放</string>
-    <string name="pause">暂停</string>
-    <string name="fastForward">快进</string>
-    <string name="fastRewind">快退</string>
     <string name="skipPrevious">上一个</string>
     <string name="skipNext">下一个</string>
     <string name="minimize">最小化</string>

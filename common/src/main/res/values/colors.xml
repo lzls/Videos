@@ -1,0 +1,4 @@
+<resources>
+    <color name="darker_gray">#AAAAAA</color> <!-- @android:color/darker_gray -->
+    <color name="lighter_gray">#DDDDDD</color> <!-- @android:color/lighter_gray -->
+</resources>

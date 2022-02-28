@@ -30,10 +30,6 @@
     <string name="shortVideoHasBeenSavedTo">Short video \"%s\" has been saved to \"%s\"</string>
     <string name="gifHasBeenSavedTo">GIF \"%s\" has been saved to \"%s\"</string>
     <string name="seconds"> seconds </string>
-    <string name="play">Play</string>
-    <string name="pause">Pause</string>
-    <string name="fastForward">Fast Forward</string>
-    <string name="fastRewind">Fast Rewind</string>
     <string name="skipPrevious">Skip to Previous</string>
     <string name="skipNext">Skip to Next</string>
     <string name="minimize">Minimize</string>

@@ -7,20 +7,13 @@ package com.liuzhenlin.videos.view.activity;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.PendingIntent;
-import android.app.PictureInPictureParams;
-import android.app.RemoteAction;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.util.Rational;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,11 +24,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.core.graphics.drawable.IconCompat;
+import androidx.appcompat.app.AppCompatDelegateProxy;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -49,6 +41,7 @@ import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.observer.RotationObserver;
 import com.liuzhenlin.common.utils.DisplayCutoutManager;
 import com.liuzhenlin.common.utils.FileUtils;
+import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
@@ -59,7 +52,6 @@ import com.liuzhenlin.texturevideoview.IjkVideoPlayer;
 import com.liuzhenlin.texturevideoview.TextureVideoView;
 import com.liuzhenlin.texturevideoview.VideoPlayer;
 import com.liuzhenlin.videos.App;
-import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
@@ -69,13 +61,15 @@ import com.liuzhenlin.videos.utils.VideoUtils2;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.LinkedList;
-import java.util.List;
 
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_FORWARD;
+import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_REWIND;
+import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PAUSE;
+import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PLAY;
 import static com.liuzhenlin.texturevideoview.utils.Utils.canUseExoPlayer;
 
 /**
@@ -123,44 +117,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             () -> showLockUnlockOrientationButton(false);
     private static final int DELAY_TIME_HIDE_LOCK_UNLOCK_ORIENTATION_BUTTON = 2500;
 
-    /** The arguments to be used for Picture-in-Picture mode. */
-    @Synthetic PictureInPictureParams.Builder mPipParamsBuilder;
-
-    /** A {@link BroadcastReceiver} to receive action item events from Picture-in-Picture mode. */
-    private BroadcastReceiver mReceiver;
-
-    /** Intent action for media controls from Picture-in-Picture mode. */
-    private static final String ACTION_MEDIA_CONTROL = "media_control";
-
-    /** Intent extra for media controls from Picture-in-Picture mode. */
-    private static final String EXTRA_PIP_ACTION = "PiP_action";
-
-    /** The intent extra value for play action. */
-    private static final int PIP_ACTION_PLAY = 1;
-    /** The intent extra value for pause action. */
-    private static final int PIP_ACTION_PAUSE = 1 << 1;
-    /** The intent extra value for pause action. */
-    private static final int PIP_ACTION_FAST_FORWARD = 1 << 2;
-    /** The intent extra value for pause action. */
-    private static final int PIP_ACTION_FAST_REWIND = 1 << 3;
-
-    /** The request code for play action PendingIntent. */
-    private static final int REQUEST_PLAY = 1;
-    /** The request code for pause action PendingIntent. */
-    private static final int REQUEST_PAUSE = 2;
-    /** The request code for fast forward action PendingIntent. */
-    private static final int REQUEST_FAST_FORWARD = 3;
-    /** The request code for fast rewind action PendingIntent. */
-    private static final int REQUEST_FAST_REWIND = 4;
-
-    private String mPlay;
-    private String mPause;
-    private String mFastForward;
-    private String mFastRewind;
     private String mLockOrientation;
     private String mUnlockOrientation;
-
-    private View.OnLayoutChangeListener mOnPipLayoutChangeListener;
 
     @Synthetic ProgressBar mVideoProgressInPiP;
 
@@ -192,17 +150,55 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
-    @Override
-    protected boolean shouldSupportResizablePipOnly() {
-        return true;
-    }
+    @Synthetic PictureInPictureHelper getPipHelper() {
+        AppCompatDelegateProxy delegate = getDelegate();
+        PictureInPictureHelper pipHelper = delegate.getPipHelper();
+        if (pipHelper == null) {
+            pipHelper = new PictureInPictureHelper(this);
+            pipHelper.setAdapter(new PictureInPictureHelper.Adapter() {
+                @Override
+                public boolean shouldOnlySupportResizablePiP() {
+                    return true;
+                }
 
-    @RequiresApi(SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
-    @Synthetic PictureInPictureParams.Builder getPipParamsBuilder() {
-        if (mPipParamsBuilder == null) {
-            mPipParamsBuilder = new PictureInPictureParams.Builder();
+                @Override
+                public View getVideoView() {
+                    return mVideoView;
+                }
+
+                @Override
+                public int getVideoWidth() {
+                    return mVideoWidth;
+                }
+
+                @Override
+                public int getVideoHeight() {
+                    return mVideoHeight;
+                }
+
+                @Override
+                public void onTapPlay() {
+                    mVideoPlayer.play(true);
+                }
+
+                @Override
+                public void onTapPause() {
+                    mVideoPlayer.pause(true);
+                }
+
+                @Override
+                public void onTapFastForward() {
+                    mVideoPlayer.fastForward(true);
+                }
+
+                @Override
+                public void onTapFastRewind() {
+                    mVideoPlayer.fastRewind(true);
+                }
+            });
+            delegate.setPipHelper(pipHelper);
         }
-        return mPipParamsBuilder;
+        return pipHelper;
     }
 
     private DisplayCutoutManager getDisplayCutoutManager() {
@@ -223,12 +219,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.attachBaseContext(newBase);
         mLockOrientation = getString(R.string.lockScreenOrientation);
         mUnlockOrientation = getString(R.string.unlockScreenOrientation);
-        if (supportsPictureInPictureMode()) {
-            mPlay = getString(R.string.play);
-            mPause = getString(R.string.pause);
-            mFastForward = getString(R.string.fastForward);
-            mFastRewind = getString(R.string.fastRewind);
-        }
         if (sStatusHeight == 0) {
             sStatusHeight = App.getInstance(newBase).getStatusHeightInPortrait();
         }
@@ -287,9 +277,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 mStatusBarView.setLayoutParams(lp);
             }
 
-            if (supportsPictureInPictureMode()) {
-                mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
-            }
+            mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
         }
 
         mVideoView = findViewById(R.id.videoview);
@@ -328,7 +316,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                     // We are playing the video now. In PiP mode, we want to show several
                     // action items to fast rewind, pause and fast forward the video.
                     //noinspection NewApi
-                    updatePictureInPictureActions(PIP_ACTION_FAST_REWIND
+                    getPipHelper().updatePictureInPictureActions(PIP_ACTION_FAST_REWIND
                             | PIP_ACTION_PAUSE | PIP_ACTION_FAST_FORWARD);
 
                     if (mRefreshVideoProgressInPiPTask != null) {
@@ -348,16 +336,14 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                         actions |= PIP_ACTION_FAST_FORWARD;
                     }
                     //noinspection NewApi
-                    updatePictureInPictureActions(actions);
+                    getPipHelper().updatePictureInPictureActions(actions);
                 }
             }
 
             @Override
             public void onVideoDurationChanged(int duration) {
-                if (supportsPictureInPictureMode()) {
-                    if (mVideoProgressInPiP.getMax() != duration) {
-                        mVideoProgressInPiP.setMax(duration);
-                    }
+                if (mVideoProgressInPiP != null && mVideoProgressInPiP.getMax() != duration) {
+                    mVideoProgressInPiP.setMax(duration);
                 }
             }
 
@@ -423,12 +409,13 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 switch (newMode) {
                     case TextureVideoView.VIEW_MODE_MINIMUM:
                         if (!layoutMatches
-                                && supportsPictureInPictureMode()
+                                && getPipHelper().supportsPictureInPictureMode()
                                 && mVideoWidth != 0 && mVideoHeight != 0) {
                             //noinspection NewApi
-                            enterPictureInPictureMode(getPipParamsBuilder()
-                                    .setAspectRatio(new Rational(mVideoWidth, mVideoHeight))
-                                    .build());
+                            enterPictureInPictureMode(
+                                    getPipHelper().getPipParamsBuilder()
+                                            .setAspectRatio(new Rational(mVideoWidth, mVideoHeight))
+                                            .build());
                         }
                         break;
                     case TextureVideoView.VIEW_MODE_DEFAULT:
@@ -503,10 +490,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 sActivityInPiP.clear();
                 sActivityInPiP = null;
                 if (activity != null) {
-                    // We need to unregister the receiver registered for it when it entered pip mode
-                    // first, since its onPictureInPictureModeChanged() method will not be called
-                    // (we are still in picture-in-picture mode).
-                    activity.unregisterReceiver(activity.mReceiver);
+//                    // We need to unregister the receiver registered for it when it entered pip mode
+//                    // first, since its onPictureInPictureModeChanged() method will not be called
+//                    // (we are still in picture-in-picture mode).
+//                    activity.unregisterReceiver(activity.mReceiver);
                     activity.finish();
                 }
             }
@@ -945,71 +932,14 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
-    /**
-     * Update the action items in Picture-in-Picture mode.
-     */
-    @RequiresApi(SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
-    @Synthetic void updatePictureInPictureActions(int pipActions) {
-        List<RemoteAction> actions = new LinkedList<>();
-        if ((pipActions & PIP_ACTION_FAST_REWIND) != 0) {
-            actions.add(createPipAction(R.drawable.ic_fast_rewind_white_24dp,
-                    mFastRewind, PIP_ACTION_FAST_REWIND, REQUEST_FAST_REWIND));
-        }
-        if ((pipActions & PIP_ACTION_PLAY) != 0) {
-            actions.add(createPipAction(R.drawable.ic_play_white_24dp,
-                    mPlay, PIP_ACTION_PLAY, REQUEST_PLAY));
-
-        } else if ((pipActions & PIP_ACTION_PAUSE) != 0) {
-            actions.add(createPipAction(R.drawable.ic_pause_white_24dp,
-                    mPause, PIP_ACTION_PAUSE, REQUEST_PAUSE));
-        }
-        if ((pipActions & PIP_ACTION_FAST_FORWARD) != 0) {
-            actions.add(createPipAction(R.drawable.ic_fast_forward_white_24dp,
-                    mFastForward, PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD));
-        } else {
-            RemoteAction action = createPipAction(R.drawable.ic_fast_forward_darkerlightgray_24dp,
-                    mFastForward, PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD);
-            action.setEnabled(false);
-            actions.add(action);
-        }
-        // This is how you can update action items (or aspect ratio) for Picture-in-Picture mode.
-        setPictureInPictureParams(getPipParamsBuilder().setActions(actions).build());
-    }
-
-    /**
-     * Create an pip action item in Picture-in-Picture mode.
-     *
-     * @param iconId      The icon to be used.
-     * @param title       The title text.
-     * @param pipAction   The type for the pip action. May be {@link #PIP_ACTION_PLAY},
-     *                    {@link #PIP_ACTION_PAUSE},
-     *                    {@link #PIP_ACTION_FAST_FORWARD},
-     *                    or {@link #PIP_ACTION_FAST_REWIND}.
-     * @param requestCode The request code for the {@link PendingIntent}.
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    private RemoteAction createPipAction(
-            @DrawableRes int iconId, String title, int pipAction, int requestCode) {
-        // This is the PendingIntent that is invoked when a user clicks on the action item.
-        // You need to use distinct request codes for play, pause, fast forward, and fast rewind,
-        // or the PendingIntent won't be properly updated.
-        @SuppressLint("UnspecifiedImmutableFlag")
-        PendingIntent intent = PendingIntent.getBroadcast(
-                this,
-                requestCode,
-                new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_PIP_ACTION, pipAction),
-                0);
-        Icon icon = IconCompat.createWithResource(this, iconId).toIcon(this);
-        return new RemoteAction(icon, title, title, intent);
-    }
-
     @SuppressLint("SwitchIntDef")
-    @RequiresApi(SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
+    @RequiresApi(PictureInPictureHelper.SDK_VERSION_SUPPORTS_RESIZABLE_PIP)
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode);
 
         mVideoView.onMinimizationModeChange(isInPictureInPictureMode);
+        getPipHelper().onPictureInPictureModeChanged(isInPictureInPictureMode);
 
         if (isInPictureInPictureMode) {
             int actions = PIP_ACTION_FAST_REWIND;
@@ -1026,37 +956,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                     actions |= PIP_ACTION_PLAY | PIP_ACTION_FAST_FORWARD;
                     break;
             }
-            updatePictureInPictureActions(actions);
-
-            // Starts receiving events from action items in PiP mode.
-            mReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    if (intent == null || !ACTION_MEDIA_CONTROL.equals(intent.getAction())) {
-                        return;
-                    }
-
-                    // This is where we are called back from Picture-in-Picture action items.
-                    final int action = intent.getIntExtra(EXTRA_PIP_ACTION, 0);
-                    switch (action) {
-                        case PIP_ACTION_PLAY:
-                            mVideoPlayer.play(true);
-                            break;
-                        case PIP_ACTION_PAUSE:
-                            mVideoPlayer.pause(true);
-                            break;
-                        case PIP_ACTION_FAST_REWIND: {
-                            mVideoPlayer.fastRewind(true);
-                        }
-                        break;
-                        case PIP_ACTION_FAST_FORWARD: {
-                            mVideoPlayer.fastForward(true);
-                        }
-                        break;
-                    }
-                }
-            };
-            registerReceiver(mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL));
+            getPipHelper().updatePictureInPictureActions(actions);
 
             sActivityInPiP = new WeakReference<>(this);
 
@@ -1071,83 +971,12 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             mVideoView.showControls(false, false);
             mVideoView.setClipViewBounds(true);
-            resizeVideoView();
-
-            mOnPipLayoutChangeListener = new View.OnLayoutChangeListener() {
-                static final float RATIO_TOLERANCE_PIP_LAYOUT_SIZE = 5.0f / 3.0f;
-
-                final float ratioOfProgressHeightToVideoSize;
-                final int progressMinHeight;
-                final int progressMaxHeight;
-
-                float cachedVideoAspectRatio;
-                int cachedSize = -1;
-
-                static final String TAG = "VideoActivityInPIP";
-
-                /* anonymous class initializer */ {
-                    // 1dp -> 2.75px (5.5inch  w * h = 1080 * 1920)
-                    final float dp = getResources().getDisplayMetrics().density;
-                    ratioOfProgressHeightToVideoSize = 1.0f / (12121.2f * dp); // 1 : 33333.3 (px)
-                    progressMinHeight = Utils.roundFloat(dp * 1.8f); // 5.45px -> 5px
-                    progressMaxHeight = Utils.roundFloat(dp * 2.5f); // 7.375px -> 7px
-                    if (BuildConfig.DEBUG) {
-                        Log.i(TAG, "ratioOfProgressHeightToVideoSize = " + ratioOfProgressHeightToVideoSize
-                                + "    " + "progressMinHeight = " + progressMinHeight
-                                + "    " + "progressMaxHeight = " + progressMaxHeight);
-                    }
-                }
-
-                @Override
-                public void onLayoutChange(
-                        View v,
-                        int left, int top, int right, int bottom,
-                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                    if (mVideoWidth == 0 || mVideoHeight == 0) return;
-
-                    final float videoAspectRatio = (float) mVideoWidth / mVideoHeight;
-                    final int width = right - left;
-                    final int height = Utils.roundFloat(width / videoAspectRatio);
-                    final int size = width * height;
-                    final float sizeRatio = (float) size / cachedSize;
-
-                    if (videoAspectRatio != cachedVideoAspectRatio
-                            || sizeRatio > RATIO_TOLERANCE_PIP_LAYOUT_SIZE
-                            || sizeRatio < 1.0f / RATIO_TOLERANCE_PIP_LAYOUT_SIZE) {
-                        final int progressHeight = Math.max(
-                                progressMinHeight,
-                                Math.min(progressMaxHeight,
-                                        Utils.roundFloat(size * ratioOfProgressHeightToVideoSize)));
-                        if (BuildConfig.DEBUG) {
-                            Log.i(TAG, "sizeRatio = " + sizeRatio
-                                    + "    " + "progressHeight = " + progressHeight
-                                    + "    " + "size / 1.8dp = " + size / progressMinHeight
-                                    + "    " + "size / 2.5dp = " + size / progressMaxHeight);
-                        }
-
-                        setPictureInPictureParams(getPipParamsBuilder()
-                                .setAspectRatio(new Rational(width, height + progressHeight))
-                                .build());
-
-                        cachedVideoAspectRatio = videoAspectRatio;
-                        cachedSize = size;
-                    }
-                }
-            };
-            mVideoView.addOnLayoutChangeListener(mOnPipLayoutChangeListener);
         } else {
-            // We are out of PiP mode. We can stop receiving events from it.
-            unregisterReceiver(mReceiver);
-            mReceiver = null;
-
             sActivityInPiP.clear();
             sActivityInPiP = null;
 
             mRefreshVideoProgressInPiPTask.cancel();
             mRefreshVideoProgressInPiPTask = null;
-
-            mVideoView.removeOnLayoutChangeListener(mOnPipLayoutChangeListener);
-            mOnPipLayoutChangeListener = null;
 
             if ((mPrivateFlags & PFLAG_STOPPED) != 0) {
                 // This case we have handled in super
@@ -1162,8 +991,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             mVideoView.showControls(true);
             mVideoView.setClipViewBounds(false);
-            resizeVideoView();
         }
+        resizeVideoView();
     }
 
     @Override

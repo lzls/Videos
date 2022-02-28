@@ -14,4 +14,9 @@
     <string name="share">Share</string>
     <string name="undo">Undo</string>
     <string name="noAppsCanPerformThisAction">No apps can perform this action</string>
+
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="fastForward">Fast Forward</string>
+    <string name="fastRewind">Fast Rewind</string>
 </resources>

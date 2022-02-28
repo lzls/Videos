@@ -5,17 +5,15 @@
 
 package com.liuzhenlin.videos.view.activity;
 
-import android.annotation.SuppressLint;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.app.AppCompatDelegateProxy;
 
+import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.swipeback.SwipeBackActivity;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
@@ -33,8 +31,6 @@ public class BaseActivity extends SwipeBackActivity {
 
     private boolean mStopped;
     private boolean mDestroyedAndStillInPiP;
-    protected static final int SDK_VERSION_SUPPORTS_PIP = Build.VERSION_CODES.N;
-    protected static final int SDK_VERSION_SUPPORTS_RESIZABLE_PIP = Build.VERSION_CODES.O;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,7 +51,7 @@ public class BaseActivity extends SwipeBackActivity {
 
     @NonNull
     @Override
-    public AppCompatDelegate getDelegate() {
+    public AppCompatDelegateProxy getDelegate() {
         if (mDelegate == null) {
             mDelegate = new AppCompatDelegateProxy(super.getDelegate());
         }
@@ -113,9 +109,11 @@ public class BaseActivity extends SwipeBackActivity {
 
     @Override
     public void finish() {
-        if (supportsPictureInPictureMode()) {
+        PictureInPictureHelper pipHelper = mDelegate.getPipHelper();
+        if (pipHelper != null && pipHelper.supportsPictureInPictureMode()) {
             // finish() does not remove the activity in PIP mode from the recents stack.
             // Only finishAndRemoveTask() does this.
+            //noinspection NewApi
             finishAndRemoveTask();
         } else {
             super.finish();
@@ -157,25 +155,13 @@ public class BaseActivity extends SwipeBackActivity {
         }
     }
 
-    protected boolean shouldSupportResizablePipOnly() {
-        return false;
-    }
-
-    private boolean doesSdkVersionSupportPiP() {
-        return Build.VERSION.SDK_INT >=
-                (shouldSupportResizablePipOnly()
-                        ? SDK_VERSION_SUPPORTS_RESIZABLE_PIP : SDK_VERSION_SUPPORTS_PIP);
-    }
-
-    @SuppressLint("InlinedApi")
-    protected boolean supportsPictureInPictureMode() {
-        return doesSdkVersionSupportPiP()
-                && getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
-                && mDelegate.doesActivityManifestDefinedSupportPiP();
-    }
-
     @Override
     public boolean isInPictureInPictureMode() {
-        return doesSdkVersionSupportPiP() && super.isInPictureInPictureMode();
+        PictureInPictureHelper pipHelper = mDelegate.getPipHelper();
+        if (pipHelper != null) {
+            return pipHelper.doesSdkVersionSupportPiP() && super.isInPictureInPictureMode();
+        }
+        return Build.VERSION.SDK_INT >= PictureInPictureHelper.SDK_VERSION_SUPPORTS_PIP
+                && super.isInPictureInPictureMode();
     }
 }

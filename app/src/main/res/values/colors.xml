@@ -20,9 +20,8 @@
     <color name="darkGray">#444444</color>
     <color name="gray">#888888</color>
     <color name="lightGray">#CCCCCC</color>
-    <color name="lighterGray">#DDDDDD</color> <!-- @android:color/lighter_gray -->
-    <color name="darkerLightGray">#AAAAAA</color> <!-- @android:color/darker_gray -->
-    <color name="darkLightGray_translucent">#80AAAAAA</color>
+    <color name="lighterGray">@color/lighter_gray</color> <!-- @android:color/lighter_gray -->
+    <color name="darkerLightGray">@color/darker_gray</color> <!-- @android:color/darker_gray -->
     <color name="gray_rgb15">#0F0F0F</color>
     <color name="gray_rgb31">#1F1F1F</color>
     <color name="gray_rgb39">#272727</color>
