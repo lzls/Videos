@@ -146,6 +146,25 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     @Override
     public void onPostCreate(Bundle savedInstanceState) {
         mDelegate.onPostCreate(savedInstanceState);
+        if (doesSdkVersionSupportPiP()) {
+            doIfDelegateIsTheBase(baseDelegate -> {
+                if (baseDelegate.mHost instanceof Activity) {
+                    Activity activity = (Activity) baseDelegate.mHost;
+                    // Fix onPictureInPictureModeChanged not called when the activity is recreated
+                    // due to any configuration we do not handle changed, which can lead to
+                    // state inconsistencies and even crashes.
+                    //noinspection NewApi
+                    if (activity.isInPictureInPictureMode()) {
+                        activity.onPictureInPictureModeChanged(true);
+                    }
+                }
+            });
+        }
+    }
+
+    private boolean doesSdkVersionSupportPiP() {
+        return mPipHelper != null && mPipHelper.doesSdkVersionSupportPiP()
+                || mPipHelper == null && Build.VERSION.SDK_INT >= SDK_VERSION_SUPPORTS_PIP;
     }
 
     @Override
@@ -253,14 +272,17 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     @Override
     public void onDestroy() {
         mDelegate.onDestroy();
-        if (mPipHelper != null && mPipHelper.doesSdkVersionSupportPiP()
-            || mPipHelper == null && Build.VERSION.SDK_INT >= SDK_VERSION_SUPPORTS_PIP) {
+        if (doesSdkVersionSupportPiP()) {
             doIfDelegateIsTheBase(baseDelegate -> {
                 if (baseDelegate.mHost instanceof Activity) {
                     Activity activity = (Activity) baseDelegate.mHost;
+                    // Fix onPictureInPictureModeChanged not called when the activity is going to be
+                    // recreated due to any configuration we do not handle changed, which can lead to
+                    // the previous instance to leak for mReceiver is still registered on it, etc.
                     //noinspection NewApi
                     if (activity.isInPictureInPictureMode()) {
                         mDestroyedAndStillInPiP = true;
+                        activity.onPictureInPictureModeChanged(false);
                     }
                 }
             });

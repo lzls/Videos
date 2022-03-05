@@ -133,7 +133,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             public void run() {
                 final int progress = mVideoPlayer.getVideoProgress();
                 if (mVideoPlayer.isPlaying()) {
-                    mHandler.postDelayed(this, 1000 - progress % 1000);
+                    getHandler().postDelayed(this, 1000 - progress % 1000);
                 }
                 mVideoProgressInPiP.setSecondaryProgress(mVideoPlayer.getVideoBufferProgress());
                 mVideoProgressInPiP.setProgress(progress);
@@ -146,8 +146,22 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
 
         void cancel() {
-            mHandler.removeCallbacks(runnable);
+            if (mHandler != null) {
+                mHandler.removeCallbacks(runnable);
+            }
         }
+    }
+
+    @Synthetic Handler getHandler() {
+        Handler handler = mHandler;
+        if (handler == null) {
+            handler = getWindow().getDecorView().getHandler();
+            if (handler == null) {
+                handler = com.liuzhenlin.common.Consts.getMainThreadHandler();
+            }
+            mHandler = handler;
+        }
+        return handler;
     }
 
     @Synthetic PictureInPictureHelper getPipHelper() {
@@ -490,10 +504,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 sActivityInPiP.clear();
                 sActivityInPiP = null;
                 if (activity != null) {
-//                    // We need to unregister the receiver registered for it when it entered pip mode
-//                    // first, since its onPictureInPictureModeChanged() method will not be called
-//                    // (we are still in picture-in-picture mode).
-//                    activity.unregisterReceiver(activity.mReceiver);
                     activity.finish();
                 }
             }
@@ -529,9 +539,11 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             getSwipeBackLayout().setEnabledEdges(SwipeBackLayout.EDGE_RIGHT);
         }
         setFullscreenMode(mVideoView.isInFullscreenMode());
+        if (inPictureInPictureMode) {
+            mStatusBarView.setVisibility(View.GONE);
+        }
 
-        mHandler = decorView.getHandler();
-        mRotationObserver = new RotationObserver(mHandler, this) {
+        mRotationObserver = new RotationObserver(getHandler(), this) {
             @Override
             public void onRotationChange(boolean selfChange, boolean enabled) {
                 //noinspection DoubleNegation
@@ -555,14 +567,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         };
         if (!inPictureInPictureMode) {
             setAutoRotationEnabled(true);
-        }
-
-        // Fix onPictureInPictureModeChanged not called when this activity is recreated due to
-        // any configuration we do not handle changed, which can lead to state inconsistencies
-        // and crashes.
-        if (inPictureInPictureMode && sActivityInPiP == null) {
-            //noinspection NewApi
-            onPictureInPictureModeChanged(true);
         }
     }
 
@@ -616,18 +620,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     protected void onDestroy() {
         super.onDestroy();
         mPresenter.detachFromView(this);
-        if (sActivityInPiP != null && sActivityInPiP.get() == this) {
-            // Fix onPictureInPictureModeChanged not called when this activity is going to be
-            // recreated due to any configuration we do not handle changed, which can lead to
-            // the previous instance to leak for mReceiver is still registered on it, etc.
-            if (isInPictureInPictureMode()) {
-                //noinspection NewApi
-                onPictureInPictureModeChanged(false);
-            } else {
-                sActivityInPiP.clear();
-                sActivityInPiP = null;
-            }
-        }
         if (mHandler != null) {
             mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable, null);
         }
@@ -664,6 +656,9 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     private void setAutoRotationEnabled(boolean enabled) {
+        if (mRotationObserver == null || mOnOrientationChangeListener == null) {
+            return;
+        }
         if (enabled) {
             mRotationObserver.startObserver();
             mOnOrientationChangeListener.setEnabled(true);
@@ -745,8 +740,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
 
         showLockUnlockOrientationButton(true);
-        mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable);
-        mHandler.postDelayed(mHideLockUnlockOrientationButtonRunnable,
+        if (mHandler != null) {
+            mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable);
+        }
+        getHandler().postDelayed(mHideLockUnlockOrientationButtonRunnable,
                 DELAY_TIME_HIDE_LOCK_UNLOCK_ORIENTATION_BUTTON);
     }
 
@@ -972,8 +969,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             mVideoView.showControls(false, false);
             mVideoView.setClipViewBounds(true);
         } else {
-            sActivityInPiP.clear();
-            sActivityInPiP = null;
+            if (sActivityInPiP != null) {
+                sActivityInPiP.clear();
+                sActivityInPiP = null;
+            }
 
             mRefreshVideoProgressInPiPTask.cancel();
             mRefreshVideoProgressInPiPTask = null;
