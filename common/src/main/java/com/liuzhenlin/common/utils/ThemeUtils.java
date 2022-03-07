@@ -9,9 +9,11 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 
+import androidx.annotation.AnimRes;
 import androidx.annotation.AnyRes;
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
@@ -87,6 +89,34 @@ public class ThemeUtils {
             }
         }
         return 0;
+    }
+
+    /** Retrieves the platform default value for {@link android.R.attr.activityOpenEnterAnimation} */
+    @SuppressWarnings("JavadocReference")
+    @AnimRes
+    public static int getDefaultActivityOpenEnterAnim() {
+        return Resources.getSystem().getIdentifier("activity_open_enter", "anim", "android");
+    }
+
+    /** Retrieves the platform default value for {@link android.R.attr.activityOpenExitAnimation} */
+    @SuppressWarnings("JavadocReference")
+    @AnimRes
+    public static int getDefaultActivityOpenExitAnim() {
+        return Resources.getSystem().getIdentifier("activity_open_exit", "anim", "android");
+    }
+
+    /** Retrieves the platform default value for {@link android.R.attr.activityCloseEnterAnimation} */
+    @SuppressWarnings("JavadocReference")
+    @AnimRes
+    public static int getDefaultActivityCloseEnterAnim() {
+        return Resources.getSystem().getIdentifier("activity_close_enter", "anim", "android");
+    }
+
+    /** Retrieves the platform default value for {@link android.R.attr.activityCloseExitAnimation} */
+    @SuppressWarnings("JavadocReference")
+    @AnimRes
+    public static int getDefaultActivityCloseExitAnim() {
+        return Resources.getSystem().getIdentifier("activity_close_exit", "anim", "android");
     }
 
     /**

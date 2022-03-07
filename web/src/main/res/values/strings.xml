@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pressAgainToExit">Press again to exit!</string>
+    <string name="noInternetConnection">No Internet Connection</string>
+    <string name="retry">Retry</string>
+    <string name="changeSettings">Change Settings</string>
+    <string name="exit">Exit</string>
+    <string name="videoThumbnail">Video Thumbnail</string>
+    <string name="replay">Replay</string>
+    <string name="stop">Stop</string>
+    <string name="skipPrevious">Skip to Previous</string>
+    <string name="skipNext">Skip to Next</string>
+    <string name="close">Close</string>
+    <string name="loadingTitle">Loading title…</string>
+    <string name="loadingAuthor">Loading author…</string>
+</resources>

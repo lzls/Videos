@@ -7,11 +7,16 @@ include ':app',
         ':sliding-drawer-layout',
         ':slidingitemmenu-recyclerview',
         ':texture-video-view',
-        ':ijkplayer'
+        ':ijkplayer',
+        ':web'
 
 def exoplayer2ExtensionModulesFolder = 'exoplayer2-extensions'
 def exoplayer2ExtensionModulesPrefix = ':' + exoplayer2ExtensionModulesFolder + '-'
-gradle.ext.exoplayer2ExtensionModulesPrefix = exoplayer2ExtensionModulesPrefix
+gradle.ext {
+    owner.exoplayer2ExtensionModulesPrefix = exoplayer2ExtensionModulesPrefix
+    owner.applicationId = 'com.liuzhenlin.videos'
+    owner.buildWebModuleAsApp = false
+}
 
 include(exoplayer2ExtensionModulesPrefix + 'av1')
 project(exoplayer2ExtensionModulesPrefix + 'av1').projectDir =

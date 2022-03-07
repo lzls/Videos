@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.liuzhenlin.videos.web">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <application
+        android:theme="@style/AppTheme"
+        android:label="Lzl's YouTube"
+        android:supportsRtl="true"
+        android:allowBackup="false"
+        tools:ignore="MissingApplicationIcon">
+
+        <activity
+            android:name=".youtube.YoutubeActivity"
+            android:configChanges="keyboardHidden|screenSize|orientation"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".youtube.YoutubePlaybackActivity"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape"
+            android:supportsPictureInPicture="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=".youtube"
+            tools:targetApi="n" />
+
+        <service android:name=".youtube.YoutubePlaybackService" />
+    </application>
+</manifest>

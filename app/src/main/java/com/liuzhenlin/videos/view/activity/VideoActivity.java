@@ -14,6 +14,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.RemoteException;
 import android.util.Rational;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,7 +28,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatDelegateProxy;
+import androidx.appcompat.app.AppCompatDelegateWrapper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -58,6 +59,7 @@ import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.presenter.IVideoPresenter;
 import com.liuzhenlin.videos.utils.VideoUtils2;
+import com.liuzhenlin.videos.web.youtube.WebService;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -165,7 +167,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @Synthetic PictureInPictureHelper getPipHelper() {
-        AppCompatDelegateProxy delegate = getDelegate();
+        AppCompatDelegateWrapper delegate = getDelegate();
         PictureInPictureHelper pipHelper = delegate.getPipHelper();
         if (pipHelper == null) {
             pipHelper = new PictureInPictureHelper(this);
@@ -425,11 +427,22 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                         if (!layoutMatches
                                 && getPipHelper().supportsPictureInPictureMode()
                                 && mVideoWidth != 0 && mVideoHeight != 0) {
-                            //noinspection NewApi
-                            enterPictureInPictureMode(
-                                    getPipHelper().getPipParamsBuilder()
-                                            .setAspectRatio(new Rational(mVideoWidth, mVideoHeight))
-                                            .build());
+                            WebService.bind(VideoActivity.this, webService -> {
+                                if (isFinishing()) {
+                                    return;
+                                }
+                                try {
+                                    webService.finishYoutubePlaybackActivityIfItIsInPiP();
+                                } catch (RemoteException e) {
+                                    e.printStackTrace();
+                                }
+                                finishOtherInstanceInPiP();
+                                //noinspection NewApi
+                                enterPictureInPictureMode(
+                                        getPipHelper().getPipParamsBuilder()
+                                                .setAspectRatio(new Rational(mVideoWidth, mVideoHeight))
+                                                .build());
+                            });
                         }
                         break;
                     case TextureVideoView.VIEW_MODE_DEFAULT:
@@ -498,6 +511,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     protected void onStart() {
         super.onStart();
+        finishOtherInstanceInPiP();
+    }
+
+    @Synthetic void finishOtherInstanceInPiP() {
         if (sActivityInPiP != null) {
             VideoActivity activity = sActivityInPiP.get();
             if (activity != this) {
@@ -526,6 +543,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     public void onAttachedToWindow() {
         super.onAttachedToWindow();
+        finishOtherInstanceInPiP();
+
         Window window = getWindow();
         View decorView = window.getDecorView();
         boolean inPictureInPictureMode = isInPictureInPictureMode();

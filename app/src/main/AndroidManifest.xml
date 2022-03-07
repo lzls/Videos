@@ -28,7 +28,7 @@
         tools:ignore="UnusedAttribute">
 
         <activity
-            android:name=".view.activity.RequireExternalStoragePermissionActivity"
+            android:name=".view.activity.BootstrapActivity"
             android:theme="@style/ActivityStyle_Translucent"
             android:configChanges="uiMode"
             android:exported="true">
@@ -78,6 +78,17 @@
             android:launchMode="singleTop"
             android:windowSoftInputMode="stateHidden"
             tools:ignore="LockedOrientationActivity" />
+
+        <service android:name=".web.youtube.WebService" android:process=":web" />
+
+        <service android:name=".web.youtube.YoutubePlaybackService" android:process=":web" />
+
+        <activity
+            android:name=".web.youtube.YoutubePlaybackActivity"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
+            android:taskAffinity=".web.youtube"
+            android:process=":web"
+            tools:replace="android:configChanges, android:taskAffinity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

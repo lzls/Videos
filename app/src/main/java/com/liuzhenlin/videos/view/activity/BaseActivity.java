@@ -10,7 +10,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegateProxy;
+import androidx.appcompat.app.AppCompatDelegateWrapper;
 
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.swipeback.SwipeBackActivity;
@@ -18,7 +18,7 @@ import com.liuzhenlin.swipeback.SwipeBackLayout;
 
 public class BaseActivity extends SwipeBackActivity {
 
-    private AppCompatDelegateProxy mDelegate;
+    private AppCompatDelegateWrapper mDelegate;
 
     private int mThemeWindowAnimations;
 
@@ -34,9 +34,9 @@ public class BaseActivity extends SwipeBackActivity {
 
     @NonNull
     @Override
-    public AppCompatDelegateProxy getDelegate() {
+    public AppCompatDelegateWrapper getDelegate() {
         if (mDelegate == null) {
-            mDelegate = new AppCompatDelegateProxy(super.getDelegate());
+            mDelegate = new AppCompatDelegateWrapper(super.getDelegate());
         }
         return mDelegate;
     }
@@ -79,7 +79,8 @@ public class BaseActivity extends SwipeBackActivity {
 
     @Override
     public void finish() {
-        PictureInPictureHelper pipHelper = getDelegate().getPipHelper();
+        AppCompatDelegateWrapper delegate = getDelegate();
+        PictureInPictureHelper pipHelper = delegate.getPipHelper();
         if (pipHelper != null && pipHelper.supportsPictureInPictureMode()) {
             // finish() does not remove the activity in PIP mode from the recents stack.
             // Only finishAndRemoveTask() does this.
@@ -88,6 +89,7 @@ public class BaseActivity extends SwipeBackActivity {
         } else {
             super.finish();
         }
+        delegate.onFinished();
     }
 
     @Override

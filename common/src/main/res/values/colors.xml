@@ -1,4 +1,8 @@
 <resources>
+    <color name="lightBlue">#00B0FF</color> <!-- Light Blue material A400 -->
+    <color name="pink">#FF4081</color> <!-- Pink material A200 -->
+    <color name="purple">#E040FB</color> <!-- Purple material A200 -->
+
     <color name="darker_gray">#AAAAAA</color> <!-- @android:color/darker_gray -->
     <color name="lighter_gray">#DDDDDD</color> <!-- @android:color/lighter_gray -->
 </resources>

@@ -3,7 +3,7 @@
  * Copyright © 2019 刘振林. All rights reserved.
  */
 
-package com.liuzhenlin.videos.view.fragment;
+package com.liuzhenlin.common.listener;
 
 /**
  * @author 刘振林

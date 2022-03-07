@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/web_player_notification_view_background"
+    android:orientation="horizontal"
+    android:weightSum="8">
+
+    <ImageView
+        android:id="@+id/thumbnail"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="2.5"
+        android:src="@drawable/img_loading"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/videoThumbnail" />
+
+    <TextView
+        android:id="@+id/text_author"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="2.5"
+        android:paddingStart="8dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="2dp"
+        android:paddingEnd="2dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:text="@string/loadingAuthor"
+        android:textColor="@color/lighter_gray"
+        android:textSize="@dimen/web_player_notification_text_size"
+        android:textAlignment="center"
+        android:gravity="center" />
+
+    <ImageView
+        android:id="@+id/btn_play_pause"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        app:srcCompat="@drawable/ic_pause_white_24dp"
+        android:contentDescription="@string/pause" />
+
+    <ImageView
+        android:id="@+id/btn_next"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        app:srcCompat="@drawable/ic_skip_next_white_24dp"
+        android:contentDescription="@string/skipNext" />
+
+    <ImageView
+        android:id="@+id/btn_stop"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginRight="10dp"
+        android:layout_marginEnd="10dp"
+        app:srcCompat="@drawable/ic_stop_white_24dp"
+        android:contentDescription="@string/stop"/>
+</LinearLayout>

@@ -9,13 +9,16 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.videos.R;
+import com.liuzhenlin.videos.web.youtube.YoutubePlaybackService;
 
 import java.util.List;
 
@@ -27,8 +30,9 @@ import pub.devrel.easypermissions.PermissionRequest;
 /**
  * @author 刘振林
  */
-public class RequireExternalStoragePermissionActivity extends BaseActivity
+public class BootstrapActivity extends BaseActivity
         implements EasyPermissions.PermissionCallbacks, EasyPermissions.RationaleCallbacks {
+
     private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION = 6;
 
     // Read-only Fields
@@ -82,15 +86,30 @@ public class RequireExternalStoragePermissionActivity extends BaseActivity
     private void onPermissionGranted() {
         Intent intent = getIntent();
         String action = intent.getAction();
-        if (Intent.ACTION_VIEW.equals(action) || Intent.ACTION_SEND.equals(action)) {
-            intent.setAction(null);
-            intent.setClass(this, VideoActivity.class);
-            startActivity(intent);
-        } else {
-            startActivity(new Intent(this, MainActivity.class));
-        }
+        try {
+            if (Intent.ACTION_VIEW.equals(action) || Intent.ACTION_SEND.equals(action)) {
+                Uri data = intent.getData();
+                String url = null;
+                if (data != null) {
+                    url = FileUtils.UriResolver.getPath(this, data);
+                }
+                if (url == null) {
+                    url = intent.getStringExtra(Intent.EXTRA_TEXT);
+                }
+                if (url != null && YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(this, url)) {
+                    return;
+                }
 
-        finish();
+                intent.setAction(null);
+                intent.setClass(this, VideoActivity.class);
+                startActivity(intent);
+
+            } else {
+                startActivity(new Intent(this, MainActivity.class));
+            }
+        } finally {
+            finish();
+        }
     }
 
     private void onPermissionDenied() {

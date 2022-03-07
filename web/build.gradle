@@ -1,0 +1,36 @@
+def buildAsApp = gradle.ext.buildWebModuleAsApp
+if (buildAsApp) {
+    apply plugin: 'com.android.application'
+} else {
+    apply plugin: 'com.android.library'
+}
+
+apply from: "$rootDir/common_build.gradle"
+
+android {
+    defaultConfig {
+        if (buildAsApp) {
+            applicationId gradle.ext.applicationId
+            applicationIdSuffix 'web'
+        }
+        minSdkVersion 14
+        versionCode 1
+        versionName "1.0"
+
+        vectorDrawables.useSupportLibrary = true
+
+        buildConfigField "boolean", 'BUILD_AS_APP', buildAsApp.toString()
+    }
+
+    if (buildAsApp) {
+        sourceSets {
+            main {
+                manifest.srcFile 'src/app/AndroidManifest.xml'
+            }
+        }
+    }
+}
+
+dependencies {
+    api project(':common')
+}

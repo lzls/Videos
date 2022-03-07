@@ -21,7 +21,7 @@ import com.liuzhenlin.videos.*
  */
 class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecycleCallback,
         LocalFoldedVideosFragment.InteractionCallback, LocalSearchedVideosFragment.InteractionCallback,
-        View.OnClickListener, SwipeBackLayout.SwipeListener, SlidingDrawerLayout.OnDrawerScrollListener {
+        SwipeBackLayout.SwipeListener, SlidingDrawerLayout.OnDrawerScrollListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
 
@@ -166,7 +166,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                 .commit()
     }
 
-    private fun goToLocalSearchedVideosFragment() {
+    override fun goToLocalSearchedVideosFragment() {
         val args = Bundle()
         args.putParcelableArrayList(KEY_VIDEOS, mLocalVideoListFragment.allVideos)
 
@@ -192,12 +192,6 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
             childFragmentManager.popBackStackImmediate()
         } else {
             mLocalVideoListFragment.onBackPressed()
-        }
-    }
-
-    override fun onClick(v: View) {
-        when (v.id) {
-            R.id.btn_search -> goToLocalSearchedVideosFragment()
         }
     }
 

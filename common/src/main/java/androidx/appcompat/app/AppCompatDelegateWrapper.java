@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.SDK_VERSION_SUPPORTS_PIP;
 
 @SuppressLint("RestrictedApi")
-public class AppCompatDelegateProxy extends AppCompatDelegate {
+public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCompatDelegateExtensions {
 
     private final AppCompatDelegate mDelegate;
 
@@ -56,7 +56,10 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
     @Nullable
     private PictureInPictureHelper mPipHelper;
 
-    public AppCompatDelegateProxy(@NonNull AppCompatDelegate delegate) {
+    @Nullable
+    private PendingTransitionOverrides mTransitionOverrides;
+
+    public AppCompatDelegateWrapper(@NonNull AppCompatDelegate delegate) {
         mDelegate = delegate;
     }
 
@@ -75,6 +78,10 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
             throw new IllegalStateException("No PictureInPictureHelper has been set for " + this);
         }
         return mPipHelper;
+    }
+
+    public void setPendingTransitionOverrides(@Nullable PendingTransitionOverrides overrides) {
+        mTransitionOverrides = overrides;
     }
 
     @Nullable
@@ -115,6 +122,14 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
         mDelegate.onCreate(savedInstanceState);
         mCreated = true;
         doIfDelegateIsTheBase(baseDelegate -> {
+            boolean hostIsActivity = baseDelegate.mHost instanceof Activity;
+
+            if (mTransitionOverrides != null && hostIsActivity) {
+                ((Activity) baseDelegate.mHost).overridePendingTransition(
+                        mTransitionOverrides.getOpenEnterTransition(),
+                        mTransitionOverrides.getOpenExitTransition());
+            }
+
             mConfig = new Configuration(baseDelegate.mContext.getResources().getConfiguration());
 
             //// Logic for app module...
@@ -123,7 +138,7 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
             // the system default, and so we can not just use the app context to see if this app
             // is decorated with the dark theme. This should be called for each activity instead of
             // just the first launched one, in case some of the activities are being recreated...
-            if (baseDelegate.mHost instanceof Activity) {
+            if (hostIsActivity) {
                 try {
                     Class<?> appClass = Class.forName("com.liuzhenlin.videos.App");
                     if (appClass != null) {
@@ -352,6 +367,20 @@ public class AppCompatDelegateProxy extends AppCompatDelegate {
         mDelegate.setLocalNightMode(mode);
     }
 
+    @Override
+    public void onFinished() {
+        if (mTransitionOverrides != null) {
+            doIfDelegateIsTheBase(baseDelegate -> {
+                if (baseDelegate.mHost instanceof Activity) {
+                    ((Activity) baseDelegate.mHost).overridePendingTransition(
+                            mTransitionOverrides.getCloseEnterTransition(),
+                            mTransitionOverrides.getCloseExitTransition());
+                }
+            });
+        }
+    }
+
+    @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         doIfDelegateIsTheBase(baseDelegate -> {
             if (baseDelegate.mHost instanceof Activity) {

@@ -5,6 +5,7 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -28,6 +29,7 @@ import androidx.core.view.ViewCompat;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.util.List;
 
 public class Utils {
     private Utils() {
@@ -191,6 +193,36 @@ public class Utils {
                 if (n.getId() == id && ObjectsCompat.equals(n.getTag(), tag)) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether the service is running.
+     *
+     * @param cls The service class.
+     * @return {@code true} if it is running, {@code false} otherwise.
+     */
+    public static boolean isServiceRunning(@NonNull Context context, @NonNull Class<?> cls) {
+        return isServiceRunning(context, cls.getName());
+    }
+
+    /**
+     * Returns whether the service is running.
+     *
+     * @param className The name of the service class.
+     * @return {@code true} if it is running, {@code false} otherwise.
+     */
+    public static boolean isServiceRunning(@NonNull Context context, @NonNull String className) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> infos = am.getRunningServices(Integer.MAX_VALUE);
+        if (infos == null || infos.size() == 0) {
+            return false;
+        }
+        for (ActivityManager.RunningServiceInfo info : infos) {
+            if (className.equals(info.service.getClassName())) {
+                return true;
             }
         }
         return false;

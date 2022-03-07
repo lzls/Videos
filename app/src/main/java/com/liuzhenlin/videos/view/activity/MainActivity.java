@@ -15,6 +15,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -49,7 +50,9 @@ import androidx.viewpager.widget.ViewPager;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.liuzhenlin.circularcheckbox.Utils;
 import com.liuzhenlin.common.adapter.BaseAdapter2;
+import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.ColorUtils;
 import com.liuzhenlin.common.utils.Executors;
@@ -71,7 +74,8 @@ import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.MergeAppUpdateChecker;
 import com.liuzhenlin.videos.view.fragment.LocalVideosFragment;
-import com.liuzhenlin.videos.view.fragment.OnlineVideosFragment;
+import com.liuzhenlin.videos.web.youtube.WebService;
+import com.liuzhenlin.videos.web.youtube.YoutubeFragment;
 import com.taobao.sophix.SophixManager;
 
 import java.io.File;
@@ -93,10 +97,11 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     @Nullable
     static MainActivity this$;
 
-    @Synthetic LocalVideosFragment mLocalVideosFragment;
-    @Synthetic OnlineVideosFragment mOnlineVideosFragment;
+    @Synthetic final Fragment[] mFragments = new Fragment[2];
+    private static final int INDEX_LOCAL_VIDEOS_FRAGMENT = 0;
+    private static final int INDEX_YOUTUBE_FRAGMENT = 1;
 
-    private SlidingDrawerLayout mSlidingDrawerLayout;
+    @Synthetic SlidingDrawerLayout mSlidingDrawerLayout;
 
     @Synthetic ScrollDisableViewPager mFragmentViewPager;
     private ViewGroup mActionBarContainer;
@@ -108,6 +113,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     private TextView mTitleText;
     @Synthetic ImageButton mActionButton;
     private DrawerArrowDrawable mDrawerArrowDrawable;
+    private final MainActivityToolbarActions mToolbarActions = new MainActivityToolbarActions(this);
 
     // 临时缓存LocalSearchedVideosFragment或LocalFoldedVideosFragment的ActionBar
     private ViewGroup mTmpActionBar;
@@ -159,14 +165,14 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             }
         }
         if (savedInstanceState == null) {
-            mLocalVideosFragment = new LocalVideosFragment();
-            mOnlineVideosFragment = new OnlineVideosFragment();
+            mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT] = new LocalVideosFragment();
+            mFragments[INDEX_YOUTUBE_FRAGMENT] = new YoutubeFragment();
         } else {
             for (Fragment fragment : getSupportFragmentManager().getFragments()) {
                 if (fragment instanceof LocalVideosFragment) {
-                    mLocalVideosFragment = (LocalVideosFragment) fragment;
-                } else if (fragment instanceof OnlineVideosFragment) {
-                    mOnlineVideosFragment = (OnlineVideosFragment) fragment;
+                    mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT] = fragment;
+                } else if (fragment instanceof YoutubeFragment) {
+                    mFragments[INDEX_YOUTUBE_FRAGMENT] = fragment;
                 }
             }
         }
@@ -180,7 +186,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         mSlidingDrawerLayout = findViewById(R.id.slidingDrawerLayout);
         mSlidingDrawerLayout.setStartDrawerWidthPercent(
                 1f - (app.getVideoThumbWidth() + DensityUtils.dp2px(app, 20f)) / (float) screenWidth);
-        mSlidingDrawerLayout.setContentSensitiveEdgeSize(screenWidth);
         mSlidingDrawerLayout.addOnDrawerScrollListener(new SlidingDrawerLayout.SimpleOnDrawerScrollListener() {
             @Override
             public void onScrollStateChange(
@@ -219,14 +224,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             }
         });
         mSlidingDrawerLayout.addOnDrawerScrollListener(this);
-        mSlidingDrawerLayout.addOnDrawerScrollListener(mLocalVideosFragment);
-        mSlidingDrawerLayout.addOnDrawerScrollListener(mOnlineVideosFragment);
+        mSlidingDrawerLayout.addOnDrawerScrollListener(getLocalVideosFragment());
+//        mSlidingDrawerLayout.addOnDrawerScrollListener(mOnlineVideosFragment);
 
         mActionBarContainer = findViewById(R.id.container_actionbar);
         mActionBar = findViewById(R.id.actionbar);
         insertTopPaddingToActionBarIfNeeded(mActionBar);
 
         mActionButton = mActionBar.findViewById(R.id.img_btn);
+        mActionButton.setOnClickListener(this);
 
         mDrawerArrowDrawable = new DrawerArrowDrawable(this);
         mDrawerArrowDrawable.setGapSize(12.5f);
@@ -256,9 +262,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         mFragmentViewPager.setAdapter(
                 new FragmentPagerAdapter(getSupportFragmentManager(),
                         FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
-                    final Fragment[] fragments = {
-                            mLocalVideosFragment, mOnlineVideosFragment
-                    };
                     final String[] fragmentTittles = {
                             getString(R.string.localVideos), getString(R.string.onlineVideos)
                     };
@@ -266,7 +269,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                     @NonNull
                     @Override
                     public Fragment getItem(int position) {
-                        return fragments[position];
+                        return mFragments[position];
                     }
 
                     @Nullable
@@ -277,7 +280,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
                     @Override
                     public int getCount() {
-                        return fragments.length;
+                        return mFragments.length;
                     }
                 });
         ViewPager.OnPageChangeListener onPageChangeListener = new ViewPager.SimpleOnPageChangeListener() {
@@ -289,12 +292,13 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 if (fragment instanceof LocalVideosFragment) {
                     mActionButton.setId(R.id.btn_search);
                     mActionButton.setImageResource(R.drawable.ic_search);
-                    mActionButton.setOnClickListener((View.OnClickListener) fragment);
+                    mSlidingDrawerLayout.setContentSensitiveEdgeSize(screenWidth);
 
-                } else if (fragment instanceof OnlineVideosFragment) {
+                } else if (fragment instanceof YoutubeFragment) {
                     mActionButton.setId(R.id.btn_link);
                     mActionButton.setImageResource(R.drawable.ic_link);
-                    mActionButton.setOnClickListener((View.OnClickListener) fragment);
+                    mSlidingDrawerLayout.setContentSensitiveEdgeSize(
+                            Utils.dp2px(MainActivity.this, SlidingDrawerLayout.DEFAULT_EDGE_SIZE));
                 }
             }
         };
@@ -304,6 +308,10 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
         mFragmentTabLayout = findViewById(R.id.tablayout_fragments);
         mFragmentTabLayout.setupWithViewPager(mFragmentViewPager);
+    }
+
+    private LocalVideosFragment getLocalVideosFragment() {
+        return (LocalVideosFragment) mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT];
     }
 
     @Synthetic void setLightDrawerStatus(boolean light) {
@@ -389,18 +397,20 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
     @Override
     public void onBackPressed() {
-        //noinspection StatementWithEmptyBody
-        if (mLocalVideosFragment.onBackPressed()) {
-
-        } else if (mSlidingDrawerLayout.hasOpenedDrawer()) {
+        if (mSlidingDrawerLayout.hasOpenedDrawer()) {
             mSlidingDrawerLayout.closeDrawer(true);
+            return;
+        }
 
-        } else if (!mIsBackPressed) {
+        if (((OnBackPressedListener) mFragments[mFragmentViewPager.getCurrentItem()]).onBackPressed()) {
+            return;
+        }
+
+        if (!mIsBackPressed) {
             mIsBackPressed = true;
             mSlidingDrawerLayout.postDelayed(() -> mIsBackPressed = false, 1500);
             UiUtils.showUserCancelableSnackbar(mSlidingDrawerLayout,
                     R.string.pressAgainToExitApp, Snackbar.LENGTH_SHORT);
-
         } else {
             super.onBackPressed();
         }
@@ -443,6 +453,13 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 } else {
                     mSlidingDrawerLayout.openDrawer(Gravity.START, true);
                 }
+                break;
+
+            case R.id.btn_search:
+                mToolbarActions.goToLocalSearchedVideosFragment(getLocalVideosFragment());
+                break;
+            case R.id.btn_link:
+                mToolbarActions.showOpenVideoLinkDialog(v.getContext());
                 break;
 
             case R.id.btn_ok_aboutAppDialog:
@@ -775,6 +792,14 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             }
             AppPrefs.getSingleton(this).edit().setDefaultNightMode(mode).apply();
             AppCompatDelegate.setDefaultNightMode(mode);
+            // Apply default night mode for web process...
+            WebService.bind(this, webService -> {
+                try {
+                    webService.applyDefaultNightMode(mode);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            });
             return true;
         });
     }
@@ -842,32 +867,32 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
     @Override
     public void goToLocalFoldedVideosFragment(@NonNull Bundle args) {
-        mLocalVideosFragment.goToLocalFoldedVideosFragment(args);
+        getLocalVideosFragment().goToLocalFoldedVideosFragment(args);
     }
 
     @Override
     public boolean isRefreshLayoutEnabled() {
-        return mLocalVideosFragment.isRefreshLayoutEnabled();
+        return getLocalVideosFragment().isRefreshLayoutEnabled();
     }
 
     @Override
     public void setRefreshLayoutEnabled(boolean enabled) {
-        mLocalVideosFragment.setRefreshLayoutEnabled(enabled);
+        getLocalVideosFragment().setRefreshLayoutEnabled(enabled);
     }
 
     @Override
     public boolean isRefreshLayoutRefreshing() {
-        return mLocalVideosFragment.isRefreshLayoutRefreshing();
+        return getLocalVideosFragment().isRefreshLayoutRefreshing();
     }
 
     @Override
     public void setRefreshLayoutRefreshing(boolean refreshing) {
-        mLocalVideosFragment.setRefreshLayoutRefreshing(refreshing);
+        getLocalVideosFragment().setRefreshLayoutRefreshing(refreshing);
     }
 
     @Override
     public void setOnRefreshLayoutChildScrollUpCallback(@Nullable SwipeRefreshLayout.OnChildScrollUpCallback callback) {
-        mLocalVideosFragment.setOnRefreshLayoutChildScrollUpCallback(callback);
+        getLocalVideosFragment().setOnRefreshLayoutChildScrollUpCallback(callback);
     }
 
     @NonNull

@@ -71,4 +71,13 @@ public class RemoteViewsCompat {
             remoteViews.setImageViewBitmap(viewId, bitmap);
         }
     }
+
+    public static void setContentDescription(
+            @NonNull RemoteViews remoteViews,
+            @IdRes int viewId,
+            @Nullable CharSequence contentDescription) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+            remoteViews.setContentDescription(viewId, contentDescription);
+        }
+    }
 }

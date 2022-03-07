@@ -8,6 +8,7 @@ package com.liuzhenlin.videos;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import com.bumptech.glide.Glide;
 import com.liuzhenlin.common.utils.Executors;
+import com.liuzhenlin.common.utils.InternetResourceLoadTask;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
@@ -49,12 +51,24 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         sApp = this;
-        mStatusHeight = SystemBarUtils.getStatusHeight(this);
-        registerComponentCallbacks(Glide.get(this));
-        AppCompatDelegate.setDefaultNightMode(AppPrefs.getSingleton(this).getDefaultNightMode());
 
         Executors.THREAD_POOL_EXECUTOR.execute(new CrashMailReporter(this)::send);
         Thread.setDefaultUncaughtExceptionHandler(LogOnCrashHandler.INSTANCE.get(this));
+
+        mStatusHeight = SystemBarUtils.getStatusHeight(this);
+        registerComponentCallbacks(Glide.get(this));
+        InternetResourceLoadTask.setAppContext(this);
+        AppCompatDelegate.setDefaultNightMode(AppPrefs.getSingleton(this).getDefaultNightMode());
+
+        // Each directory storing WebView data can be used by only one process in the application
+        // when targetSdk >= P.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            String procName = getProcessName();
+            String pkgName = getPackageName();
+            if (!procName.equals(pkgName)) {
+                android.webkit.WebView.setDataDirectorySuffix(procName.replace(pkgName, ""));
+            }
+        }
     }
 
     @NonNull

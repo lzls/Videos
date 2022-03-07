@@ -22,6 +22,7 @@ import com.bumptech.glide.Glide
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
+import com.liuzhenlin.common.listener.OnBackPressedListener
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.view.SwipeRefreshLayout

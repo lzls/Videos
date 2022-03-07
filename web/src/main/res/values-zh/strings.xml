@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pressAgainToExit">再按一次退出！</string>
+    <string name="noInternetConnection">无网络连接</string>
+    <string name="retry">重试</string>
+    <string name="changeSettings">更改设置</string>
+    <string name="exit">退出</string>
+    <string name="videoThumbnail">视频缩略图</string>
+    <string name="replay">重播</string>
+    <string name="stop">停止</string>
+    <string name="skipPrevious">上一个</string>
+    <string name="skipNext">下一个</string>
+    <string name="close">关闭</string>
+    <string name="loadingTitle">加载标题…</string>
+    <string name="loadingAuthor">加载作者…</string>
+</resources>

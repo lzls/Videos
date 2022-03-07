@@ -9,9 +9,12 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 
+import com.liuzhenlin.common.listener.OnBackPressedListener;
+
 /**
  * @author 刘振林
  */
 public interface ILocalVideosFragment extends OnBackPressedListener {
     void goToLocalFoldedVideosFragment(@NonNull Bundle args);
+    void goToLocalSearchedVideosFragment();
 }

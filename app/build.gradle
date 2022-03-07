@@ -5,7 +5,7 @@ apply from: "$rootDir/common_build.gradle"
 
 android {
     defaultConfig {
-        applicationId "com.liuzhenlin.videos"
+        applicationId gradle.ext.applicationId
         minSdkVersion 16
         versionCode 41
         versionName "2.0"
@@ -36,6 +36,7 @@ dependencies {
     implementation project(':swipeback')
     implementation project(':circular-checkbox')
     implementation project(':floating-menu')
+    implementation project(':web')
 
     implementation 'pub.devrel:easypermissions:3.0.0'
 
