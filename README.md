@@ -2,8 +2,9 @@ Videos
 ======================
 
 An app lists all the videos from the sdcard (except for the ones not recorded to the system db.),
-where you can perform such ops as topping, deleting and playing. Also, there are some handy TV
-live streams that you can find to play in the `Online Videos` section of the application homepage.
+where you can perform such ops as topping, deleting and playing. Also, there are lots of videos
+from [YouTube](https://m.youtube.com) that you can find to play in the `Online Videos` plate of
+the application homepage.
 
 ## Features
 - Videos are listed and classified by each item for the videos under the same directory or just
@@ -16,20 +17,30 @@ live streams that you can find to play in the `Online Videos` section of the app
 - Search the videos matching all of the search key words.
 - Play a local video from the app list or across from an other app (such as a file manager/explorer).
   Audio files are also permitted in the latter case.
-- Play an online audio/video stream by entering a direct URL.
+- Play an online audio/video stream by entering a direct URL or choosing a publicly shared
+  YouTube video/playlist from the Online Videos page.
 - A set of useful, typical, and even awesome ops for the audio/video playbacks.
+- Simple and smooth UI with day/night mode support.
+- Crashes are auto reported and users can send their suggestion or problems they encountered, all of
+  which help make this app much better.
+- Hot and cold updates support to continuously let user get the latest product for bug fixes,
+  feature enhancements, etc.
+- Good support for devices with API 16+, very large font size and right-to-left layout direction.
 
 ## Screenshots
 <img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_01.jpg" width="256">&nbsp;
 <img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_02.jpg" width="256">&nbsp;
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_03.jpg" width="256"><br/>
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_03.png" width="256"><br/>
 <img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_04.jpg" width="256">&nbsp;
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_05.jpg" width="256"><br/>
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_06.jpg" width="256">&nbsp;
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_07.jpg" width="455"><br/>
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_08.jpg" width="455">
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_09.jpg" width="455">
-<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_10.jpg" width="455">
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_05.jpg" width="256">&nbsp;
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_06.jpg" width="256"><br/>
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_07.jpg" width="256">&nbsp;
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_08.jpg" width="455"><br/>
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_09.jpg" width="455"><br/>
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_10.jpg" width="455"><br/>
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_11.jpg" width="455"><br/>
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_12.jpg" height="256">&nbsp;
+<img src="https://github.com/ApksHolder/Videos/blob/master/screenshot_13.png" width="256">
 
 ## Developing Videos
 
