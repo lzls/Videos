@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="code except for libraries'" pattern="!lib:*..*&amp;&amp;![Videos.ijkplayer]:*..*" />
+</component>

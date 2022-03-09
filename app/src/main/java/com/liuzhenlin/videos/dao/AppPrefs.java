@@ -42,7 +42,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class AppPrefs {
 
-    @SuppressWarnings("FieldCanBeLocal")
     private final Context mContext;
     @Synthetic final SharedPreferences mSP;
     @Synthetic final ReadWriteLock mLock = new ReentrantReadWriteLock();

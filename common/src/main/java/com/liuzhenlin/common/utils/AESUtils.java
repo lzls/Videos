@@ -5,6 +5,7 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Base64;
 
@@ -42,6 +43,7 @@ public class AESUtils {
     /**
      * 字符编码
      */
+    @SuppressLint("NewApi")
     private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     /**

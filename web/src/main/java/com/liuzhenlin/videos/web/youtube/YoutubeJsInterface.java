@@ -14,6 +14,7 @@ public class YoutubeJsInterface {
     public static final String JSI_ON_GET_PLAYLIST = "window.YouTube.onGetPlaylist";
     public static final String JSI_ON_GET_PLAYLIST_INDEX = "window.YouTube.onGetPlaylistIndex";
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final Context mContext;
 
     public YoutubeJsInterface(Context context) {

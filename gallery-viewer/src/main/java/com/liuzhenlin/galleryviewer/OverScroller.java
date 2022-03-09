@@ -588,7 +588,7 @@ public class OverScroller {
         // A context-specific coefficient adjusted to physical values.
         float mPhysicalCoeff;
 
-        static float DECELERATION_RATE = (float) (Math.log(0.78) / Math.log(0.9));
+        static final float DECELERATION_RATE = (float) (Math.log(0.78) / Math.log(0.9));
         static final float INFLEXION = 0.35f; // Tension lines cross at (INFLEXION, 1)
         static final float START_TENSION = 0.5f;
         static final float END_TENSION = 1.0f;

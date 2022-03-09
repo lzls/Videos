@@ -869,7 +869,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 } else if (displayCutoutManager.isNotchSupport()) {
 //                    mVideoView.setPadding(mNotchHeight, 0, 0, 0);
                     for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                        //noinspection SuspiciousNameCombination
                         UiUtils.setViewMargins(mVideoView.getChildAt(i),
                                 displayCutoutManager.getNotchHeight(), 0, 0, 0);
                     }
@@ -887,7 +886,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 } else if (displayCutoutManager.isNotchSupport()) {
 //                    mVideoView.setPadding(0, 0, mNotchHeight, 0);
                     for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                        //noinspection SuspiciousNameCombination
                         UiUtils.setViewMargins(mVideoView.getChildAt(i),
                                 0, 0, displayCutoutManager.getNotchHeight(), 0);
                     }
