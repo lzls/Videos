@@ -770,27 +770,34 @@ public class VlcVideoPlayer extends VideoPlayer {
         return EMPTY_TRACK_INFOS;
     }
 
-    // FIXME: parameter 'index' actually is the Media.Track's id,
-    //        which may not be equal to MediaPlayer.TrackDescription's id.
+    // FIXME: mMediaPlayer.set*Track actually only accepts MediaPlayer.TrackDescription's id as
+    //        its parameter, which may not be equal to the Media.Track's id ('libIndex').
     @Override
     public void selectTrack(int index) {
         if (mMediaPlayer != null) {
-            switch (getTrackTypeAt(index)) {
+            Media media = mMediaPlayer.getMedia();
+            if (media == null) return;
+
+            int libIndex = externalIndexToLibIndex(index);
+            if (libIndex < 0) return;
+
+            Media.Track track = media.getTrack(libIndex);
+            if (track == null) return;
+
+            switch (track.type) {
                 case Media.Track.Type.Video:
-                    mMediaPlayer.setVideoTrack(index);
+                    mMediaPlayer.setVideoTrack(libIndex);
                     break;
                 case Media.Track.Type.Audio:
-                    mMediaPlayer.setAudioTrack(index);
+                    mMediaPlayer.setAudioTrack(libIndex);
                     break;
                 case Media.Track.Type.Text:
-                    mMediaPlayer.setSpuTrack(index);
+                    mMediaPlayer.setSpuTrack(libIndex);
                     break;
             }
         }
     }
 
-    // FIXME: parameter 'index' actually is the Media.Track's id,
-    //        which may not be equal to MediaPlayer.TrackDescription's id.
     @Override
     public void deselectTrack(int index) {
         if (mMediaPlayer != null) {
@@ -808,48 +815,91 @@ public class VlcVideoPlayer extends VideoPlayer {
         }
     }
 
-    // FIXME: parameter 'index' actually is the Media.Track's id,
-    //        which may not be equal to MediaPlayer.TrackDescription's id.
     private int getTrackTypeAt(int index) {
-        MediaPlayer.TrackDescription[] vtds = mMediaPlayer.getVideoTracks();
-        if (vtds != null) {
-            for (MediaPlayer.TrackDescription vtd : vtds) {
-                if (vtd.id == index) return Media.Track.Type.Video;
+        if (mMediaPlayer != null) {
+            Media media = mMediaPlayer.getMedia();
+            if (media != null) {
+                int libIndex = externalIndexToLibIndex(index);
+                if (libIndex >= 0) {
+                    Media.Track track = media.getTrack(libIndex);
+                    if (track != null) {
+                        return track.type;
+                    }
+                }
             }
         }
-
-        MediaPlayer.TrackDescription[] atds = mMediaPlayer.getAudioTracks();
-        if (atds != null) {
-            for (MediaPlayer.TrackDescription atd : atds) {
-                if (atd.id == index) return Media.Track.Type.Audio;
-            }
-        }
-
-        MediaPlayer.TrackDescription[] stds = mMediaPlayer.getSpuTracks();
-        if (stds != null) {
-            for (MediaPlayer.TrackDescription std : stds) {
-                if (std.id == index) return Media.Track.Type.Text;
-            }
-        }
-
         return Media.Track.Type.Unknown;
     }
 
-    // FIXME: index returned is the MediaPlayer.TrackDescription's id,
-    //        which may not be equal to Media.Track's id.
-    @Override
-    public int getSelectedTrackIndex(int trackType) {
-        if (mMediaPlayer != null) {
-            switch (trackType) {
-                case TrackInfo.TRACK_TYPE_VIDEO:
-                    return mMediaPlayer.getVideoTrack();
-                case TrackInfo.TRACK_TYPE_AUDIO:
-                    return mMediaPlayer.getAudioTrack();
-                case TrackInfo.TRACK_TYPE_SUBTITLE:
-                    return mMediaPlayer.getSpuTrack();
+    private int externalIndexToLibIndex(int index) {
+        if (index >= 0 && mMediaPlayer != null) {
+            Media media = mMediaPlayer.getMedia();
+            if (media != null) {
+                int usableTrackCount = 0;
+                for (int i = 0, trackCount = media.getTrackCount();
+                     i < trackCount && usableTrackCount < index + 1; i++) {
+                    Media.Track track = media.getTrack(i);
+                    if (track != null && isSupportedTrackType(track.type)) {
+                        ++usableTrackCount;
+                    }
+                }
+                return usableTrackCount - 1;
             }
         }
-        return INVALID_TRACK_INDEX;
+        return -1;
+    }
+
+    private int libIndexToExternalIndex(int index) {
+        if (index >= 0 && mMediaPlayer != null) {
+            Media media = mMediaPlayer.getMedia();
+            if (media != null) {
+                int usableTrackCount = 0;
+                for (int i = 0; i <= index; i++) {
+                    Media.Track track = media.getTrack(i);
+                    if (track != null && isSupportedTrackType(track.type)) {
+                        ++usableTrackCount;
+                    }
+                }
+                return usableTrackCount - 1;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isSupportedTrackType(int trackType) {
+        switch (trackType) {
+            case Media.Track.Type.Video:
+            case Media.Track.Type.Audio:
+            case Media.Track.Type.Text:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // FIXME: mMediaPlayer.get*Track returns the id of MediaPlayer.TrackDescription, which may not
+    //        be equal to Media.Track's id (the index of the media track array in lib).
+    @Override
+    public int getSelectedTrackIndex(int trackType) {
+        int trackIndex = -1;
+        if (mMediaPlayer != null) {
+            Media media = mMediaPlayer.getMedia();
+            if (media != null) {
+                switch (trackType) {
+                    case TrackInfo.TRACK_TYPE_VIDEO:
+                        trackIndex = mMediaPlayer.getVideoTrack();
+                        break;
+                    case TrackInfo.TRACK_TYPE_AUDIO:
+                        trackIndex = mMediaPlayer.getAudioTrack();
+                        break;
+                    case TrackInfo.TRACK_TYPE_SUBTITLE:
+                        trackIndex = mMediaPlayer.getSpuTrack();
+                        break;
+                }
+                trackIndex = libIndexToExternalIndex(trackIndex);
+            }
+        }
+        return trackIndex >= 0 ? trackIndex : INVALID_TRACK_INDEX;
     }
 
     @Override
