@@ -6,10 +6,10 @@ import android.webkit.WebSettings;
 import androidx.annotation.Nullable;
 
 import com.liuzhenlin.common.utils.NonNullApi;
-import com.liuzhenlin.videos.web.AndroidWebView;
+import com.liuzhenlin.videos.web.BackgroundbleWebView;
 
 @NonNullApi
-public abstract class PlayerWebView extends AndroidWebView {
+public abstract class PlayerWebView extends BackgroundbleWebView {
 
     @Nullable private WebPlayer mPlayer;
 

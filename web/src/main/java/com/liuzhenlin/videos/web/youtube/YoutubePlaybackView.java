@@ -54,4 +54,9 @@ public class YoutubePlaybackView extends PlayerWebView {
             }
         });
     }
+
+    @Override
+    protected boolean shouldStopWhenDetachedFromWindow() {
+        return false;
+    }
 }
