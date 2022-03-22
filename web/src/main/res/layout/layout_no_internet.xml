@@ -14,7 +14,7 @@
         android:textAlignment="center"
         android:gravity="center" />
 
-    <Button
+    <com.liuzhenlin.common.view.TranslucentOnPressedButton
         android:id="@+id/btn_retry"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
@@ -22,7 +22,7 @@
         android:textColor="@android:color/white"
         android:text="@string/retry" />
 
-    <Button
+    <com.liuzhenlin.common.view.TranslucentOnPressedButton
         android:id="@+id/btn_settings"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
@@ -31,7 +31,7 @@
         android:textColor="@android:color/white"
         android:text="@string/changeSettings" />
 
-    <Button
+    <com.liuzhenlin.common.view.TranslucentOnPressedButton
         android:id="@+id/btn_exit"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
