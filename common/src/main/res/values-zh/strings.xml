@@ -13,4 +13,7 @@
     <string name="pause">暂停</string>
     <string name="fastForward">快进</string>
     <string name="fastRewind">快退</string>
+
+    <string name="lockScreenOrientation">锁定屏幕</string>
+    <string name="unlockScreenOrientation">解锁屏幕</string>
 </resources>

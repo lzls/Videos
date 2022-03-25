@@ -3,28 +3,45 @@ package com.liuzhenlin.videos.web.youtube;
 import android.annotation.SuppressLint;
 import android.app.PictureInPictureParams;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Rational;
+import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.webkit.WebView;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
 import androidx.appcompat.app.PlatformPendingTransitionOverrides;
 
+import com.liuzhenlin.common.Consts;
+import com.liuzhenlin.common.observer.OnOrientationChangeListener;
+import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.videos.web.R;
+import com.liuzhenlin.videos.web.player.PlayerWebView;
+import com.liuzhenlin.videos.web.player.WebPlayer;
 
+import java.lang.reflect.Field;
+
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_FORWARD;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_REWIND;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PAUSE;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PLAY;
 
+@SuppressLint("SourceLockedOrientationActivity")
 public class YoutubePlaybackActivity extends AppCompatActivity {
 
     @SuppressLint("StaticFieldLeak")
@@ -32,9 +49,45 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     private AppCompatDelegateWrapper mDelegate;
 
     private ViewGroup mContentView;
-    private WebView mPlaybackView;
+    private PlayerWebView mPlaybackView;
 
     @Synthetic YoutubePlaybackService mService;
+
+    private ImageView mLockUnlockOrientationButton;
+    private OnOrientationChangeListener mOnOrientationChangeListener;
+    private boolean mOrientationLocked;
+
+    private String mLockOrientation;
+    private String mUnlockOrientation;
+
+    private Handler mHandler;
+    private final Runnable mHideLockUnlockOrientationButtonRunnable =
+            this::hideLockUnlockOrientationButton;
+    private static final int DELAY_TIME_HIDE_LOCK_UNLOCK_ORIENTATION_BUTTON = 2500;
+
+    private Handler getHandler() {
+        if (mHandler == null) {
+            mHandler = getWindow().getDecorView().getHandler();
+            if (mHandler == null) {
+                mHandler = Consts.getMainThreadHandler();
+            }
+        }
+        return mHandler;
+    }
+
+    private String getLockOrientationStr() {
+        if (mLockOrientation == null) {
+            mLockOrientation = getString(R.string.lockScreenOrientation);
+        }
+        return mLockOrientation;
+    }
+
+    private String getUnlockOrientationStr() {
+        if (mUnlockOrientation == null) {
+            mUnlockOrientation = getString(R.string.unlockScreenOrientation);
+        }
+        return mUnlockOrientation;
+    }
 
     @NonNull
     @Override
@@ -52,38 +105,182 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
-        getDelegate().setPendingTransitionOverrides(new PlatformPendingTransitionOverrides());
+        mService = YoutubePlaybackService.get();
+        if (usingYoutubeIFramePlayer()) {
+            getDelegate().setPendingTransitionOverrides(new PlatformPendingTransitionOverrides());
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sInstance = this;
-
-        setContentView(R.layout.activity_youtube_playback);
         mService = YoutubePlaybackService.get();
         if (mService == null || mService.mView == null) {
             finish();
         } else {
-            SystemBarUtils.showSystemBars(getWindow(), false);
+            setRequestedOrientation(
+                    usingYoutubeIFramePlayer()
+                            ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
+            adjustStatusBar();
+            setContentView(R.layout.activity_youtube_playback);
 
             mPlaybackView = mService.mView;
             ViewGroup parent = (ViewGroup) mPlaybackView.getParent();
             if (parent != null) {
                 parent.removeView(mPlaybackView);
             }
-            ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.MATCH_PARENT);
+            // Showing Dialog or any kind of child Window from JS will need an Activity instance
+            // with a valid Window token.
+            setPlaybackViewBaseContext(this);
             mContentView = findViewById(R.id.content);
-            mContentView.addView(mPlaybackView, lp);
+            mContentView.addView(mPlaybackView, 0);
+
+            mLockUnlockOrientationButton = mContentView.findViewById(R.id.btn_lockUnlockOrientation);
+            mLockUnlockOrientationButton.setOnClickListener(
+                    v -> setScreenOrientationLocked(!mOrientationLocked));
+            mOnOrientationChangeListener = new OnOrientationChangeListener(this) {
+                @Override
+                protected void onOrientationChange(int orientation) {
+                    if (orientation != SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                            && usingYoutubePlayer()) {
+                        Configuration config = getResources().getConfiguration();
+                        boolean toPortrait = orientation == SCREEN_ORIENTATION_PORTRAIT;
+                        boolean portrait = config.orientation == Configuration.ORIENTATION_PORTRAIT;
+                        if (portrait && !toPortrait || !portrait && toPortrait) {
+                            showLockUnlockOrientationButton(true);
+                        }
+                    }
+                }
+            };
         }
+    }
+
+    private void setPlaybackViewBaseContext(Context context) {
+        if (mPlaybackView != null) {
+            try {
+                //noinspection JavaReflectionMemberAccess,DiscouragedPrivateApi
+                Field base = ContextWrapper.class.getDeclaredField("mBase");
+                base.setAccessible(true);
+                base.set(mPlaybackView.getContext(), context);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void adjustStatusBar() {
+        if (usingYoutubeIFramePlayer()) {
+            SystemBarUtils.showSystemBars(getWindow(), false);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            SystemBarUtils.setStatusBackgroundColorRes(
+                    getWindow(), R.color.youtube_watch_page_actionbar_background);
+        }
+    }
+
+    @Synthetic boolean usingYoutubePlayer() {
+        return mService != null && mService.getWebPlayer() instanceof YoutubePlayer;
+    }
+
+    private boolean usingYoutubeIFramePlayer() {
+        return mService != null && mService.getWebPlayer() instanceof YoutubeIFramePlayer;
+    }
+
+    /*package*/ void enterFullscreen() {
+        if (usingYoutubePlayer()) {
+            SystemBarUtils.showSystemBars(getWindow(), false);
+            setRequestedOrientation(SCREEN_ORIENTATION_SENSOR);
+            setOnOrientationChangeListenerEnabled(true);
+        }
+    }
+
+    /*package*/ void exitFullscreen() {
+        if (usingYoutubePlayer()) {
+            SystemBarUtils.showSystemBars(getWindow(), true);
+            setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
+            setOnOrientationChangeListenerEnabled(false);
+            showLockUnlockOrientationButton(false);
+            setScreenOrientationLocked(false);
+        }
+    }
+
+    private void setOnOrientationChangeListenerEnabled(boolean enabled) {
+        if (enabled) {
+            enabled = usingYoutubePlayer()
+                    && mPlaybackView.isInFullscreen() && !isInPictureInPictureMode();
+        }
+        if (enabled) {
+            mOnOrientationChangeListener.setOrientation(ActivityUtils.getCurrentOrientation(this));
+        }
+        mOnOrientationChangeListener.setEnabled(enabled);
+    }
+
+    private void setScreenOrientationLocked(boolean locked) {
+        if (!usingYoutubePlayer()) {
+            return;
+        }
+        mOrientationLocked = locked;
+        if (locked) {
+            mLockUnlockOrientationButton.setImageResource(R.drawable.ic_unlock);
+            mLockUnlockOrientationButton.setContentDescription(getLockOrientationStr());
+            if (mPlaybackView.isInFullscreen()) {
+                switch (ActivityUtils.getCurrentOrientation(this)) {
+                    case SCREEN_ORIENTATION_LANDSCAPE:
+                    case SCREEN_ORIENTATION_REVERSE_LANDSCAPE:
+                        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                        break;
+                    default:
+                        setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
+                        break;
+                }
+            } else {
+                setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
+            }
+        } else {
+            mLockUnlockOrientationButton.setImageResource(R.drawable.ic_lock);
+            mLockUnlockOrientationButton.setContentDescription(getUnlockOrientationStr());
+            if (mPlaybackView.isInFullscreen()) {
+                setRequestedOrientation(SCREEN_ORIENTATION_SENSOR);
+            } else {
+                setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
+            }
+        }
+    }
+
+    @Synthetic void showLockUnlockOrientationButton(boolean show) {
+        if (mHandler != null) {
+            mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable);
+        }
+        if (show) {
+            getHandler().postDelayed(mHideLockUnlockOrientationButtonRunnable,
+                    DELAY_TIME_HIDE_LOCK_UNLOCK_ORIENTATION_BUTTON);
+            mLockUnlockOrientationButton.setVisibility(View.VISIBLE);
+        } else {
+            hideLockUnlockOrientationButton();
+        }
+    }
+
+    private void hideLockUnlockOrientationButton() {
+        mLockUnlockOrientationButton.setVisibility(View.GONE);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setOnOrientationChangeListenerEnabled(true);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        setOnOrientationChangeListenerEnabled(false);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         sInstance = null;
+        setPlaybackViewBaseContext(getApplicationContext());
         // Removes the player view in case a memory leak as it is part of the view hierarchy
         // and may be still referenced from YoutubePlaybackService.
         if (mContentView != null) {
@@ -117,6 +314,10 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
         getPipHelper().onPictureInPictureModeChanged(isInPictureInPictureMode);
         if (isInPictureInPictureMode) {
             updatePictureInPictureActions(mService.mPlayingStatus);
+            setOnOrientationChangeListenerEnabled(false);
+            showLockUnlockOrientationButton(false);
+        } else {
+            setOnOrientationChangeListenerEnabled(true);
         }
     }
 
@@ -124,7 +325,9 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
-        enterPipMode();
+        if (mPlaybackView.isInFullscreen()) {
+            enterPipMode();
+        }
     }
 
     public void enterPipMode() {
@@ -177,7 +380,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
             pipHelper.setAdapter(new PictureInPictureHelper.Adapter() {
                 @Override
                 public void onTapPlay() {
-                    YoutubePlayer player = mService.getWebPlayer();
+                    WebPlayer player = mService.getWebPlayer();
                     if (player != null) {
                         player.play();
                     }
@@ -185,7 +388,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
 
                 @Override
                 public void onTapPause() {
-                    YoutubePlayer player = mService.getWebPlayer();
+                    WebPlayer player = mService.getWebPlayer();
                     if (player != null) {
                         player.pause();
                     }
@@ -193,7 +396,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
 
                 @Override
                 public void onTapFastForward() {
-                    YoutubePlayer player = mService.getWebPlayer();
+                    WebPlayer player = mService.getWebPlayer();
                     if (player != null) {
                         player.fastForward();
                     }
@@ -201,7 +404,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
 
                 @Override
                 public void onTapFastRewind() {
-                    YoutubePlayer player = mService.getWebPlayer();
+                    WebPlayer player = mService.getWebPlayer();
                     if (player != null) {
                         player.fastRewind();
                     }

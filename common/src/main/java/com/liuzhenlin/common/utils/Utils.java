@@ -14,11 +14,13 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.webkit.ConsoleMessage;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -314,5 +316,33 @@ public class Utils {
      */
     public static int getAbsoluteHorizontalGravity(@NonNull View parent, int gravity) {
         return getAbsoluteGravity(parent, gravity) & Gravity.HORIZONTAL_GRAVITY_MASK;
+    }
+
+    /**
+     * Log a {@link ConsoleMessage web console message} to the Android logcat.
+     * @param consoleMessage The message object would be output onto the web console.
+     * @param logTag Used to identify the source of a log message.
+     */
+    public static void logWebConsoleMessage(
+            @NonNull ConsoleMessage consoleMessage, @NonNull String logTag) {
+        String message = consoleMessage.message() + " (at " + consoleMessage.sourceId()
+                + " : line " + consoleMessage.lineNumber() + ")";
+        switch (consoleMessage.messageLevel()) {
+            case TIP:
+                Log.v(logTag, message);
+                break;
+            case LOG:
+                Log.i(logTag, message);
+                break;
+            case DEBUG:
+                Log.d(logTag, message);
+                break;
+            case WARNING:
+                Log.w(logTag, message);
+                break;
+            case ERROR:
+                Log.e(logTag, message);
+                break;
+        }
     }
 }

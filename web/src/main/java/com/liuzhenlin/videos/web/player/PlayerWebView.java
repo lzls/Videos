@@ -35,6 +35,10 @@ public abstract class PlayerWebView extends BackgroundbleWebView {
         return mPlayer;
     }
 
+    public boolean isInFullscreen() {
+        return false;
+    }
+
     public abstract void loadPlaylist(String playlistId, @Nullable String videoId);
 
     public abstract void loadVideo(String videoId);

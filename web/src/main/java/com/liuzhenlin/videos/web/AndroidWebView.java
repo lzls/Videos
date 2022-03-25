@@ -91,6 +91,10 @@ public class AndroidWebView extends WebView {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            setWebContentsDebuggingEnabled(com.liuzhenlin.videos.web.Configs.WEB_DEBUGGING_ENABLED);
+        }
     }
 
     // Copied from Fermata

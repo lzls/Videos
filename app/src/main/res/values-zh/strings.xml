@@ -47,7 +47,6 @@
     <string name="isTheLatestVersion">已是最新版本</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">正在载入数据，请稍候…</string>
     <string name="localVideos">本地视频</string>
-    <string name="lockScreenOrientation">锁定屏幕</string>
     <string name="name">名称：%s</string>
     <string name="newAppDownloaded">新应用下载完成</string>
     <string name="noNetworkConnection">无网络连接！</string>
@@ -113,7 +112,6 @@
     <string name="theVideoIsPlaying">正在播放该视频</string>
     <string name="top">置顶</string>
     <string name="unfold">展开</string>
-    <string name="unlockScreenOrientation">解锁屏幕</string>
     <string name="updateLog">%1$sv%2$s 更新日志：</string>
     <string name="updateLogs">更新日志</string>
     <string name="userFeedback">用户反馈</string>

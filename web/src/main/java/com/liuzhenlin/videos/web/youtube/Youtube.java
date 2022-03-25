@@ -12,10 +12,26 @@ import androidx.annotation.Nullable;
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Utils;
 
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_PLAYLIST;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_PLAYLIST_INDEX;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_VID;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_READY;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_STATE_CHANGE;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_ERR;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_BUFFERING;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_ENDED;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_PAUSED;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_PLAYING;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_SELECTOR_FOUND;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_UNSTARTED;
+
 @NonNullApi
 public final class Youtube {
 
     private Youtube() {}
+
+    /*package*/ static final String JS_LOG_TAG = "YouTubeJavaScripts";
 
     /*package*/ static final String REGEX_PROTOCOL = "http(s)?://";
     /*package*/ static final String REGEX_WATCH_URL_HOST = "(m|www)\\.youtube\\.com";
@@ -32,6 +48,8 @@ public final class Youtube {
         public static final String HOME = "https://m.youtube.com";
 
         public static final String PLAYER_API = HOME + "/player_api";
+
+        public static final String WATCH = HOME + "/watch";
     }
 
     public static final class PlayingStatus {
@@ -97,6 +115,10 @@ public final class Youtube {
             return "javascript:player.setPlaybackQuality(\"" + quality + "\");";
         }
 
+        public static String setMuted(boolean muted) {
+            return "javascript:player." + (muted ? "mute" : "unMute") + "();";
+        }
+
         public static String loadPlaylist(String pId, int index) {
             return "javascript:player.loadPlaylist({list:\"" + pId + "\", index:" + index + "});";
         }
@@ -114,18 +136,251 @@ public final class Youtube {
         }
 
         public static String getPlaylistIndex() {
-            return "javascript:"
-                    + YoutubeJsInterface.JSI_ON_GET_PLAYLIST_INDEX + "(player.getPlaylistIndex());";
+            return "javascript:" + JSI_ON_GET_PLAYLIST_INDEX + "(player.getPlaylistIndex());";
         }
 
         public static String getPlaylist() {
-            return "javascript:"
-                    + YoutubeJsInterface.JSI_ON_GET_PLAYLIST + "(player.getPlaylist());";
+            return "javascript:" + JSI_ON_GET_PLAYLIST + "(player.getPlaylist());";
         }
 
         public static String getVideoId() {
-            return "javascript:"
-                    + YoutubeJsInterface.JSI_ON_GET_VID + "(player.getVideoData()['video_id']);";
+            return "javascript:" + JSI_ON_GET_VID + "(player.getVideoData()['video_id']);";
+        }
+    }
+
+    public static final class JsInterface {
+        private JsInterface() {}
+
+        public static String attachListeners() {
+            return "javascript:\n" +
+                    "function attachVideoListeners(v) {\n" +
+                    "  if (v.getAttribute('listenersAttached') === 'true') return;\n" +
+                    "  v.setAttribute('listenersAttached', 'true');\n" +
+                    "  " + JSI_ON_EVENT + "(" + JSE_VIDEO_SELECTOR_FOUND + ", null);\n" +
+                    "  if (v.currentTime > 0 && !v.paused && !v.ended) " + JSI_ON_EVENT
+                    + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);\n" +
+                    "  v.addEventListener('playing', function(e) {" + JSI_ON_EVENT
+                    + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);});\n" +
+                    "  v.addEventListener('pause', function(e) {" + JSI_ON_EVENT
+                    + "(" + JSE_VIDEO_PAUSED + ", v.currentSrc);});\n" +
+                    "  v.addEventListener('ended', function(e) {" + JSI_ON_EVENT
+                    + "(" + JSE_VIDEO_ENDED + ", v.currentSrc);});\n" +
+                    "  v.addEventListener('waiting', function(e) {" + JSI_ON_EVENT
+                    + "(" + JSE_VIDEO_BUFFERING + ", null);});\n" +
+                    "  v.addEventListener('loadstart', function(e) {" + JSI_ON_EVENT
+                    + "(" + JSE_VIDEO_UNSTARTED + ", null);});\n" +
+                    "}\n" +
+                    "function findVideo() {\n" +
+                    "  var video = document.querySelectorAll('video');\n" +
+                    "  video.forEach(attachVideoListeners);\n" +
+                    "  setTimeout(findVideo, 1000);\n" +
+                    "}\n" +
+                    "findVideo();";
+        }
+
+        public static String skipAd() {
+            return "javascript:\n" +
+                    "if (document.querySelectorAll('.ad-showing').length > 0) {\n" +
+                    "  var video = document.querySelector('video');\n" +
+                    "  if (video != null) video.currentTime = video.duration;\n" +
+                    "}";
+        }
+
+        public static String setMuted(boolean muted) {
+            return "javascript:var v = document.querySelector('video');\n" +
+                    "if (v != null) v.muted=" + muted + ";";
+        }
+
+        public static String loadVideo(String vId) {
+            return URLs.WATCH + "?v=" + vId;
+        }
+
+        public static String playVideo() {
+            return "javascript:var v = document.querySelector('video'); if (v != null) v.play();";
+        }
+
+        public static String pauseVideo() {
+            return "javascript:var v = document.querySelector('video'); if (v != null) v.pause();";
+        }
+
+        public static String stopVideo() {
+            return "javascript:var v = document.querySelector('video');\n" +
+                    "if (v != null) { v.currentTime = 0; v.pause(); }";
+        }
+
+        public static String nextVideo() {
+            return prevNextVideo(4, 1);
+        }
+
+        public static String prevVideo() {
+            return prevNextVideo(0, 0);
+        }
+
+        private static String prevNextVideo(int idx, int plIdx) {
+            return "javascript:\n" +
+                    "var e = document.getElementsByClassName('player-controls-middle center');\n" +
+                    "if (e.length > 0) e = e[0].querySelectorAll('button');\n" +
+                    "if (e.length >= 5) e[" + idx + "].click();\n" +
+                    "else {\n" +
+                    "  e = document.getElementsByClassName('playlist-controls-primary');\n" +
+                    "  if (e.length > 0 && e[0].children.length >= 2)\n" +
+                    "    e[0].children[" + plIdx + "].children[0].click();\n" +
+                    "}";
+        }
+
+        public static String seekToDefault() {
+            return seekTo(0);
+        }
+
+        public static String seekTo(long position) {
+            double pos = position / 1000d;
+            return "javascript:var v = document.querySelector('video');\n" +
+                    "if (v != null) v.currentTime = " + pos + ";";
+        }
+
+        public static String fastRewind() {
+            return "javascript:var v = document.querySelector('video');\n" +
+                    "if (v != null) v.currentTime -= 15;";
+        }
+
+        public static String fastForward() {
+            return "javascript:var v = document.querySelector('video');\n" +
+                    "if (v != null) v.currentTime += 15;";
+        }
+
+        public static String setPlaybackQuality(int idx) {
+            return "javascript:\n" +
+                    "function retrySetVideoQuality(idx, attempt, openMenu) {\n" +
+                    "  if (attempt < 10) setTimeout(setVideoQuality, 100, idx, attempt + 1, openMenu);\n" +
+                    "  else " + JSI_ON_EVENT + "(" + JSE_ERR
+                    + ", 'Failed to set playback quality at index ' + " + idx + ");\n" +
+                    "  return false;\n" +
+                    "}\n" +
+                    "function setVideoQuality(idx, attempt, openMenu) {\n" +
+                    "  if (openMenu) {\n" +
+                    "    var b = document.querySelector('.player-settings-icon');\n" +
+                    "    if (b == null) return retrySetVideoQuality(idx, attempt, true);\n" +
+                    "    b.click();\n" +
+                    "  }\n" +
+                    "  var settings = document.querySelector('.player-quality-settings');\n" +
+                    "  if (settings == null) return retrySetVideoQuality(idx, attempt, false);\n" +
+                    "  var select = settings.querySelector('.select');\n" +
+                    "  if (select == null) return retrySetVideoQuality(idx, attempt, false);\n" +
+                    "  var options = select.querySelectorAll('.option');\n" +
+                    "  var evt = document.createEvent(\"HTMLEvents\");\n" +
+                    "  evt.initEvent(\"change\", true, true);\n" +
+                    "  select.selectedIndex = idx;\n" +
+                    "  options[idx].selected = true;\n" +
+                    "  select.dispatchEvent(evt);\n" +
+                    "  setTimeout(()=> {settings.parentNode.parentNode.querySelector("
+                    + "'.c3-material-button-button').click();}, 100);\n" +
+                    "  return true;\n" +
+                    "}\n" +
+                    "setVideoQuality(" + idx + ", 0, true);";
+        }
+
+        public static String loadPlaylist(String pId, @Nullable String vId) {
+            return URLs.WATCH + "?list=" + pId
+                    + (TextUtils.isEmpty(vId) ? "" : ("&v=" + vId));
+        }
+
+        public static String setLoopPlaylist(boolean loop) {
+            return "javascript:";
+        }
+
+        public static String replayPlaylist() {
+            return "javascript:\n" +
+                    "var e = document.getElementsByClassName('player-controls-middle center');\n" +
+                    "if (e.length > 0)\n" +
+                    "  e = e[0].getElementsByClassName('icon-button endscreen-replay-button');\n" +
+                    "if (e.length > 0) e[0].click();\n" +
+                    "else {\n" +
+                    "  " + playVideoAt(0).replaceFirst("javascript:", "") + "\n" +
+                    "}";
+        }
+
+        public static String playVideoAt(int index) {
+            return "javascript:\n" +
+                    "var e = document.getElementsByClassName('playlist-content section');\n" +
+                    "if (e.length > 0) {\n" +
+                    "  e = e[0].getElementsByClassName('compact-media-item');\n" +
+                    "  if (e.length > " + index + ") {\n" +
+                    "    e = e[" + index + "].querySelector('a');\n" +
+                    "    if (e != null) e.click();\n" +
+                    "  } else {\n" +
+                    "    " + JSI_ON_EVENT + "(" + JSE_ERR
+                    + ", 'Expected maximum index for video to be played ' + e.length + "
+                    + "', but got ' + " + index + ");\n" +
+                    "  }\n" +
+                    "} else if (" + index + " == 0) {\n" +
+                    "  " + playVideo().replaceFirst("javascript:", "") + "\n" +
+                    "} else {\n" +
+                    "  " + JSI_ON_EVENT + "(" + JSE_ERR
+                    + ", 'Expected maximum index for video to be played 0, but got ' + " + index + ");\n" +
+                    "}";
+        }
+
+        public static String getPlaylistIndex() {
+            return "javascript:\n" +
+                    "var e = document.getElementsByClassName('playlist-content section');\n" +
+                    "if (e.length > 0) {\n" +
+                    "  e = e[0].querySelectorAll('ytm-playlist-panel-video-renderer');\n" +
+                    "  for (let i = e.length - 1; i >= 0; i--) {\n" +
+                    "    if (e[i].getAttribute('selected') == 'true') {\n" +
+                    "      " + JSI_ON_GET_PLAYLIST_INDEX + "(i);\n" +
+                    "      break;\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "} else {\n" +
+                    "  " + JSI_ON_GET_PLAYLIST_INDEX + "(0);\n" +
+                    "}";
+        }
+
+        public static String getPlaylist() {
+            return "javascript:\n" +
+                    "var e = document.getElementsByClassName('playlist-content section');\n" +
+                    "if (e.length > 0) {\n" +
+                    "  e = e[0].getElementsByClassName('compact-media-item');\n" +
+                    "  if (e.length > 0) {\n" +
+                    "    var videos = new Array();\n" +
+                    "    for (let i = e.length - 1; i >= 0; i--) {\n" +
+                    "      let href = e[i].querySelector('a').href;\n" +
+                    "      videos[i] = href.substring(href.indexOf('v=') + 2).split('&')[0];\n" +
+                    "    }\n" +
+                    "    " + JSI_ON_GET_PLAYLIST + "(videos);\n" +
+                    "  }\n" +
+                    "} else {\n" +
+                    "  " + jsFunGetVideoId() + "\n" +
+                    "  " + JSI_ON_GET_PLAYLIST + "([getVideoId()]);\n" +
+                    "}";
+        }
+
+        private static String jsFunGetVideoId() {
+            return "function getVideoId() {\n" +
+                    "  var e = document.querySelector('ytm-player-microformat-renderer');\n" +
+                    "  if (e != null) {\n" +
+                    "    let json = JSON.parse(e.firstChild.innerText);\n" +
+                    "    let embedUrl = json.embedUrl;\n" +
+                    "    let embedUrlInfix = 'youtube.com/embed/';\n" +
+                    "    let vid = embedUrl.substring(embedUrl.indexOf(embedUrlInfix)"
+                    + " + embedUrlInfix.length).split('?')[0];\n" +
+                    "    return vid;\n" +
+                    "  }\n" +
+                    "}";
+        }
+
+        public static String getVideoId() {
+            return "javascript:\n" +
+                    jsFunGetVideoId() + "\n" +
+                    JSI_ON_GET_VID + "(getVideoId());";
+        }
+
+        public String requestFullScreen() {
+            return "javascript: var v = document.querySelector('video');\n" +
+                    "if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
+                    "else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
+                    "else " + JSI_ON_EVENT + "(" + JSE_ERR
+                    + ", 'Method requestFullscreen not found in ' + v);";
         }
     }
 
@@ -173,10 +428,10 @@ public final class Youtube {
             "          });\n" +
             "      }\n" +
             "      function onPlayerReady(event) {\n" +
-            "          " + YoutubeJsInterface.JSI_ON_PLAYER_READY + "();\n" +
+            "          " + JSI_ON_PLAYER_READY + "();\n" +
             "      }\n" +
             "      function onPlayerStateChange(event) {\n" +
-            "          " + YoutubeJsInterface.JSI_ON_PLAYER_STATE_CHANGE + "(player.getPlayerState());\n" +
+            "          " + JSI_ON_PLAYER_STATE_CHANGE + "(player.getPlayerState());\n" +
             "      }\n" +
             "    </script>\n" +
             "\n" +

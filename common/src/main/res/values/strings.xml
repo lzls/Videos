@@ -19,4 +19,7 @@
     <string name="pause">Pause</string>
     <string name="fastForward">Fast Forward</string>
     <string name="fastRewind">Fast Rewind</string>
+
+    <string name="lockScreenOrientation">Lock screen orientation</string>
+    <string name="unlockScreenOrientation">Unlock screen orientation</string>
 </resources>

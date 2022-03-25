@@ -7,6 +7,8 @@ package com.liuzhenlin.videos.web.player;
 
 import android.webkit.WebView;
 
+import androidx.annotation.Nullable;
+
 import com.liuzhenlin.common.utils.NonNullApi;
 
 @NonNullApi
@@ -20,7 +22,11 @@ public abstract class WebPlayer {
 
     public abstract void loadVideo(String vid);
 
-    public abstract void loadPlaylist(String pid, int index);
+    public abstract void loadPlaylist(String pid, @Nullable Object payload);
+
+    public abstract void skipAd();
+
+    public abstract void setMuted(boolean muted);
 
     public abstract void play();
 
@@ -40,7 +46,7 @@ public abstract class WebPlayer {
 
     public abstract void fastRewind();
 
-    public abstract void setPlaybackQuality(Object quality);
+    public abstract void setPlaybackQuality(Object arg);
 
     public abstract void setLoopPlaylist(boolean loop);
 

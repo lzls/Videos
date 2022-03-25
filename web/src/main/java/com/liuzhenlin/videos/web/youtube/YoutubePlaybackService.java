@@ -41,6 +41,7 @@ import com.liuzhenlin.videos.web.R;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
 import com.liuzhenlin.videos.web.player.Settings;
+import com.liuzhenlin.videos.web.player.WebPlayer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -60,7 +61,7 @@ public class YoutubePlaybackService extends Service {
 
     @Nullable /*package*/ PlayerWebView mView;
 
-    @Nullable @Synthetic YoutubePlayer mPlayer;
+    @Nullable @Synthetic WebPlayer mPlayer;
     private boolean mPlayerReady;
 
     private String mVideoId = "";
@@ -98,7 +99,7 @@ public class YoutubePlaybackService extends Service {
     }
 
     @Nullable
-    public YoutubePlayer getWebPlayer() {
+    public WebPlayer getWebPlayer() {
         return mPlayer;
     }
 
@@ -317,9 +318,13 @@ public class YoutubePlaybackService extends Service {
                 mPlaylistId = playlistId;
                 mPlaylistSize = UNKNOWN;
                 mPlaylistIndex = UNKNOWN;
-                if (mPlayerReady && videoId.isEmpty()) {
-                    //noinspection ConstantConditions
-                    mPlayer.loadPlaylist(playlistId, 0);
+                if (mPlayerReady && (mPlayer instanceof YoutubePlayer || videoId.isEmpty())) {
+                    if (mPlayer instanceof YoutubePlayer) {
+                        mPlayer.loadPlaylist(playlistId, videoId);
+                    } else {
+                        //noinspection ConstantConditions
+                        mPlayer.loadPlaylist(playlistId, 0);
+                    }
                 } else {
                     mPlayerReady = false;
                     mView.loadPlaylist(playlistId, videoId);
@@ -378,6 +383,9 @@ public class YoutubePlaybackService extends Service {
 //                    mPlayer.requestGetPlaylist();
 //                    mPlayer.requestGetPlaylistIndex();
 //                }
+
+                mPlayer.skipAd();
+                mPlayer.setMuted(false);
 
                 // Register MediaButtonEventReceiver every time the video starts, which
                 // will ensure it to be the sole receiver of MEDIA_BUTTON intents

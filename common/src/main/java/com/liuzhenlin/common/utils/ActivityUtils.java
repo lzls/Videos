@@ -7,12 +7,20 @@ package com.liuzhenlin.common.utils;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.TypedArray;
+import android.os.Build;
 import android.text.TextUtils;
+import android.view.Surface;
+import android.view.WindowManager;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -170,5 +178,47 @@ public class ActivityUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /** 获取当前屏幕方向 */
+    @SuppressLint("SwitchIntDef")
+    public static int getCurrentOrientation(@NonNull Context context) {
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        switch (wm.getDefaultDisplay().getRotation()) {
+            case Surface.ROTATION_90:
+                return ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            case Surface.ROTATION_180:
+                return ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            case Surface.ROTATION_270:
+                return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            default:
+                return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        }
+    }
+
+    /** 锁定屏幕方向 */
+    public static void setOrientationLocked(@NonNull Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.O) {
+                try {
+                    Class<ActivityInfo> activityInfoClass = ActivityInfo.class;
+                    //noinspection JavaReflectionMemberAccess
+                    Method isTranslucentOrFloating =
+                            activityInfoClass.getMethod("isTranslucentOrFloating", TypedArray.class);
+                    Boolean ret = (Boolean)
+                            isTranslucentOrFloating.invoke(
+                                    activityInfoClass, activity.getWindow().getWindowStyle());
+                    if (ret != null && ret) {
+                        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+                        return;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        } else {
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+        }
     }
 }
