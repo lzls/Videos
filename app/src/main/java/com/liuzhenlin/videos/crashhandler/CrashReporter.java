@@ -30,7 +30,7 @@ import java.io.InputStream;
 public abstract class CrashReporter {
 
     private static final String URL_CRASH_REPORT_BLACKLISTS =
-            "https://gitee.com/lzl_s/Videos-Server/raw/master/crash_report_blacklists.json";
+            "https://gitlab.com/lzls/Videos-Server/-/raw/master/crash_report_blacklists.json";
 
     private static final String KEY_DEVICE_BLACKLIST = "deviceBlacklist";
     private static final String KEY_DEVICE_MODEL_BLACKLIST = "deviceModelBlacklist";

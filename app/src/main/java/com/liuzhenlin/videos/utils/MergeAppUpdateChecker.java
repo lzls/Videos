@@ -90,7 +90,7 @@ public final class MergeAppUpdateChecker {
     private static final int TIMEOUT_READ = 30 * 1000; // ms
 
     private static final String LINK_APP_INFOS =
-            "https://gitee.com/lzl_s/Videos-Server/raw/master/app/Android/app.json";
+            "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app.json";
 
     @Synthetic String mAppName;
     @Synthetic String mVersionName;

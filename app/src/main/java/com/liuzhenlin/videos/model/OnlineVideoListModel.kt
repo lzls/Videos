@@ -119,6 +119,6 @@ class OnlineVideoListModel(context: Context) : BaseModel<Nothing, Array<TVGroup>
     }
 
     private companion object {
-        const val LINK_TVS_JSON = "https://gitee.com/lzl_s/Videos-Server/raw/master/tvs.json"
+        const val LINK_TVS_JSON = "https://gitlab.com/lzls/Videos-Server/-/raw/master/tvs.json"
     }
 }
