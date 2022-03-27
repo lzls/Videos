@@ -8,7 +8,7 @@ android {
         applicationId gradle.ext.applicationId
         minSdkVersion 16
         versionCode 41 // 41 -> 42
-        versionName "2.1-beta01"
+        versionName "2.1-beta02"
 
         vectorDrawables.useSupportLibrary = true
 
