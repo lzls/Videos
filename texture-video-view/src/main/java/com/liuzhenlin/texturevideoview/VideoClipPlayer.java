@@ -21,6 +21,7 @@ import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.liuzhenlin.texturevideoview.utils.Utils;
 
@@ -242,7 +243,8 @@ import java.io.IOException;
             mSurfaceHolder = surfaceHolder;
             if (mediaSourceFactory == null) {
                 mediaSourceFactory = new ProgressiveMediaSource.Factory(
-                        new DefaultHttpDataSource.Factory().setUserAgent(userAgent));
+                        new DefaultDataSource.Factory(
+                                context, new DefaultHttpDataSource.Factory().setUserAgent(userAgent)));
             }
             mMediaSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(videoUri));
         }
