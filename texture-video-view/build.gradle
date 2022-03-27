@@ -33,7 +33,7 @@ dependencies {
 
     api project(':ijkplayer')
 
-//    api 'org.videolan.android:libvlc-all:3.2.5'
+    api 'org.videolan.android:libvlc-all:3.4.9'
 
 //    api 'com.danikula:videocache:2.7.1'
 

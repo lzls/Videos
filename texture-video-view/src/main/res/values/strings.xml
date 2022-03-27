@@ -48,7 +48,7 @@
     <string name="android_mediaplayer" translatable="false">Android MediaPlayer</string>
     <string name="google_exoplayer" translatable="false">Google ExoPlayer</string>
     <string name="bilibili_ijkplayer" translatable="false">bilibili IjkPlayer</string>
-    <string name="vlc_mediaplayer">VLC MediaPlayer (recommended)</string>
+    <string name="vlc_mediaplayer">VLC MediaPlayer (experimental)</string>
     <string name="videoIsLoading">Video is loading…</string>
     <string name="failedToLoadThisVideo">Failed to load this video!</string>
     <string name="videoInThisFormatIsNotSupported">Video in this format is not supported!</string>

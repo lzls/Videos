@@ -237,8 +237,7 @@
                     android:textColor="@color/color_selector_white_color_accent"
                     android:textSize="@dimen/widget_small_text_size"
                     android:textAlignment="viewStart"
-                    android:gravity="start"
-                    android:visibility="gone" />
+                    android:gravity="start" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
