@@ -2415,7 +2415,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 final int position = player.getCurrentPosition();
                 vcv.setSelection(position - rangeOffset);
                 if (player.isPlaying()) {
-                    if (position < interval[0] || position > interval[1]) {
+                    // We can not check for position < interval[0] here to avoid possible dead loop
+                    // on calling seekTo(), as seeks may complete at slightly earlier positions
+                    // than what we want and this is normal.
+                    if (/*position < interval[0] ||*/ position > interval[1]) {
                         player.seekTo(interval[0]);
                     }
                     vcv.post(this);
