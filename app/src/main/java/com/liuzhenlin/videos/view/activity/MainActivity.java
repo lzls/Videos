@@ -213,8 +213,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                     setDrawerBackground(path);
                     // 用户从存储卡中删除了该路径下的图片或其路径已改变
                 } else {
+                    asp.setDrawerBackgroundPath(null);
                     asp.edit()
-                            .setDrawerBackgroundPath(null)
                             .setLightDrawerStatus(false, true)
                             .setLightDrawerStatus(true, false)
                             .setLightDrawerListForeground(false, false)
@@ -369,7 +369,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                     activity.mDrawerListAdapter.setLightDrawerListForeground(
                             asp.isLightDrawerListForeground());
                 } else {
-                    asp.edit().setDrawerBackgroundPath(mImagePath).apply();
+                    asp.setDrawerBackgroundPath(mImagePath);
 
                     final int defColor = ThemeUtils.isNightMode(activity) ? Color.BLACK : Color.WHITE;
                     final boolean lightBackground = ColorUtils.isLightColor(

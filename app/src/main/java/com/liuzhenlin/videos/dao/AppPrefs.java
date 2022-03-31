@@ -80,6 +80,13 @@ public final class AppPrefs {
         return mSP.getString(DRAWER_BACKGROUND_PATH, null);
     }
 
+    // Always commits the new path for drawer background image immediately to SP, since
+    // we could rely on its current value later from an Editor's setLightDrawerStatus()
+    // or setLightDrawerListForeground() method.
+    public void setDrawerBackgroundPath(@Nullable String path) {
+        mSP.edit().putString(DRAWER_BACKGROUND_PATH, path).apply();
+    }
+
     public boolean isLightDrawerStatus() {
         Lock readLock = mLock.readLock();
         readLock.lock();
@@ -193,11 +200,6 @@ public final class AppPrefs {
         Editor(AppPrefs prefs) {
             mPrefs = prefs;
             mEditor = prefs.mSP.edit();
-        }
-
-        public AppPrefs.Editor setDrawerBackgroundPath(@Nullable String path) {
-            mEditor.putString(DRAWER_BACKGROUND_PATH, path);
-            return this;
         }
 
         public AppPrefs.Editor setLightDrawerStatus(boolean light) {
