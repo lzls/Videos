@@ -202,24 +202,16 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 mDrawerList.setScrollEnabled(false);
 
                 mDrawerImage = findViewById(R.id.image_drawer);
-                AppPrefs asp = AppPrefs.getSingleton(app);
+                mDrawerImage.setTag("null");
+                final AppPrefs asp = AppPrefs.getSingleton(app);
                 final String path = asp.getDrawerBackgroundPath();
                 // 未设置背景图片
-                if (path == null) {
-                    setLightDrawerStatus(asp.isLightDrawerStatus());
-                    mDrawerListAdapter.setLightDrawerListForeground(asp.isLightDrawerListForeground());
-
-                } else if (new File(path).exists()) {
-                    setDrawerBackground(path);
-                    // 用户从存储卡中删除了该路径下的图片或其路径已改变
+                if (path == null
+                        // 用户从存储卡中删除了该路径下的图片或其路径已改变
+                        || !new File(path).exists()) {
+                    setDrawerBackground(null);
                 } else {
-                    asp.setDrawerBackgroundPath(null);
-                    asp.edit()
-                            .setLightDrawerStatus(false, true)
-                            .setLightDrawerStatus(true, false)
-                            .setLightDrawerListForeground(false, false)
-                            .setLightDrawerListForeground(true, true)
-                            .apply();
+                    setDrawerBackground(path);
                 }
             }
         });
@@ -314,7 +306,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         return (LocalVideosFragment) mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT];
     }
 
-    @Synthetic void setLightDrawerStatus(boolean light) {
+    private void setLightDrawerStatus(boolean light) {
         mIsDrawerStatusLight = light;
         AppPrefs.getSingleton(this).edit().setLightDrawerStatus(light).apply();
         if (mDrawerScrollPercent >= 0.5f) {
@@ -323,9 +315,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     }
 
     @Synthetic void setDrawerBackground(String path) {
-        if (path != null) {
-            Executors.SERIAL_EXECUTOR.execute(new LoadDrawerImageTask(this, path));
-        }
+        Executors.SERIAL_EXECUTOR.execute(new LoadDrawerImageTask(this, path));
     }
 
     private static final class LoadDrawerImageTask implements Runnable {
@@ -344,53 +334,83 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 return;
             }
 
-            final Bitmap bitmap = BitmapUtils.decodeRotatedBitmapFormFile(mImagePath);
-            if (bitmap == null) {
-                return;
-            }
-            final int drawerWidth = activity.mDrawerImage.getWidth();
-            final int drawerHeight = activity.mDrawerImage.getHeight();
-            final Bitmap centerCroppedBitmap = BitmapUtils.centerCroppedBitmap(
-                    bitmap, drawerWidth, drawerHeight, true, true);
-            Executors.MAIN_EXECUTOR.post(() -> {
-                if (activity.isFinishing() || mImagePath.equals(activity.mDrawerImage.getTag())) {
-                    activity.recycleBmpIfNotDrawerImage(centerCroppedBitmap);
+            if (mImagePath == null) {
+                setDrawerBackground(null);
+            } else {
+                final Bitmap bitmap = BitmapUtils.decodeRotatedBitmapFormFile(mImagePath);
+                if (bitmap == null) {
                     return;
                 }
+                final int drawerWidth = activity.mDrawerImage.getWidth();
+                final int drawerHeight = activity.mDrawerImage.getHeight();
+                final Bitmap centerCroppedBitmap = BitmapUtils.centerCroppedBitmap(
+                        bitmap, drawerWidth, drawerHeight, true, true);
+                setDrawerBackground(centerCroppedBitmap);
+            }
+        }
 
-                activity.recycleDrawerImage();
-                activity.mDrawerImage.setImageBitmap(centerCroppedBitmap);
-                activity.mDrawerImage.setTag(mImagePath);
-
-                AppPrefs asp = AppPrefs.getSingleton(activity);
-                String savedPath = asp.getDrawerBackgroundPath();
-                if (mImagePath.equals(savedPath)) {
-                    activity.setLightDrawerStatus(asp.isLightDrawerStatus());
-                    activity.mDrawerListAdapter.setLightDrawerListForeground(
-                            asp.isLightDrawerListForeground());
-                } else {
-                    asp.setDrawerBackgroundPath(mImagePath);
-
-                    final int defColor = ThemeUtils.isNightMode(activity) ? Color.BLACK : Color.WHITE;
-                    final boolean lightBackground = ColorUtils.isLightColor(
-                            BitmapUtils.getDominantColor(centerCroppedBitmap, defColor));
-                    activity.setLightDrawerStatus(lightBackground);
-                    activity.mDrawerListAdapter.setLightDrawerListForeground(!lightBackground);
+        void setDrawerBackground(Bitmap bmp) {
+            Executors.MAIN_EXECUTOR.post(() -> {
+                final MainActivity activity = mActivityRef.get();
+                if (activity != null && !activity.isFinishing()) {
+                    activity.setDrawerBackground(bmp, mImagePath);
                 }
             });
         }
     }
 
-    @Synthetic void recycleBmpIfNotDrawerImage(Bitmap bitmap) {
-        Drawable d = mDrawerImage.getDrawable();
-        if (d instanceof BitmapDrawable && ((BitmapDrawable) d).getBitmap() != bitmap) {
-            bitmap.recycle();
+    @Synthetic void setDrawerBackground(Bitmap bmp, String bmpPath) {
+        if (TextUtils.equals(bmpPath, (String) mDrawerImage.getTag())) {
+            recycleBmpIfNotDrawerImage(bmp);
+            return;
+        }
+
+        recycleDrawerImage();
+        mDrawerImage.setImageBitmap(bmp);
+        mDrawerImage.setTag(bmpPath);
+
+        AppPrefs asp = AppPrefs.getSingleton(this);
+        String savedPath = asp.getDrawerBackgroundPath();
+        if (TextUtils.equals(bmpPath, savedPath)) {
+            setLightDrawerStatus(asp.isLightDrawerStatus());
+            mDrawerListAdapter.setLightDrawerListForeground(asp.isLightDrawerListForeground());
+        } else {
+            final boolean nightMode = ThemeUtils.isNightMode(this);
+            if (bmpPath == null) {
+                asp.setDrawerBackgroundPath(bmpPath);
+                asp.edit()
+                        .setLightDrawerStatus(false, true)
+                        .setLightDrawerStatus(true, false)
+                        .setLightDrawerListForeground(false, false)
+                        .setLightDrawerListForeground(true, true)
+                        .apply();
+
+                setLightDrawerStatus(!nightMode);
+                mDrawerListAdapter.setLightDrawerListForeground(nightMode);
+            } else {
+                asp.setDrawerBackgroundPath(bmpPath);
+
+                final int defColor = nightMode ? Color.BLACK : Color.WHITE;
+                final boolean lightBackground = ColorUtils.isLightColor(
+                        BitmapUtils.getDominantColor(bmp, defColor));
+                setLightDrawerStatus(lightBackground);
+                mDrawerListAdapter.setLightDrawerListForeground(!lightBackground);
+            }
         }
     }
 
-    @Synthetic void recycleDrawerImage() {
+    private void recycleBmpIfNotDrawerImage(Bitmap bitmap) {
+        if (bitmap != null) {
+            Drawable d = mDrawerImage.getDrawable();
+            if (d instanceof BitmapDrawable && ((BitmapDrawable) d).getBitmap() != bitmap) {
+                bitmap.recycle();
+            }
+        }
+    }
+
+    private void recycleDrawerImage() {
         Drawable d = mDrawerImage.getDrawable();
-        if (d instanceof BitmapDrawable) {
+        if (d instanceof BitmapDrawable && ((BitmapDrawable) d).getBitmap() != null) {
             ((BitmapDrawable) d).getBitmap().recycle();
         }
     }
@@ -435,7 +455,10 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         switch (requestCode) {
             case REQUEST_CODE_CHOSE_DRAWER_BACKGROUND_PICTURE:
                 if (data != null && data.getData() != null) {
-                    setDrawerBackground(FileUtils.UriResolver.getPath(this, data.getData()));
+                    String path = FileUtils.UriResolver.getPath(this, data.getData());
+                    if (path != null) {
+                        setDrawerBackground(path);
+                    }
                 }
                 break;
 //            case REQUEST_CODE_APPLY_FOR_FLOATING_WINDOW_PERMISSION:
@@ -730,13 +753,19 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         PopupMenu ppm = new PopupMenu(this, anchor);
 
         Menu menu = ppm.getMenu();
-        menu.add(Menu.NONE, R.id.setBackground, Menu.NONE, R.string.setBackground);
-        SubMenu subMenu = menu.addSubMenu(Menu.NONE, R.id.setForeground, Menu.NONE, R.string.setForeground);
+        SubMenu bgSettingsMenu =
+                menu.addSubMenu(Menu.NONE, R.id.setBackground, Menu.NONE, R.string.setBackground);
+        SubMenu fgSettingsMenu =
+                menu.addSubMenu(Menu.NONE, R.id.setForeground, Menu.NONE, R.string.setForeground);
 
-        subMenu.add(R.id.setForeground, R.id.changeTextColor, Menu.NONE,
+        bgSettingsMenu.add(R.id.setBackground, R.id.pickPicture, Menu.NONE, R.string.pickPicture);
+        bgSettingsMenu.add(R.id.setBackground, R.id.clearBackground, Menu.NONE,
+                R.string.clearBackground);
+
+        fgSettingsMenu.add(R.id.setForeground, R.id.changeTextColor, Menu.NONE,
                 mIsDrawerListForegroundLight ? R.string.setDarkTexts : R.string.setLightTexts);
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
-            subMenu.add(R.id.setForeground, R.id.changeStatusTextColor, Menu.NONE,
+            fgSettingsMenu.add(R.id.setForeground, R.id.changeStatusTextColor, Menu.NONE,
                     mIsDrawerStatusLight ? R.string.setLightStatus : R.string.setDarkStatus);
         }
 
@@ -744,9 +773,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         ppm.show();
         ppm.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
-                case R.id.setBackground:
+                case R.id.pickPicture:
                     Intent it = new Intent(Intent.ACTION_GET_CONTENT).setType("image/*");
                     startActivityForResult(it, REQUEST_CODE_CHOSE_DRAWER_BACKGROUND_PICTURE);
+                    return true;
+                case R.id.clearBackground:
+                    setDrawerBackground(null);
                     return true;
                 case R.id.changeTextColor:
                     mDrawerListAdapter.setLightDrawerListForeground(!mIsDrawerListForegroundLight);

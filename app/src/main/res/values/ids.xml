@@ -10,6 +10,8 @@
     <item name="setForeground" type="id" />
     <item name="changeTextColor" type="id" />
     <item name="changeStatusTextColor" type="id" />
+    <item name="pickPicture" type="id" />
+    <item name="clearBackground" type="id" />
 
     <item name="followsSystem" type="id" />
     <item name="turnOff" type="id" />

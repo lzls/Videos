@@ -16,6 +16,7 @@
     <string name="cancelTop">Cancel Top</string>
     <string name="cannotPlayThisVideo">Cannot play this video</string>
     <string name="checkForUpdates">Check for Updates</string>
+    <string name="clearBackground">Clear background</string>
     <string name="clickToInstallIt">Click to install it</string>
     <string name="colon">:</string>
     <string name="commit">Commit</string>
@@ -61,6 +62,7 @@
     <string name="optionalForMeToContactWithYou">Optional, for me to contact with you</string>
     <string name="path">Path: %s</string>
     <string name="permissionsRequired">Permissions Required</string>
+    <string name="pickPicture">Pick a picture</string>
     <string name="pictures">Pictures (Optional, provide screenshots of the issue(s))</string>
     <string name="playWithThisApp">Play with Videos</string>
     <string name="pleaseEnterTheIssuesYouEncounteredOrYourAdvice">

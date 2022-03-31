@@ -15,6 +15,7 @@
     <string name="cancelTop">取消置顶</string>
     <string name="cannotPlayThisVideo">无法播放此视频</string>
     <string name="checkForUpdates">检查更新</string>
+    <string name="clearBackground">清除背景</string>
     <string name="clickToInstallIt">点击安装</string>
     <string name="colon">：</string>
     <string name="commit">提交</string>
@@ -59,6 +60,7 @@
     <string name="optionalForMeToContactWithYou">选填，便于我与你联系</string>
     <string name="path">路径：%s</string>
     <string name="permissionsRequired">需要权限</string>
+    <string name="pickPicture">挑选图片</string>
     <string name="pictures">图片（选填，提供问题截图）</string>
     <string name="playWithThisApp">用“视频”播放</string>
     <string name="pleaseEnterTheIssuesYouEncounteredOrYourAdvice">请输入遇到的问题或建议…</string>
