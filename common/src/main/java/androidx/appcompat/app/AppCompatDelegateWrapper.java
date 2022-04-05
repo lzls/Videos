@@ -37,6 +37,8 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     private final AppCompatDelegate mDelegate;
 
+    private Object mHost;
+
     /**
      * Flag indicating whether we can return a different context from attachBaseContext().
      * Unfortunately, doing so breaks Robolectric tests, so we skip night mode application there.
@@ -121,8 +123,10 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
         mBaseContextAttached = true;
         mDelegate.onCreate(savedInstanceState);
         mCreated = true;
-        doIfDelegateIsTheBase(baseDelegate -> {
+        if (mDelegate instanceof AppCompatDelegateImpl) {
+            AppCompatDelegateImpl baseDelegate = (AppCompatDelegateImpl) mDelegate;
             boolean hostIsActivity = baseDelegate.mHost instanceof Activity;
+            mHost = baseDelegate.mHost;
 
             if (mTransitionOverrides != null && hostIsActivity) {
                 ((Activity) baseDelegate.mHost).overridePendingTransition(
@@ -155,7 +159,17 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
                     e.printStackTrace();
                 }
             }
-        });
+        } else if (mDelegate instanceof AppCompatDelegateWrapper) {
+            AppCompatDelegateWrapper delegate = (AppCompatDelegateWrapper) mDelegate;
+            mHost = delegate.mHost;
+        }
+        // Try replacing the wrapped delegate cached in active Activity delegates with this,
+        // which will ensure our applyDayNight() method can be called from
+        // AppCompatDelegate.setDefaultNightMode().
+        if (mHost instanceof Activity) {
+            removeActivityDelegate(mDelegate);
+            addActiveDelegate(this);
+        }
     }
 
     @Override
@@ -287,6 +301,9 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     @Override
     public void onDestroy() {
         mDelegate.onDestroy();
+        if (mHost instanceof Activity) {
+            removeActivityDelegate(this);
+        }
         if (doesSdkVersionSupportPiP()) {
             doIfDelegateIsTheBase(baseDelegate -> {
                 if (baseDelegate.mHost instanceof Activity) {
@@ -353,7 +370,27 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     @Override
     public boolean applyDayNight() {
-        return mDelegate.applyDayNight();
+         boolean[] handled = { mDelegate.applyDayNight() };
+         doIfDelegateIsTheBase(baseDelegate -> {
+             Configuration newConfig = baseDelegate.mContext.getResources().getConfiguration();
+             int uiModeMask = Configuration.UI_MODE_NIGHT_MASK;
+             // Always check for whether uiMode is changed if the Activity has declared to handle
+             // UI mode changes in manifest because the uiMode from newConfig, even the newConfig
+             // itself, can be the same value across multiple Activities.
+             // Besides, an Activity instance that was not started could not have its
+             // onConfigurationChanged() called even if super updated the Configuration with a new
+             // UI mode. So we can not just rely on the return value from super to suppose that
+             // the onConfigurationChanged() of our host Activity has been called to update the UI.
+             if (!baseDelegate.mIsDestroyed
+                     && ((mConfig.uiMode & uiModeMask) != (newConfig.uiMode & uiModeMask))
+                     && baseDelegate.mHost instanceof Activity
+                     && isActivityManifestHandlingUiMode()) {
+                 ((Activity) baseDelegate.mHost).onConfigurationChanged(
+                         baseDelegate.mContext.getResources().getConfiguration());
+                 handled[0] = true;
+             }
+         });
+         return handled[0];
     }
 
     @Override

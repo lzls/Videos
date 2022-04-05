@@ -236,7 +236,10 @@ class LocalVideoListFragment : SwipeBackFragment(),
         super.onStop()
         val activity = contextThemedFirst as? Activity
         if (activity?.isFinishing == false && !isRemoving && !isDetached) {
-            (mVideoObserver ?: VideoObserver(requireView().rootView.handler)).startWatching()
+            // This can be called when a stopped activity is being recreated,
+            // in which case onStop() is being called unexpectedly.
+            (mVideoObserver ?: VideoObserver(requireView().rootView.handler ?: return))
+                    .startWatching()
         }
     }
 
