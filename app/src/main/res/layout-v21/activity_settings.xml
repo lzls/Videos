@@ -1,0 +1,19 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/windowBackground"
+        android:elevation="@dimen/actionbarElevationHeight">
+
+        <include layout="@layout/actionbar_settings_activity" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/container_fragments"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</LinearLayout>

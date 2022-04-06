@@ -15,7 +15,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -36,13 +35,13 @@ import android.widget.TextView;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.appcompat.graphics.drawable.DrawerArrowDrawable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.MarginLayoutParamsCompat;
+import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
@@ -74,7 +73,6 @@ import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.MergeAppUpdateChecker;
 import com.liuzhenlin.videos.view.fragment.LocalVideosFragment;
-import com.liuzhenlin.videos.web.youtube.WebService;
 import com.liuzhenlin.videos.web.youtube.YoutubeFragment;
 import com.taobao.sophix.SophixManager;
 
@@ -89,7 +87,7 @@ import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_LIGHT;
 /**
  * @author 刘振林
  */
-public class MainActivity extends BaseActivity implements View.OnClickListener,
+public class MainActivity extends StatusBarTransparentActivity implements View.OnClickListener,
         AdapterView.OnItemClickListener, SlidingDrawerLayout.OnDrawerScrollListener,
         LocalVideosFragment.InteractionCallback {
 
@@ -121,8 +119,10 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     @Synthetic ScrollDisableListView mDrawerList;
     @Synthetic DrawerListAdapter mDrawerListAdapter;
     @Synthetic ImageView mDrawerImage;
+    @Synthetic ImageView mSettingsBtn;
     @Synthetic boolean mIsDrawerStatusLight;
     @Synthetic boolean mIsDrawerListForegroundLight;
+    @Synthetic boolean mIsDrawerIconsLight;
     private float mDrawerScrollPercent;
 
     private static final int REQUEST_CODE_CHOSE_DRAWER_BACKGROUND_PICTURE = 7;
@@ -156,14 +156,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
         setAsNonSwipeBackActivity();
         setContentView(R.layout.activity_main);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Window window = getWindow();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                SystemBarUtils.setTransparentStatus(window);
-            } else {
-                SystemBarUtils.setTranslucentStatus(window, true);
-            }
-        }
         if (savedInstanceState == null) {
             mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT] = new LocalVideosFragment();
             mFragments[INDEX_YOUTUBE_FRAGMENT] = new YoutubeFragment();
@@ -192,6 +184,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                     @NonNull SlidingDrawerLayout parent, @NonNull View drawer, int state) {
                 parent.removeOnDrawerScrollListener(this);
 
+                mSettingsBtn = drawer.findViewById(R.id.btn_settings_drawer);
+                mSettingsBtn.setOnClickListener(MainActivity.this);
+
                 mDrawerList = drawer.findViewById(R.id.list_drawer);
                 mDrawerList.setDivider(null);
 //                View divider = new ViewStub(app);
@@ -201,7 +196,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 mDrawerList.setOnItemClickListener(MainActivity.this);
                 mDrawerList.setScrollEnabled(false);
 
-                mDrawerImage = findViewById(R.id.image_drawer);
+                mDrawerImage = drawer.findViewById(R.id.image_drawer);
                 mDrawerImage.setTag("null");
                 final AppPrefs asp = AppPrefs.getSingleton(app);
                 final String path = asp.getDrawerBackgroundPath();
@@ -314,6 +309,17 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         }
     }
 
+    private void setLightDrawerIcons(boolean light) {
+        mIsDrawerIconsLight = light;
+        AppPrefs.getSingleton(this).edit().setLightDrawerIcons(light).apply();
+
+        final boolean nightMode = ThemeUtils.isNightMode(this);
+        final int colorRes = nightMode && light || !nightMode && !light
+                ? R.color.textColorSecondary
+                : R.color.textColorSecondary_inverse;
+        ImageViewCompat.setImageTintList(mSettingsBtn, ContextCompat.getColorStateList(this, colorRes));
+    }
+
     @Synthetic void setDrawerBackground(String path) {
         Executors.SERIAL_EXECUTOR.execute(new LoadDrawerImageTask(this, path));
     }
@@ -373,6 +379,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         String savedPath = asp.getDrawerBackgroundPath();
         if (TextUtils.equals(bmpPath, savedPath)) {
             setLightDrawerStatus(asp.isLightDrawerStatus());
+            setLightDrawerIcons(asp.isLightDrawerIcons());
             mDrawerListAdapter.setLightDrawerListForeground(asp.isLightDrawerListForeground());
         } else {
             final boolean nightMode = ThemeUtils.isNightMode(this);
@@ -386,6 +393,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                         .apply();
 
                 setLightDrawerStatus(!nightMode);
+                setLightDrawerIcons(nightMode);
                 mDrawerListAdapter.setLightDrawerListForeground(nightMode);
             } else {
                 asp.setDrawerBackgroundPath(bmpPath);
@@ -394,6 +402,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 final boolean lightBackground = ColorUtils.isLightColor(
                         BitmapUtils.getDominantColor(bmp, defColor));
                 setLightDrawerStatus(lightBackground);
+                setLightDrawerIcons(!lightBackground);
                 mDrawerListAdapter.setLightDrawerListForeground(!lightBackground);
             }
         }
@@ -485,6 +494,10 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 mToolbarActions.showOpenVideoLinkDialog(v.getContext());
                 break;
 
+            case R.id.btn_settings_drawer:
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+
             case R.id.btn_ok_aboutAppDialog:
             case R.id.btn_ok_updateLogsDialog:
                 ((Dialog) v.getTag()).cancel();
@@ -498,7 +511,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             R.string.updateLogs,
             R.string.userFeedback,
             R.string.drawerSettings,
-            R.string.darkTheme,
     };
 
     private final class DrawerListAdapter extends BaseAdapter2 {
@@ -533,16 +545,17 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
             final boolean nightMode = ThemeUtils.isNightMode(mContext);
             mIsDrawerStatusLight = !nightMode;
+            mIsDrawerIconsLight = nightMode;
             mIsDrawerListForegroundLight = !nightMode;
-            applyDrawerForeground(nightMode);
+            applyDrawerListForeground(nightMode);
         }
 
         void setLightDrawerListForeground(boolean light) {
             AppPrefs.getSingleton(mContext).edit().setLightDrawerListForeground(light).apply();
-            applyDrawerForeground(light);
+            applyDrawerListForeground(light);
         }
 
-        void applyDrawerForeground(boolean light) {
+        void applyDrawerListForeground(boolean light) {
             if (mIsDrawerListForegroundLight != light) {
                 mIsDrawerListForegroundLight = light;
 
@@ -655,9 +668,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
             case R.string.drawerSettings:
                 showDrawerSettingsMenu(view);
                 break;
-            case R.string.darkTheme:
-                showThemePicker(view);
-                break;
         }
     }
 
@@ -764,6 +774,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
 
         fgSettingsMenu.add(R.id.setForeground, R.id.changeTextColor, Menu.NONE,
                 mIsDrawerListForegroundLight ? R.string.setDarkTexts : R.string.setLightTexts);
+        fgSettingsMenu.add(R.id.setForeground, R.id.changeIconsColor, Menu.NONE,
+                mIsDrawerIconsLight ? R.string.setDarkIcons : R.string.setLightIcons);
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
             fgSettingsMenu.add(R.id.setForeground, R.id.changeStatusTextColor, Menu.NONE,
                     mIsDrawerStatusLight ? R.string.setLightStatus : R.string.setDarkStatus);
@@ -783,56 +795,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 case R.id.changeTextColor:
                     mDrawerListAdapter.setLightDrawerListForeground(!mIsDrawerListForegroundLight);
                     return true;
+                case R.id.changeIconsColor:
+                    setLightDrawerIcons(!mIsDrawerIconsLight);
+                    return true;
                 case R.id.changeStatusTextColor:
                     setLightDrawerStatus(!mIsDrawerStatusLight);
                     return true;
                 default:
                     return false;
             }
-        });
-    }
-
-    private void showThemePicker(View anchor) {
-        PopupMenu ppm = new PopupMenu(this, anchor);
-        Menu menu = ppm.getMenu();
-        int nightMode = AppCompatDelegate.getDefaultNightMode();
-        if (nightMode != AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
-            menu.add(Menu.NONE, R.id.followsSystem, Menu.NONE, R.string.followsSystem);
-        }
-        if (nightMode != AppCompatDelegate.MODE_NIGHT_NO) {
-            menu.add(Menu.NONE, R.id.turnOff, Menu.NONE, R.string.turnOff);
-        }
-        if (nightMode != AppCompatDelegate.MODE_NIGHT_YES) {
-            menu.add(Menu.NONE, R.id.turnOn, Menu.NONE, R.string.turnOn);
-        }
-        ppm.setGravity(Gravity.END);
-        ppm.show();
-        ppm.setOnMenuItemClickListener(item -> {
-            int mode;
-            switch (item.getItemId()) {
-                case R.id.followsSystem:
-                    mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
-                    break;
-                case R.id.turnOff:
-                    mode = AppCompatDelegate.MODE_NIGHT_NO;
-                    break;
-                case R.id.turnOn:
-                    mode = AppCompatDelegate.MODE_NIGHT_YES;
-                    break;
-                default:
-                    return false;
-            }
-            AppPrefs.getSingleton(this).edit().setDefaultNightMode(mode).apply();
-            AppCompatDelegate.setDefaultNightMode(mode);
-            // Apply default night mode for web process...
-            WebService.bind(this, webService -> {
-                try {
-                    webService.applyDefaultNightMode(mode);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            });
-            return true;
         });
     }
 
@@ -946,28 +917,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     @Override
     public void setTmpActionBarAlpha(float alpha) {
         mTmpActionBar.setAlpha(alpha);
-    }
-
-    private void insertTopPaddingToActionBarIfNeeded(View actionbar) {
-        if (isLayoutUnderStatusBar()) {
-            final int statusHeight = App.getInstance(this).getStatusHeightInPortrait();
-            switch (actionbar.getLayoutParams().height) {
-                case ViewGroup.LayoutParams.WRAP_CONTENT:
-                case ViewGroup.LayoutParams.MATCH_PARENT:
-                    break;
-                default:
-                    actionbar.getLayoutParams().height += statusHeight;
-            }
-            actionbar.setPadding(
-                    actionbar.getPaddingLeft(),
-                    actionbar.getPaddingTop() + statusHeight,
-                    actionbar.getPaddingRight(),
-                    actionbar.getPaddingBottom());
-        }
-    }
-
-    private boolean isLayoutUnderStatusBar() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
 
     @Override

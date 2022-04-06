@@ -5,12 +5,15 @@
 
 package com.liuzhenlin.videos.web.youtube;
 
+import android.content.Context;
 import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
 
+import com.bumptech.glide.util.Preconditions;
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.common.utils.prefs.PrefsHelper;
 
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_PLAYLIST;
@@ -62,6 +65,50 @@ public final class Youtube {
         public static final int PAUSED = 2;
         public static final int BUFFERRING = 3;
         public static final int VIDEO_CUED = 5; // When a video is cued and ready to play
+    }
+
+    public static abstract class Prefs {
+
+        public static final String KEY_PLAYBACK_PAGE_STYLE = "youtube_playback_page_style";
+        public static final String PLAYBACK_PAGE_STYLE_ORIGINAL = "original";
+        public static final String PLAYBACK_PAGE_STYLE_BRIEF = "brief";
+
+        public static final String KEY_PIP = "youtube_pip";
+
+        @SuppressWarnings("NotNullFieldNotInitialized")
+        private static Prefs sImpl;
+
+        public static Prefs get(Context context) {
+            //noinspection ConstantConditions
+            if (sImpl == null) {
+                sImpl = new Prefs() {
+                    final PrefsHelper mPrefsHelper = PrefsHelper.create(
+                            context,
+                            /* PreferenceManager.getDefaultSharedPreferencesName(context) */
+                            context.getPackageName() + "_preferences");
+
+                    @Override
+                    public String getPlaybackPageStyle() {
+                        return mPrefsHelper.getString(KEY_PLAYBACK_PAGE_STYLE,
+                                PLAYBACK_PAGE_STYLE_ORIGINAL);
+                    }
+
+                    @Override
+                    public boolean enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground() {
+                        return mPrefsHelper.getBoolean(KEY_PIP, false);
+                    }
+                };
+            }
+            return sImpl;
+        }
+
+        public static void set(Prefs prefs) {
+            sImpl = Preconditions.checkNotNull(prefs);
+        }
+
+        public abstract String getPlaybackPageStyle();
+
+        public abstract boolean enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground();
     }
 
     public static final class IFrameJsInterface {

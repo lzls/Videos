@@ -107,9 +107,11 @@
     <string name="sendSuccessful">Send successful</string>
     <string name="sending">Sending…</string>
     <string name="setBackground">Set background</string>
+    <string name="setDarkIcons">Set dark icons</string>
     <string name="setDarkStatus">Set dark status</string>
     <string name="setDarkTexts">Set dark texts</string>
     <string name="setForeground">Set foreground</string>
+    <string name="setLightIcons">Set light icons</string>
     <string name="setLightStatus">Set light status</string>
     <string name="setLightTexts">Set light texts</string>
     <string name="followsSystem">Follows system</string>
@@ -145,4 +147,24 @@
     <string name="charsequenceProgress" translatable="false">%1$s/%2$s</string>
     <string name="percentProgress" translatable="false">%.2f%%</string>
     <string name="updateAppendedColon" translatable="false">更新：</string>
+
+    <string name="settings">Settings</string>
+
+    <!-- Preference Titles -->
+    <string name="general_header">General</string>
+    <string name="youtube_playback_header">YouTube Playback</string>
+
+    <string name="update_channel_title">Update Channel</string>
+
+    <!-- General Preferences -->
+    <string name="dark_mode_title">Dark Mode</string>
+
+    <!-- YouTube Playback Preferences -->
+    <string name="youtube_playback_page_style_title">UI Style</string>
+    <string name="youtube_playback_page_style_dialog_title">
+        UI Style (takes effect the next time you select a video to play)</string>
+    <string name="youtube_pip_title">Picture in Picture</string>
+    <string name="youtube_pip_summary">
+        Enters automatically when video is fullscreen and playback switches to the background
+    </string>
 </resources>

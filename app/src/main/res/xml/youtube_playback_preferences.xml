@@ -1,0 +1,17 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+        app:defaultValue="original"
+        app:entries="@array/youtube_playback_page_style_entries"
+        app:entryValues="@array/youtube_playback_page_style_values"
+        app:key="youtube_playback_page_style"
+        app:title="@string/youtube_playback_page_style_title"
+        app:dialogTitle="@string/youtube_playback_page_style_dialog_title"
+        app:useSimpleSummaryProvider="true" />
+
+    <SwitchPreferenceCompat
+        app:key="youtube_pip"
+        app:title="@string/youtube_pip_title"
+        app:summary="@string/youtube_pip_summary" />
+
+</PreferenceScreen>

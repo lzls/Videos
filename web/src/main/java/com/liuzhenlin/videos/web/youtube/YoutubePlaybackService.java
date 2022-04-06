@@ -293,13 +293,20 @@ public class YoutubePlaybackService extends Service {
             videoId = "";
         }
 
+        boolean playerChanged;
+
         if (mView == null) {
             mView = new YoutubePlaybackView(this);
-            mPlayer = new YoutubePlayer(mView);
+        }
+        WebPlayer oldPlayer = mPlayer;
+        mPlayer = YoutubePlayerFactory.obtain(mView);
+        playerChanged = mPlayer != oldPlayer;
+        if (playerChanged) {
             mView.setWebPlayer(mPlayer);
+            mPlayerReady = false;
         }
 
-        if (!playlistId.equals(mPlaylistId) || !videoId.equals(mVideoId)) {
+        if (playerChanged || (!playlistId.equals(mPlaylistId) || !videoId.equals(mVideoId))) {
             if (playlistId.isEmpty()) {
                 mLinkType = Constants.LinkType.SINGLES;
                 mVideoId = videoId;
@@ -307,7 +314,6 @@ public class YoutubePlaybackService extends Service {
                 mPlaylistSize = 1;
                 mPlaylistIndex = 0;
                 if (mPlayerReady) {
-                    //noinspection ConstantConditions
                     mPlayer.loadVideo(videoId);
                 } else {
                     mView.loadVideo(videoId);
@@ -322,7 +328,6 @@ public class YoutubePlaybackService extends Service {
                     if (mPlayer instanceof YoutubePlayer) {
                         mPlayer.loadPlaylist(playlistId, videoId);
                     } else {
-                        //noinspection ConstantConditions
                         mPlayer.loadPlaylist(playlistId, 0);
                     }
                 } else {
@@ -331,6 +336,11 @@ public class YoutubePlaybackService extends Service {
                 }
             }
             mReplayPlaylist = mReplayVideo = false;
+        }
+        if (playerChanged) {
+            if (YoutubePlaybackActivity.get() != null) {
+                YoutubePlaybackActivity.get().finish();
+            }
         }
         playInFullscreen();
     }

@@ -79,6 +79,13 @@
             android:windowSoftInputMode="stateHidden"
             tools:ignore="LockedOrientationActivity" />
 
+        <activity
+            android:name=".view.activity.SettingsActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboardHidden|screenSize|orientation|uiMode"
+            android:launchMode="singleTop"
+            tools:ignore="LockedOrientationActivity" />
+
         <service android:name=".web.youtube.WebService" android:process=":web" />
 
         <service android:name=".web.youtube.YoutubePlaybackService" android:process=":web" />

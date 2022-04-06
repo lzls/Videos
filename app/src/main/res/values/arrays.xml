@@ -1,0 +1,37 @@
+<resources>
+    <!-- General Preference -->
+    <string-array name="dark_model_entries">
+        <item>On</item>
+        <item>Off</item>
+        <item>Follows system</item>
+    </string-array>
+
+    <string-array name="dark_model_values">
+        <item>on</item>
+        <item>off</item>
+        <item>followsSystem</item>
+    </string-array>
+
+    <!-- YouTube Playback Preference -->
+    <string-array name="youtube_playback_page_style_entries">
+        <item>Original</item>
+        <item>Brief</item>
+    </string-array>
+
+    <string-array name="youtube_playback_page_style_values">
+        <item>original</item> <!-- Maps to Youtube.Prefs.PLAYBACK_PAGE_STYLE_ORIGINAL -->
+        <item>brief</item> <!-- Maps to Youtube.Prefs.PLAYBACK_PAGE_STYLE_BRIEF -->
+    </string-array>
+
+    <string-array name="update_channel_entries">
+        <item>Dev</item>
+        <item>Beta</item>
+        <item>Stable</item>
+    </string-array>
+
+    <string-array name="update_channel_values">
+        <item>dev</item>
+        <item>beta</item>
+        <item>stable</item>
+    </string-array>
+</resources>

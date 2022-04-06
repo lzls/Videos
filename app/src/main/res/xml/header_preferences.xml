@@ -1,0 +1,21 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+        app:defaultValue="stable"
+        app:entries="@array/update_channel_entries"
+        app:entryValues="@array/update_channel_values"
+        app:key="update_channel"
+        app:title="@string/update_channel_title"
+        app:useSimpleSummaryProvider="true"
+        app:enabled="false" />
+
+    <Preference
+        app:fragment="com.liuzhenlin.videos.view.activity.SettingsActivity$GeneralFragment"
+        app:key="general_header"
+        app:title="@string/general_header" />
+
+    <Preference
+        app:fragment="com.liuzhenlin.videos.view.activity.SettingsActivity$YoutubePlaybackFragment"
+        app:key="youtube_playback_header"
+        app:title="@string/youtube_playback_header" />
+</PreferenceScreen>

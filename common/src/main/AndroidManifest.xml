@@ -15,5 +15,10 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
+
+        <provider
+            android:authorities="${applicationId}.prefs.provider"
+            android:name=".utils.prefs.PrefsContentProvider"
+            android:exported="false" />
     </application>
 </manifest>

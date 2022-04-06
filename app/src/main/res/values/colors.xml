@@ -11,6 +11,7 @@
     <color name="textColorPrimary_translucent">#6F000000</color>
     <color name="textColorPrimary_inverse">@color/primary_text_default_material_dark</color> <!-- #ffffff -->
     <color name="textColorSecondary">@color/secondary_text_default_material_light</color> <!-- #8a000000 -->
+    <color name="textColorSecondary_inverse">@color/secondary_text_default_material_dark</color> <!-- #b3ffffff -->
 
     <color name="darkGray_translucent">#80444444</color>
     <color name="darkGray">#444444</color>

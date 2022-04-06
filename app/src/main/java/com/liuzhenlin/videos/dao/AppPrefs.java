@@ -49,6 +49,7 @@ public final class AppPrefs {
     private static final String DRAWER_BACKGROUND_PATH = "drawerBackgroundPath";
     private static final String IS_LIGHT_DRAWER_STATUS = "isLightDrawerStatus";
     private static final String IS_LIGHT_DRAWER_LIST_FOREGROUND = "isLightDrawerListForeground";
+    private static final String IS_LIGHT_DRAWER_ICONS = "isLightDrawerIcons";
     private static final String KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND =
             "_nightUIWithNoDrawerBackground";
 
@@ -88,30 +89,27 @@ public final class AppPrefs {
     }
 
     public boolean isLightDrawerStatus() {
-        Lock readLock = mLock.readLock();
-        readLock.lock();
-        try {
-            String key = IS_LIGHT_DRAWER_STATUS;
-            boolean nightMode = App.isNightMode();
-            if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
-                key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
-            }
-            return mSP.getBoolean(key, !nightMode);
-        } finally {
-            readLock.unlock();
-        }
+        return getDrawerDayNightPref(IS_LIGHT_DRAWER_STATUS, false);
     }
 
     public boolean isLightDrawerListForeground() {
+        return getDrawerDayNightPref(IS_LIGHT_DRAWER_LIST_FOREGROUND, true);
+    }
+
+    public boolean isLightDrawerIcons() {
+        return getDrawerDayNightPref(IS_LIGHT_DRAWER_ICONS, true);
+    }
+
+    private boolean getDrawerDayNightPref(String key, boolean defaultFollowsNight) {
         Lock readLock = mLock.readLock();
         readLock.lock();
         try {
-            String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
             boolean nightMode = App.isNightMode();
             if (nightMode && !mSP.contains(DRAWER_BACKGROUND_PATH)) {
                 key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
             }
-            return mSP.getBoolean(key, nightMode);
+            return mSP.getBoolean(key,
+                    defaultFollowsNight && nightMode  || !defaultFollowsNight && !nightMode);
         } finally {
             readLock.unlock();
         }
@@ -208,17 +206,7 @@ public final class AppPrefs {
         }
 
         public AppPrefs.Editor setLightDrawerStatus(boolean nightMode, boolean light) {
-            Lock readLock = mPrefs.mLock.readLock();
-            readLock.lock();
-            try {
-                String key = IS_LIGHT_DRAWER_STATUS;
-                if (nightMode && !mPrefs.mSP.contains(DRAWER_BACKGROUND_PATH)) {
-                    key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
-                }
-                mEditor.putBoolean(key, light);
-            } finally {
-                readLock.unlock();
-            }
+            setDrawerDayNightPref(IS_LIGHT_DRAWER_STATUS, light, nightMode);
             return this;
         }
 
@@ -228,18 +216,31 @@ public final class AppPrefs {
         }
 
         public AppPrefs.Editor setLightDrawerListForeground(boolean nightMode, boolean light) {
+            setDrawerDayNightPref(IS_LIGHT_DRAWER_LIST_FOREGROUND, light, nightMode);
+            return this;
+        }
+
+        public AppPrefs.Editor setLightDrawerIcons(boolean light) {
+            setLightDrawerIcons(App.isNightMode(), light);
+            return this;
+        }
+
+        public AppPrefs.Editor setLightDrawerIcons(boolean nightMode, boolean light) {
+            setDrawerDayNightPref(IS_LIGHT_DRAWER_ICONS, light, nightMode);
+            return this;
+        }
+
+        private void setDrawerDayNightPref(String key, boolean value, boolean nightMode) {
             Lock readLock = mPrefs.mLock.readLock();
             readLock.lock();
             try {
-                String key = IS_LIGHT_DRAWER_LIST_FOREGROUND;
                 if (nightMode && !mPrefs.mSP.contains(DRAWER_BACKGROUND_PATH)) {
                     key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
                 }
-                mEditor.putBoolean(key, light);
+                mEditor.putBoolean(key, value);
             } finally {
                 readLock.unlock();
             }
-            return this;
         }
 
         public AppPrefs.Editor setDefaultNightMode(int mode) {

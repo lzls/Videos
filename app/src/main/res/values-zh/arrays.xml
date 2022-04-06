@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- General Preference -->
+    <string-array name="dark_model_entries">
+        <item>开启</item>
+        <item>关闭</item>
+        <item>跟随系统</item>
+    </string-array>
+
+    <!-- YouTube Playback Preference -->
+    <string-array name="youtube_playback_page_style_entries">
+        <item>原生</item>
+        <item>简洁</item>
+    </string-array>
+
+    <string-array name="update_channel_entries">
+        <item>开发</item>
+        <item>测试</item>
+        <item>稳定</item>
+    </string-array>
+</resources>

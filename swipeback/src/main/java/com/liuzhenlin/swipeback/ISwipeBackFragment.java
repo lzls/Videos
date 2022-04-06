@@ -1,5 +1,7 @@
 package com.liuzhenlin.swipeback;
 
+import android.view.animation.Animation;
+
 import androidx.annotation.Nullable;
 
 public interface ISwipeBackFragment {
@@ -42,4 +44,9 @@ public interface ISwipeBackFragment {
      */
     @Nullable
     ISwipeBackFragment getPreviousFragment();
+
+    interface PrivateAccess {
+        Animation superOnCreateAnimation(int transit, boolean enter, int nextAnim);
+        void superOnHiddenChanged(boolean hidden);
+    }
 }

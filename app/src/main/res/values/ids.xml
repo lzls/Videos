@@ -9,6 +9,7 @@
     <item name="setBackground" type="id" />
     <item name="setForeground" type="id" />
     <item name="changeTextColor" type="id" />
+    <item name="changeIconsColor" type="id" />
     <item name="changeStatusTextColor" type="id" />
     <item name="pickPicture" type="id" />
     <item name="clearBackground" type="id" />

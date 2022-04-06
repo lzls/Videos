@@ -1,24 +1,31 @@
+/*
+ * Created on 2022-4-3 11:31:24 PM.
+ * Copyright © 2022 刘振林. All rights reserved.
+ */
+
 package com.liuzhenlin.swipeback;
 
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.Animation;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceFragmentCompat;
 
-public class SwipeBackFragment extends Fragment implements ISwipeBackFragment {
+public abstract class SwipeBackPreferenceFragment extends PreferenceFragmentCompat
+        implements ISwipeBackFragment {
 
-    private final SwipeBackFragmentDelegate<SwipeBackFragment> mDelegate =
-            new SwipeBackFragmentDelegate<>(this, new PrivateAccess() {
+    private final SwipeBackFragmentDelegate<SwipeBackPreferenceFragment> mDelegate =
+            new SwipeBackFragmentDelegate<>(this, new ISwipeBackFragment.PrivateAccess() {
                 @Override
                 public Animation superOnCreateAnimation(int transit, boolean enter, int nextAnim) {
-                    return SwipeBackFragment.super.onCreateAnimation(transit, enter, nextAnim);
+                    return SwipeBackPreferenceFragment.super.onCreateAnimation(transit, enter, nextAnim);
                 }
 
                 @Override
                 public void superOnHiddenChanged(boolean hidden) {
-                    SwipeBackFragment.super.onHiddenChanged(hidden);
+                    SwipeBackPreferenceFragment.super.onHiddenChanged(hidden);
                 }
             });
 
@@ -28,7 +35,7 @@ public class SwipeBackFragment extends Fragment implements ISwipeBackFragment {
         mDelegate.onCreate(savedInstanceState);
     }
 
-    protected final SwipeBackLayout attachViewToSwipeBackLayout(View view) {
+    protected final SwipeBackLayout attachViewToSwipeBackLayout(@NonNull View view) {
         return mDelegate.attachViewToSwipeBackLayout(view);
     }
 

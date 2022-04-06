@@ -325,7 +325,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
-        if (mPlaybackView.isInFullscreen()) {
+        if (mPlaybackView.isInFullscreen()
+                && Youtube.Prefs.get(this).enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground()) {
             enterPipMode();
         }
     }
