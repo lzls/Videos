@@ -39,7 +39,11 @@ public abstract class PlayerWebView extends BackgroundbleWebView {
         return false;
     }
 
-    public abstract void loadPlaylist(String playlistId, @Nullable String videoId);
+    public abstract void loadPlaylist(String playlistId, @Nullable String videoId, int videoIndex);
+
+    public void loadPlaylist(String playlistId, @Nullable String videoId) {
+        loadPlaylist(playlistId, videoId, Constants.UNKNOWN);
+    }
 
     public abstract void loadVideo(String videoId);
 }

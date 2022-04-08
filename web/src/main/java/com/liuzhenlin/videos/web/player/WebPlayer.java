@@ -22,7 +22,7 @@ public abstract class WebPlayer {
 
     public abstract void loadVideo(String vid);
 
-    public abstract void loadPlaylist(String pid, @Nullable Object payload);
+    public abstract void loadPlaylist(String pid, @Nullable String vid, int index);
 
     public abstract void skipAd();
 

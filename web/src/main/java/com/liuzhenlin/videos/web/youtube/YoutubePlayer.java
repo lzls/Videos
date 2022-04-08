@@ -29,8 +29,8 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     @Override
-    public void loadPlaylist(String pid, @Nullable Object vid) {
-        mWeb.loadUrl(Youtube.JsInterface.loadPlaylist(pid, vid == null ? "" : vid.toString()));
+    public void loadPlaylist(String pid, @Nullable String vid, int index) {
+        mWeb.loadUrl(Youtube.JsInterface.loadPlaylist(pid, vid, index));
     }
 
     @Override

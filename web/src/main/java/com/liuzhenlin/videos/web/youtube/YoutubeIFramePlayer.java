@@ -25,8 +25,8 @@ public class YoutubeIFramePlayer extends WebPlayer {
     }
 
     @Override
-    public void loadPlaylist(String pid, @Nullable Object index) {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.loadPlaylist(pid, index == null ? 0 : (int) index));
+    public void loadPlaylist(String pid, @Nullable String vid, int index) {
+        mWeb.loadUrl(Youtube.IFrameJsInterface.loadPlaylist(pid, index));
     }
 
     @Override

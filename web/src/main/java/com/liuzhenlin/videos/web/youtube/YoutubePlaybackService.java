@@ -62,7 +62,7 @@ public class YoutubePlaybackService extends Service {
     @Nullable /*package*/ PlayerWebView mView;
 
     @Nullable @Synthetic WebPlayer mPlayer;
-    private boolean mPlayerReady;
+    /*package*/ boolean mPlayerReady;
 
     private String mVideoId = "";
     private String mPlaylistId = "";
@@ -71,7 +71,6 @@ public class YoutubePlaybackService extends Service {
 
     private int mPlaylistSize;
     private int mPlaylistIndex;
-    private static final int UNKNOWN = -1;
 
     /*package*/ int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
 
@@ -141,8 +140,9 @@ public class YoutubePlaybackService extends Service {
             case Constants.Actions.START_FOREGROUND:
                 Bundle bundle = intent.getExtras();
                 if (bundle != null) {
-                    String videoId = bundle.getString(Constants.Extras.VIDEO_ID);
                     String playlistId = bundle.getString(Constants.Extras.PLAYLIST_ID);
+                    String videoId = bundle.getString(Constants.Extras.VIDEO_ID);
+                    int videoIndex = bundle.getInt(Constants.Extras.VIDEO_INDEX);
                     if (action.equals(Constants.Actions.START_FOREGROUND)) {
                         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                             Notification notification = createNotification(videoId);
@@ -153,7 +153,7 @@ public class YoutubePlaybackService extends Service {
                             });
                         });
                     }
-                    startPlayback(playlistId, videoId);
+                    startPlayback(playlistId, videoId, videoIndex);
                 }
                 break;
             case Constants.Actions.STOP_SELF:
@@ -248,36 +248,36 @@ public class YoutubePlaybackService extends Service {
     }
 
     public static boolean startPlaybackIfUrlIsWatchUrl(@NonNull Context context, @NonNull String url) {
-        String videoId = null;
-        String playlistId = null;
+        String videoId;
+        String playlistId;
+        int videoIndex;
 
         if (url.matches(Youtube.REGEX_WATCH_URL)) {
-            int startOfVideoId = url.indexOf("v=");
-            if (startOfVideoId > 0) {
-                videoId = url.substring(startOfVideoId + 2).split("&")[0];
-            }
+            videoId = Youtube.Util.getVideoIdFromWatchUrl(url);
         } else if (url.matches(Youtube.REGEX_SHARE_URL)) {
-            int startOfVideoId = url.indexOf("youtu.be/");
-            if (startOfVideoId > 0) {
-                videoId = url.substring(startOfVideoId + 9).split("\\?")[0];
-            }
+            videoId = Youtube.Util.getVideoIdFromShareUrl(url);
         } else {
             return false;
         }
-        int startOfListId = url.indexOf("list=");
-        if (startOfListId > 0) {
-            playlistId = url.substring(startOfListId + 5).split("&")[0];
-        }
+        playlistId = Youtube.Util.getPlaylistIdFromWatchOrShareUrl(url);
+        videoIndex = Youtube.Util.getVideoIndexFromWatchOrShareUrl(url);
 
-        startPlayback(context, playlistId, videoId);
+        startPlayback(context, playlistId, videoId, videoIndex);
         return true;
     }
 
     public static void startPlayback(
             @NonNull Context context, @Nullable String playlistId, @Nullable String videoId) {
+        startPlayback(context, playlistId, videoId, Constants.UNKNOWN);
+    }
+
+    public static void startPlayback(
+            @NonNull Context context,
+            @Nullable String playlistId, @Nullable String videoId, int videoIndex) {
         Intent intent = new Intent(context, YoutubePlaybackService.class);
-        intent.putExtra(Constants.Extras.VIDEO_ID, videoId);
         intent.putExtra(Constants.Extras.PLAYLIST_ID, playlistId);
+        intent.putExtra(Constants.Extras.VIDEO_ID, videoId);
+        intent.putExtra(Constants.Extras.VIDEO_INDEX, videoIndex);
         intent.setAction(
                 Utils.isServiceRunning(context, YoutubePlaybackService.class)
                         ? Constants.Actions.START
@@ -285,12 +285,15 @@ public class YoutubePlaybackService extends Service {
         context.startService(intent);
     }
 
-    private void startPlayback(@Nullable String playlistId, @Nullable String videoId) {
+    private void startPlayback(@Nullable String playlistId, @Nullable String videoId, int videoIndex) {
         if (playlistId == null) {
             playlistId = "";
         }
         if (videoId == null) {
             videoId = "";
+        }
+        if (videoIndex == Constants.UNKNOWN && videoId.isEmpty()) {
+            videoIndex = 0;
         }
 
         boolean playerChanged;
@@ -322,17 +325,17 @@ public class YoutubePlaybackService extends Service {
                 mLinkType = Constants.LinkType.PLAYLIST;
                 mVideoId = videoId;
                 mPlaylistId = playlistId;
-                mPlaylistSize = UNKNOWN;
-                mPlaylistIndex = UNKNOWN;
-                if (mPlayerReady && (mPlayer instanceof YoutubePlayer || videoId.isEmpty())) {
-                    if (mPlayer instanceof YoutubePlayer) {
-                        mPlayer.loadPlaylist(playlistId, videoId);
-                    } else {
-                        mPlayer.loadPlaylist(playlistId, 0);
-                    }
+                mPlaylistSize = Constants.UNKNOWN;
+                mPlaylistIndex = videoIndex;
+                if (mPlayerReady && mPlayer instanceof YoutubePlayer) {
+                    mPlayer.loadPlaylist(playlistId, videoId, videoIndex);
                 } else {
-                    mPlayerReady = false;
-                    mView.loadPlaylist(playlistId, videoId);
+                    if (mPlayerReady && videoIndex != Constants.UNKNOWN) {
+                        mPlayer.loadPlaylist(playlistId, videoId, videoIndex);
+                    } else {
+                        mPlayerReady = false;
+                        mView.loadPlaylist(playlistId, videoId, videoIndex);
+                    }
                 }
             }
             mReplayPlaylist = mReplayVideo = false;

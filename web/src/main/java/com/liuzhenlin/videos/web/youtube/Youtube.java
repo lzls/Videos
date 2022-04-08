@@ -14,6 +14,7 @@ import com.bumptech.glide.util.Preconditions;
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.utils.prefs.PrefsHelper;
+import com.liuzhenlin.videos.web.player.Constants;
 
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_PLAYLIST;
@@ -326,9 +327,10 @@ public final class Youtube {
                     "setVideoQuality(" + idx + ", 0, true);";
         }
 
-        public static String loadPlaylist(String pId, @Nullable String vId) {
+        public static String loadPlaylist(String pId, @Nullable String vId, int index) {
             return URLs.WATCH + "?list=" + pId
-                    + (TextUtils.isEmpty(vId) ? "" : ("&v=" + vId));
+                    + (TextUtils.isEmpty(vId) ? "" : ("&v=" + vId))
+                    + (index == Constants.UNKNOWN ? "" : "&index=" + index);
         }
 
         public static String setLoopPlaylist(boolean loop) {
@@ -428,6 +430,57 @@ public final class Youtube {
                     "else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
                     "else " + JSI_ON_EVENT + "(" + JSE_ERR
                     + ", 'Method requestFullscreen not found in ' + v);";
+        }
+    }
+
+    public static final class Util {
+        private Util() {}
+
+        @Nullable
+        public static String getPlaylistIdFromWatchOrShareUrl(String url) {
+            url = normalizedServerUrl(url);
+            int startOfListId = url.indexOf("list=");
+            if (startOfListId > 0) {
+                return url.substring(startOfListId + 5).split("&")[0];
+            }
+            return null;
+        }
+
+        @Nullable
+        public static String getVideoIdFromWatchUrl(String watchUrl) {
+            watchUrl = normalizedServerUrl(watchUrl);
+            int startOfVideoId = watchUrl.indexOf("v=");
+            if (startOfVideoId > 0) {
+                return watchUrl.substring(startOfVideoId + 2).split("&")[0];
+            }
+            return null;
+        }
+
+        @Nullable
+        public static String getVideoIdFromShareUrl(String shareUrl) {
+            shareUrl = normalizedServerUrl(shareUrl);
+            int startOfVideoId = shareUrl.indexOf("youtu.be/");
+            if (startOfVideoId > 0) {
+                return shareUrl.substring(startOfVideoId + 9).split("\\?")[0];
+            }
+            return null;
+        }
+
+        public static int getVideoIndexFromWatchOrShareUrl(String url) {
+            url = normalizedServerUrl(url);
+            int startOfVideoIndex = url.indexOf("index=");
+            if (startOfVideoIndex > 0) {
+                try {
+                    return Integer.parseInt(url.substring(startOfVideoIndex + 6).split("&")[0]);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+            return Constants.UNKNOWN;
+        }
+
+        private static String normalizedServerUrl(String url) {
+            return url.split("#")[0];
         }
     }
 

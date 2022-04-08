@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.MessageQueue;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,18 +25,35 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import com.liuzhenlin.common.compat.LooperCompat;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.NetworkUtil;
-import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.view.SwipeRefreshLayout;
 import com.liuzhenlin.videos.web.BuildConfig;
 import com.liuzhenlin.videos.web.R;
+import com.liuzhenlin.videos.web.player.Constants;
 
 public class YoutubeFragment extends Fragment implements View.OnClickListener, OnBackPressedListener {
 
     private Context mContext;
-    private WebView mYoutubeView;
+
+    @Synthetic WebView mYoutubeView;
+    @Synthetic String mUrl = Constants.URL_BLANK;
+    private final MessageQueue.IdleHandler mCheckCurrentUrlIdleHandler = () -> {
+        WebView view = mYoutubeView;
+        String url = view.getUrl();
+        if (!url.equals(mUrl)) {
+            if (YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(view.getContext(), url)) {
+                view.goBack();
+            }
+            mUrl = url;
+        }
+        return true;
+    };
+    private boolean mIdleHandlerAdded;
+
     private boolean mBackPressed;
     private boolean mExitOnBackPressed;
 
@@ -89,27 +107,6 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
                     super.onPageFinished(view, url);
                     Executors.MAIN_EXECUTOR.execute(() -> swipeRefreshLayout.setRefreshing(false));
                 }
-
-                @Override
-                public void onLoadResource(WebView view, String url) {
-                    if (YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(view.getContext(), url)) {
-                        // Postpone stopping loading the watch url and going back to
-                        // the playback triggered page like the youtube home as it may have not
-                        // been started loading and thus we can not go back immediately now.
-                        boolean[] shouldGoBack = { false };
-                        Utils.postTillConditionMeets(Executors.MAIN_EXECUTOR.getHandler(),
-                                () -> {
-                                    if (shouldGoBack[0]) {
-                                        view.stopLoading();
-                                        view.goBack();
-                                    }
-                                },
-                                () -> {
-                                    shouldGoBack[0] = view.getUrl().matches(Youtube.REGEX_WATCH_URL);
-                                    return shouldGoBack[0] || isDetached();
-                                });
-                    }
-                }
             });
             mYoutubeView.loadUrl(Youtube.URLs.HOME);
         } else {
@@ -126,6 +123,30 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
             view.findViewById(R.id.btn_exit).setOnClickListener(this);
         }
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mYoutubeView != null && !mIdleHandlerAdded) {
+            mIdleHandlerAdded = true;
+            MessageQueue msgQueue = LooperCompat.getQueue(Executors.MAIN_EXECUTOR.getLooper());
+            if (msgQueue != null) {
+                msgQueue.addIdleHandler(mCheckCurrentUrlIdleHandler);
+            }
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mIdleHandlerAdded) {
+            mIdleHandlerAdded = false;
+            MessageQueue msgQueue = LooperCompat.getQueue(Executors.MAIN_EXECUTOR.getLooper());
+            if (msgQueue != null) {
+                msgQueue.removeIdleHandler(mCheckCurrentUrlIdleHandler);
+            }
+        }
     }
 
     private void setSwipeRefreshColorSchemeResources(SwipeRefreshLayout srl) {
