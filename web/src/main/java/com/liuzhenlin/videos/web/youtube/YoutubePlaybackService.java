@@ -149,7 +149,7 @@ public class YoutubePlaybackService extends Service {
                     int videoIndex = bundle.getInt(Constants.Extras.VIDEO_INDEX);
                     if (action.equals(Constants.Actions.START_FOREGROUND)) {
                         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
-                            Notification notification = createNotification(videoId);
+                            Notification notification = createNotification(videoId, false);
                             Executors.MAIN_EXECUTOR.execute(() -> {
                                 if (mRunning) {
                                     startForeground(ID_NOTIFICATION, notification);
@@ -394,7 +394,7 @@ public class YoutubePlaybackService extends Service {
             case Youtube.PlayingStatus.PLAYING:
                 mPlayPauseBtnImgSrc = R.drawable.ic_pause_white_24dp;
                 mPlayPauseBtnContentDesc = R.string.pause;
-                refreshNotification();
+                refreshNotification(true);
                 mPlayer.requestGetVideoId();
 //                if (mLinkType == Constants.LinkType.PLAYLIST) {
 //                    mPlayer.requestGetPlaylist();
@@ -412,7 +412,7 @@ public class YoutubePlaybackService extends Service {
             case Youtube.PlayingStatus.PAUSED:
                 mPlayPauseBtnImgSrc = R.drawable.ic_play_white_24dp;
                 mPlayPauseBtnContentDesc = R.string.play;
-                refreshNotification();
+                refreshNotification(true);
                 break;
             case Youtube.PlayingStatus.ENDED:
                 if (mLinkType == Constants.LinkType.PLAYLIST) {
@@ -425,7 +425,7 @@ public class YoutubePlaybackService extends Service {
                             mReplayPlaylist = true;
                             mPlayPauseBtnImgSrc = R.drawable.ic_replay_white_24dp;
                             mPlayPauseBtnContentDesc = R.string.replay;
-                            refreshNotification();
+                            refreshNotification(true);
                             break;
                     }
                 } else {
@@ -438,7 +438,7 @@ public class YoutubePlaybackService extends Service {
                             mReplayVideo = true;
                             mPlayPauseBtnImgSrc = R.drawable.ic_replay_white_24dp;
                             mPlayPauseBtnContentDesc = R.string.replay;
-                            refreshNotification();
+                            refreshNotification(true);
                         }
                     }
                 }
@@ -453,15 +453,16 @@ public class YoutubePlaybackService extends Service {
         }
         if (!videoId.equals(mVideoId)) {
             mVideoId = videoId;
-            refreshNotification();
+            refreshNotification(false);
+            refreshNotification(true);
         }
     }
 
-    private void refreshNotification() {
+    private void refreshNotification(boolean showVideoInfo) {
         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
             NotificationManager notificationManager =
                     (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
-            Notification notification = createNotification(mVideoId);
+            Notification notification = createNotification(mVideoId, showVideoInfo);
             Executors.MAIN_EXECUTOR.execute(() -> {
                 if (mRunning) {
                     notificationManager.notify(ID_NOTIFICATION, notification);
@@ -470,7 +471,7 @@ public class YoutubePlaybackService extends Service {
         });
     }
 
-    private Notification createNotification(String videoId) {
+    private Notification createNotification(String videoId, boolean loadInfo) {
         if (!mRunning) return null;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(
@@ -480,44 +481,47 @@ public class YoutubePlaybackService extends Service {
         RemoteViews viewBig = new RemoteViews(pkgName, R.layout.web_player_notification_view_large);
         RemoteViews viewSmall = new RemoteViews(pkgName, R.layout.web_player_notification_view_small);
 
-        CountDownLatch latch = new CountDownLatch(2);
-        Executors.MAIN_EXECUTOR.execute(() -> {
-            Executor workerExecutor = Executors.THREAD_POOL_EXECUTOR;
-            InternetResourceLoadTask.ofBitmap("https://i.ytimg.com/vi/" + videoId + "/mqdefault.jpg")
-                    .onResult(new InternetResourceLoadTask.ResultCallback<Bitmap>() {
-                        @Override
-                        public void onCompleted(Bitmap thumb) {
-                            if (thumb != null) {
-                                viewBig.setImageViewBitmap(R.id.image_thumbnail, thumb);
-                                viewSmall.setImageViewBitmap(R.id.image_thumbnail, thumb);
-                            }
-                            latch.countDown();
-                        }
-                    }).executeOnExecutor(workerExecutor);
-            InternetResourceLoadTask.ofString(
-                    "https://www.youtube.com/oembed?url=http://www.youtu.be/watch?v="
-                            + videoId + "&format=json")
-                    .onResult(new InternetResourceLoadTask.ResultCallback<String>() {
-                        @Override
-                        public void onCompleted(String details) {
-                            if (details != null) {
-                                try {
-                                    JSONObject detailsJson = new JSONObject(details);
-                                    String title = detailsJson.getString("title");
-                                    String author = detailsJson.getString("author_name");
-                                    builder.setTicker(title);
-                                    viewBig.setTextViewText(R.id.text_title, title);
-                                    viewBig.setTextViewText(R.id.text_author, author);
-                                    viewSmall.setTextViewText(R.id.text_title, title);
-                                    viewSmall.setTextViewText(R.id.text_author, author);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
+        CountDownLatch[] latch = new CountDownLatch[1];
+        if (loadInfo) {
+            latch[0] = new CountDownLatch(2);
+            Executors.MAIN_EXECUTOR.execute(() -> {
+                Executor workerExecutor = Executors.THREAD_POOL_EXECUTOR;
+                InternetResourceLoadTask.ofBitmap("https://i.ytimg.com/vi/" + videoId + "/mqdefault.jpg")
+                        .onResult(new InternetResourceLoadTask.ResultCallback<Bitmap>() {
+                            @Override
+                            public void onCompleted(Bitmap thumb) {
+                                if (thumb != null) {
+                                    viewBig.setImageViewBitmap(R.id.image_thumbnail, thumb);
+                                    viewSmall.setImageViewBitmap(R.id.image_thumbnail, thumb);
                                 }
+                                latch[0].countDown();
                             }
-                            latch.countDown();
-                        }
-                    }).executeOnExecutor(workerExecutor);
-        });
+                        }).executeOnExecutor(workerExecutor);
+                InternetResourceLoadTask.ofString(
+                        "https://www.youtube.com/oembed?url=http://www.youtu.be/watch?v="
+                                + videoId + "&format=json")
+                        .onResult(new InternetResourceLoadTask.ResultCallback<String>() {
+                            @Override
+                            public void onCompleted(String details) {
+                                if (details != null) {
+                                    try {
+                                        JSONObject detailsJson = new JSONObject(details);
+                                        String title = detailsJson.getString("title");
+                                        String author = detailsJson.getString("author_name");
+                                        builder.setTicker(title);
+                                        viewBig.setTextViewText(R.id.text_title, title);
+                                        viewBig.setTextViewText(R.id.text_author, author);
+                                        viewSmall.setTextViewText(R.id.text_title, title);
+                                        viewSmall.setTextViewText(R.id.text_author, author);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                latch[0].countDown();
+                            }
+                        }).executeOnExecutor(workerExecutor);
+            });
+        }
 
         // Intent to do things
         Intent doThings = new Intent(mContext, YoutubePlaybackService.class);
@@ -581,11 +585,13 @@ public class YoutubePlaybackService extends Service {
                         .setAutoCancel(false)
                         .build();
 
-        while (latch.getCount() > 0) {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        if (latch[0] != null) {
+            while (latch[0].getCount() > 0) {
+                try {
+                    latch[0].await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
