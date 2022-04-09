@@ -80,6 +80,18 @@ public class ScreenUtils {
     }
 
     /**
+     * 设置当此窗口对用户可见时是否保持设备的屏幕打开且明亮
+     */
+    public static void setKeepWindowBright(Window window, boolean keepBright) {
+        int flags = window.getAttributes().flags;
+        int keepScreenOnFlag = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+        if ((flags & keepScreenOnFlag) == (keepBright ? 0 : keepScreenOnFlag)) {
+            flags ^= keepScreenOnFlag;
+            window.setFlags(flags, keepScreenOnFlag);
+        }
+    }
+
+    /**
      * 判断屏幕能否自动旋转
      */
     public static boolean isRotationEnabled(@NonNull Context context) {

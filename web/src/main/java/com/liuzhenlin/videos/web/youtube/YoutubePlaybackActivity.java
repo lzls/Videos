@@ -22,6 +22,7 @@ import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
+import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.videos.web.R;
@@ -135,6 +136,11 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
             setPlaybackViewBaseContext(this);
             mContentView = findViewById(R.id.content);
             mContentView.addView(mPlaybackView, 0);
+
+            if (mService.mPlayingStatus == Youtube.PlayingStatus.PLAYING
+                    || mService.mPlayingStatus == Youtube.PlayingStatus.BUFFERRING) {
+                ScreenUtils.setKeepWindowBright(getWindow(), true);
+            }
 
             mLockUnlockOrientationButton = mContentView.findViewById(R.id.btn_lockUnlockOrientation);
             mLockUnlockOrientationButton.setOnClickListener(
@@ -347,6 +353,16 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     }
 
     /*package*/ void onPlayingStatusChange(int playingStatus) {
+        switch (playingStatus) {
+            case Youtube.PlayingStatus.PLAYING:
+            case Youtube.PlayingStatus.BUFFERRING:
+                ScreenUtils.setKeepWindowBright(getWindow(), true);
+                break;
+            case Youtube.PlayingStatus.PAUSED:
+            case Youtube.PlayingStatus.ENDED:
+                ScreenUtils.setKeepWindowBright(getWindow(), false);
+                break;
+        }
         if (isInPictureInPictureMode()) {
             updatePictureInPictureActions(playingStatus);
         }
