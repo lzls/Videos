@@ -18,8 +18,6 @@ dependencies {
     api project(':common')
     api 'androidx.constraintlayout:constraintlayout:2.1.3'
     api 'androidx.recyclerview:recyclerview:1.2.1'
-    //noinspection GradleDependency (limited by used compile sdk version 29)
-    api 'androidx.media:media:1.3.1'
 
     api "com.google.android.exoplayer:exoplayer-core:$rootProject.ext.exoplayer2Version"
     api "com.google.android.exoplayer:exoplayer-dash:$rootProject.ext.exoplayer2Version"

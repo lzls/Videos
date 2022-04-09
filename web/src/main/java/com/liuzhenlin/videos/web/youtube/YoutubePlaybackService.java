@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -29,6 +28,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.util.Consumer;
 
 import com.liuzhenlin.common.compat.RemoteViewsCompat;
+import com.liuzhenlin.common.notification.style.DecoratedMediaCustomViewStyle;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
 import com.liuzhenlin.common.receiver.MediaButtonEventHandler;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
@@ -36,6 +36,7 @@ import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.InternetResourceLoadTask;
 import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Synthetic;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.web.R;
 import com.liuzhenlin.videos.web.player.Constants;
@@ -80,6 +81,8 @@ public class YoutubePlaybackService extends Service {
     private volatile int mPlayPauseBtnImgSrc = R.drawable.ic_pause_white_24dp;
     private volatile int mPlayPauseBtnContentDesc = R.string.pause;
 
+    private int mNotificationActionIconTint;
+
     private AudioManager mAudioManager;
     private HeadsetEventsReceiver mHeadsetEventsReceiver;
     private MediaButtonEventHandler mMediaButtonEventHandler;
@@ -122,6 +125,7 @@ public class YoutubePlaybackService extends Service {
         super.onCreate();
         mContext = getApplicationContext();
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        mNotificationActionIconTint = getNotificationActionIconTint();
         sInstance = this;
     }
 
@@ -469,6 +473,9 @@ public class YoutubePlaybackService extends Service {
     private Notification createNotification(String videoId) {
         if (!mRunning) return null;
 
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(
+                this, NotificationChannelManager.getPlaybackControlNotificationChannelId(mContext));
+
         String pkgName = mContext.getPackageName();
         RemoteViews viewBig = new RemoteViews(pkgName, R.layout.web_player_notification_view_large);
         RemoteViews viewSmall = new RemoteViews(pkgName, R.layout.web_player_notification_view_small);
@@ -481,8 +488,8 @@ public class YoutubePlaybackService extends Service {
                         @Override
                         public void onCompleted(Bitmap thumb) {
                             if (thumb != null) {
-                                viewBig.setImageViewBitmap(R.id.thumbnail, thumb);
-                                viewSmall.setImageViewBitmap(R.id.thumbnail, thumb);
+                                viewBig.setImageViewBitmap(R.id.image_thumbnail, thumb);
+                                viewSmall.setImageViewBitmap(R.id.image_thumbnail, thumb);
                             }
                             latch.countDown();
                         }
@@ -498,8 +505,10 @@ public class YoutubePlaybackService extends Service {
                                     JSONObject detailsJson = new JSONObject(details);
                                     String title = detailsJson.getString("title");
                                     String author = detailsJson.getString("author_name");
-                                    viewBig.setTextViewText(R.id.text_tittle, title);
+                                    builder.setTicker(title);
+                                    viewBig.setTextViewText(R.id.text_title, title);
                                     viewBig.setTextViewText(R.id.text_author, author);
+                                    viewSmall.setTextViewText(R.id.text_title, title);
                                     viewSmall.setTextViewText(R.id.text_author, author);
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -512,51 +521,45 @@ public class YoutubePlaybackService extends Service {
 
         // Intent to do things
         Intent doThings = new Intent(mContext, YoutubePlaybackService.class);
+        int iconTint = mNotificationActionIconTint;
 
-        RemoteViewsCompat.setImageViewResource(this, viewSmall,
-                R.id.btn_stop, R.drawable.ic_stop_white_24dp);
-        RemoteViewsCompat.setImageViewResource(this, viewBig,
-                R.id.btn_close, R.drawable.ic_close_white_20dp);
+        RemoteViewsCompat.setImageViewResourceWithTint(this,
+                viewSmall, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
+        RemoteViewsCompat.setImageViewResourceWithTint(this,
+                viewBig, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
         // Stop service using doThings Intent
-        viewSmall.setOnClickPendingIntent(R.id.btn_stop,
+        viewSmall.setOnClickPendingIntent(
+                R.id.btn_close,
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.STOP_SELF), 0));
-        viewBig.setOnClickPendingIntent(R.id.btn_close,
+        viewBig.setOnClickPendingIntent(
+                R.id.btn_close,
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.STOP_SELF), 0));
 
-        RemoteViewsCompat.setImageViewResource(this, viewSmall,
-                R.id.btn_play_pause, mPlayPauseBtnImgSrc);
-        RemoteViewsCompat.setContentDescription(viewSmall,
-                R.id.btn_play_pause, getText(mPlayPauseBtnContentDesc));
-        RemoteViewsCompat.setImageViewResource(this, viewBig,
-                R.id.btn_play_pause, mPlayPauseBtnImgSrc);
-        RemoteViewsCompat.setContentDescription(viewBig,
-                R.id.btn_play_pause, getText(mPlayPauseBtnContentDesc));
+        RemoteViewsCompat.setImageViewResourceWithTint(this,
+                viewBig, R.id.btn_play_pause, mPlayPauseBtnImgSrc, iconTint);
+        RemoteViewsCompat.setContentDescription(
+                viewBig, R.id.btn_play_pause, getText(mPlayPauseBtnContentDesc));
         // Play, Pause video using doThings Intent
-        viewSmall.setOnClickPendingIntent(R.id.btn_play_pause,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.PLAY_PAUSE), 0));
-        viewBig.setOnClickPendingIntent(R.id.btn_play_pause,
+        viewBig.setOnClickPendingIntent(
+                R.id.btn_play_pause,
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.PLAY_PAUSE), 0));
 
-        RemoteViewsCompat.setImageViewResource(this, viewSmall,
-                R.id.btn_next, R.drawable.ic_skip_next_white_24dp);
-        RemoteViewsCompat.setImageViewResource(this, viewBig,
-                R.id.btn_next, R.drawable.ic_skip_next_white_24dp);
+        RemoteViewsCompat.setImageViewResourceWithTint(this,
+                viewBig, R.id.btn_next, R.drawable.ic_skip_next_white_24dp, iconTint);
         // Next video using doThings Intent
-        viewSmall.setOnClickPendingIntent(R.id.btn_next,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.NEXT), 0));
-        viewBig.setOnClickPendingIntent(R.id.btn_next,
+        viewBig.setOnClickPendingIntent(
+                R.id.btn_next,
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.NEXT), 0));
 
-        RemoteViewsCompat.setImageViewResource(this, viewBig,
-                R.id.btn_previous, R.drawable.ic_skip_previous_white_24dp);
+        RemoteViewsCompat.setImageViewResourceWithTint(this,
+                viewBig, R.id.btn_previous, R.drawable.ic_skip_previous_white_24dp, iconTint);
         // Previous video using doThings Intent
-        viewBig.setOnClickPendingIntent(R.id.btn_previous,
+        viewBig.setOnClickPendingIntent(
+                R.id.btn_previous,
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.PREV), 0));
 
@@ -564,23 +567,19 @@ public class YoutubePlaybackService extends Service {
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
                         Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pit = PendingIntent.getActivity(mContext, 0, it, 0);
-        viewSmall.setOnClickPendingIntent(R.id.content, pit);
-        viewBig.setOnClickPendingIntent(R.id.content, pit);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(
-                this, NotificationChannelManager.getPlaybackControlNotificationChannelId(mContext))
-                .setSmallIcon(R.drawable.ic_media_app_notification)
-                .setDefaults(0)
-                .setOnlyAlertOnce(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setContent(viewSmall)
-                .setAutoCancel(false);
-        Notification notification = builder.build();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            notification.bigContentView = viewBig;
-        }
+        Notification notification =
+                builder.setSmallIcon(R.drawable.ic_media_app_notification)
+                        .setStyle(new DecoratedMediaCustomViewStyle())
+                        .setDefaults(0)
+                        .setOnlyAlertOnce(true)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                        .setCustomContentView(viewSmall)
+                        .setCustomBigContentView(viewBig)
+                        .setContentIntent(pit)
+                        .setAutoCancel(false)
+                        .build();
 
         while (latch.getCount() > 0) {
             try {
@@ -591,6 +590,14 @@ public class YoutubePlaybackService extends Service {
         }
 
         return notification;
+    }
+
+    /**
+     * Gets the notification action icon tint relying on the current theme. Do NOT cache statically!
+     */
+    private int getNotificationActionIconTint() {
+        return ThemeUtils.getTextAppearanceDefaultTextColor(
+                this, R.style.TextAppearance_Compat_Notification_Media);
     }
 
     private static final class MsgHandler extends Handler {

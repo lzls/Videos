@@ -42,12 +42,12 @@ import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.util.Synthetic;
 import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.compat.RemoteViewsCompat;
+import com.liuzhenlin.common.notification.style.DecoratedMediaCustomViewStyle;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.texturevideoview.InternalConsts;
 import com.liuzhenlin.texturevideoview.R;
-import com.liuzhenlin.texturevideoview.notification.style.DecoratedMediaCustomViewStyle;
 
 /**
  * @author 刘振林
@@ -120,7 +120,7 @@ public class BackgroundPlaybackControllerService extends Service {
         @Override
         public void run() {
             if (mIsForeground) {
-                resetNotificationView();
+                resetNotificationViews();
                 mNotificationManager.notify(ID_NOTIFICATION, mNotificationBuilder.build());
             }
         }
@@ -180,7 +180,7 @@ public class BackgroundPlaybackControllerService extends Service {
             mNotificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, it, 0));
         }
         loadMediaThumb(mediaUri);
-        resetNotificationView();
+        resetNotificationViews();
         startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
         mIsForeground = true;
 
@@ -224,51 +224,54 @@ public class BackgroundPlaybackControllerService extends Service {
         }
     }
 
-    @Synthetic void resetNotificationView() {
-        RemoteViews nv = createNotificationView();
-        mNotificationBuilder.setCustomContentView(nv);
-        mNotificationBuilder.setCustomBigContentView(nv);
+    @Synthetic void resetNotificationViews() {
+        mNotificationBuilder.setCustomContentView(createNotificationView(false));
+        mNotificationBuilder.setCustomBigContentView(createNotificationView(true));
     }
 
-    private RemoteViews createNotificationView() {
+    private RemoteViews createNotificationView(boolean big) {
         final boolean playing = mIsPlaying && !mIsBuffering;
         final int tint = mNotificationActionIconTint;
 
         RemoteViews nv = new RemoteViews(
-                mPkgName, R.layout.notification_background_playback_controller);
+                mPkgName,
+                big ? R.layout.notification_background_playback_controller_big
+                        : R.layout.notification_background_playback_controller);
 
         nv.setImageViewBitmap(R.id.image_videoThumb, mVideoThumb == null ? mDefThumb : mVideoThumb);
 
         nv.setTextViewText(R.id.text_mediaTitle, mMediaTitle);
 
-        RemoteViewsCompat.setImageViewResourceWithTint(this, nv,
-                R.id.btn_toggle,
-                playing ? R.drawable.ic_pause_white_24dp : R.drawable.ic_play_white_24dp,
-                tint);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-            nv.setContentDescription(R.id.btn_toggle, playing ? mPause : mPlay);
-        }
-        nv.setOnClickPendingIntent(R.id.btn_toggle,
-                createNotificationActionIntent(
-                        playing ? CONTROLLER_ACTION_PAUSE : CONTROLLER_ACTION_PLAY,
-                        playing ? REQUEST_PAUSE : REQUEST_PLAY));
-
-        nv.setViewVisibility(R.id.btn_skipPrevious, mCanSkipToPrevious ? View.VISIBLE : View.GONE);
-        if (mCanSkipToPrevious) {
+        if (big) {
             RemoteViewsCompat.setImageViewResourceWithTint(this, nv,
-                    R.id.btn_skipPrevious, R.drawable.ic_skip_previous_white_24dp, tint);
-            nv.setOnClickPendingIntent(R.id.btn_skipPrevious,
+                    R.id.btn_toggle,
+                    playing ? R.drawable.ic_pause_white_24dp : R.drawable.ic_play_white_24dp,
+                    tint);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                nv.setContentDescription(R.id.btn_toggle, playing ? mPause : mPlay);
+            }
+            nv.setOnClickPendingIntent(R.id.btn_toggle,
                     createNotificationActionIntent(
-                            CONTROLLER_ACTION_SKIP_TO_PREVIOUS, REQUEST_SKIP_TO_PREVIOUS));
-        }
+                            playing ? CONTROLLER_ACTION_PAUSE : CONTROLLER_ACTION_PLAY,
+                            playing ? REQUEST_PAUSE : REQUEST_PLAY));
 
-        nv.setViewVisibility(R.id.btn_skipNext, mCanSkipToNext ? View.VISIBLE : View.GONE);
-        if (mCanSkipToNext) {
-            RemoteViewsCompat.setImageViewResourceWithTint(this, nv,
-                    R.id.btn_skipNext, R.drawable.ic_skip_next_white_24dp, tint);
-            nv.setOnClickPendingIntent(R.id.btn_skipNext,
-                    createNotificationActionIntent(
-                            CONTROLLER_ACTION_SKIP_TO_NEXT, REQUEST_SKIP_TO_NEXT));
+            nv.setViewVisibility(R.id.btn_skipPrevious, mCanSkipToPrevious ? View.VISIBLE : View.GONE);
+            if (mCanSkipToPrevious) {
+                RemoteViewsCompat.setImageViewResourceWithTint(this, nv,
+                        R.id.btn_skipPrevious, R.drawable.ic_skip_previous_white_24dp, tint);
+                nv.setOnClickPendingIntent(R.id.btn_skipPrevious,
+                        createNotificationActionIntent(
+                                CONTROLLER_ACTION_SKIP_TO_PREVIOUS, REQUEST_SKIP_TO_PREVIOUS));
+            }
+
+            nv.setViewVisibility(R.id.btn_skipNext, mCanSkipToNext ? View.VISIBLE : View.GONE);
+            if (mCanSkipToNext) {
+                RemoteViewsCompat.setImageViewResourceWithTint(this, nv,
+                        R.id.btn_skipNext, R.drawable.ic_skip_next_white_24dp, tint);
+                nv.setOnClickPendingIntent(R.id.btn_skipNext,
+                        createNotificationActionIntent(
+                                CONTROLLER_ACTION_SKIP_TO_NEXT, REQUEST_SKIP_TO_NEXT));
+            }
         }
 
         RemoteViewsCompat.setImageViewResourceWithTint(this, nv,
@@ -277,12 +280,16 @@ public class BackgroundPlaybackControllerService extends Service {
                 createNotificationActionIntent(CONTROLLER_ACTION_CLOSE, REQUEST_CLOSE));
 
         // Chronometer
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            final long remaining = mMediaDuration - mMediaProgress;
-            if (remaining > 0) {
-                nv.setLong(R.id.countdownChronometer,
-                        "setBase", SystemClock.elapsedRealtime() + remaining);
-                nv.setBoolean(R.id.countdownChronometer, "setStarted", playing);
+        if (big) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                final long remaining = mMediaDuration - mMediaProgress;
+                if (remaining > 0) {
+                    nv.setLong(R.id.countdownChronometer,
+                            "setBase", SystemClock.elapsedRealtime() + remaining);
+                    nv.setBoolean(R.id.countdownChronometer, "setStarted", playing);
+                }
+            } else {
+                nv.setViewVisibility(R.id.countdownChronometer, View.GONE);
             }
         }
 

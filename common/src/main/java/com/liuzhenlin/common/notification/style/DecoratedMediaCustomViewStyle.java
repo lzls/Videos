@@ -3,7 +3,7 @@
  * Copyright © 2019 刘振林. All rights reserved.
  */
 
-package com.liuzhenlin.texturevideoview.notification.style;
+package com.liuzhenlin.common.notification.style;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -17,7 +17,7 @@ import androidx.annotation.RestrictTo;
 import androidx.core.app.NotificationBuilderWithBuilderAccessor;
 import androidx.core.app.NotificationCompat;
 
-import com.liuzhenlin.texturevideoview.R;
+import com.liuzhenlin.common.R;
 
 /**
  * Notification style for media custom views that are decorated by the system.
