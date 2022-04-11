@@ -23,6 +23,7 @@ import androidx.preference.PreferenceScreen;
 
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.swipeback.SwipeBackPreferenceFragment;
+import com.liuzhenlin.videos.Prefs;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.web.youtube.WebService;
@@ -115,16 +116,16 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         switch (preference.getKey()) {
-            case "dark_mode":
+            case Prefs.KEY_DARK_MODE:
                 int mode;
                 switch (newValue.toString()) {
-                    case "on":
+                    case Prefs.DARK_MODE_ON:
                         mode = AppCompatDelegate.MODE_NIGHT_YES;
                         break;
-                    case "off":
+                    case Prefs.DARK_MODE_OFF:
                         mode = AppCompatDelegate.MODE_NIGHT_NO;
                         break;
-                    case "followsSystem":
+                    case Prefs.DARK_MODE_FOLLOWS_SYSTEM:
                         mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
                         break;
                     default:
@@ -141,6 +142,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
                     }
                 });
                 return true;
+            case Prefs.KEY_UPDATE_CHANNEL:
             case Youtube.Prefs.KEY_PLAYBACK_PAGE_STYLE:
             case Youtube.Prefs.KEY_PIP:
                 return true;

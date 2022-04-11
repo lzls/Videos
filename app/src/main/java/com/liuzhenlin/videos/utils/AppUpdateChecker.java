@@ -34,6 +34,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.ObjectsCompat;
+import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.gson.JsonElement;
@@ -50,6 +51,7 @@ import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.Files;
+import com.liuzhenlin.videos.Prefs;
 import com.liuzhenlin.videos.R;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -84,7 +86,7 @@ public final class AppUpdateChecker {
     private static final int TIMEOUT_READ = 30 * 1000; // ms
 
     private static final String LINK_APP_INFOS =
-            "https://raw.githubusercontent.com/lzls/Videos/release/app.json";
+            "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app.json";
 
     @Synthetic String mAppName;
     @Synthetic String mVersionName;
@@ -199,24 +201,41 @@ public final class AppUpdateChecker {
                 JsonObject appInfos = JsonParser.parseString(json).getAsJsonObject()
                         .get("appInfos").getAsJsonObject();
 
-                final boolean findNewVersion = Configs.DEBUG_APP_UPDATE
-                        || appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
+                mAppName = appInfos.get("appName").getAsString();
+                mPromptDialogAnchorActivityClsName =
+                        appInfos.get("promptDialogAnchorActivityClsName").getAsString();
+
+                boolean findNewVersion = Configs.DEBUG_APP_UPDATE;
+                String updateChannel =
+                        PreferenceManager.getDefaultSharedPreferences(mContext)
+                                .getString(Prefs.KEY_UPDATE_CHANNEL, Prefs.UPDATE_CHANNEL_STABLE);
+                switch (updateChannel) {
+                    case Prefs.UPDATE_CHANNEL_STABLE:
+                        findNewVersion |=
+                                appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
+                        break;
+                    case Prefs.UPDATE_CHANNEL_BETA:
+                        appInfos = appInfos.get("beta").getAsJsonObject();
+                        findNewVersion |=
+                                appInfos.get("versionCode").getAsInt() > BuildConfig.BETA_VERSION_CODE;
+                        break;
+                    case Prefs.UPDATE_CHANNEL_DEV:
+                        appInfos = appInfos.get("dev").getAsJsonObject();
+                        findNewVersion |=
+                                appInfos.get("versionCode").getAsInt() > BuildConfig.DEV_VERSION_CODE;
+                        break;
+                }
+
                 // 检测到版本更新
                 if (findNewVersion) {
-                    mAppName = appInfos.get("appName").getAsString();
-                    mVersionName = appInfos.get("versionName").getAsString();
-
                     mAppLink = appInfos.get("appLink").getAsString();
                     mAppSha1 = appInfos.get("appSha1").getAsString();
-
+                    mVersionName = appInfos.get("versionName").getAsString();
                     mUpdateLog = new StringBuilder();
                     for (JsonElement log : appInfos.get("updateLogs").getAsJsonArray()) {
                         mUpdateLog.append(log.getAsString()).append("\n");
                     }
                     mUpdateLog.deleteCharAt(mUpdateLog.length() - 1);
-
-                    mPromptDialogAnchorActivityClsName =
-                            appInfos.get("promptDialogAnchorActivityClsName").getAsString();
                 }
                 return findNewVersion ? RESULT_FIND_NEW_VERSION : RESULT_NO_NEW_VERSION;
             }

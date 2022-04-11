@@ -71,7 +71,7 @@ import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
-import com.liuzhenlin.videos.utils.MergeAppUpdateChecker;
+import com.liuzhenlin.videos.utils.AppUpdateChecker;
 import com.liuzhenlin.videos.view.fragment.LocalVideosFragment;
 import com.liuzhenlin.videos.web.youtube.YoutubeFragment;
 import com.taobao.sophix.SophixManager;
@@ -131,7 +131,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     @Synthetic String mCheckUpdateResultText;
     private String mIsTheLatestVersion;
     @Synthetic String mFindNewVersion;
-    private MergeAppUpdateChecker.OnResultListener mOnCheckUpdateResultListener;
+    private AppUpdateChecker.OnResultListener mOnCheckUpdateResultListener;
 
     private boolean mIsBackPressed;
 
@@ -453,7 +453,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             recycleDrawerImage();
         }
         if (mOnCheckUpdateResultListener != null) {
-            MergeAppUpdateChecker.getSingleton(this).removeOnResultListener(mOnCheckUpdateResultListener);
+            AppUpdateChecker.getSingleton(this).removeOnResultListener(mOnCheckUpdateResultListener);
         }
     }
 
@@ -688,7 +688,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 //    }
 
     private void baseCheckUpdate(boolean toastResult) {
-        MergeAppUpdateChecker auc = MergeAppUpdateChecker.getSingleton(this);
+        AppUpdateChecker auc = AppUpdateChecker.getSingleton(this);
         if (mOnCheckUpdateResultListener == null) {
             mOnCheckUpdateResultListener = findNewVersion -> {
                 mCheckUpdateResultText = findNewVersion ? mFindNewVersion : mIsTheLatestVersion;

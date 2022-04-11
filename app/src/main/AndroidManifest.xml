@@ -107,6 +107,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <service android:name=".utils.MergeAppUpdateChecker$UpdateAppService" />
+        <service android:name=".utils.AppUpdateChecker$UpdateAppService" />
     </application>
 </manifest>

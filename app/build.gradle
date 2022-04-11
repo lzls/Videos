@@ -17,6 +17,9 @@ android {
         ndk {
             abiFilters 'armeabi-v7a'/*, 'arm64-v8a'*/
         }
+
+        buildConfigField "int", 'DEV_VERSION_CODE', '47'
+        buildConfigField "int", 'BETA_VERSION_CODE', '47'
     }
 
     packagingOptions {

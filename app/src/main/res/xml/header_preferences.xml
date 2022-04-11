@@ -6,8 +6,7 @@
         app:entryValues="@array/update_channel_values"
         app:key="update_channel"
         app:title="@string/update_channel_title"
-        app:useSimpleSummaryProvider="true"
-        app:enabled="false" />
+        app:useSimpleSummaryProvider="true" />
 
     <Preference
         app:fragment="com.liuzhenlin.videos.view.activity.SettingsActivity$GeneralFragment"
