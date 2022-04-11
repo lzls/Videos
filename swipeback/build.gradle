@@ -11,5 +11,6 @@ android {
 }
 
 dependencies {
+    //noinspection GradleDependency (limited by used compile sdk version 29)
     api 'androidx.preference:preference:1.1.1'
 }
