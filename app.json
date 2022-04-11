@@ -39,27 +39,37 @@
       "10. 分享时的目标应用列表不再显示当前应用"
     ],
     "beta": {
-      "versionCode": 47,
-      "versionName": "2.1-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1-beta02.apk",
-      "appLength": 34226949,
-      "appSha1": "820111ebbfa7cbbe24d0aa9cee5919dd19a8dbca",
+      "versionCode": 48,
+      "versionName": "2.1-beta03",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1-beta03.apk",
+      "appLength": 34368888,
+      "appSha1": "ea1c33006a62f0fa8e85cb06f9667e6f8b7942fe",
       "updateLogs": [
         "1. 解决特殊情况下播放中视频不受耳机线控制的问题",
         "2. 在线视频页移除不再维护的无线电视列表，改为加载YouTube网站并提供视频播放支持",
-        "3. 本地视频播放引擎新增 VLC MediaPlayer（试验性特性）"
+        "3. 本地视频播放引擎新增 VLC MediaPlayer（试验性特性）",
+        "4. 优化后台播放控制通知折叠时的UI显示",
+        "5. 修复当未使用ExoPlayer播放视频时，视频裁剪无法预览的问题",
+        "6. 添加清除首页抽屉背景图的选项",
+        "7. 添加应用设置页面",
+        "8. 应用支持多渠道更新（开发、测试、稳定）"
       ]
     },
     "dev": {
-      "versionCode": 47,
-      "versionName": "2.1-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1-beta02.apk",
-      "appLength": 34226949,
-      "appSha1": "820111ebbfa7cbbe24d0aa9cee5919dd19a8dbca",
+      "versionCode": 48,
+      "versionName": "2.1-beta03",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1-beta03.apk",
+      "appLength": 34368888,
+      "appSha1": "ea1c33006a62f0fa8e85cb06f9667e6f8b7942fe",
       "updateLogs": [
         "1. 解决特殊情况下播放中视频不受耳机线控制的问题",
         "2. 在线视频页移除不再维护的无线电视列表，改为加载YouTube网站并提供视频播放支持",
-        "3. 本地视频播放引擎新增 VLC MediaPlayer（试验性特性）"
+        "3. 本地视频播放引擎新增 VLC MediaPlayer（试验性特性）",
+        "4. 优化后台播放控制通知折叠时的UI显示",
+        "5. 修复当未使用ExoPlayer播放视频时，视频裁剪无法预览的问题",
+        "6. 添加清除首页抽屉背景图的选项",
+        "7. 添加应用设置页面",
+        "8. 应用支持多渠道更新（开发、测试、稳定）"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
