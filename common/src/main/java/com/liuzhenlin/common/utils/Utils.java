@@ -5,6 +5,7 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.ClipData;
@@ -21,10 +22,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.webkit.ConsoleMessage;
+import android.webkit.WebSettings;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
@@ -343,6 +346,30 @@ public class Utils {
             case ERROR:
                 Log.e(logTag, message);
                 break;
+        }
+    }
+
+    /**
+     * Properly converts one of {@link AppCompatDelegate.NightMode the MODE_NIGHT_* ints} to one of
+     * {@link WebSettings.ForceDark the FORCE_DARK_* ints for WebView settings}.
+     */
+    @SuppressWarnings("JavadocReference")
+    @SuppressLint("InlinedApi")
+//    @WebSettings.ForceDark
+    public static int nightModeToWebSettingsForceDarkInt(@AppCompatDelegate.NightMode int mode) {
+        switch (mode) {
+            case AppCompatDelegate.MODE_NIGHT_YES:
+                return WebSettings.FORCE_DARK_ON;
+            case AppCompatDelegate.MODE_NIGHT_NO:
+                return WebSettings.FORCE_DARK_OFF;
+            case AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM:
+            //noinspection deprecation
+            case AppCompatDelegate.MODE_NIGHT_AUTO_TIME:
+            case AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY:
+            case AppCompatDelegate.MODE_NIGHT_UNSPECIFIED:
+                return WebSettings.FORCE_DARK_AUTO;
+            default:
+                throw new IllegalArgumentException("Unknown night mode " + mode + " was supplied.");
         }
     }
 }

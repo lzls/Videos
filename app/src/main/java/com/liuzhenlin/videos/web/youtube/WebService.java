@@ -10,14 +10,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.util.Consumer;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.ServiceBindHelper;
+import com.liuzhenlin.common.utils.Utils;
 
 public class WebService extends Service {
 
@@ -32,7 +36,19 @@ public class WebService extends Service {
         return new IWebService.Stub() {
             @Override
             public void applyDefaultNightMode(int mode) throws RemoteException {
-                Executors.MAIN_EXECUTOR.execute(() -> AppCompatDelegate.setDefaultNightMode(mode));
+                Executors.MAIN_EXECUTOR.execute(() -> {
+                    AppCompatDelegate.setDefaultNightMode(mode);
+                    // YoutubePlaybackView will not be recreated according to our code
+                    // as it was created in YoutubePlaybackService directly.
+                    YoutubePlaybackService.peekIfNonnullThenDo(service -> {
+                        WebView web = service.mView;
+                        if (web != null
+                                && WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                            WebSettingsCompat.setForceDark(web.getSettings(),
+                                    Utils.nightModeToWebSettingsForceDarkInt(mode));
+                        }
+                    });
+                });
             }
 
             @Override
