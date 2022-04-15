@@ -46,7 +46,6 @@ import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
-import com.liuzhenlin.swipeback.SwipeBackLayout;
 import com.liuzhenlin.texturevideoview.ExoVideoPlayer;
 import com.liuzhenlin.texturevideoview.IVideoPlayer;
 import com.liuzhenlin.texturevideoview.IjkVideoPlayer;
@@ -545,8 +544,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.onAttachedToWindow();
         finishOtherInstanceInPiP();
 
-        Window window = getWindow();
-        View decorView = window.getDecorView();
         boolean inPictureInPictureMode = isInPictureInPictureMode();
 
         getDisplayCutoutManager().setLayoutInDisplayCutout(true);
@@ -554,9 +551,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             observeNotchSwitch(true);
         }
 
-        if (Utils.isLayoutRtl(decorView)) {
-            getSwipeBackLayout().setEnabledEdges(SwipeBackLayout.EDGE_RIGHT);
-        }
         setFullscreenMode(mVideoView.isInFullscreenMode());
         if (inPictureInPictureMode) {
             mStatusBarView.setVisibility(View.GONE);

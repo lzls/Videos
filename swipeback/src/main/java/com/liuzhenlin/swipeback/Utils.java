@@ -6,6 +6,7 @@ import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Build;
+import android.view.View;
 import android.view.Window;
 
 import androidx.annotation.AnyRes;
@@ -14,6 +15,7 @@ import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class Utils {
@@ -173,4 +175,44 @@ public class Utils {
             ta.recycle();
         }
     }
+
+    /**
+     * @return true if the view's layout direction has been resolved.
+     */
+    public static boolean isLayoutDirectionResolved(@NonNull View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            return view.isLayoutDirectionResolved();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            ensureIsLayoutDirectionResolvedMethodFetched();
+            if (sIsLayoutDirectionResolvedMethod != null) {
+                try {
+                    Boolean ret = (Boolean) sIsLayoutDirectionResolvedMethod.invoke(view);
+                    return ret != null && ret;
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+            return false;
+        }
+        // No support for RTL in SDKs below 17
+        return true;
+    }
+
+    private static void ensureIsLayoutDirectionResolvedMethodFetched() {
+        if (!sIsLayoutDirectionResolvedMethodFetched) {
+            try {
+                sIsLayoutDirectionResolvedMethod =
+                        View.class.getDeclaredMethod("isLayoutDirectionResolved");
+                sIsLayoutDirectionResolvedMethod.setAccessible(true);
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+            sIsLayoutDirectionResolvedMethodFetched = true;
+        }
+    }
+
+    private static Method sIsLayoutDirectionResolvedMethod;
+    private static boolean sIsLayoutDirectionResolvedMethodFetched;
 }

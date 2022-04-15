@@ -193,8 +193,6 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
     public void onAttachedToWindow() {
         super.onAttachedToWindow();
         final Window window = getWindow();
-        if (com.liuzhenlin.simrv.Utils.isLayoutRtl(window.getDecorView()))
-            getSwipeBackLayout().setEnabledEdges(SwipeBackLayout.EDGE_RIGHT);
         getSwipeBackLayout().addSwipeListener(new SwipeBackLayout.SwipeListener() {
             int oldState = SwipeBackLayout.STATE_IDLE;
 

@@ -3,9 +3,11 @@ package com.liuzhenlin.swipeback;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -42,21 +44,29 @@ public class SwipeBackLayout extends FrameLayout {
     @Nullable
     /*synthetic*/ ISwipeBackFragment mFragment;
 
-    /*package*/ final ViewDragHelper mDragHelper;
+    /*package*/ ViewDragHelper mDragHelper;
 
     public static final int EDGE_LEFT = ViewDragHelper.EDGE_LEFT;
     public static final int EDGE_RIGHT = ViewDragHelper.EDGE_RIGHT;
+    public static final int EDGE_START = EDGE_RIGHT << 3;
+    public static final int EDGE_END = EDGE_RIGHT << 4;
 
-    private static final int EDGE_MASK = 0b0000_0011;
+    private static final int ABSOLUTE_EDGE_MASK = EDGE_LEFT | EDGE_RIGHT;
+    private static final int EDGE_MASK = ABSOLUTE_EDGE_MASK | EDGE_START | EDGE_END;
 
-    @IntDef(flag = true, value = {EDGE_LEFT, EDGE_RIGHT})
+    @IntDef(flag = true, value = {EDGE_LEFT, EDGE_RIGHT, EDGE_START, EDGE_END})
     @Retention(RetentionPolicy.SOURCE)
     /*package*/ @interface Edge {
     }
 
-    @Edge
-    /*synthetic*/ int mTrackingEdge = NO_TRACKING_EDGE;
-    private static final int NO_TRACKING_EDGE = -1;
+    @IntDef(flag = true, value = {EDGE_LEFT, EDGE_RIGHT})
+    @Retention(RetentionPolicy.SOURCE)
+    /*package*/ @interface AbsoluteEdge {
+    }
+
+    @AbsoluteEdge
+    /*synthetic*/ int mDraggedEdge = NO_DRAGGED_EDGE;
+    private static final int NO_DRAGGED_EDGE = -1;
 
     public static final int STATE_IDLE = ViewDragHelper.STATE_IDLE;
     public static final int STATE_DRAGGING = ViewDragHelper.STATE_DRAGGING;
@@ -87,21 +97,41 @@ public class SwipeBackLayout extends FrameLayout {
     @FloatRange(from = 0.0, to = 1.0)
     /*synthetic*/ float mScrollPercent;
 
-    /*synthetic*/ int mViewFlags = EDGE_LEFT | FLAG_ENABLED | FLAG_PREVIOUS_CONTENT_SCROLLABLE;
+    /*synthetic*/ int mViewFlags = FLAG_ENABLED | FLAG_PREVIOUS_CONTENT_SCROLLABLE;
 
     /**
      * @see #isGestureEnabled()
      * @see #setGestureEnabled(boolean)
      */
-    private static final int FLAG_ENABLED = 1 << 2;
+    private static final int FLAG_ENABLED = EDGE_END << 1;
 
     /**
      * @see #isPreviousContentScrollable()
      * @see #setPreviousContentScrollable(boolean)
      */
-    private static final int FLAG_PREVIOUS_CONTENT_SCROLLABLE = 1 << 3;
+    private static final int FLAG_PREVIOUS_CONTENT_SCROLLABLE = EDGE_END << 2;
 
-    private static final int FLAG_WINDOW_IS_TRANSLUCENT = 1 << 4;
+    private static final int FLAG_WINDOW_IS_TRANSLUCENT = EDGE_END << 3;
+
+    /**
+     * Bit for {@link #mViewFlags}: {@code true} when the application is willing to support RTL
+     * (right to left). All activities will inherit this value.
+     * Set from the {@link android.R.attr#supportsRtl} attribute in the activity's manifest.
+     * Default value is false (no support for RTL).
+     */
+    private static final int FLAG_SUPPORTS_RTL = EDGE_END << 4;
+
+    private static final int FLAG_TRACKING_EDGES_RESOLVED = EDGE_END << 5;
+    private static final int FLAG_TRACKING_LEFT_EDGE_SPECIFIED = EDGE_END << 6;
+    private static final int FLAG_TRACKING_RIGHT_EDGE_SPECIFIED = EDGE_END << 7;
+    private static final int FLAG_TRACKING_START_EDGE_SPECIFIED = EDGE_END << 8;
+    private static final int FLAG_TRACKING_END_EDGE_SPECIFIED = EDGE_END << 9;
+
+    private static final int FLAG_EDGE_SHADOWS_RESOLVED = EDGE_END << 10;
+    private static final int FLAG_LEFT_EDGE_SHADOW_SPECIFIED = EDGE_END << 11;
+    private static final int FLAG_RIGHT_EDGE_SHADOW_SPECIFIED = EDGE_END << 12;
+    private static final int FLAG_START_EDGE_SHADOW_SPECIFIED = EDGE_END << 13;
+    private static final int FLAG_END_EDGE_SHADOW_SPECIFIED = EDGE_END << 14;
 
     /**
      * The set of listeners to be sent events through
@@ -128,6 +158,9 @@ public class SwipeBackLayout extends FrameLayout {
     /** The shadow to be shown while the right edge of {@link #mContentView} is being dragged */
     @Nullable
     /*synthetic*/ Drawable mShadowRight;
+
+    private Drawable mShadowStart;
+    private Drawable mShadowEnd;
 
     /**
      * @see #getScrimColor()
@@ -165,11 +198,23 @@ public class SwipeBackLayout extends FrameLayout {
 
     public SwipeBackLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        ApplicationInfo ai = context.getApplicationInfo();
+        if (ai.targetSdkVersion >= Build.VERSION_CODES.JELLY_BEAN_MR1
+                && (ai.flags & ApplicationInfo.FLAG_SUPPORTS_RTL) != 0) {
+            mViewFlags |= FLAG_SUPPORTS_RTL;
+        }
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-        mDragHelper = ViewDragHelper.create(this, new ViewDragCallback());
-        mDragHelper.setMinVelocity(MIN_FLING_VELOCITY * getResources().getDisplayMetrics().density);
+        getDragHelper().setMinVelocity(MIN_FLING_VELOCITY * getResources().getDisplayMetrics().density);
+        setEnabledEdges(EDGE_START);
         setEdgeShadow(R.drawable.shadow_left, EDGE_LEFT);
         setEdgeShadow(R.drawable.shadow_right, EDGE_RIGHT);
+    }
+
+    /*package*/ ViewDragHelper getDragHelper() {
+        if (mDragHelper == null) {
+            mDragHelper = ViewDragHelper.create(this, new ViewDragCallback());
+        }
+        return mDragHelper;
     }
 
     /**
@@ -230,7 +275,89 @@ public class SwipeBackLayout extends FrameLayout {
      */
     @Edge
     public int getEnabledEdges() {
+        if ((mViewFlags & FLAG_TRACKING_EDGES_RESOLVED) == 0) {
+            if ((mViewFlags & FLAG_SUPPORTS_RTL) == 0) {
+                resolveTrackingEdges(ViewCompat.LAYOUT_DIRECTION_LTR);
+            } else {
+                if (((FLAG_TRACKING_START_EDGE_SPECIFIED | FLAG_TRACKING_END_EDGE_SPECIFIED)
+                        & mViewFlags) == 0) {
+                    int edges = 0;
+                    if ((mViewFlags & FLAG_TRACKING_LEFT_EDGE_SPECIFIED) != 0) {
+                        edges |= EDGE_LEFT;
+                    }
+                    if ((mViewFlags & FLAG_TRACKING_RIGHT_EDGE_SPECIFIED) != 0) {
+                        edges |= EDGE_RIGHT;
+                    }
+                    return edges;
+                }
+                //noinspection StatementWithEmptyBody
+                if (!resolveTrackingEdgesIfDirectionResolved()) {
+                    // Can not return specific edges which are being watched when layout direction
+                    // is not resolved.
+                }
+            }
+        }
         return mViewFlags & EDGE_MASK;
+    }
+
+    private boolean resolveTrackingEdgesIfDirectionResolved() {
+        if (Utils.isLayoutDirectionResolved(this)) {
+            resolveTrackingEdges(ViewCompat.getLayoutDirection(this));
+            return true;
+        }
+        return false;
+    }
+
+    private void resolveTrackingEdges(int layoutDirection) {
+        if ((mViewFlags & FLAG_TRACKING_EDGES_RESOLVED) != 0) {
+            return;
+        }
+
+        if ((mViewFlags & FLAG_SUPPORTS_RTL) == 0) {
+            if ((mViewFlags & FLAG_TRACKING_LEFT_EDGE_SPECIFIED) != 0
+                    || (mViewFlags & FLAG_TRACKING_START_EDGE_SPECIFIED) != 0) {
+                mViewFlags |= EDGE_LEFT;
+            } else {
+                mViewFlags &= ~EDGE_LEFT;
+            }
+            if ((mViewFlags & FLAG_TRACKING_RIGHT_EDGE_SPECIFIED) != 0
+                    || (mViewFlags & FLAG_TRACKING_END_EDGE_SPECIFIED) != 0) {
+                mViewFlags |= EDGE_RIGHT;
+            } else {
+                mViewFlags &= ~EDGE_RIGHT;
+            }
+        } else {
+            final boolean ldrtl = layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL;
+            final int startTrackingEdge = ldrtl ? EDGE_RIGHT : EDGE_LEFT;
+            final int endTrackingEdge = ldrtl ? EDGE_LEFT : EDGE_RIGHT;
+            if ((mViewFlags & FLAG_TRACKING_START_EDGE_SPECIFIED) != 0) {
+                mViewFlags |= startTrackingEdge;
+            } else {
+                if (ldrtl && (mViewFlags & FLAG_TRACKING_RIGHT_EDGE_SPECIFIED) != 0
+                        || !ldrtl && (mViewFlags & FLAG_TRACKING_LEFT_EDGE_SPECIFIED) != 0) {
+                    mViewFlags |= startTrackingEdge;
+                } else {
+                    mViewFlags &= ~startTrackingEdge;
+                }
+            }
+            if ((mViewFlags & FLAG_TRACKING_END_EDGE_SPECIFIED) != 0) {
+                mViewFlags |= endTrackingEdge;
+            } else {
+                if (ldrtl && (mViewFlags & FLAG_TRACKING_LEFT_EDGE_SPECIFIED) != 0
+                        || !ldrtl && (mViewFlags & FLAG_TRACKING_RIGHT_EDGE_SPECIFIED) != 0) {
+                    mViewFlags |= endTrackingEdge;
+                } else {
+                    mViewFlags &= ~endTrackingEdge;
+                }
+            }
+        }
+
+        // Can not access mDragHelper directly here because this method might be called during
+        // super constructor method invocation, at which point mDragHelper will not have been
+        // initialized in this class constructor.
+        getDragHelper().setEdgeTrackingEnabled(mViewFlags & ABSOLUTE_EDGE_MASK);
+
+        mViewFlags |= FLAG_TRACKING_EDGES_RESOLVED;
     }
 
     /**
@@ -240,13 +367,32 @@ public class SwipeBackLayout extends FrameLayout {
      * for edges for which edge tracking has been enabled.
      *
      * @param edgeFlags Combination of edge flags describing the edges to watch
-     * @see #EDGE_LEFT
-     * @see #EDGE_RIGHT
      * @see #getEnabledEdges()
      */
     public void setEnabledEdges(@Edge int edgeFlags) {
-        mViewFlags = (mViewFlags & ~EDGE_MASK) | (edgeFlags = edgeFlags & EDGE_MASK);
-        mDragHelper.setEdgeTrackingEnabled(edgeFlags);
+        mViewFlags = (mViewFlags & ~EDGE_MASK) | (edgeFlags & EDGE_MASK);
+        if ((edgeFlags & EDGE_LEFT) != 0) {
+            mViewFlags |= FLAG_TRACKING_LEFT_EDGE_SPECIFIED;
+        } else {
+            mViewFlags &= ~FLAG_TRACKING_LEFT_EDGE_SPECIFIED;
+        }
+        if ((edgeFlags & EDGE_RIGHT) != 0) {
+            mViewFlags |= FLAG_TRACKING_RIGHT_EDGE_SPECIFIED;
+        } else {
+            mViewFlags &= ~FLAG_TRACKING_RIGHT_EDGE_SPECIFIED;
+        }
+        if ((edgeFlags & EDGE_START) != 0) {
+            mViewFlags |= FLAG_TRACKING_START_EDGE_SPECIFIED;
+        } else {
+            mViewFlags &= ~FLAG_TRACKING_START_EDGE_SPECIFIED;
+        }
+        if ((edgeFlags & EDGE_END) != 0) {
+            mViewFlags |= FLAG_TRACKING_END_EDGE_SPECIFIED;
+        } else {
+            mViewFlags &= ~FLAG_TRACKING_END_EDGE_SPECIFIED;
+        }
+        mViewFlags &= ~FLAG_TRACKING_EDGES_RESOLVED;
+        resolveTrackingEdgesIfDirectionResolved();
     }
 
     /**
@@ -346,8 +492,6 @@ public class SwipeBackLayout extends FrameLayout {
      *
      * @param resId     Resource of drawable to use
      * @param edgeFlags Edge flags describing the edges to set
-     * @see #EDGE_LEFT
-     * @see #EDGE_RIGHT
      * @see #setEdgeShadow(Drawable, int)
      */
     public void setEdgeShadow(@DrawableRes int resId, @Edge int edgeFlags) {
@@ -359,24 +503,74 @@ public class SwipeBackLayout extends FrameLayout {
      *
      * @param shadow    Drawable to use
      * @param edgeFlags Edge flags describing the edges to set
-     * @see #EDGE_LEFT
-     * @see #EDGE_RIGHT
      * @see #setEdgeShadow(int, int)
      */
     public void setEdgeShadow(@Nullable Drawable shadow, @Edge int edgeFlags) {
-        boolean shadowChanged = false;
-        if ((edgeFlags & EDGE_LEFT) != 0 && mShadowLeft != shadow) {
+        if ((edgeFlags & EDGE_LEFT) != 0) {
+            mViewFlags |= FLAG_LEFT_EDGE_SHADOW_SPECIFIED;
             mShadowLeft = shadow;
-            shadowChanged = true;
         }
-        if ((edgeFlags & EDGE_RIGHT) != 0 && mShadowRight != shadow) {
+        if ((edgeFlags & EDGE_RIGHT) != 0) {
+            mViewFlags |= FLAG_RIGHT_EDGE_SHADOW_SPECIFIED;
             mShadowRight = shadow;
-            shadowChanged = true;
         }
-        if (shadowChanged && mScrollPercent > 0 && mDragHelper.getViewDragState() != STATE_SETTLING) {
-            // redraw edge shadow
+        if ((edgeFlags & EDGE_START) != 0) {
+            mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
+            mShadowStart = shadow;
+        }
+        if ((edgeFlags & EDGE_END) != 0) {
+            mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
+            mShadowEnd = shadow;
+        }
+        mViewFlags &= ~FLAG_EDGE_SHADOWS_RESOLVED;
+        resolveEdgeShadowsIfDirectionResolved();
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    private boolean resolveEdgeShadowsIfDirectionResolved() {
+        if (Utils.isLayoutDirectionResolved(this)) {
+            resolveEdgeShadows(ViewCompat.getLayoutDirection(this));
+            return true;
+        }
+        return false;
+    }
+
+    private void resolveEdgeShadows(int layoutDirection) {
+        if ((mViewFlags & FLAG_EDGE_SHADOWS_RESOLVED) != 0) {
+            return;
+        }
+
+        if ((mViewFlags & FLAG_SUPPORTS_RTL) == 0) {
+            if ((mViewFlags & FLAG_LEFT_EDGE_SHADOW_SPECIFIED) == 0) {
+                mShadowLeft = mShadowStart;
+            }
+            if ((mViewFlags & FLAG_RIGHT_EDGE_SHADOW_SPECIFIED) == 0) {
+                mShadowRight = mShadowEnd;
+            }
+        } else {
+            final boolean ldrtl = layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL;
+            if ((mViewFlags & FLAG_START_EDGE_SHADOW_SPECIFIED) != 0) {
+                if (ldrtl) {
+                    mShadowRight = mShadowStart;
+                } else {
+                    mShadowLeft = mShadowStart;
+                }
+            }
+            if ((mViewFlags & FLAG_END_EDGE_SHADOW_SPECIFIED) != 0) {
+                if (ldrtl) {
+                    mShadowLeft = mShadowEnd;
+                } else {
+                    mShadowRight = mShadowEnd;
+                }
+            }
+        }
+
+        if (mScrollPercent > 0 && mDragHelper.getViewDragState() != STATE_SETTLING) {
+            // redraw edge shadows
             invalidate();
         }
+
+        mViewFlags |= FLAG_EDGE_SHADOWS_RESOLVED;
     }
 
     /**
@@ -399,6 +593,28 @@ public class SwipeBackLayout extends FrameLayout {
         } else {
             mViewFlags &= ~FLAG_PREVIOUS_CONTENT_SCROLLABLE;
         }
+    }
+
+    @Override
+    public void onRtlPropertiesChanged(int layoutDirection) {
+        super.onRtlPropertiesChanged(layoutDirection);
+        mViewFlags &= ~(FLAG_TRACKING_EDGES_RESOLVED | FLAG_EDGE_SHADOWS_RESOLVED);
+        resolveRtlProperties(layoutDirection);
+    }
+
+    private void resolveRtlProperties(int layoutDirection) {
+        resolveTrackingEdges(layoutDirection);
+        resolveEdgeShadows(layoutDirection);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            // Since onRtlPropertiesChanged() was not defined on JELLY_BEAN and lower version SDKs,
+            // call resolveRtlProperties() manually instead.
+            resolveRtlProperties(ViewCompat.LAYOUT_DIRECTION_LTR);
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     @Override
@@ -425,7 +641,7 @@ public class SwipeBackLayout extends FrameLayout {
     private void drawShadow(Canvas canvas, View child) {
         child.getHitRect(mTempRect);
 
-        switch (mTrackingEdge) {
+        switch (mDraggedEdge) {
             case EDGE_LEFT:
                 if (mShadowLeft != null) {
                     mShadowLeft.setBounds(
@@ -448,7 +664,7 @@ public class SwipeBackLayout extends FrameLayout {
 
     private void drawScrim(Canvas canvas, View child) {
         canvas.save();
-        switch (mTrackingEdge) {
+        switch (mDraggedEdge) {
             case EDGE_LEFT:
                 canvas.clipRect(0, 0, child.getLeft(), getHeight());
                 break;
@@ -515,15 +731,15 @@ public class SwipeBackLayout extends FrameLayout {
                 return false;
             }
 
-            if (mDragHelper.isEdgeTouched(mViewFlags & EDGE_MASK, pointerId)) {
+            if (mDragHelper.isEdgeTouched(mViewFlags & ABSOLUTE_EDGE_MASK, pointerId)) {
                 if (mDragHelper.isEdgeTouched(EDGE_LEFT, pointerId)) {
-                    mTrackingEdge = EDGE_LEFT;
+                    mDraggedEdge = EDGE_LEFT;
                 } else if (mDragHelper.isEdgeTouched(EDGE_RIGHT, pointerId)) {
-                    mTrackingEdge = EDGE_RIGHT;
+                    mDraggedEdge = EDGE_RIGHT;
                 }
                 // Only when the distance in vertical the user's finger traveled is not more than
                 // the distance to travel before a drag may begin can we capture it.
-                if (mTrackingEdge == EDGE_LEFT || mTrackingEdge == EDGE_RIGHT) {
+                if (mDraggedEdge == EDGE_LEFT || mDraggedEdge == EDGE_RIGHT) {
                     return !mDragHelper.checkTouchSlop(ViewDragHelper.DIRECTION_VERTICAL, pointerId);
                 }
             }
@@ -542,7 +758,7 @@ public class SwipeBackLayout extends FrameLayout {
             if (mScrollPercent != oldScrollPercent) {
                 if (mSwipeListeners != null) {
                     for (int i = mSwipeListeners.size() - 1; i >= 0; i--) {
-                        mSwipeListeners.get(i).onScrollPercentChange(mTrackingEdge, mScrollPercent);
+                        mSwipeListeners.get(i).onScrollPercentChange(mDraggedEdge, mScrollPercent);
                     }
                 }
 
@@ -568,7 +784,7 @@ public class SwipeBackLayout extends FrameLayout {
 
         @Override
         public int clampViewPositionHorizontal(@NonNull View child, int left, int dx) {
-            switch (mTrackingEdge) {
+            switch (mDraggedEdge) {
                 case EDGE_LEFT:
                     return Math.min(child.getWidth(), Math.max(left, 0));
                 case EDGE_RIGHT:
@@ -580,7 +796,7 @@ public class SwipeBackLayout extends FrameLayout {
         @Override
         public void onViewReleased(@NonNull View releasedChild, float xvel, float yvel) {
             int finalLeft = 0;
-            switch (mTrackingEdge) {
+            switch (mDraggedEdge) {
                 case EDGE_LEFT:
                     if (xvel > 0 || xvel == 0 && mScrollPercent > mScrollThreshold) {
                         finalLeft = releasedChild.getWidth() +
@@ -602,7 +818,7 @@ public class SwipeBackLayout extends FrameLayout {
         public void onViewDragStateChanged(int state) {
             if (mSwipeListeners != null) {
                 for (int i = mSwipeListeners.size() - 1; i >= 0; i--) {
-                    mSwipeListeners.get(i).onScrollStateChange(mTrackingEdge, state);
+                    mSwipeListeners.get(i).onScrollStateChange(mDraggedEdge, state);
                 }
             }
 
@@ -631,7 +847,7 @@ public class SwipeBackLayout extends FrameLayout {
                         activity.overridePendingTransition(0, 0);
                     }
                 } else {
-                    mTrackingEdge = NO_TRACKING_EDGE;
+                    mDraggedEdge = NO_DRAGGED_EDGE;
                     // If this view has been settled at its original position, lay the previous
                     // content view back to ensure it will be shown normally after user presses
                     // the return key to finish current activity.
@@ -691,7 +907,7 @@ public class SwipeBackLayout extends FrameLayout {
         View view = getPreviousContent();
         if (view != null) {
             float translationX = 0;
-            switch (mTrackingEdge) {
+            switch (mDraggedEdge) {
                 case EDGE_LEFT:
                     translationX = mScrollThreshold * (mScrollPercent - 1f) * view.getWidth();
                     break;
@@ -725,11 +941,11 @@ public class SwipeBackLayout extends FrameLayout {
         if ((mViewFlags & EDGE_LEFT) != 0) {
             left = mContentView.getWidth() +
                     (mShadowLeft == null ? 0 : mShadowLeft.getIntrinsicWidth());
-            mTrackingEdge = EDGE_LEFT;
+            mDraggedEdge = EDGE_LEFT;
         } else if ((mViewFlags & EDGE_RIGHT) != 0) {
             left = -(mContentView.getWidth() +
                     (mShadowRight == null ? 0 : mShadowRight.getIntrinsicWidth()));
-            mTrackingEdge = EDGE_RIGHT;
+            mDraggedEdge = EDGE_RIGHT;
         }
 
         mDragHelper.smoothSlideViewTo(mContentView, left, 0);
@@ -772,7 +988,7 @@ public class SwipeBackLayout extends FrameLayout {
          * @see #STATE_DRAGGING
          * @see #STATE_SETTLING
          */
-        void onScrollStateChange(@Edge int edge, @ScrollState int state);
+        void onScrollStateChange(@AbsoluteEdge int edge, @ScrollState int state);
 
         /**
          * Invoked as the scroll percentage changes
@@ -780,6 +996,7 @@ public class SwipeBackLayout extends FrameLayout {
          * @param edge    edge flag describing the edge being dragged
          * @param percent scroll percentage of the content view
          */
-        void onScrollPercentChange(@Edge int edge, @FloatRange(from = 0.0, to = 1.0) float percent);
+        void onScrollPercentChange(
+                @AbsoluteEdge int edge, @FloatRange(from = 0.0, to = 1.0) float percent);
     }
 }

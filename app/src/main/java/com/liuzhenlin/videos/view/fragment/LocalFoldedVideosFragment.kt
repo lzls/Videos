@@ -28,9 +28,7 @@ import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
-import com.liuzhenlin.simrv.Utils
 import com.liuzhenlin.swipeback.SwipeBackFragment
-import com.liuzhenlin.swipeback.SwipeBackLayout
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -226,12 +224,6 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
         mRenameButton.setOnClickListener(this)
         mShareButton.setOnClickListener(this)
         mDetailsButton.setOnClickListener(this)
-
-        contentView.post {
-            if (Utils.isLayoutRtl(contentView)) {
-                swipeBackLayout.enabledEdges = SwipeBackLayout.EDGE_RIGHT
-            }
-        }
     }
 
     override fun onBackPressed() =
