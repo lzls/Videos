@@ -25,9 +25,14 @@ import com.liuzhenlin.common.utils.Utils;
 
 public class WebService extends Service {
 
-    public static void bind(@NonNull Context context, @NonNull Consumer<IWebService> onBindAction) {
+    public static void bind(@NonNull Context context, @Nullable Consumer<IWebService> onBindAction) {
         ServiceBindHelper.bind(context, WebService.class,
-                service -> onBindAction.accept(IWebService.Stub.asInterface(service)));
+                onBindAction == null ?
+                        null : service -> onBindAction.accept(IWebService.Stub.asInterface(service)));
+    }
+
+    public static void unbind(@NonNull Context context) {
+        ServiceBindHelper.unbind(context, WebService.class);
     }
 
     @Nullable
