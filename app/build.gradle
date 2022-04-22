@@ -48,7 +48,7 @@ dependencies {
     implementation 'com.sun.mail:android-mail:1.6.7'
     implementation 'com.sun.mail:android-activation:1.6.7'
 
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.8.1'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.9.1'
 
-    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.0'
+    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.5'
 }
