@@ -159,6 +159,10 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
                     }
                 }
             };
+
+            if (mPlaybackView.isInFullscreen()) {
+                enterFullscreen();
+            }
         }
     }
 
@@ -291,6 +295,15 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
         // and may be still referenced from YoutubePlaybackService.
         if (mContentView != null) {
             mContentView.removeView(mPlaybackView);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mPlaybackView.canGoBack()) {
+            mPlaybackView.goBack();
+        } else {
+            super.onBackPressed();
         }
     }
 

@@ -29,6 +29,8 @@ import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
 import com.liuzhenlin.videos.web.player.WebPlayer;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getPlaylistIdFromWatchOrShareUrl;
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIdFromWatchUrl;
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWatchOrShareUrl;
@@ -118,6 +120,20 @@ public class YoutubePlaybackView extends PlayerWebView {
     }
 
     @Override
+    public boolean canGoBack() {
+        return super.canGoBack() || mChromeClient.mCustomViewCallback != null;
+    }
+
+    @Override
+    public void goBack() {
+        if (mChromeClient.mCustomViewCallback != null) {
+            mChromeClient.mCustomViewCallback.onCustomViewHidden();
+        } else {
+            super.goBack();
+        }
+    }
+
+    @Override
     public void onVisibilityAggregated(boolean isVisible) {
         super.onVisibilityAggregated(isVisible);
         if (mVisible != isVisible) {
@@ -196,8 +212,7 @@ public class YoutubePlaybackView extends PlayerWebView {
             if (mCustomView == null) {
                 mCustomViewCallback = callback;
                 mCustomView = view;
-                setVisibility(View.GONE);
-                ((ViewGroup) getParent()).addView(view, 0);
+                addView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 
                 @Nullable YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
                 if (ytPlaybackActivity != null) {
@@ -209,15 +224,9 @@ public class YoutubePlaybackView extends PlayerWebView {
         @Override
         public void onHideCustomView() {
             if (mCustomView != null) {
-                if (mCustomViewCallback != null) {
-                    mCustomViewCallback.onCustomViewHidden();
-                    mCustomViewCallback = null;
-                }
-                if (mCustomView.getParent() != null) {
-                    ((ViewGroup) mCustomView.getParent()).removeView(mCustomView);
-                    setVisibility(View.VISIBLE);
-                }
+                removeView(mCustomView);
                 mCustomView = null;
+                mCustomViewCallback = null;
 
                 @Nullable YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
                 if (ytPlaybackActivity != null) {
