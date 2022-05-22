@@ -30,6 +30,7 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewStub;
+import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.Interpolator;
 
@@ -2639,7 +2640,15 @@ public class SlidingDrawerLayout extends ViewGroup {
         if (ss.openDrawerGravity != Gravity.NO_GRAVITY) {
             // Wait for the drawer on the specified side to be correctly resolved by this view
             // as it may depends on the current layout direction.
-            post(() -> openDrawer(ss.openDrawerGravity, false));
+            getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    if (Utils.isLayoutValid(SlidingDrawerLayout.this)) {
+                        getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        openDrawer(ss.openDrawerGravity, false);
+                    }
+                }
+            });
         }
     }
 

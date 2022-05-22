@@ -97,4 +97,11 @@ public class Utils {
     public static boolean isLayoutRtl(@NonNull View view) {
         return ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL;
     }
+
+    /**
+     * @return {@code true} if the view is laid-out and not about to do another layout.
+     */
+    public static boolean isLayoutValid(@NonNull View view) {
+        return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+    }
 }

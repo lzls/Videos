@@ -49,7 +49,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
-import com.liuzhenlin.circularcheckbox.Utils;
 import com.liuzhenlin.common.adapter.BaseAdapter2;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
@@ -62,6 +61,7 @@ import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
+import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.view.ScrollDisableListView;
 import com.liuzhenlin.common.view.ScrollDisableViewPager;
 import com.liuzhenlin.common.view.SwipeRefreshLayout;
@@ -230,7 +230,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         mHomeAsUpIndicator.setOnClickListener(this);
 
         mTitleText = mActionBar.findViewById(R.id.text_title);
-        mTitleText.post(() -> {
+        Utils.postOnLayoutValid(mTitleText, () -> {
             ViewGroup.MarginLayoutParams hauilp = (ViewGroup.MarginLayoutParams)
                     mHomeAsUpIndicator.getLayoutParams();
             ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
@@ -285,7 +285,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                     mActionButton.setId(R.id.btn_link);
                     mActionButton.setImageResource(R.drawable.ic_link);
                     mSlidingDrawerLayout.setContentSensitiveEdgeSize(
-                            Utils.dp2px(MainActivity.this, SlidingDrawerLayout.DEFAULT_EDGE_SIZE));
+                            DensityUtils.dp2px(app, SlidingDrawerLayout.DEFAULT_EDGE_SIZE));
                 }
             }
         };

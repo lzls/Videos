@@ -21,6 +21,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebSettings;
 
@@ -166,6 +167,31 @@ public class Utils {
             }
         } else {
             action.run();
+        }
+    }
+
+    /**
+     * Causes the Runnable to execute once the {@code view} is laid out.
+     * The runnable will be run on the user interface thread.
+     */
+    public static void postOnLayoutValid(@NonNull View view, @NonNull Runnable action) {
+        Handler uiHandler = view.getHandler();
+        if (uiHandler != null && Thread.currentThread() == uiHandler.getLooper().getThread()) {
+            if (UiUtils.isLayoutValid(view)) {
+                action.run();
+            } else {
+                view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        if (UiUtils.isLayoutValid(view)) {
+                            view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                            action.run();
+                        }
+                    }
+                });
+            }
+        } else {
+            view.post(() -> postOnLayoutValid(view, action));
         }
     }
 

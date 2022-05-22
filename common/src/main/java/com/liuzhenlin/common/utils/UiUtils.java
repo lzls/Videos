@@ -391,4 +391,11 @@ public class UiUtils {
         }
         return null;
     }
+
+    /**
+     * @return {@code true} if the view is laid-out and not about to do another layout.
+     */
+    public static boolean isLayoutValid(@NonNull View view) {
+        return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+    }
 }
