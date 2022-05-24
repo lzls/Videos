@@ -75,7 +75,7 @@ public abstract class ImageLoadingListAdapter<VH extends RecyclerView.ViewHolder
 
     @CallSuper
     @Override
-    public void onViewDetachedFromWindow(@NonNull VH holder) {
+    public void onViewRecycled(@NonNull VH holder) {
         cancelLoadingItemImages(holder);
     }
 
