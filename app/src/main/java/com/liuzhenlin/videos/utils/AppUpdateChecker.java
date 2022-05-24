@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
+import static com.liuzhenlin.common.utils.Utils.postOnLayoutValid;
 import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
 /**
@@ -296,7 +297,7 @@ public final class AppUpdateChecker {
 
         TextView tv = view.findViewById(R.id.text_updateLog);
         tv.setText(mUpdateLog);
-        tv.post(() -> TextViewUtils.setHangingIndents(tv, 4));
+        postOnLayoutValid(tv, () -> TextViewUtils.setHangingIndents(tv, 4));
 
         View.OnClickListener listener = v -> {
             switch (v.getId()) {

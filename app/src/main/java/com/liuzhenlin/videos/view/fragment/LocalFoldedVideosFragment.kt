@@ -25,6 +25,7 @@ import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.listener.OnBackPressedListener
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.UiUtils
+import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
@@ -406,7 +407,7 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                 mOptionsFrameTopDivider.visibility = View.VISIBLE
                 mVideoOptionsFrame.visibility = View.VISIBLE
 
-                mRecyclerView.post {
+                Utils.postOnLayoutValid(mRecyclerView.parent as View) {
                     val itemBottom = (v.parent as View).bottom
                     val listHeight = mRecyclerView.height
                     if (itemBottom > listHeight) {

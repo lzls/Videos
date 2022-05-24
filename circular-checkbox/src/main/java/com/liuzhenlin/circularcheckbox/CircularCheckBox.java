@@ -346,8 +346,12 @@ public class CircularCheckBox extends View implements Checkable {
 
                     } else if (mPostedSetCheckedRunnable == null) {
                         mPostedSetCheckedRunnable = () -> {
-                            mPostedSetCheckedRunnable = null;
-                            startCheckedAnimation();
+                            if (mStrokeInnerCircleScale > 0) {
+                                mPostedSetCheckedRunnable = null;
+                                startCheckedAnimation();
+                            } else {
+                                post(mPostedSetCheckedRunnable);
+                            }
                         };
                         post(mPostedSetCheckedRunnable);
                     }

@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -74,19 +75,34 @@ public class GalleryViewPager extends ViewPager {
                         } else {
                             duration = baseDuration * 2;
                         }
-                        if (ViewCompat.isLaidOut(image)) {
-                            image.startImageOverScrollAndSpringBack(dx, 0, (int) duration);
-                        } else {
-                            image.post(() -> {
-                                if (mImageOverScrollEnabled && ViewCompat.isAttachedToWindow(image)) {
-                                    image.startImageOverScrollAndSpringBack(dx, 0, (int) duration);
-                                }
-                            });
-                        }
+                        startImageOverScrollAndSpringBack(image, dx, 0, (int) duration);
                     }
                 }
             }
             mLastSelectedPageIndex = position;
+        }
+
+        void startImageOverScrollAndSpringBack(
+                GestureImageView image, float dx, float dy, int duration) {
+            if (isLayoutValid(image)) {
+                image.startImageOverScrollAndSpringBack(dx, dy, duration);
+            } else {
+                image.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        if (isLayoutValid(image)) {
+                            if (mImageOverScrollEnabled) {
+                                image.startImageOverScrollAndSpringBack(dx, dy, duration);
+                            }
+                            image.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        }
+                    }
+                });
+            }
+        }
+
+        boolean isLayoutValid(GestureImageView view) {
+            return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
         }
     };
 

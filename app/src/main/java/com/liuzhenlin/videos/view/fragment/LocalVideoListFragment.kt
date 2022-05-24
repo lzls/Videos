@@ -878,7 +878,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
                 mTitleWindowFrame = View.inflate(v.context,
                         R.layout.popup_window_main_title, null) as FrameLayout
-                mTitleWindowFrame!!.post(object : Runnable {
+                Utils.postOnLayoutValid(mTitleWindowFrame!!, object : Runnable {
                     init {
                         mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
                                 .setOnClickListener(this@LocalVideoListFragment)
@@ -915,7 +915,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
                 mItemOptionsWindow!!.animationStyle = R.style.WindowAnimations_BottomPopupWindow
                 mItemOptionsWindow!!.showAtLocation(v, Gravity.BOTTOM, 0, 0)
 
-                iowcv.post(object : Runnable {
+                Utils.postOnLayoutValid(iowcv, object : Runnable {
                     val selection = v.tag as Int
 
                     init {
@@ -945,7 +945,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
                         if (itemBottom <= rvpLP.height) {
                             notifyItemsToShowCheckBoxes()
                         } else {
-                            mRecyclerView.post {
+                            Utils.postOnLayoutValid(rvParent) {
                                 // 使长按的itemView在RecyclerView高度改变后可见
                                 mRecyclerView.scrollBy(0, itemBottom - rvpLP.height)
 

@@ -729,7 +729,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         if (text == null) return;
         tv.setText(text);
 
-        tv.post(() -> {
+        Utils.postOnLayoutValid(tv, () -> {
             TextViewUtils.setHangingIndents(tv, 4);
 
             final String newText = tv.getText().toString();
@@ -747,7 +747,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
             tv.setText(ss);
 
-            tv.post(() -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
+            Utils.postOnLayoutValid(tv,
+                    () -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
         });
 
         Dialog dialog = new AppCompatDialog(_this, R.style.DialogStyle_MinWidth_NoTitle);
