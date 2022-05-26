@@ -15,11 +15,11 @@ import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.utils.prefs.PrefsHelper;
 import com.liuzhenlin.videos.web.player.Constants;
+import com.liuzhenlin.videos.web.player.Constants.Keys;
 
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_PLAYLIST_INFO_RETRIEVED;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_INFO_RETRIEVED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_PLAYLIST;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_PLAYLIST_INDEX;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_GET_VID;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_READY;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_STATE_CHANGE;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_ERR;
@@ -149,11 +149,11 @@ public final class Youtube {
         }
 
         public static String fastRewind() {
-            return "javascript:player.seekTo(player.getCurrentTime() + Number(-15), true);";
+            return "javascript:player.seekTo(player.getCurrentTime() -15, true);";
         }
 
         public static String fastForward() {
-            return "javascript:player.seekTo(player.getCurrentTime() + Number(15), true);";
+            return "javascript:player.seekTo(player.getCurrentTime() + 15, true);";
         }
 
         public static String setPlaybackQuality(String quality) {
@@ -183,16 +183,29 @@ public final class Youtube {
             return "javascript:player.playVideoAt(" + index + ");";
         }
 
-        public static String getPlaylistIndex() {
-            return "javascript:" + JSI_ON_GET_PLAYLIST_INDEX + "(player.getPlaylistIndex());";
+        public static String getPlaylistInfo() {
+            return "javascript:\n" +
+                    "var playlist = player.getPlaylist();\n" +
+                    "var playlistIndex = player.getPlaylistIndex();\n" +
+                    "var infoObj = new Object();\n" +
+                    "infoObj['" + Keys.PLAYLIST + "'] = playlist;\n" +
+                    "infoObj['" + Keys.PLAYLIST_INDEX + "'] = playlistIndex;\n" +
+                    JSI_ON_EVENT + "(" + JSE_PLAYLIST_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
         }
 
-        public static String getPlaylist() {
-            return "javascript:" + JSI_ON_GET_PLAYLIST + "(player.getPlaylist());";
-        }
-
-        public static String getVideoId() {
-            return "javascript:" + JSI_ON_GET_VID + "(player.getVideoData()['video_id']);";
+        public static String getVideoInfo() {
+            return "javascript:\n" +
+                    "var videoId = player.getVideoData()['video_id'];\n" +
+                    "var fduration = player.getDuration() * 1000;\n" +
+                    "var duration = Math.round(fduration);\n" +
+                    "var bufferedPosition = Math.round(fduration * player.getVideoLoadedFraction());\n" +
+                    "var currentPosition = Math.round(player.getCurrentTime() * 1000);\n" +
+                    "var infoObj = new Object();\n" +
+                    "infoObj['" + Keys.ID + "'] = videoId;\n" +
+                    "infoObj['" + Keys.DURATION + "'] = duration;\n" +
+                    "infoObj['" + Keys.BUFFERED_POSITION + "'] = bufferedPosition;\n" +
+                    "infoObj['" + Keys.CURRENT_POSITION + "'] = currentPosition;\n" +
+                    JSI_ON_EVENT + "(" + JSE_VIDEO_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
         }
     }
 
@@ -228,7 +241,7 @@ public final class Youtube {
 
         public static String skipAd() {
             return "javascript:\n" +
-                    "if (document.querySelectorAll('.ad-showing').length > 0) {\n" +
+                    "if (document.querySelector('.ad-showing') != null) {\n" +
                     "  var video = document.querySelector('video');\n" +
                     "  if (video != null) video.currentTime = video.duration;\n" +
                     "}";
@@ -369,38 +382,56 @@ public final class Youtube {
                     "}";
         }
 
-        public static String getPlaylistIndex() {
-            return "javascript:\n" +
-                    "var e = document.getElementsByClassName('playlist-content section');\n" +
-                    "if (e.length > 0) {\n" +
-                    "  e = e[0].querySelectorAll('ytm-playlist-panel-video-renderer');\n" +
-                    "  for (let i = e.length - 1; i >= 0; i--) {\n" +
-                    "    if (e[i].getAttribute('selected') == 'true') {\n" +
-                    "      " + JSI_ON_GET_PLAYLIST_INDEX + "(i);\n" +
-                    "      break;\n" +
+        private static String jsFunGetPlaylistIndex() {
+            return "function getPlaylistIndex() {\n" +
+                    "  var e = document.getElementsByClassName('playlist-content section');\n" +
+                    "  if (e.length > 0) {\n" +
+                    "    e = e[0].querySelectorAll('ytm-playlist-panel-video-renderer');\n" +
+                    "    for (let i = e.length - 1; i >= 0; i--) {\n" +
+                    "      if (e[i].getAttribute('selected') == 'true') {\n" +
+                    "        return i;\n" +
+                    "      }\n" +
                     "    }\n" +
+                    "  } else {\n" +
+                    "    return 0;\n" +
                     "  }\n" +
-                    "} else {\n" +
-                    "  " + JSI_ON_GET_PLAYLIST_INDEX + "(0);\n" +
+                    "  return -1;\n" +
                     "}";
         }
 
-        public static String getPlaylist() {
-            return "javascript:\n" +
-                    "var e = document.getElementsByClassName('playlist-content section');\n" +
-                    "if (e.length > 0) {\n" +
-                    "  e = e[0].getElementsByClassName('compact-media-item');\n" +
+        private static String jsFunGetPlaylist() {
+            return "function getPlaylist() {\n" +
+                    "  var e = document.getElementsByClassName('playlist-content section');\n" +
                     "  if (e.length > 0) {\n" +
-                    "    var videos = new Array();\n" +
-                    "    for (let i = e.length - 1; i >= 0; i--) {\n" +
-                    "      let href = e[i].querySelector('a').href;\n" +
-                    "      videos[i] = href.substring(href.indexOf('v=') + 2).split('&')[0];\n" +
+                    "    e = e[0].getElementsByClassName('compact-media-item');\n" +
+                    "    if (e.length > 0) {\n" +
+                    "      var videos = new Array();\n" +
+                    "      for (let i = e.length - 1; i >= 0; i--) {\n" +
+                    "        let href = e[i].querySelector('a').href;\n" +
+                    "        videos[i] = href.substring(href.indexOf('v=') + 2).split('&')[0];\n" +
+                    "      }\n" +
+                    "      return videos;\n" +
                     "    }\n" +
-                    "    " + JSI_ON_GET_PLAYLIST + "(videos);\n" +
+                    "  } else {\n" +
+                    "    " + jsFunGetVideoId() + "\n" +
+                    "    return [getVideoId()];\n" +
                     "  }\n" +
-                    "} else {\n" +
-                    "  " + jsFunGetVideoId() + "\n" +
-                    "  " + JSI_ON_GET_PLAYLIST + "([getVideoId()]);\n" +
+                    "  return null;\n" +
+                    "}";
+        }
+
+        private static String jsFunGetPlaylistId() {
+            return "function getPlaylistId() {\n" +
+                    "  var e = document.getElementsByClassName('playlist-content section');\n" +
+                    "  if (e.length > 0) {\n" +
+                    "    e = e[0].querySelector('div.compact-media-item');\n" +
+                    "    if (e != null) {\n" +
+                    "      let href = e.querySelector('a').href;\n" +
+                    "      let pid = href.substring(href.indexOf('list=') + 5).split('&')[0];\n" +
+                    "      return pid;\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "  return null;\n" +
                     "}";
         }
 
@@ -415,16 +446,71 @@ public final class Youtube {
                     + " + embedUrlInfix.length).split('?')[0];\n" +
                     "    return vid;\n" +
                     "  }\n" +
+                    "  return null;\n" +
                     "}";
         }
 
-        public static String getVideoId() {
-            return "javascript:\n" +
-                    jsFunGetVideoId() + "\n" +
-                    JSI_ON_GET_VID + "(getVideoId());";
+        private static String jsFunGetVideoDuration() {
+            return "function getVideoDuration() {\n" +
+                    "  var v = document.querySelector('video');\n" +
+                    "  return v != null ? Math.round(v.duration * 1000) : 0;\n" +
+                    "}";
         }
 
-        public String requestFullScreen() {
+        private static String jsFunGetVideoBufferedPosition() {
+            return "function getVideoBufferedPosition() {\n" +
+                    "  var v = document.querySelector('video');\n" +
+                    "  if (v == null) return 0;\n" +
+                    "  var bufferedPosition = 0;\n" +
+                    "  for (let i = v.buffered.length - 1; i >= 0; i--) {;\n" +
+                    "    let end = v.buffered.end(i);\n" +
+                    "    if (end > bufferedPosition) bufferedPosition = end;\n" +
+                    "  }\n" +
+                    "  return Math.round(bufferedPosition * 1000);\n" +
+                    "}";
+        }
+
+        private static String jsFunGetVideoCurrentPosition() {
+            return "function getVideoCurrentPosition() {\n" +
+                    "  var v = document.querySelector('video');\n" +
+                    "  return v != null ? Math.round(v.currentTime * 1000) : 0;\n" +
+                    "}";
+        }
+
+        public static String getPlaylistInfo() {
+            return "javascript:\n" +
+                    jsFunGetPlaylistId() + "\n" +
+                    jsFunGetPlaylist() + "\n" +
+                    jsFunGetPlaylistIndex() + "\n" +
+                    "var playlistId = getPlaylistId();\n" +
+                    "var playlist = getPlaylist();\n" +
+                    "var playlistIndex = getPlaylistIndex();\n" +
+                    "var infoObj = new Object();\n" +
+                    "infoObj['" + Keys.ID + "'] = playlistId;\n" +
+                    "infoObj['" + Keys.PLAYLIST + "'] = playlist;\n" +
+                    "infoObj['" + Keys.PLAYLIST_INDEX + "'] = playlistIndex;\n" +
+                    JSI_ON_EVENT + "(" + JSE_PLAYLIST_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
+        }
+
+        public static String getVideoInfo() {
+            return "javascript:\n" +
+                    jsFunGetVideoId() + "\n" +
+                    jsFunGetVideoDuration() + "\n" +
+                    jsFunGetVideoBufferedPosition() + "\n" +
+                    jsFunGetVideoCurrentPosition() + "\n" +
+                    "var videoId = getVideoId();\n" +
+                    "var duration = getVideoDuration();\n" +
+                    "var bufferedPosition = getVideoBufferedPosition();\n" +
+                    "var currentPosition = getVideoCurrentPosition();\n" +
+                    "var infoObj = new Object();\n" +
+                    "infoObj['" + Keys.ID + "'] = videoId;\n" +
+                    "infoObj['" + Keys.DURATION + "'] = duration;\n" +
+                    "infoObj['" + Keys.BUFFERED_POSITION + "'] = bufferedPosition;\n" +
+                    "infoObj['" + Keys.CURRENT_POSITION + "'] = currentPosition;\n" +
+                    JSI_ON_EVENT + "(" + JSE_VIDEO_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
+        }
+
+        public static String requestFullscreen() {
             return "javascript: var v = document.querySelector('video');\n" +
                     "if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
                     "else if ('requestFullscreen' in v) v.requestFullscreen();\n" +

@@ -15,11 +15,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.SystemClock;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import androidx.annotation.NonNull;
@@ -39,6 +42,8 @@ import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.web.R;
+import com.liuzhenlin.videos.web.bean.Playlist;
+import com.liuzhenlin.videos.web.bean.Video;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
 import com.liuzhenlin.videos.web.player.Settings;
@@ -73,7 +78,11 @@ public class YoutubePlaybackService extends Service {
     private int mPlaylistSize;
     private int mPlaylistIndex;
 
-    /*package*/ int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
+    private volatile Video mVideo = EMPTY_VIDEO;
+    private static final Video EMPTY_VIDEO = new Video();
+
+    /*package*/ volatile int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
+    private int mLastPlayingStatus = mPlayingStatus;
 
     private boolean mReplayVideo;
     private boolean mReplayPlaylist;
@@ -358,14 +367,12 @@ public class YoutubePlaybackService extends Service {
         mContext.startActivity(fullscreenIntent);
     }
 
-    /*package*/ void onGetPlaylist(String[] vids) {
-        if (vids != null) {
-            mPlaylistSize = vids.length;
+    /*package*/ void onGetPlaylistInfo(Playlist playlist) {
+        if (playlist != null) {
+            String[] videoIds = playlist.getVideoIds();
+            mPlaylistSize = videoIds != null ? videoIds.length : 0;
+            mPlaylistIndex = playlist.getVideoIndex();
         }
-    }
-
-    /*package*/ void onGetPlaylistIndex(int playlistIndex) {
-        mPlaylistIndex = playlistIndex;
     }
 
     /*package*/ void onPlayerReady() {
@@ -394,11 +401,8 @@ public class YoutubePlaybackService extends Service {
             case Youtube.PlayingStatus.PLAYING:
                 mPlayPauseBtnImgSrc = R.drawable.ic_pause_white_24dp;
                 mPlayPauseBtnContentDesc = R.string.pause;
-                refreshNotification(true);
-                mPlayer.requestGetVideoId();
 //                if (mLinkType == Constants.LinkType.PLAYLIST) {
-//                    mPlayer.requestGetPlaylist();
-//                    mPlayer.requestGetPlaylistIndex();
+//                    mPlayer.requestGetPlaylistInfo();
 //                }
 
                 mPlayer.skipAd();
@@ -412,7 +416,6 @@ public class YoutubePlaybackService extends Service {
             case Youtube.PlayingStatus.PAUSED:
                 mPlayPauseBtnImgSrc = R.drawable.ic_play_white_24dp;
                 mPlayPauseBtnContentDesc = R.string.play;
-                refreshNotification(true);
                 break;
             case Youtube.PlayingStatus.ENDED:
                 if (mLinkType == Constants.LinkType.PLAYLIST) {
@@ -425,7 +428,6 @@ public class YoutubePlaybackService extends Service {
                             mReplayPlaylist = true;
                             mPlayPauseBtnImgSrc = R.drawable.ic_replay_white_24dp;
                             mPlayPauseBtnContentDesc = R.string.replay;
-                            refreshNotification(true);
                             break;
                     }
                 } else {
@@ -434,26 +436,38 @@ public class YoutubePlaybackService extends Service {
                     } else {
                         if (Settings.shouldFinishServiceOnPlaylistEnded()) {
                             stop();
+                            return;
                         } else {
                             mReplayVideo = true;
                             mPlayPauseBtnImgSrc = R.drawable.ic_replay_white_24dp;
                             mPlayPauseBtnContentDesc = R.string.replay;
-                            refreshNotification(true);
                         }
                     }
                 }
                 break;
         }
+        mLastPlayingStatus = mPlayingStatus;
         mPlayingStatus = playingStatus;
+        mPlayer.requestGetVideoInfo();
     }
 
-    /*package*/ void onGetVideoId(String videoId) {
-        if (videoId == null) {
-            videoId = "";
+    /*package*/ void onGetVideoInfo(Video video) {
+        if (video == null) {
+            video = EMPTY_VIDEO;
         }
-        if (!videoId.equals(mVideoId)) {
+        boolean changed = mLastPlayingStatus != mPlayingStatus
+                || mVideo.getDuration() != video.getDuration()
+                || mVideo.getBufferedPosition() != video.getBufferedPosition()
+                || mVideo.getCurrentPosition() != video.getCurrentPosition();
+        mLastPlayingStatus = mPlayingStatus;
+        mVideo = video;
+        String videoId = Utils.emptyIfStringNull(video.getId());
+        if (!mVideoId.equals(videoId)) {
             mVideoId = videoId;
+            changed = true;
             refreshNotification(false);
+        }
+        if (changed) {
             refreshNotification(true);
         }
     }
@@ -566,6 +580,19 @@ public class YoutubePlaybackService extends Service {
                 R.id.btn_previous,
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.PREV), 0));
+
+        // Chronometer
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            long remaining = loadInfo ? mVideo.getDuration() - mVideo.getCurrentPosition() : 0;
+            if (remaining > 0) {
+                viewBig.setLong(R.id.countdownChronometer,
+                        "setBase", SystemClock.elapsedRealtime() + remaining);
+                viewBig.setBoolean(R.id.countdownChronometer,
+                        "setStarted", mPlayingStatus == Youtube.PlayingStatus.PLAYING);
+            }
+        } else {
+            viewBig.setViewVisibility(R.id.countdownChronometer, View.GONE);
+        }
 
         Intent it = new Intent(mContext, YoutubePlaybackActivity.class)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |

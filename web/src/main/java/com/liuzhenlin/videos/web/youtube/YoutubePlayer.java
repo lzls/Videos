@@ -109,17 +109,12 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     @Override
-    public void requestGetPlaylist() {
-        mWeb.loadUrl(Youtube.JsInterface.getPlaylist());
+    public void requestGetPlaylistInfo() {
+        mWeb.loadUrl(Youtube.JsInterface.getPlaylistInfo());
     }
 
     @Override
-    public void requestGetPlaylistIndex() {
-        mWeb.loadUrl(Youtube.JsInterface.getPlaylistIndex());
-    }
-
-    @Override
-    public void requestGetVideoId() {
-        mWeb.loadUrl(Youtube.JsInterface.getVideoId());
+    public void requestGetVideoInfo() {
+        mWeb.loadUrl(Youtube.JsInterface.getVideoInfo());
     }
 }

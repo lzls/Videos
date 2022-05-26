@@ -104,17 +104,12 @@ public class YoutubeIFramePlayer extends WebPlayer {
     }
 
     @Override
-    public void requestGetPlaylist() {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.getPlaylist());
+    public void requestGetPlaylistInfo() {
+        mWeb.loadUrl(Youtube.IFrameJsInterface.getPlaylistInfo());
     }
 
     @Override
-    public void requestGetPlaylistIndex() {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.getPlaylistIndex());
-    }
-
-    @Override
-    public void requestGetVideoId() {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.getVideoId());
+    public void requestGetVideoInfo() {
+        mWeb.loadUrl(Youtube.IFrameJsInterface.getVideoInfo());
     }
 }

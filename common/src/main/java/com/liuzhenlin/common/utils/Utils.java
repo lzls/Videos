@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -397,5 +398,15 @@ public class Utils {
             default:
                 throw new IllegalArgumentException("Unknown night mode " + mode + " was supplied.");
         }
+    }
+
+    @Nullable
+    public static String nullIfStringEmpty(@Nullable String str) {
+        return TextUtils.isEmpty(str) ? null : str;
+    }
+
+    @NonNull
+    public static String emptyIfStringNull(@Nullable String str) {
+        return str == null ? "" : str;
     }
 }

@@ -51,4 +51,19 @@ public final class Constants {
         public static final String PLAYLIST_ID = "playlistId";
         public static final String VIDEO_INDEX = "videoIndex";
     }
+
+    public static final class Keys {
+        private Keys() {
+        }
+
+        public static final String ID = "id";
+        public static final String WIDTH = "width";
+        public static final String HEIGHT = "height";
+        public static final String DURATION = "duration";
+        public static final String BUFFERED_POSITION = "bufferedPosition";
+        public static final String CURRENT_POSITION = "currentPosition";
+
+        public static final String PLAYLIST = "playlist";
+        public static final String PLAYLIST_INDEX = "playlistIndex";
+    }
 }

@@ -54,9 +54,7 @@ public abstract class WebPlayer {
 
     public abstract void playVideoAt(int index);
 
-    public abstract void requestGetPlaylist();
+    public abstract void requestGetPlaylistInfo();
 
-    public abstract void requestGetPlaylistIndex();
-
-    public abstract void requestGetVideoId();
+    public abstract void requestGetVideoInfo();
 }
