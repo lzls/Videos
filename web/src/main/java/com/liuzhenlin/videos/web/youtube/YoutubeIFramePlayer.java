@@ -109,7 +109,7 @@ public class YoutubeIFramePlayer extends WebPlayer {
     }
 
     @Override
-    public void requestGetVideoInfo() {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.getVideoInfo());
+    public void requestGetVideoInfo(boolean refreshNotificationOnInfoRetrieved) {
+        mWeb.loadUrl(Youtube.IFrameJsInterface.getVideoInfo(refreshNotificationOnInfoRetrieved));
     }
 }

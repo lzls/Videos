@@ -65,5 +65,7 @@ public final class Constants {
 
         public static final String PLAYLIST = "playlist";
         public static final String PLAYLIST_INDEX = "playlistIndex";
+
+        public static final String REFRESH_NOTIFICATION = "refreshNotification";
     }
 }

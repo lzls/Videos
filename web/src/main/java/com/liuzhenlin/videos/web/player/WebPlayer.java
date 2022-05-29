@@ -56,5 +56,5 @@ public abstract class WebPlayer {
 
     public abstract void requestGetPlaylistInfo();
 
-    public abstract void requestGetVideoInfo();
+    public abstract void requestGetVideoInfo(boolean refreshNotificationOnInfoRetrieved);
 }

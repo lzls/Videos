@@ -7,10 +7,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.videos.web.VideosJsInterface;
 import com.liuzhenlin.videos.web.bean.Playlist;
 import com.liuzhenlin.videos.web.bean.Video;
+import com.liuzhenlin.videos.web.player.Constants.Keys;
 
 public class YoutubeJsInterface extends VideosJsInterface {
 
@@ -95,9 +97,16 @@ public class YoutubeJsInterface extends VideosJsInterface {
     @JavascriptInterface
     public void onRetrieveVideoInfo(String json) {
         Video video = new Gson().fromJson(json, Video.class);
-        Executors.MAIN_EXECUTOR.execute(
-                () -> YoutubePlaybackService.peekIfNonnullThenDo(
-                        service -> service.onGetVideoInfo(video)));
+        boolean refreshNotification =
+                JsonParser.parseString(json).getAsJsonObject()
+                        .get(Keys.REFRESH_NOTIFICATION).getAsBoolean();
+        Executors.MAIN_EXECUTOR.execute(() -> {
+            if (YoutubePlaybackActivity.get() != null) {
+                YoutubePlaybackActivity.get().onGetVideoInfo(video);
+            }
+            YoutubePlaybackService.peekIfNonnullThenDo(
+                    service -> service.onGetVideoInfo(video, refreshNotification));
+        });
     }
 
     @JavascriptInterface

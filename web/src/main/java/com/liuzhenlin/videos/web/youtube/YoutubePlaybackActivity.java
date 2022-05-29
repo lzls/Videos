@@ -12,8 +12,10 @@ import android.util.Rational;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
 import androidx.appcompat.app.PlatformPendingTransitionOverrides;
@@ -25,7 +27,9 @@ import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.SystemBarUtils;
+import com.liuzhenlin.common.view.AspectRatioFrameLayout;
 import com.liuzhenlin.videos.web.R;
+import com.liuzhenlin.videos.web.bean.Video;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
 import com.liuzhenlin.videos.web.player.WebPlayer;
 
@@ -49,8 +53,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     private static YoutubePlaybackActivity sInstance;
     private AppCompatDelegateWrapper mDelegate;
 
-    private ViewGroup mContentView;
-    private PlayerWebView mPlaybackView;
+    private AspectRatioFrameLayout mPlaybackViewContainer;
+    @Synthetic PlayerWebView mPlaybackView;
 
     @Synthetic YoutubePlaybackService mService;
 
@@ -61,10 +65,53 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     private String mLockOrientation;
     private String mUnlockOrientation;
 
-    private Handler mHandler;
+    @Synthetic Handler mHandler;
     private final Runnable mHideLockUnlockOrientationButtonRunnable =
             this::hideLockUnlockOrientationButton;
     private static final int DELAY_TIME_HIDE_LOCK_UNLOCK_ORIENTATION_BUTTON = 2500;
+
+    private ProgressBar mVideoProgressInPiP;
+    private RefreshVideoProgressInPiPTask mRefreshVideoProgressInPiPTask;
+    private final class RefreshVideoProgressInPiPTask implements Runnable {
+        RefreshVideoProgressInPiPTask() {
+        }
+
+        @Override
+        public void run() {
+            WebPlayer player = mService.getWebPlayer();
+            if (player != null) {
+                player.requestGetVideoInfo(false);
+            }
+        }
+
+        void execute() {
+            cancel();
+            run();
+        }
+
+        void cancel() {
+            if (mHandler != null) {
+                mHandler.removeCallbacks(this);
+            }
+        }
+    }
+
+    /*package*/ void onGetVideoInfo(Video video) {
+        if (mRefreshVideoProgressInPiPTask == null || mService == null) {
+            return;
+        }
+        if (video == null) {
+            video = YoutubePlaybackService.EMPTY_VIDEO;
+        }
+        long progress = video.getCurrentPosition();
+        if (mService.isPlaying()) {
+            mRefreshVideoProgressInPiPTask.cancel();
+            getHandler().postDelayed(mRefreshVideoProgressInPiPTask, 1000 - progress % 1000);
+        }
+        mVideoProgressInPiP.setMax((int) video.getDuration());
+        mVideoProgressInPiP.setSecondaryProgress((int) video.getBufferedPosition());
+        mVideoProgressInPiP.setProgress((int) progress);
+    }
 
     private Handler getHandler() {
         if (mHandler == null) {
@@ -134,15 +181,16 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
             // Showing Dialog or any kind of child Window from JS will need an Activity instance
             // with a valid Window token.
             setPlaybackViewBaseContext(this);
-            mContentView = findViewById(R.id.content);
-            mContentView.addView(mPlaybackView, 0);
+            mPlaybackViewContainer = findViewById(R.id.videoViewContainer);
+            mPlaybackViewContainer.addView(mPlaybackView, 0);
 
-            if (mService.mPlayingStatus == Youtube.PlayingStatus.PLAYING
-                    || mService.mPlayingStatus == Youtube.PlayingStatus.BUFFERRING) {
+            if (mService.isPlaying()) {
                 ScreenUtils.setKeepWindowBright(getWindow(), true);
             }
 
-            mLockUnlockOrientationButton = mContentView.findViewById(R.id.btn_lockUnlockOrientation);
+            mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
+
+            mLockUnlockOrientationButton = findViewById(R.id.btn_lockUnlockOrientation);
             mLockUnlockOrientationButton.setOnClickListener(
                     v -> setScreenOrientationLocked(!mOrientationLocked));
             mOnOrientationChangeListener = new OnOrientationChangeListener(this) {
@@ -293,8 +341,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
         setPlaybackViewBaseContext(getApplicationContext());
         // Removes the player view in case a memory leak as it is part of the view hierarchy
         // and may be still referenced from YoutubePlaybackService.
-        if (mContentView != null) {
-            mContentView.removeView(mPlaybackView);
+        if (mPlaybackViewContainer != null) {
+            mPlaybackViewContainer.removeView(mPlaybackView);
         }
     }
 
@@ -335,8 +383,23 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
             updatePictureInPictureActions(mService.mPlayingStatus);
             setOnOrientationChangeListenerEnabled(false);
             showLockUnlockOrientationButton(false);
+            if (Build.VERSION.SDK_INT >= PictureInPictureHelper.SDK_VERSION_SUPPORTS_RESIZABLE_PIP) {
+                PictureInPictureHelper.Adapter pipHelperAdapter = getPipHelper().getAdapter();
+                //noinspection ConstantConditions
+                mPlaybackViewContainer.setAspectRatio((float)
+                        pipHelperAdapter.getVideoWidth() / pipHelperAdapter.getVideoHeight());
+                mVideoProgressInPiP.setVisibility(View.VISIBLE);
+                mRefreshVideoProgressInPiPTask = new RefreshVideoProgressInPiPTask();
+                mRefreshVideoProgressInPiPTask.execute();
+            }
         } else {
             setOnOrientationChangeListenerEnabled(true);
+            if (Build.VERSION.SDK_INT >= PictureInPictureHelper.SDK_VERSION_SUPPORTS_RESIZABLE_PIP) {
+                mPlaybackViewContainer.setAspectRatio(0); // Unset any aspect ratio
+                mVideoProgressInPiP.setVisibility(View.GONE);
+                mRefreshVideoProgressInPiPTask.cancel();
+                mRefreshVideoProgressInPiPTask = null;
+            }
         }
     }
 
@@ -370,10 +433,16 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
             case Youtube.PlayingStatus.PLAYING:
             case Youtube.PlayingStatus.BUFFERRING:
                 ScreenUtils.setKeepWindowBright(getWindow(), true);
+                if (mRefreshVideoProgressInPiPTask != null) {
+                    mRefreshVideoProgressInPiPTask.execute();
+                }
                 break;
             case Youtube.PlayingStatus.PAUSED:
             case Youtube.PlayingStatus.ENDED:
                 ScreenUtils.setKeepWindowBright(getWindow(), false);
+                if (mRefreshVideoProgressInPiPTask != null) {
+                    mRefreshVideoProgressInPiPTask.cancel();
+                }
                 break;
         }
         if (isInPictureInPictureMode()) {
@@ -438,6 +507,22 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
                     if (player != null) {
                         player.fastRewind();
                     }
+                }
+
+                @Nullable
+                @Override
+                public View getVideoView() {
+                    return mPlaybackView;
+                }
+
+                @Override
+                public int getVideoWidth() {
+                    return 16;
+                }
+
+                @Override
+                public int getVideoHeight() {
+                    return 9;
                 }
             });
             delegate.setPipHelper(pipHelper);

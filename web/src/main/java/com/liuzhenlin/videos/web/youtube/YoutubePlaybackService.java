@@ -78,8 +78,8 @@ public class YoutubePlaybackService extends Service {
     private int mPlaylistSize;
     private int mPlaylistIndex;
 
-    private volatile Video mVideo = EMPTY_VIDEO;
-    private static final Video EMPTY_VIDEO = new Video();
+    /*package*/ volatile Video mVideo = EMPTY_VIDEO;
+    /*package*/ static final Video EMPTY_VIDEO = new Video();
 
     /*package*/ volatile int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
     private int mLastPlayingStatus = mPlayingStatus;
@@ -112,6 +112,12 @@ public class YoutubePlaybackService extends Service {
     @Nullable
     public WebPlayer getWebPlayer() {
         return mPlayer;
+    }
+
+    public boolean isPlaying() {
+        int status = mPlayingStatus;
+        return status == Youtube.PlayingStatus.PLAYING
+                || status == Youtube.PlayingStatus.BUFFERRING;
     }
 
     private MediaButtonEventHandler getMediaButtonEventHandler() {
@@ -448,27 +454,29 @@ public class YoutubePlaybackService extends Service {
         }
         mLastPlayingStatus = mPlayingStatus;
         mPlayingStatus = playingStatus;
-        mPlayer.requestGetVideoInfo();
+        mPlayer.requestGetVideoInfo(true);
     }
 
-    /*package*/ void onGetVideoInfo(Video video) {
-        if (video == null) {
-            video = EMPTY_VIDEO;
-        }
-        boolean changed = mLastPlayingStatus != mPlayingStatus
-                || mVideo.getDuration() != video.getDuration()
-                || mVideo.getBufferedPosition() != video.getBufferedPosition()
-                || mVideo.getCurrentPosition() != video.getCurrentPosition();
-        mLastPlayingStatus = mPlayingStatus;
-        mVideo = video;
-        String videoId = Utils.emptyIfStringNull(video.getId());
-        if (!mVideoId.equals(videoId)) {
-            mVideoId = videoId;
-            changed = true;
-            refreshNotification(false);
-        }
-        if (changed) {
-            refreshNotification(true);
+    /*package*/ void onGetVideoInfo(Video video, boolean refreshNotification) {
+        if (refreshNotification) {
+            if (video == null) {
+                video = EMPTY_VIDEO;
+            }
+            boolean changed = mLastPlayingStatus != mPlayingStatus
+                    || mVideo.getDuration() != video.getDuration()
+                    || mVideo.getBufferedPosition() != video.getBufferedPosition()
+                    || mVideo.getCurrentPosition() != video.getCurrentPosition();
+            mLastPlayingStatus = mPlayingStatus;
+            mVideo = video;
+            String videoId = Utils.emptyIfStringNull(video.getId());
+            if (!mVideoId.equals(videoId)) {
+                mVideoId = videoId;
+                changed = true;
+                refreshNotification(false);
+            }
+            if (changed) {
+                refreshNotification(true);
+            }
         }
     }
 

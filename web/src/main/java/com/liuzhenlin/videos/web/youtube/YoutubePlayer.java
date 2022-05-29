@@ -114,7 +114,7 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     @Override
-    public void requestGetVideoInfo() {
-        mWeb.loadUrl(Youtube.JsInterface.getVideoInfo());
+    public void requestGetVideoInfo(boolean refreshNotificationOnInfoRetrieved) {
+        mWeb.loadUrl(Youtube.JsInterface.getVideoInfo(refreshNotificationOnInfoRetrieved));
     }
 }
