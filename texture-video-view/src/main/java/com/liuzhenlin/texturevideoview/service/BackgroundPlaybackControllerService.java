@@ -40,7 +40,6 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.util.Synthetic;
-import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.compat.RemoteViewsCompat;
 import com.liuzhenlin.common.notification.style.DecoratedMediaCustomViewStyle;
 import com.liuzhenlin.common.utils.BitmapUtils;
@@ -116,15 +115,23 @@ public class BackgroundPlaybackControllerService extends Service {
         }
     };
 
-    private final Runnable mPostNotificationRunnable = new Runnable() {
+    private static final int MSG_POST_NOTIFICATION = 1;
+    private final Handler mHandler = new Handler(new Handler.Callback() {
         @Override
-        public void run() {
-            if (mIsForeground) {
-                resetNotificationViews();
-                mNotificationManager.notify(ID_NOTIFICATION, mNotificationBuilder.build());
+        public boolean handleMessage(@NonNull Message msg) {
+            //noinspection SwitchStatementWithTooFewBranches
+            switch (msg.what) {
+                case MSG_POST_NOTIFICATION:
+                    long sendTime = (long) msg.obj;
+                    if (mIsForeground) {
+                        resetNotificationViews(sendTime);
+                        mNotificationManager.notify(ID_NOTIFICATION, mNotificationBuilder.build());
+                    }
+                    break;
             }
+            return true;
         }
-    };
+    });
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -180,7 +187,7 @@ public class BackgroundPlaybackControllerService extends Service {
             mNotificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, it, 0));
         }
         loadMediaThumb(mediaUri);
-        resetNotificationViews();
+        resetNotificationViews(SystemClock.elapsedRealtime());
         startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
         mIsForeground = true;
 
@@ -213,23 +220,24 @@ public class BackgroundPlaybackControllerService extends Service {
     }
 
     @Synthetic void postNotificationIfForeground() {
-        Handler handler = Consts.getMainThreadHandler();
-        handler.removeCallbacks(mPostNotificationRunnable);
+        mHandler.removeMessages(MSG_POST_NOTIFICATION);
         if (mIsForeground) {
             // Use the Handler to post a delayed notification and remove any previously unpublished
             // notifications that exist in the message queue, of which the main purpose is
             // to spare no effort in posting notifications one at a time in serial order so as to
             // notably reduce situations where the controller and the player state are inconsistent.
-            handler.postDelayed(mPostNotificationRunnable, 100);
+            mHandler.sendMessageDelayed(
+                    mHandler.obtainMessage(MSG_POST_NOTIFICATION, SystemClock.elapsedRealtime()),
+                    100);
         }
     }
 
-    @Synthetic void resetNotificationViews() {
-        mNotificationBuilder.setCustomContentView(createNotificationView(false));
-        mNotificationBuilder.setCustomBigContentView(createNotificationView(true));
+    @Synthetic void resetNotificationViews(long elapsedTime) {
+        mNotificationBuilder.setCustomContentView(createNotificationView(false, elapsedTime));
+        mNotificationBuilder.setCustomBigContentView(createNotificationView(true, elapsedTime));
     }
 
-    private RemoteViews createNotificationView(boolean big) {
+    private RemoteViews createNotificationView(boolean big, long elapsedTime) {
         final boolean playing = mIsPlaying && !mIsBuffering;
         final int tint = mNotificationActionIconTint;
 
@@ -282,10 +290,9 @@ public class BackgroundPlaybackControllerService extends Service {
         // Chronometer
         if (big) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                final long remaining = mMediaDuration - mMediaProgress;
-                if (remaining > 0) {
-                    nv.setLong(R.id.countdownChronometer,
-                            "setBase", SystemClock.elapsedRealtime() + remaining);
+                long endTime = elapsedTime + (mMediaDuration - mMediaProgress);
+                if (endTime > SystemClock.elapsedRealtime()) {
+                    nv.setLong(R.id.countdownChronometer, "setBase", endTime);
                     nv.setBoolean(R.id.countdownChronometer, "setStarted", playing);
                 }
             } else {

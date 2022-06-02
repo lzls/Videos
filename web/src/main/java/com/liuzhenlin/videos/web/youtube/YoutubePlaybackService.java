@@ -164,7 +164,8 @@ public class YoutubePlaybackService extends Service {
                     int videoIndex = bundle.getInt(Constants.Extras.VIDEO_INDEX);
                     if (action.equals(Constants.Actions.START_FOREGROUND)) {
                         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
-                            Notification notification = createNotification(videoId, false);
+                            Notification notification =
+                                    createNotification(videoId, SystemClock.elapsedRealtime(), false);
                             Executors.MAIN_EXECUTOR.execute(() -> {
                                 if (mRunning) {
                                     startForeground(ID_NOTIFICATION, notification);
@@ -481,10 +482,11 @@ public class YoutubePlaybackService extends Service {
     }
 
     private void refreshNotification(boolean showVideoInfo) {
+        long elapsedTime = SystemClock.elapsedRealtime();
         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
             NotificationManager notificationManager =
                     (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
-            Notification notification = createNotification(mVideoId, showVideoInfo);
+            Notification notification = createNotification(mVideoId, elapsedTime, showVideoInfo);
             Executors.MAIN_EXECUTOR.execute(() -> {
                 if (mRunning) {
                     notificationManager.notify(ID_NOTIFICATION, notification);
@@ -493,7 +495,7 @@ public class YoutubePlaybackService extends Service {
         });
     }
 
-    private Notification createNotification(String videoId, boolean loadInfo) {
+    private Notification createNotification(String videoId, long elapsedTime, boolean loadInfo) {
         if (!mRunning) return null;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(
@@ -589,36 +591,21 @@ public class YoutubePlaybackService extends Service {
                 PendingIntent.getService(mContext, 0,
                         doThings.setAction(Constants.Actions.PREV), 0));
 
-        // Chronometer
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            long remaining = loadInfo ? mVideo.getDuration() - mVideo.getCurrentPosition() : 0;
-            if (remaining > 0) {
-                viewBig.setLong(R.id.countdownChronometer,
-                        "setBase", SystemClock.elapsedRealtime() + remaining);
-                viewBig.setBoolean(R.id.countdownChronometer,
-                        "setStarted", mPlayingStatus == Youtube.PlayingStatus.PLAYING);
-            }
-        } else {
-            viewBig.setViewVisibility(R.id.countdownChronometer, View.GONE);
-        }
-
         Intent it = new Intent(mContext, YoutubePlaybackActivity.class)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
                         Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pit = PendingIntent.getActivity(mContext, 0, it, 0);
-        Notification notification =
-                builder.setSmallIcon(R.drawable.ic_media_app_notification)
-                        .setStyle(new DecoratedMediaCustomViewStyle())
-                        .setDefaults(0)
-                        .setOnlyAlertOnce(true)
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                        .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                        .setCustomContentView(viewSmall)
-                        .setCustomBigContentView(viewBig)
-                        .setContentIntent(pit)
-                        .setAutoCancel(false)
-                        .build();
+        builder.setSmallIcon(R.drawable.ic_media_app_notification)
+                .setStyle(new DecoratedMediaCustomViewStyle())
+                .setDefaults(0)
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setCustomContentView(viewSmall)
+                .setCustomBigContentView(viewBig)
+                .setContentIntent(pit)
+                .setAutoCancel(false);
 
         if (latch[0] != null) {
             while (latch[0].getCount() > 0) {
@@ -630,7 +617,21 @@ public class YoutubePlaybackService extends Service {
             }
         }
 
-        return notification;
+        // Chronometer
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (loadInfo) {
+                long endTime = elapsedTime + (mVideo.getDuration() - mVideo.getCurrentPosition());
+                if (endTime > SystemClock.elapsedRealtime()) {
+                    viewBig.setLong(R.id.countdownChronometer, "setBase", endTime);
+                    viewBig.setBoolean(R.id.countdownChronometer,
+                            "setStarted", mPlayingStatus == Youtube.PlayingStatus.PLAYING);
+                }
+            }
+        } else {
+            viewBig.setViewVisibility(R.id.countdownChronometer, View.GONE);
+        }
+
+        return builder.build();
     }
 
     /**
