@@ -57,37 +57,31 @@
       "8. 应用支持多渠道更新（开发、测试、稳定）"
     ],
     "beta": {
-      "versionCode": 49,
-      "versionName": "2.1",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.apk",
-      "appLength": 34410381,
-      "appSha1": "6cda881838ae7b9530ba5717b25aa5667c2bc7fd",
+      "versionCode": 50,
+      "versionName": "2.1.1-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1-beta01.apk",
+      "appLength": 34418241,
+      "appSha1": "c85d4af02af741aa9bbcfc627756d33acb3728e8",
       "updateLogs": [
-        "1. 解决特殊情况下播放中视频不受耳机线控制的问题",
-        "2. 在线视频页移除不再维护的无线电视列表，改为加载YouTube网站并提供视频播放支持",
-        "3. 本地视频播放引擎新增 VLC MediaPlayer（试验性特性）",
-        "4. 优化后台播放控制通知折叠时的UI显示",
-        "5. 修复当未使用ExoPlayer播放视频时，视频裁剪无法预览的问题",
-        "6. 添加清除首页抽屉背景图的选项",
-        "7. 添加应用设置页面",
-        "8. 应用支持多渠道更新（开发、测试、稳定）"
+        "1. 修复在原网页全屏播放YouTube视频时，如果关闭页面后点击播放控制通知重进，页面会空白的问题",
+        "2. 修复切换深浅色（黑白）主题时首页抽屉会自动关闭且标题栏文字显示靠中的问题",
+        "3. 修复当本地视频列表数据超过一屏时，长按屏幕底部最下方露出未超过一半的那行，在浮窗弹出后，该行视频缩略图不加载且多选按钮可能也不显示的问题",
+        "4. YouTube视频剩余时长也可显示在播放控制通知啦～",
+        "5. YouTube视频画中画播放时会在窗口底部显示播放进度条"
       ]
     },
     "dev": {
-      "versionCode": 49,
-      "versionName": "2.1",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.apk",
-      "appLength": 34410381,
-      "appSha1": "6cda881838ae7b9530ba5717b25aa5667c2bc7fd",
+      "versionCode": 50,
+      "versionName": "2.1.1-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1-beta01.apk",
+      "appLength": 34418241,
+      "appSha1": "c85d4af02af741aa9bbcfc627756d33acb3728e8",
       "updateLogs": [
-        "1. 解决特殊情况下播放中视频不受耳机线控制的问题",
-        "2. 在线视频页移除不再维护的无线电视列表，改为加载YouTube网站并提供视频播放支持",
-        "3. 本地视频播放引擎新增 VLC MediaPlayer（试验性特性）",
-        "4. 优化后台播放控制通知折叠时的UI显示",
-        "5. 修复当未使用ExoPlayer播放视频时，视频裁剪无法预览的问题",
-        "6. 添加清除首页抽屉背景图的选项",
-        "7. 添加应用设置页面",
-        "8. 应用支持多渠道更新（开发、测试、稳定）"
+        "1. 修复在原网页全屏播放YouTube视频时，如果关闭页面后点击播放控制通知重进，页面会空白的问题",
+        "2. 修复切换深浅色（黑白）主题时首页抽屉会自动关闭且标题栏文字显示靠中的问题",
+        "3. 修复当本地视频列表数据超过一屏时，长按屏幕底部最下方露出未超过一半的那行，在浮窗弹出后，该行视频缩略图不加载且多选按钮可能也不显示的问题",
+        "4. YouTube视频剩余时长也可显示在播放控制通知啦～",
+        "5. YouTube视频画中画播放时会在窗口底部显示播放进度条"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
