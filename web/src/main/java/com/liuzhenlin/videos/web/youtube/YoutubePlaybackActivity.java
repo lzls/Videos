@@ -141,7 +141,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     @Override
     public AppCompatDelegateWrapper getDelegate() {
         if (mDelegate == null) {
-            mDelegate = new AppCompatDelegateWrapper(super.getDelegate());
+            mDelegate = new AppCompatDelegateWrapper(super.getDelegate(), super::finish);
         }
         return mDelegate;
     }
@@ -357,15 +357,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
 
     @Override
     public void finish() {
-        if (getPipHelper().supportsPictureInPictureMode()) {
-            // finish() does not remove the activity in PIP mode from the recents stack.
-            // Only finishAndRemoveTask() does this.
-            //noinspection NewApi
-            finishAndRemoveTask();
-        } else {
-            super.finish();
-        }
-        getDelegate().onFinished();
+        getDelegate().finish();
     }
 
     @Override

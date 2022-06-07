@@ -36,7 +36,7 @@ public class BaseActivity extends SwipeBackActivity {
     @Override
     public AppCompatDelegateWrapper getDelegate() {
         if (mDelegate == null) {
-            mDelegate = new AppCompatDelegateWrapper(super.getDelegate());
+            mDelegate = new AppCompatDelegateWrapper(super.getDelegate(), super::finish);
         }
         return mDelegate;
     }
@@ -79,17 +79,7 @@ public class BaseActivity extends SwipeBackActivity {
 
     @Override
     public void finish() {
-        AppCompatDelegateWrapper delegate = getDelegate();
-        PictureInPictureHelper pipHelper = delegate.getPipHelper();
-        if (pipHelper != null && pipHelper.supportsPictureInPictureMode()) {
-            // finish() does not remove the activity in PIP mode from the recents stack.
-            // Only finishAndRemoveTask() does this.
-            //noinspection NewApi
-            finishAndRemoveTask();
-        } else {
-            super.finish();
-        }
-        delegate.onFinished();
+        getDelegate().finish();
     }
 
     @Override

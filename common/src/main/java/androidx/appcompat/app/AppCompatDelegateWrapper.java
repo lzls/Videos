@@ -38,6 +38,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     private final AppCompatDelegate mDelegate;
 
     private Object mHost;
+    private final HostPrivateAccess mHostPrivateAccess;
 
     /**
      * Flag indicating whether we can return a different context from attachBaseContext().
@@ -61,8 +62,10 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     @Nullable
     private PendingTransitionOverrides mTransitionOverrides;
 
-    public AppCompatDelegateWrapper(@NonNull AppCompatDelegate delegate) {
+    public AppCompatDelegateWrapper(
+            @NonNull AppCompatDelegate delegate, @NonNull HostPrivateAccess hostPrivateAccess) {
         mDelegate = delegate;
+        mHostPrivateAccess = hostPrivateAccess;
     }
 
     public void setPipHelper(@Nullable PictureInPictureHelper pipHelper) {
@@ -405,16 +408,28 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     }
 
     @Override
-    public void onFinished() {
-        if (mTransitionOverrides != null) {
-            doIfDelegateIsTheBase(baseDelegate -> {
-                if (baseDelegate.mHost instanceof Activity) {
-                    ((Activity) baseDelegate.mHost).overridePendingTransition(
+    public void finish() {
+        doIfDelegateIsTheBase(baseDelegate -> {
+            if (baseDelegate.mHost instanceof Activity) {
+                Activity activity = (Activity) baseDelegate.mHost;
+
+                PictureInPictureHelper pipHelper = getPipHelper();
+                if (pipHelper != null && pipHelper.supportsPictureInPictureMode()) {
+                    // finish() does not remove the activity in PIP mode from the recents stack.
+                    // Only finishAndRemoveTask() does this.
+                    //noinspection NewApi
+                    activity.finishAndRemoveTask();
+                } else {
+                    mHostPrivateAccess.superFinishActivity();
+                }
+
+                if (mTransitionOverrides != null) {
+                    activity.overridePendingTransition(
                             mTransitionOverrides.getCloseEnterTransition(),
                             mTransitionOverrides.getCloseExitTransition());
                 }
-            });
-        }
+            }
+        });
     }
 
     @Override
@@ -440,5 +455,9 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
         if (mDelegate instanceof AppCompatDelegateImpl) {
             consumer.accept((AppCompatDelegateImpl) mDelegate);
         }
+    }
+
+    public interface HostPrivateAccess {
+        void superFinishActivity();
     }
 }

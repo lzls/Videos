@@ -6,6 +6,6 @@
 package androidx.appcompat.app;
 
 public interface AppCompatDelegateExtensions {
-    void onFinished();
+    void finish();
     void onPictureInPictureModeChanged(boolean isInPictureInPictureMode);
 }
