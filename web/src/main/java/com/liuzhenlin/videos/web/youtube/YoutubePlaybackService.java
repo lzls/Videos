@@ -37,6 +37,7 @@ import com.liuzhenlin.common.receiver.MediaButtonEventHandler;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.InternetResourceLoadTask;
+import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.ThemeUtils;
@@ -55,7 +56,7 @@ import org.json.JSONObject;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 
-public class YoutubePlaybackService extends Service {
+public class YoutubePlaybackService extends Service implements PlayerListener {
 
     private static final int ID_NOTIFICATION = 20220216;
 
@@ -81,7 +82,7 @@ public class YoutubePlaybackService extends Service {
     /*package*/ volatile Video mVideo = EMPTY_VIDEO;
     /*package*/ static final Video EMPTY_VIDEO = new Video();
 
-    /*package*/ volatile int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
+    @Youtube.PlayingStatus /*package*/ volatile int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
     private int mLastPlayingStatus = mPlayingStatus;
 
     private boolean mReplayVideo;
@@ -96,6 +97,8 @@ public class YoutubePlaybackService extends Service {
     private HeadsetEventsReceiver mHeadsetEventsReceiver;
     private MediaButtonEventHandler mMediaButtonEventHandler;
     private ComponentName mMediaButtonEventReceiverComponent;
+
+    private ListenerSet<PlayerListener> mListeners;
 
     public static void peekIfNonnullThenDo(@NonNull Consumer<YoutubePlaybackService> consumer) {
         YoutubePlaybackService service = sInstance;
@@ -133,6 +136,21 @@ public class YoutubePlaybackService extends Service {
                     new ComponentName(mContext, MediaButtonEventReceiver.class);
         }
         return mMediaButtonEventReceiverComponent;
+    }
+
+    public void addPlayerListener(@Nullable PlayerListener listener) {
+        if (listener != null) {
+            if (mListeners == null) {
+                mListeners = new ListenerSet<>();
+            }
+            mListeners.add(listener);
+        }
+    }
+
+    public void removePlayerListener(@Nullable PlayerListener listener) {
+        if (listener != null && mListeners != null) {
+            mListeners.remove(listener);
+        }
     }
 
     @Override
@@ -382,7 +400,8 @@ public class YoutubePlaybackService extends Service {
         }
     }
 
-    /*package*/ void onPlayerReady() {
+    @Override
+    public void onPlayerReady() {
         if (mPlayer == null) {
             return;
         }
@@ -398,9 +417,14 @@ public class YoutubePlaybackService extends Service {
             };
             mHeadsetEventsReceiver.register(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         }
+        if (mListeners != null) {
+            mListeners.forEach(PlayerListener::onPlayerReady);
+        }
     }
 
-    /*package*/ void onPlayingStatusChange(int playingStatus) {
+    @SuppressLint("SwitchIntDef")
+    @Override
+    public void onPlayerStateChange(@Youtube.PlayingStatus int playingStatus) {
         if (mPlayer == null) {
             return;
         }
@@ -456,6 +480,9 @@ public class YoutubePlaybackService extends Service {
         mLastPlayingStatus = mPlayingStatus;
         mPlayingStatus = playingStatus;
         mPlayer.requestGetVideoInfo(true);
+        if (mListeners != null) {
+            mListeners.forEach(listener -> listener.onPlayerStateChange(playingStatus));
+        }
     }
 
     /*package*/ void onGetVideoInfo(Video video, boolean refreshNotification) {

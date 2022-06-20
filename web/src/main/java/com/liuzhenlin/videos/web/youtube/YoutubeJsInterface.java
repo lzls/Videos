@@ -85,13 +85,10 @@ public class YoutubeJsInterface extends VideosJsInterface {
     }
 
     @JavascriptInterface
-    public void onPlayerStateChange(int status) {
-        Executors.MAIN_EXECUTOR.execute(() -> {
-            if (YoutubePlaybackActivity.get() != null) {
-                YoutubePlaybackActivity.get().onPlayingStatusChange(status);
-            }
-            YoutubePlaybackService.peekIfNonnullThenDo(service -> service.onPlayingStatusChange(status));
-        });
+    public void onPlayerStateChange(@Youtube.PlayingStatus int status) {
+        Executors.MAIN_EXECUTOR.execute(
+                () -> YoutubePlaybackService.peekIfNonnullThenDo(
+                        service -> service.onPlayerStateChange(status)));
     }
 
     @JavascriptInterface

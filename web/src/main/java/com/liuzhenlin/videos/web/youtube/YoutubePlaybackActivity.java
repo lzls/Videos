@@ -47,7 +47,7 @@ import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PAUS
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PLAY;
 
 @SuppressLint("SourceLockedOrientationActivity")
-public class YoutubePlaybackActivity extends AppCompatActivity {
+public class YoutubePlaybackActivity extends AppCompatActivity implements PlayerListener {
 
     @SuppressLint("StaticFieldLeak")
     private static YoutubePlaybackActivity sInstance;
@@ -167,6 +167,11 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
         if (mService == null || mService.mView == null) {
             finish();
         } else {
+            mService.addPlayerListener(this);
+            if (mService.isPlaying()) {
+                ScreenUtils.setKeepWindowBright(getWindow(), true);
+            }
+
             setRequestedOrientation(
                     usingYoutubeIFramePlayer()
                             ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
@@ -183,10 +188,6 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
             setPlaybackViewBaseContext(this);
             mPlaybackViewContainer = findViewById(R.id.videoViewContainer);
             mPlaybackViewContainer.addView(mPlaybackView, 0);
-
-            if (mService.isPlaying()) {
-                ScreenUtils.setKeepWindowBright(getWindow(), true);
-            }
 
             mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
 
@@ -337,6 +338,9 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mService != null) {
+            mService.removePlayerListener(this);
+        }
         sInstance = null;
         setPlaybackViewBaseContext(getApplicationContext());
         // Removes the player view in case a memory leak as it is part of the view hierarchy
@@ -420,7 +424,9 @@ public class YoutubePlaybackActivity extends AppCompatActivity {
         }
     }
 
-    /*package*/ void onPlayingStatusChange(int playingStatus) {
+    @SuppressLint("SwitchIntDef")
+    @Override
+    public void onPlayerStateChange(@Youtube.PlayingStatus int playingStatus) {
         switch (playingStatus) {
             case Youtube.PlayingStatus.PLAYING:
             case Youtube.PlayingStatus.BUFFERRING:

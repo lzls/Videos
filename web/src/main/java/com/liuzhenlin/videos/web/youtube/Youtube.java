@@ -8,6 +8,7 @@ package com.liuzhenlin.videos.web.youtube;
 import android.content.Context;
 import android.text.TextUtils;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.util.Preconditions;
@@ -16,6 +17,9 @@ import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.utils.prefs.PrefsHelper;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.Constants.Keys;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_PLAYLIST_INFO_RETRIEVED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_INFO_RETRIEVED;
@@ -56,16 +60,18 @@ public final class Youtube {
         public static final String WATCH = HOME + "/watch";
     }
 
-    public static final class PlayingStatus {
-        private PlayingStatus() {
-        }
-
-        public static final int UNSTARTED = -1; // When the player first loads a video
-        public static final int ENDED = 0;
-        public static final int PLAYING = 1;
-        public static final int PAUSED = 2;
-        public static final int BUFFERRING = 3;
-        public static final int VIDEO_CUED = 5; // When a video is cued and ready to play
+    @IntDef({
+            PlayingStatus.UNSTARTED, PlayingStatus.ENDED, PlayingStatus.PLAYING,
+            PlayingStatus.PAUSED, PlayingStatus.BUFFERRING, PlayingStatus.VIDEO_CUED
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface PlayingStatus {
+        int UNSTARTED = -1; // When the player first loads a video
+        int ENDED = 0;
+        int PLAYING = 1;
+        int PAUSED = 2;
+        int BUFFERRING = 3;
+        int VIDEO_CUED = 5; // When a video is cued and ready to play
     }
 
     public static abstract class Prefs {
