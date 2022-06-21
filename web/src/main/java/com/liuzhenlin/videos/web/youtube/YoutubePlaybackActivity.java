@@ -348,6 +348,11 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         if (mPlaybackViewContainer != null) {
             mPlaybackViewContainer.removeView(mPlaybackView);
         }
+        // Have the video view exit fullscreen here, to avoid it going fullscreen automatically
+        // the next time user selects a video to play.
+        if (mPlaybackView != null) {
+            mPlaybackView.exitFullscreen();
+        }
     }
 
     @Override

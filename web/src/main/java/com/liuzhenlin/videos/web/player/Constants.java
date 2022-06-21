@@ -50,6 +50,8 @@ public final class Constants {
         public static final String VIDEO_ID = "videoId";
         public static final String PLAYLIST_ID = "playlistId";
         public static final String VIDEO_INDEX = "videoIndex";
+
+        public static final String FROM_PLAYBACK_VIEW = "fromPlaybackView";
     }
 
     public static final class Keys {

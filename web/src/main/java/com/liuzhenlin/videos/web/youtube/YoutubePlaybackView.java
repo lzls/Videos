@@ -53,12 +53,31 @@ public class YoutubePlaybackView extends PlayerWebView {
             if ((playlistId != null && !playlistId.isEmpty() || videoId != null && !videoId.isEmpty())
                     && (!TextUtils.equals(playlistId, getPlaylistIdFromWatchOrShareUrl(mWatchUrl))
                             || !TextUtils.equals(videoId, getVideoIdFromWatchUrl(mWatchUrl)))) {
+                boolean fullscreen = mChromeClient.mCustomView != null;
                 int videoIndex = getVideoIndexFromWatchOrShareUrl(url);
                 // Player will probably not be ready to load the video from the new watch url
-                // immediately after this view goes back, at which the player will be being reloaded.
+                // immediately after this view goes back, at which point the player will be
+                // being reloaded.
                 YoutubePlaybackService.peekIfNonnullThenDo(service -> service.mPlayerReady = false);
                 goBack();
-                YoutubePlaybackService.startPlayback(getContext(), playlistId, videoId, videoIndex);
+                YoutubePlaybackService.startPlayback(mContext, playlistId, videoId, videoIndex, true);
+                if (fullscreen) {
+                    YoutubePlaybackService.peekIfNonnullThenDo(
+                            service -> service.addPlayerListener(new PlayerListener() {
+                                @Override
+                                public void onPlayerStateChange(int status) {
+                                    if (status == Youtube.PlayingStatus.PLAYING) {
+                                        // Don't go fullscreen automatically if the user chose
+                                        // another related video from this playback view while
+                                        // the video is not fullscreen.
+                                        if (url.equals(mWatchUrl)) {
+                                            enterFullscreen();
+                                        }
+                                        service.removePlayerListener(this);
+                                    }
+                                }
+                            }));
+                }
                 mWatchUrl = url;
             }
         }
@@ -120,13 +139,39 @@ public class YoutubePlaybackView extends PlayerWebView {
     }
 
     @Override
+    public boolean canEnterFullscreen() {
+        return getWebPlayer() instanceof YoutubePlayer && mChromeClient.mCustomView == null;
+    }
+
+    @Override
+    public boolean canExitFullscreen() {
+        return mChromeClient.mCustomViewCallback != null;
+    }
+
+    @Override
+    public void exitFullscreen() {
+        if (canExitFullscreen()) {
+            //noinspection ConstantConditions
+            mChromeClient.mCustomViewCallback.onCustomViewHidden();
+        }
+    }
+
+    @Override
+    public void enterFullscreen() {
+        if (canEnterFullscreen()) {
+            loadUrl(Youtube.JsInterface.requestFullscreen());
+        }
+    }
+
+    @Override
     public boolean canGoBack() {
-        return super.canGoBack() || mChromeClient.mCustomViewCallback != null;
+        return super.canGoBack() || canExitFullscreen();
     }
 
     @Override
     public void goBack() {
-        if (mChromeClient.mCustomViewCallback != null) {
+        if (canExitFullscreen()) {
+            //noinspection ConstantConditions
             mChromeClient.mCustomViewCallback.onCustomViewHidden();
         } else {
             super.goBack();
@@ -168,7 +213,7 @@ public class YoutubePlaybackView extends PlayerWebView {
             // This can work normally for YoutubeIFramePlayer, but not to YoutubePlayer
             if (!url.contains("#")) {
                 if (url.equals(mWatchUrl)
-                        || YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(getContext(), url)) {
+                        || YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(mContext, url, true)) {
                     mWatchUrl = url;
                     return true;
                 }

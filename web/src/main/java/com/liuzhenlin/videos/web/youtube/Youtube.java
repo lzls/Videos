@@ -519,11 +519,22 @@ public final class Youtube {
         }
 
         public static String requestFullscreen() {
-            return "javascript: var v = document.querySelector('video');\n" +
-                    "if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
-                    "else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
-                    "else " + JSI_ON_EVENT + "(" + JSE_ERR
-                    + ", 'Method requestFullscreen not found in ' + v);";
+            return "javascript:\n" +
+                    "function requestFullscreen(attempt) {\n" +
+                    "  var e = document.getElementsByClassName('player-controls-bottom cbox');\n" +
+                    "  if (e.length <= 0) return retryRequestFullscreen(attempt + 1);\n" +
+                    "  e = e[0].getElementsByClassName('icon-button fullscreen-icon');\n" +
+                    "  if (e.length <= 0) return retryRequestFullscreen(attempt + 1);\n" +
+                    "  e[0].click();\n" +
+                    "  return true;\n" +
+                    "}\n" +
+                    "function retryRequestFullscreen(attempt) {\n" +
+                    "  if (attempt < 10) setTimeout(requestFullscreen, 100, attempt);\n" +
+                    "  else " + JSI_ON_EVENT + "(" + JSE_ERR
+                    + ", 'Failed to request video to be fullscreen');\n" +
+                    "  return false;\n" +
+                    "}\n" +
+                    "requestFullscreen(0);";
         }
     }
 

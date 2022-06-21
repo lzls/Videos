@@ -180,6 +180,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                     String playlistId = bundle.getString(Constants.Extras.PLAYLIST_ID);
                     String videoId = bundle.getString(Constants.Extras.VIDEO_ID);
                     int videoIndex = bundle.getInt(Constants.Extras.VIDEO_INDEX);
+                    boolean fromPlaybackView = bundle.getBoolean(Constants.Extras.FROM_PLAYBACK_VIEW);
                     if (action.equals(Constants.Actions.START_FOREGROUND)) {
                         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                             Notification notification =
@@ -191,7 +192,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                             });
                         });
                     }
-                    startPlayback(playlistId, videoId, videoIndex);
+                    startPlayback(playlistId, videoId, videoIndex, fromPlaybackView);
                 }
                 break;
             case Constants.Actions.STOP_SELF:
@@ -286,6 +287,11 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
     }
 
     public static boolean startPlaybackIfUrlIsWatchUrl(@NonNull Context context, @NonNull String url) {
+        return startPlaybackIfUrlIsWatchUrl(context, url, false);
+    }
+
+    public static boolean startPlaybackIfUrlIsWatchUrl(
+            @NonNull Context context, @NonNull String url, boolean fromPlaybackView) {
         String videoId;
         String playlistId;
         int videoIndex;
@@ -300,22 +306,26 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         playlistId = Youtube.Util.getPlaylistIdFromWatchOrShareUrl(url);
         videoIndex = Youtube.Util.getVideoIndexFromWatchOrShareUrl(url);
 
-        startPlayback(context, playlistId, videoId, videoIndex);
+        startPlayback(context, playlistId, videoId, videoIndex, fromPlaybackView);
         return true;
     }
 
     public static void startPlayback(
-            @NonNull Context context, @Nullable String playlistId, @Nullable String videoId) {
-        startPlayback(context, playlistId, videoId, Constants.UNKNOWN);
+            @NonNull Context context,
+            @Nullable String playlistId, @Nullable String videoId,
+            boolean fromPlaybackView) {
+        startPlayback(context, playlistId, videoId, Constants.UNKNOWN, fromPlaybackView);
     }
 
     public static void startPlayback(
             @NonNull Context context,
-            @Nullable String playlistId, @Nullable String videoId, int videoIndex) {
+            @Nullable String playlistId, @Nullable String videoId, int videoIndex,
+            boolean fromPlaybackView) {
         Intent intent = new Intent(context, YoutubePlaybackService.class);
         intent.putExtra(Constants.Extras.PLAYLIST_ID, playlistId);
         intent.putExtra(Constants.Extras.VIDEO_ID, videoId);
         intent.putExtra(Constants.Extras.VIDEO_INDEX, videoIndex);
+        intent.putExtra(Constants.Extras.FROM_PLAYBACK_VIEW, fromPlaybackView);
         intent.setAction(
                 Utils.isServiceRunning(context, YoutubePlaybackService.class)
                         ? Constants.Actions.START
@@ -323,7 +333,9 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         context.startService(intent);
     }
 
-    private void startPlayback(@Nullable String playlistId, @Nullable String videoId, int videoIndex) {
+    private void startPlayback(
+            @Nullable String playlistId, @Nullable String videoId, int videoIndex,
+            boolean fromPlaybackView) {
         if (playlistId == null) {
             playlistId = "";
         }
@@ -378,15 +390,23 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
             }
             mReplayPlaylist = mReplayVideo = false;
         }
-        if (playerChanged) {
-            if (YoutubePlaybackActivity.get() != null) {
-                YoutubePlaybackActivity.get().finish();
+        if (playerChanged || !fromPlaybackView) {
+            YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
+            if (playerChanged) {
+                if (ytPlaybackActivity != null) {
+                    ytPlaybackActivity.finish();
+                }
             }
+            // Have the video view exit fullscreen first, to avoid it going fullscreen automatically
+            // after it exits from PiP to the default display mode.
+            if (ytPlaybackActivity != null && ytPlaybackActivity.isInPictureInPictureMode()) {
+                mView.exitFullscreen();
+            }
+            playInForeground();
         }
-        playInFullscreen();
     }
 
-    public void playInFullscreen() {
+    public void playInForeground() {
         Intent fullscreenIntent = new Intent(mContext, YoutubePlaybackActivity.class);
         fullscreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(fullscreenIntent);
