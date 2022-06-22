@@ -23,6 +23,30 @@
         <item>brief</item> <!-- Maps to Youtube.Prefs.PLAYBACK_PAGE_STYLE_BRIEF -->
     </string-array>
 
+    <string-array name="youtube_video_quality_entries">
+        <item>4320p</item>
+        <item>2160p</item>
+        <item>1440p</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+        <item>240p</item>
+        <item>144p</item>
+        <item>Auto</item>
+    </string-array>
+
+    <string-array name="youtube_video_quality_values">
+        <item>4320p</item> <!-- Maps to Constants.VideoQuality._4320P -->
+        <item>2160p</item> <!-- Maps to Constants.VideoQuality._2160P -->
+        <item>1440p</item> <!-- Maps to Constants.VideoQuality._1440P -->
+        <item>1080p</item> <!-- Maps to Constants.VideoQuality._1080P -->
+        <item>720p</item> <!-- Maps to Constants.VideoQuality._720P -->
+        <item>480p</item> <!-- Maps to Constants.VideoQuality._480P -->
+        <item>240p</item> <!-- Maps to Constants.VideoQuality._240P -->
+        <item>144p</item> <!-- Maps to Constants.VideoQuality._144P -->
+        <item>auto</item> <!-- Maps to Constants.VideoQuality.AUTO -->
+    </string-array>
+
     <string-array name="update_channel_entries">
         <item>Dev</item>
         <item>Beta</item>

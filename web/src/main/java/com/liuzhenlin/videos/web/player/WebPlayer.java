@@ -46,7 +46,7 @@ public abstract class WebPlayer {
 
     public abstract void fastRewind();
 
-    public abstract void setPlaybackQuality(Object arg);
+    public abstract void setPlaybackQuality(String quality);
 
     public abstract void setLoopPlaylist(boolean loop);
 

@@ -28,6 +28,22 @@ public final class Constants {
         public static final int SINGLE = 2;
     }
 
+    public static final class VideoQuality {
+        private VideoQuality() {
+        }
+
+        public static final String _4320P = "4320p";
+        public static final String _2160P = "2160p";
+        public static final String _1440P = "1440p";
+        public static final String _1080P = "1080p";
+        public static final String _720P = "720p";
+        public static final String _480P = "480p";
+        public static final String _360P = "360p";
+        public static final String _240P = "240p";
+        public static final String _144P = "144p";
+        public static final String AUTO =  "Auto";
+    }
+
     public static final class Actions {
         private Actions() {
         }

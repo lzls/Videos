@@ -20,7 +20,7 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     public void attachListeners() {
-        mWeb.loadUrl(Youtube.JsInterface.attachListeners());
+        mWeb.loadUrl(Youtube.JsInterface.attachListeners(mWeb.getContext()));
     }
 
     @Override
@@ -89,8 +89,8 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     @Override
-    public void setPlaybackQuality(Object qualityIndex) {
-        mWeb.loadUrl(Youtube.JsInterface.setPlaybackQuality((int) qualityIndex));
+    public void setPlaybackQuality(String quality) {
+        mWeb.loadUrl(Youtube.JsInterface.setPlaybackQuality(quality));
     }
 
     @Override

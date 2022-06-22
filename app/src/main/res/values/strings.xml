@@ -167,4 +167,5 @@
     <string name="youtube_pip_summary">
         Enters automatically when video is fullscreen and playback switches to the background
     </string>
+    <string name="youtube_video_quality_title">Video Quality (useless to the brief playback UI)</string>
 </resources>

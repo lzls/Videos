@@ -145,4 +145,5 @@
     <string name="youtube_playback_page_style_dialog_title">页面风格（在下次选中视频播放时生效）</string>
     <string name="youtube_pip_title">画中画</string>
     <string name="youtube_pip_summary">当视频全屏且播放切到后台时自动进入</string>
+    <string name="youtube_video_quality_title">视频清晰度（对简洁的播放UI无效）</string>
 </resources>

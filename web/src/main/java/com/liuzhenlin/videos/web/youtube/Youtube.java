@@ -17,6 +17,7 @@ import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.utils.prefs.PrefsHelper;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.Constants.Keys;
+import com.liuzhenlin.videos.web.player.Constants.VideoQuality;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -82,6 +83,8 @@ public final class Youtube {
 
         public static final String KEY_PIP = "youtube_pip";
 
+        public static final String KEY_VIDEO_QUALITY = "youtube_video_quality";
+
         @SuppressWarnings("NotNullFieldNotInitialized")
         private static Prefs sImpl;
 
@@ -104,6 +107,11 @@ public final class Youtube {
                     public boolean enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground() {
                         return mPrefsHelper.getBoolean(KEY_PIP, false);
                     }
+
+                    @Override
+                    public String getVideoQuality() {
+                        return mPrefsHelper.getString(KEY_VIDEO_QUALITY, VideoQuality.AUTO);
+                    }
                 };
             }
             return sImpl;
@@ -116,6 +124,8 @@ public final class Youtube {
         public abstract String getPlaybackPageStyle();
 
         public abstract boolean enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground();
+
+        public abstract String getVideoQuality();
     }
 
     public static final class IFrameJsInterface {
@@ -219,7 +229,7 @@ public final class Youtube {
     public static final class JsInterface {
         private JsInterface() {}
 
-        public static String attachListeners() {
+        public static String attachListeners(Context context) {
             return "javascript:\n" +
                     "function attachVideoListeners(v) {\n" +
                     "  if (v.getAttribute('listenersAttached') === 'true') return;\n" +
@@ -237,6 +247,12 @@ public final class Youtube {
                     + "(" + JSE_VIDEO_BUFFERING + ", null);});\n" +
                     "  v.addEventListener('loadstart', function(e) {" + JSI_ON_EVENT
                     + "(" + JSE_VIDEO_UNSTARTED + ", null);});\n" +
+                    "  v.addEventListener('loadedmetadata', function(e) {\n" +
+                    "    if (v.getAttribute('qualitySet') === 'true') return;\n" +
+                    "    v.setAttribute('qualitySet', 'true');\n" +
+                    "    " + setPlaybackQuality(Prefs.get(context).getVideoQuality())
+                                    .replaceFirst("javascript:", "") + "\n" +
+                    "  });\n" +
                     "}\n" +
                     "function findVideo() {\n" +
                     "  var video = document.querySelectorAll('video');\n" +
@@ -316,35 +332,50 @@ public final class Youtube {
                     "if (v != null) v.currentTime += 15;";
         }
 
-        public static String setPlaybackQuality(int idx) {
+        public static String setPlaybackQuality(String quality) {
             return "javascript:\n" +
-                    "function retrySetVideoQuality(idx, attempt, openMenu) {\n" +
-                    "  if (attempt < 10) setTimeout(setVideoQuality, 100, idx, attempt + 1, openMenu);\n" +
+                    "function retrySetVideoQuality(quality, attempt, openMenu) {\n" +
+                    "  if (attempt < 10)\n" +
+                    "   setTimeout(setVideoQuality, 100, quality, attempt + 1, openMenu);\n" +
                     "  else " + JSI_ON_EVENT + "(" + JSE_ERR
-                    + ", 'Failed to set playback quality at index ' + " + idx + ");\n" +
+                    + ", 'Failed to set playback quality to " + quality + "');\n" +
                     "  return false;\n" +
                     "}\n" +
-                    "function setVideoQuality(idx, attempt, openMenu) {\n" +
+                    "function setVideoQuality(quality, attempt, openMenu) {\n" +
                     "  if (openMenu) {\n" +
                     "    var b = document.querySelector('.player-settings-icon');\n" +
-                    "    if (b == null) return retrySetVideoQuality(idx, attempt, true);\n" +
+                    "    if (b == null) return retrySetVideoQuality(quality, attempt, true);\n" +
                     "    b.click();\n" +
                     "  }\n" +
                     "  var settings = document.querySelector('.player-quality-settings');\n" +
-                    "  if (settings == null) return retrySetVideoQuality(idx, attempt, false);\n" +
+                    "  if (settings == null) return retrySetVideoQuality(quality, attempt, false);\n" +
                     "  var select = settings.querySelector('.select');\n" +
-                    "  if (select == null) return retrySetVideoQuality(idx, attempt, false);\n" +
+                    "  if (select == null) return retrySetVideoQuality(quality, attempt, false);\n" +
                     "  var options = select.querySelectorAll('.option');\n" +
-                    "  var evt = document.createEvent(\"HTMLEvents\");\n" +
-                    "  evt.initEvent(\"change\", true, true);\n" +
-                    "  select.selectedIndex = idx;\n" +
-                    "  options[idx].selected = true;\n" +
-                    "  select.dispatchEvent(evt);\n" +
+                    "  var idx = options.length - 1;\n" +
+                    "  quality = quality.trim().toLowerCase();\n" +
+                    "  if (!quality.match(/^" + VideoQuality.AUTO + "$/i)) {\n" +
+                    "    for (let i = 0; i < options.length - 1; i++) {\n" +
+                    "      var option = options[i].innerText.toLowerCase();\n" +
+                    "      if (parseInt(option.substring(0, option.indexOf('p')))\n" +
+                    "          <= parseInt(quality.substring(0, quality.indexOf('p')))) {\n" +
+                    "        idx = i;\n" +
+                    "        break;\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "  if (idx != select.selectedIndex) {\n" +
+                    "    var evt = document.createEvent(\"HTMLEvents\");\n" +
+                    "    evt.initEvent(\"change\", true, true);\n" +
+                    "    select.selectedIndex = idx;\n" +
+                    "    options[idx].selected = true;\n" +
+                    "    select.dispatchEvent(evt);\n" +
+                    "  }\n" +
                     "  setTimeout(()=> {settings.parentNode.parentNode.querySelector("
                     + "'.c3-material-button-button').click();}, 100);\n" +
                     "  return true;\n" +
                     "}\n" +
-                    "setVideoQuality(" + idx + ", 0, true);";
+                    "setVideoQuality('" + quality + "', 0, true);";
         }
 
         public static String loadPlaylist(String pId, @Nullable String vId, int index) {

@@ -84,8 +84,8 @@ public class YoutubeIFramePlayer extends WebPlayer {
     }
 
     @Override
-    public void setPlaybackQuality(Object quality) {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.setPlaybackQuality(quality.toString()));
+    public void setPlaybackQuality(String quality) {
+        mWeb.loadUrl(Youtube.IFrameJsInterface.setPlaybackQuality(quality));
     }
 
     @Override

@@ -14,4 +14,11 @@
         app:title="@string/youtube_pip_title"
         app:summary="@string/youtube_pip_summary" />
 
+    <ListPreference
+        app:defaultValue="auto"
+        app:entries="@array/youtube_video_quality_entries"
+        app:entryValues="@array/youtube_video_quality_values"
+        app:key="youtube_video_quality"
+        app:title="@string/youtube_video_quality_title"
+        app:useSimpleSummaryProvider="true" />
 </PreferenceScreen>
