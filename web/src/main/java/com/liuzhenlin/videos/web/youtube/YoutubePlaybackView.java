@@ -249,6 +249,9 @@ public class YoutubePlaybackView extends PlayerWebView {
         @Nullable WebChromeClient.CustomViewCallback mCustomViewCallback;
         @Nullable View mCustomView;
 
+        private int mScrollX;
+        private int mScrollY;
+
         ChromeClient() {
         }
 
@@ -257,6 +260,11 @@ public class YoutubePlaybackView extends PlayerWebView {
             if (mCustomView == null) {
                 mCustomViewCallback = callback;
                 mCustomView = view;
+                mScrollX = getScrollX();
+                mScrollY = getScrollY();
+                if (mScrollX != 0 || mScrollY != 0) {
+                    scrollTo(0, 0);
+                }
                 addView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 
                 @Nullable YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
@@ -270,6 +278,10 @@ public class YoutubePlaybackView extends PlayerWebView {
         public void onHideCustomView() {
             if (mCustomView != null) {
                 removeView(mCustomView);
+                if (mScrollX != 0 || mScrollY != 0) {
+                    Utils.postOnLayoutValid(YoutubePlaybackView.this,
+                            () -> scrollTo(mScrollX, mScrollY));
+                }
                 mCustomView = null;
                 mCustomViewCallback = null;
 
