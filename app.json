@@ -57,31 +57,35 @@
       "8. 应用支持多渠道更新（开发、测试、稳定）"
     ],
     "beta": {
-      "versionCode": 50,
-      "versionName": "2.1.1-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1-beta01.apk",
-      "appLength": 34418241,
-      "appSha1": "c85d4af02af741aa9bbcfc627756d33acb3728e8",
+      "versionCode": 51,
+      "versionName": "2.1.1-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1-beta02.apk",
+      "appLength": 34435037,
+      "appSha1": "169d90ecf6b65244c4bb0d323da2b7b436e560e7",
       "updateLogs": [
         "1. 修复在原网页全屏播放YouTube视频时，如果关闭页面后点击播放控制通知重进，页面会空白的问题",
         "2. 修复切换深浅色（黑白）主题时首页抽屉会自动关闭且标题栏文字显示靠中的问题",
         "3. 修复当本地视频列表数据超过一屏时，长按屏幕底部最下方露出未超过一半的那行，在浮窗弹出后，该行视频缩略图不加载且多选按钮可能也不显示的问题",
-        "4. YouTube视频剩余时长也可显示在播放控制通知啦～",
-        "5. YouTube视频画中画播放时会在窗口底部显示播放进度条"
+        "4. 修复当YouTube视频自动切到下一个进行播放时，视频会退出全屏或画中画的问题",
+        "5. YouTube视频剩余时长也可显示在播放控制通知啦～",
+        "6. YouTube视频画中画播放时会在窗口底部显示播放进度条",
+        "7. 可以在YouTube播放设置中选定视频播放的优先画质（仅适用于原生播放UI）"
       ]
     },
     "dev": {
-      "versionCode": 50,
-      "versionName": "2.1.1-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1-beta01.apk",
-      "appLength": 34418241,
-      "appSha1": "c85d4af02af741aa9bbcfc627756d33acb3728e8",
+      "versionCode": 51,
+      "versionName": "2.1.1-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1-beta02.apk",
+      "appLength": 34435037,
+      "appSha1": "169d90ecf6b65244c4bb0d323da2b7b436e560e7",
       "updateLogs": [
         "1. 修复在原网页全屏播放YouTube视频时，如果关闭页面后点击播放控制通知重进，页面会空白的问题",
         "2. 修复切换深浅色（黑白）主题时首页抽屉会自动关闭且标题栏文字显示靠中的问题",
         "3. 修复当本地视频列表数据超过一屏时，长按屏幕底部最下方露出未超过一半的那行，在浮窗弹出后，该行视频缩略图不加载且多选按钮可能也不显示的问题",
-        "4. YouTube视频剩余时长也可显示在播放控制通知啦～",
-        "5. YouTube视频画中画播放时会在窗口底部显示播放进度条"
+        "4. 修复当YouTube视频自动切到下一个进行播放时，视频会退出全屏或画中画的问题",
+        "5. YouTube视频剩余时长也可显示在播放控制通知啦～",
+        "6. YouTube视频画中画播放时会在窗口底部显示播放进度条",
+        "7. 可以在YouTube播放设置中选定视频播放的优先画质（仅适用于原生播放UI）"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
