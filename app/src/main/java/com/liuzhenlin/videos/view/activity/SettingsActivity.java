@@ -97,7 +97,8 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
     }
 
     @Override
-    public void setTitle(CharSequence title) {
+    protected void onTitleChanged(CharSequence title, int color) {
+        super.onTitleChanged(title, color);
         mTitleText.setText(title);
     }
 
