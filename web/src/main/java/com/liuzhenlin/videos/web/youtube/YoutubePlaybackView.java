@@ -29,6 +29,8 @@ import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
 import com.liuzhenlin.videos.web.player.WebPlayer;
 
+import java.lang.ref.WeakReference;
+
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getPlaylistIdFromWatchOrShareUrl;
@@ -39,50 +41,16 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWa
 public class YoutubePlaybackView extends PlayerWebView {
 
     @SuppressWarnings("NotNullFieldNotInitialized")
-    private ChromeClient mChromeClient;
+    @Synthetic ChromeClient mChromeClient;
 
     private boolean mVisible;
+    // Always check the current url to see if it is changed even if the view is not visible,
+    // just in case it changes in the background where it was not under our control.
+    private static final boolean ALWAYS_CHECK_CURRENT_URL = true;
 
     @Synthetic String mWatchUrl = Constants.URL_BLANK;
     // This should only work for YoutubePlayer
-    private final MessageQueue.IdleHandler mCheckCurrentUrlIdleHandler = () -> {
-        String url = getUrl();
-        if (!url.split("#")[0].equals(mWatchUrl) && url.matches(Youtube.REGEX_WATCH_URL)) {
-            @Nullable String playlistId = getPlaylistIdFromWatchOrShareUrl(url);
-            @Nullable String videoId = getVideoIdFromWatchUrl(url);
-            if ((playlistId != null && !playlistId.isEmpty() || videoId != null && !videoId.isEmpty())
-                    && (!TextUtils.equals(playlistId, getPlaylistIdFromWatchOrShareUrl(mWatchUrl))
-                            || !TextUtils.equals(videoId, getVideoIdFromWatchUrl(mWatchUrl)))) {
-                boolean fullscreen = mChromeClient.mCustomView != null;
-                int videoIndex = getVideoIndexFromWatchOrShareUrl(url);
-                // Player will probably not be ready to load the video from the new watch url
-                // immediately after this view goes back, at which point the player will be
-                // being reloaded.
-                YoutubePlaybackService.peekIfNonnullThenDo(service -> service.mPlayerReady = false);
-                goBack();
-                YoutubePlaybackService.startPlayback(mContext, playlistId, videoId, videoIndex, true);
-                if (fullscreen) {
-                    YoutubePlaybackService.peekIfNonnullThenDo(
-                            service -> service.addPlayerListener(new PlayerListener() {
-                                @Override
-                                public void onPlayerStateChange(int status) {
-                                    if (status == Youtube.PlayingStatus.PLAYING) {
-                                        // Don't go fullscreen automatically if the user chose
-                                        // another related video from this playback view while
-                                        // the video is not fullscreen.
-                                        if (url.equals(mWatchUrl)) {
-                                            enterFullscreen();
-                                        }
-                                        service.removePlayerListener(this);
-                                    }
-                                }
-                            }));
-                }
-                mWatchUrl = url;
-            }
-        }
-        return true;
-    };
+    private final CheckCurrentUrlIdler mCheckCurrentUrlIdler = new CheckCurrentUrlIdler(this);
     private boolean mIdleHandlerAdded;
 
     public YoutubePlaybackView(Context context) {
@@ -191,17 +159,71 @@ public class YoutubePlaybackView extends PlayerWebView {
         @Nullable
         MessageQueue msgQueue = LooperCompat.getQueue(Executors.MAIN_EXECUTOR.getLooper());
         if (msgQueue != null) {
-            if (mVisible /*&& getWebPlayer() instanceof YoutubePlayer*/) {
+            if (ALWAYS_CHECK_CURRENT_URL || (mVisible /*&& getWebPlayer() instanceof YoutubePlayer*/)) {
                 if (!mIdleHandlerAdded) {
                     mIdleHandlerAdded = true;
-                    msgQueue.addIdleHandler(mCheckCurrentUrlIdleHandler);
+                    msgQueue.addIdleHandler(mCheckCurrentUrlIdler);
                 }
             } else {
                 if (mIdleHandlerAdded) {
                     mIdleHandlerAdded = false;
-                    msgQueue.removeIdleHandler(mCheckCurrentUrlIdleHandler);
+                    msgQueue.removeIdleHandler(mCheckCurrentUrlIdler);
                 }
             }
+        }
+    }
+
+    private static final class CheckCurrentUrlIdler implements MessageQueue.IdleHandler {
+
+        final WeakReference<YoutubePlaybackView> mViewRef;
+
+        CheckCurrentUrlIdler(YoutubePlaybackView view) {
+            mViewRef = new WeakReference<>(view);
+        }
+
+        @Override
+        public boolean queueIdle() {
+            @Nullable YoutubePlaybackView v = mViewRef.get();
+            if (v == null) {
+                return false;
+            }
+            String url = v.getUrl();
+            if (!url.split("#")[0].equals(v.mWatchUrl) && url.matches(Youtube.REGEX_WATCH_URL)) {
+                @Nullable String playlistId = getPlaylistIdFromWatchOrShareUrl(url);
+                @Nullable String videoId = getVideoIdFromWatchUrl(url);
+                if ((playlistId != null && !playlistId.isEmpty() || videoId != null && !videoId.isEmpty())
+                        && (!TextUtils.equals(playlistId, getPlaylistIdFromWatchOrShareUrl(v.mWatchUrl))
+                        || !TextUtils.equals(videoId, getVideoIdFromWatchUrl(v.mWatchUrl)))) {
+                    boolean fullscreen = v.mChromeClient.mCustomView != null;
+                    int videoIndex = getVideoIndexFromWatchOrShareUrl(url);
+                    // Player will probably not be ready to load the video from the new watch url
+                    // immediately after this view goes back, at which point the player will be
+                    // being reloaded.
+                    YoutubePlaybackService.peekIfNonnullThenDo(service -> service.mPlayerReady = false);
+                    v.goBack();
+                    YoutubePlaybackService.startPlayback(
+                            v.mContext, playlistId, videoId, videoIndex, true);
+                    if (fullscreen) {
+                        YoutubePlaybackService.peekIfNonnullThenDo(
+                                service -> service.addPlayerListener(new PlayerListener() {
+                                    @Override
+                                    public void onPlayerStateChange(int status) {
+                                        if (status == Youtube.PlayingStatus.PLAYING) {
+                                            // Don't go fullscreen automatically if the user chose
+                                            // another related video from this playback view while
+                                            // the video is not fullscreen.
+                                            if (url.equals(v.mWatchUrl)) {
+                                                v.enterFullscreen();
+                                            }
+                                            service.removePlayerListener(this);
+                                        }
+                                    }
+                                }));
+                    }
+                    v.mWatchUrl = url;
+                }
+            }
+            return true;
         }
     }
 
