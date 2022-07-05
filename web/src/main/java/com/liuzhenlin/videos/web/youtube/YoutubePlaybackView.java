@@ -38,7 +38,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIdFromWatch
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWatchOrShareUrl;
 
 @NonNullApi
-public class YoutubePlaybackView extends PlayerWebView {
+/*package*/ class YoutubePlaybackView extends PlayerWebView {
 
     @SuppressWarnings("NotNullFieldNotInitialized")
     @Synthetic ChromeClient mChromeClient;
@@ -102,6 +102,7 @@ public class YoutubePlaybackView extends PlayerWebView {
         return false;
     }
 
+    @Override
     public boolean isInFullscreen() {
         return getWebPlayer() instanceof YoutubeIFramePlayer || mChromeClient.mCustomView != null;
     }

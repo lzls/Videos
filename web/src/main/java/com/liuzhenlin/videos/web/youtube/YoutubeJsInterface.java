@@ -14,7 +14,7 @@ import com.liuzhenlin.videos.web.bean.Playlist;
 import com.liuzhenlin.videos.web.bean.Video;
 import com.liuzhenlin.videos.web.player.Constants.Keys;
 
-public class YoutubeJsInterface extends VideosJsInterface {
+/*package*/ class YoutubeJsInterface extends VideosJsInterface {
 
     public static final String NAME = "YouTube";
 
