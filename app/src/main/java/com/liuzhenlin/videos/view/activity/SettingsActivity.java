@@ -133,14 +133,17 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
                         return false;
                 }
                 AppPrefs.getSingleton(this).edit().setDefaultNightMode(mode).apply();
-                AppCompatDelegate.setDefaultNightMode(mode);
-                // Apply default night mode for web process...
                 WebService.bind(this, webService -> {
                     try {
+                        // Apply default night mode for web process...
                         webService.applyDefaultNightMode(mode);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
+                    // This can cause the current Activity to recreate, so it can only be invoked
+                    // after this Activity is bound with the web service or this onBindAction will
+                    // probably not be called at all.
+                    AppCompatDelegate.setDefaultNightMode(mode);
                 });
                 return true;
             case Prefs.KEY_UPDATE_CHANNEL:
