@@ -80,23 +80,29 @@ public class BackgroundbleWebView extends AndroidWebView {
                                             classLoader,
                                             new Class[]{ sViewDelegateCls },
                                             (proxy1, method1, args1) -> {
-                                                switch (method1.getName()) {
-                                                    case "onWindowVisibilityChanged":
-                                                        if ((int) args1[0] != VISIBLE) {
-                                                            return null;
-                                                        }
-                                                        break;
-                                                    case "onVisibilityChanged":
-                                                        if (args1[0] == BackgroundbleWebView.this
-                                                                && (int) args1[1] != VISIBLE) {
-                                                            return null;
-                                                        }
-                                                        break;
-                                                    case "onDetachedFromWindow":
-                                                        if (!shouldStopWhenDetachedFromWindow()) {
-                                                            return null;
-                                                        }
-                                                        break;
+                                                // CAUTION: keeping WebView in background will let
+                                                // it continuously occupy the CPU to request
+                                                // refreshing the device display, causing obvious
+                                                // frame drops and even device temperature rises.
+                                                if (canKeepInBackground()) {
+                                                    switch (method1.getName()) {
+                                                        case "onWindowVisibilityChanged":
+                                                            if ((int) args1[0] != VISIBLE) {
+                                                                return null;
+                                                            }
+                                                            break;
+                                                        case "onVisibilityChanged":
+                                                            if (args1[0] == BackgroundbleWebView.this
+                                                                    && (int) args1[1] != VISIBLE) {
+                                                                return null;
+                                                            }
+                                                            break;
+                                                        case "onDetachedFromWindow":
+                                                            if (!shouldStopWhenDetachedFromWindow()) {
+                                                                return null;
+                                                            }
+                                                            break;
+                                                    }
                                                 }
                                                 return method1.invoke(viewDelegate, args1);
                                             });
@@ -114,5 +120,9 @@ public class BackgroundbleWebView extends AndroidWebView {
 
     protected boolean shouldStopWhenDetachedFromWindow() {
         return true;
+    }
+
+    protected boolean canKeepInBackground() {
+        return false;
     }
 }

@@ -98,11 +98,6 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWa
     }
 
     @Override
-    protected boolean shouldStopWhenDetachedFromWindow() {
-        return false;
-    }
-
-    @Override
     public boolean isInFullscreen() {
         return getWebPlayer() instanceof YoutubeIFramePlayer || mChromeClient.mCustomView != null;
     }
