@@ -10,4 +10,8 @@ public class Configs {
     }
 
     public static final String DEFAULT_CHARSET = "UTF-8";
+
+    @SuppressWarnings({"PointlessBooleanExpression", "ConstantConditions"})
+    public static final boolean DEBUG_DAY_NIGHT_SWITCH = BuildConfig.DEBUG && false;
+    public static final String TAG_DAY_NIGHT_SWITCH = "DayNightSwitch";
 }

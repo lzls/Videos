@@ -157,6 +157,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         if (usingYoutubeIFramePlayer()) {
             getDelegate().setPendingTransitionOverrides(new PlatformPendingTransitionOverrides());
         }
+        // This avoids the unnecessary recreation for this Activity when day night mode changes.
+        getDelegate().setHostCallback(night -> true);
     }
 
     @Override

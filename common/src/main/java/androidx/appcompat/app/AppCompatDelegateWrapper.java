@@ -12,6 +12,7 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.util.Consumer;
 
+import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.ThemeUtils;
 
@@ -38,6 +40,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     private final AppCompatDelegate mDelegate;
 
     private Object mHost;
+    private HostCallback mHostCallback;
     private final HostPrivateAccess mHostPrivateAccess;
 
     /**
@@ -87,6 +90,10 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     public void setPendingTransitionOverrides(@Nullable PendingTransitionOverrides overrides) {
         mTransitionOverrides = overrides;
+    }
+
+    public void setHostCallback(@Nullable HostCallback callback) {
+        mHostCallback = callback;
     }
 
     @Nullable
@@ -207,20 +214,45 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
             // the updated UI Mode
             Configuration config = baseDelegate.mContext.getResources().getConfiguration();
             int uiModeMask = Configuration.UI_MODE_NIGHT_MASK;
-            if ((mConfig.uiMode & uiModeMask) != (config.uiMode & uiModeMask)) {
-                recreateHostWhenDayNightAppliedIfNeeded(baseDelegate);
+            int oldUiNightMode = mConfig.uiMode & uiModeMask;
+            int uiNightMode = config.uiMode & uiModeMask;
+            if (oldUiNightMode != uiNightMode) {
+                if (Configs.DEBUG_DAY_NIGHT_SWITCH) {
+                    Log.d(Configs.TAG_DAY_NIGHT_SWITCH,
+                            "UI night mode of " + baseDelegate.mHost + " changes"
+                                    + " from " + uiNightModeToString(oldUiNightMode)
+                                    + " to " + uiNightModeToString(uiNightMode));
+                }
+                recreateHostWhenDayNightAppliedToResourcesConfigIfNeeded(
+                        baseDelegate, uiNightMode == Configuration.UI_MODE_NIGHT_YES);
             }
             mConfig.setTo(config);
         });
     }
 
-    private void recreateHostWhenDayNightAppliedIfNeeded(AppCompatDelegateImpl baseDelegate) {
+    private String uiNightModeToString(int uiNightMode) {
+        switch (uiNightMode) {
+            case Configuration.UI_MODE_NIGHT_YES:
+                return "night";
+            case Configuration.UI_MODE_NIGHT_NO:
+            default:
+                return "day";
+        }
+    }
+
+    private void recreateHostWhenDayNightAppliedToResourcesConfigIfNeeded(
+            AppCompatDelegateImpl baseDelegate, boolean night) {
         if (!baseDelegate.mIsDestroyed
                 && mBaseContextAttached
                 && (sCanReturnDifferentContext || mCreated)
                 && baseDelegate.mHost instanceof Activity && !((Activity) baseDelegate.mHost).isChild()
                 && isActivityManifestHandlingUiMode()) {
-            ActivityCompat.recreate((Activity) baseDelegate.mHost);
+            if (mHostCallback == null || !mHostCallback.onDayNightAppliedToResourcesConfig(night)) {
+                if (Configs.DEBUG_DAY_NIGHT_SWITCH) {
+                    Log.d(Configs.TAG_DAY_NIGHT_SWITCH, "Recreate " + baseDelegate.mHost);
+                }
+                ActivityCompat.recreate((Activity) baseDelegate.mHost);
+            }
         }
     }
 
@@ -459,5 +491,9 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     public interface HostPrivateAccess {
         void superFinishActivity();
+    }
+
+    public interface HostCallback {
+        boolean onDayNightAppliedToResourcesConfig(boolean night);
     }
 }
