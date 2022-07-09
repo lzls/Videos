@@ -30,24 +30,29 @@ public class ThemeUtils {
     private ThemeUtils() {
     }
 
-    private static int[] sTextAppearanceStyleable;
-    private static int sTextAppearanceStyleableTextColorIndex;
-    private static boolean sTextAppearanceStyleableFetched;
-    private static boolean sTextAppearanceStyleableTextColorIndexFetched;
+    private static volatile int[] sTextAppearanceStyleable;
+    private static volatile int sTextAppearanceStyleableTextColorIndex;
+    private static volatile boolean sTextAppearanceStyleableFetched;
+    private static volatile boolean sTextAppearanceStyleableTextColorIndexFetched;
 
     @SuppressLint("PrivateApi")
     private static void ensureTextAppearanceStyleableFetched(Context context, ClassLoader loader) {
         if (!sTextAppearanceStyleableFetched) {
-            sTextAppearanceStyleableFetched = true;
-            try {
-                if (loader == null) {
-                    loader = context.getClassLoader();
+            synchronized (ThemeUtils.class) {
+                if (!sTextAppearanceStyleableFetched) {
+                    try {
+                        if (loader == null) {
+                            loader = context.getClassLoader();
+                        }
+                        Class<?> styleable = loader.loadClass("com.android.internal.R$styleable");
+                        sTextAppearanceStyleable =
+                                (int[]) styleable.getField("TextAppearance").get(styleable);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        sTextAppearanceStyleable = null;
+                    }
+                    sTextAppearanceStyleableFetched = true;
                 }
-                Class<?> styleable = loader.loadClass("com.android.internal.R$styleable");
-                sTextAppearanceStyleable = (int[]) styleable.getField("TextAppearance").get(styleable);
-            } catch (Exception e) {
-                e.printStackTrace();
-                sTextAppearanceStyleable = null;
             }
         }
     }
@@ -55,17 +60,21 @@ public class ThemeUtils {
     @SuppressLint("PrivateApi")
     private static void ensureTextAppearanceStyleableTextColorIndexFetched(Context context, ClassLoader loader) {
         if (!sTextAppearanceStyleableTextColorIndexFetched) {
-            sTextAppearanceStyleableTextColorIndexFetched = true;
-            try {
-                if (loader == null) {
-                    loader = context.getClassLoader();
+            synchronized (ThemeUtils.class) {
+                if (!sTextAppearanceStyleableTextColorIndexFetched) {
+                    try {
+                        if (loader == null) {
+                            loader = context.getClassLoader();
+                        }
+                        Class<?> styleable = loader.loadClass("com.android.internal.R$styleable");
+                        sTextAppearanceStyleableTextColorIndex =
+                                styleable.getField("TextAppearance_textColor").getInt(styleable);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        sTextAppearanceStyleableTextColorIndex = 0;
+                    }
+                    sTextAppearanceStyleableTextColorIndexFetched = true;
                 }
-                Class<?> styleable = loader.loadClass("com.android.internal.R$styleable");
-                sTextAppearanceStyleableTextColorIndex =
-                        styleable.getField("TextAppearance_textColor").getInt(styleable);
-            } catch (Exception e) {
-                e.printStackTrace();
-                sTextAppearanceStyleableTextColorIndex = 0;
             }
         }
     }

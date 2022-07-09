@@ -7,10 +7,14 @@
 package com.liuzhenlin.videos
 
 import androidx.core.content.ContextCompat
+import com.liuzhenlin.common.Consts
 
 /**
  * @author 刘振林
  */
+
+internal const val PROCESS_NAME_MAIN = Consts.APPLICATION_ID
+internal const val PROCESS_NAME_WEB = Consts.APPLICATION_ID + ":web"
 
 internal const val KEY_DIRECTORY_PATH = "directoryPath"
 internal const val KEY_VIDEODIR = "videodir"

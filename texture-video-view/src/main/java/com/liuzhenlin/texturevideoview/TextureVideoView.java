@@ -97,7 +97,9 @@ import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.transition.MaterialSharedAxis;
+import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
+import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.ParallelThreadExecutor;
@@ -171,7 +173,8 @@ import static com.liuzhenlin.texturevideoview.utils.Utils.isMediaPlayerPlaybackS
  *
  * @author <a href="mailto:2233788867@qq.com">刘振林</a>
  */
-public class TextureVideoView extends AbsTextureVideoView implements ViewHostEventCallback {
+public class TextureVideoView extends AbsTextureVideoView implements ViewHostEventCallback,
+        OnSystemUiNightModeChangedListener {
 
     /** Monitors all events related to (some of the widgets of) this view. */
     public interface EventListener {
@@ -4039,6 +4042,17 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             if (sBgPlaybackControllerServiceConn.disconnectFor(this)) {
                 sBgPlaybackControllerServiceConn = null;
             }
+        }
+    }
+
+    @Override
+    public void onSystemUiNightModeChanged(boolean night) {
+        if (canAccessBackgroundPlaybackControllerService()) {
+            if (Configs.DEBUG_DAY_NIGHT_SWITCH) {
+                Log.d(Configs.TAG_DAY_NIGHT_SWITCH,
+                        "Refresh background playback controller UI from " + this);
+            }
+            sBgPlaybackControllerServiceConn.service.refreshControllerUI();
         }
     }
 

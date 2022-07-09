@@ -488,6 +488,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 return Files.getAppExternalFilesDir().getPath();
             }
         });
+        App.getInstance(this).addOnSystemUiNightModeChangedListener(mVideoView);
     }
 
     @Override
@@ -636,6 +637,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         if (mHandler != null) {
             mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable, null);
         }
+        App.getInstance(this).removeOnSystemUiNightModeChangeListener(mVideoView);
     }
 
     @Override

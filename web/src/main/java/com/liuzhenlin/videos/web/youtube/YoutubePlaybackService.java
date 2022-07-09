@@ -91,8 +91,6 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
     private volatile int mPlayPauseBtnImgSrc = R.drawable.ic_pause_white_24dp;
     private volatile int mPlayPauseBtnContentDesc = R.string.pause;
 
-    private int mNotificationActionIconTint;
-
     private AudioManager mAudioManager;
     private HeadsetEventsReceiver mHeadsetEventsReceiver;
     private MediaButtonEventHandler mMediaButtonEventHandler;
@@ -158,7 +156,6 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         super.onCreate();
         mContext = getApplicationContext();
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-        mNotificationActionIconTint = getNotificationActionIconTint();
         sInstance = this;
     }
 
@@ -528,6 +525,10 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
     }
 
+    public void refreshNotification() {
+        refreshNotification(true);
+    }
+
     private void refreshNotification(boolean showVideoInfo) {
         long elapsedTime = SystemClock.elapsedRealtime();
         Executors.THREAD_POOL_EXECUTOR.execute(() -> {
@@ -596,7 +597,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
 
         // Intent to do things
         Intent doThings = new Intent(mContext, YoutubePlaybackService.class);
-        int iconTint = mNotificationActionIconTint;
+        int iconTint = getNotificationActionIconTint();
 
         RemoteViewsCompat.setImageViewResourceWithTint(this,
                 viewSmall, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
@@ -685,8 +686,11 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
      * Gets the notification action icon tint relying on the current theme. Do NOT cache statically!
      */
     private int getNotificationActionIconTint() {
+        // MUST use the application Context to retrieve the default text color of the below
+        // TextAppearance used by the system UI, whose night mode the application Context will
+        // always keep in sync with.
         return ThemeUtils.getTextAppearanceDefaultTextColor(
-                this, R.style.TextAppearance_Compat_Notification_Media);
+                mContext, R.style.TextAppearance_Compat_Notification_Media);
     }
 
     private static final class MsgHandler extends Handler {
