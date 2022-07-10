@@ -29,6 +29,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -514,35 +515,29 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         finishOtherInstanceInPiP();
     }
 
-    @Synthetic void finishOtherInstanceInPiP() {
-        if (sActivityInPiP != null) {
-            VideoActivity activity = sActivityInPiP.get();
-            if (activity != this) {
-                sActivityInPiP.clear();
-                sActivityInPiP = null;
-                if (activity != null) {
-                    activity.finish();
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        View decorView = getWindow().getDecorView();
+        // True if the activity is recreating.
+        if (ViewCompat.isAttachedToWindow(decorView)) {
+            initUI();
+        } else {
+            decorView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(View v) {
+                    decorView.removeOnAttachStateChangeListener(this);
+                    initUI();
                 }
-            }
+
+                @Override
+                public void onViewDetachedFromWindow(View v) {
+                }
+            });
         }
     }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        mPrivateFlags &= ~PFLAG_STOPPED;
-
-        if (!isInPictureInPictureMode()) {
-            observeNotchSwitch(true);
-            setAutoRotationEnabled(true);
-        }
-
-        mVideoPlayer.openVideo();
-    }
-
-    @Override
-    public void onAttachedToWindow() {
-        super.onAttachedToWindow();
+    @Synthetic void initUI() {
         finishOtherInstanceInPiP();
 
         boolean inPictureInPictureMode = isInPictureInPictureMode();
@@ -582,6 +577,32 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         if (!inPictureInPictureMode) {
             setAutoRotationEnabled(true);
         }
+    }
+
+    @Synthetic void finishOtherInstanceInPiP() {
+        if (sActivityInPiP != null) {
+            VideoActivity activity = sActivityInPiP.get();
+            if (activity != this) {
+                sActivityInPiP.clear();
+                sActivityInPiP = null;
+                if (activity != null) {
+                    activity.finish();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        mPrivateFlags &= ~PFLAG_STOPPED;
+
+        if (!isInPictureInPictureMode()) {
+            observeNotchSwitch(true);
+            setAutoRotationEnabled(true);
+        }
+
+        mVideoPlayer.openVideo();
     }
 
     private void observeNotchSwitch(boolean observe) {

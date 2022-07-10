@@ -129,6 +129,23 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             }
         }
 
+        getSwipeBackLayout().addSwipeListener(new SwipeBackLayout.SwipeListener() {
+            int oldState = SwipeBackLayout.STATE_IDLE;
+
+            @Override
+            public void onScrollStateChange(int edge, int state) {
+                if (oldState == SwipeBackLayout.STATE_IDLE && state != SwipeBackLayout.STATE_IDLE) {
+                    UiUtils.hideSoftInput(window, true);
+                }
+                oldState = state;
+            }
+
+            @Override
+            public void onScrollPercentChange(int edge, float percent) {
+                mShouldSaveDataOnDestroy = percent == 1f;
+            }
+        });
+
         TextView backButton = findViewById(R.id.btn_back);
         backButton.setOnClickListener(this);
 
@@ -187,28 +204,6 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         if (savedInstanceState == null) {
             mPresenter.restoreData(null);
         }
-    }
-
-    @Override
-    public void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        final Window window = getWindow();
-        getSwipeBackLayout().addSwipeListener(new SwipeBackLayout.SwipeListener() {
-            int oldState = SwipeBackLayout.STATE_IDLE;
-
-            @Override
-            public void onScrollStateChange(int edge, int state) {
-                if (oldState == SwipeBackLayout.STATE_IDLE && state != SwipeBackLayout.STATE_IDLE) {
-                    UiUtils.hideSoftInput(window, true);
-                }
-                oldState = state;
-            }
-
-            @Override
-            public void onScrollPercentChange(int edge, float percent) {
-                mShouldSaveDataOnDestroy = percent == 1f;
-            }
-        });
     }
 
     @Override
