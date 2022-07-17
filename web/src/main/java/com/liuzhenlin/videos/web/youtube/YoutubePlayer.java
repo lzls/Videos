@@ -7,10 +7,10 @@ package com.liuzhenlin.videos.web.youtube;
 
 import android.webkit.WebView;
 
+import androidx.annotation.Nullable;
+
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.videos.web.player.WebPlayer;
-
-import androidx.annotation.Nullable;
 
 @NonNullApi
 public class YoutubePlayer extends WebPlayer {
@@ -69,8 +69,8 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     @Override
-    public void seekTo(long position) {
-        mWeb.loadUrl(Youtube.JsInterface.seekTo(position));
+    public void seekTo(long positionMs) {
+        mWeb.loadUrl(Youtube.JsInterface.seekTo(positionMs));
     }
 
     @Override

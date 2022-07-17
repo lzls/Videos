@@ -61,6 +61,7 @@ public class Video {
     public void setBufferedPosition(long bufferedPosition) {
         this.bufferedPosition = bufferedPosition;
     }
+
     public long getCurrentPosition() {
         return currentPosition;
     }

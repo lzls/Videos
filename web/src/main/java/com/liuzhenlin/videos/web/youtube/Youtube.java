@@ -159,9 +159,9 @@ public final class Youtube {
             return seekTo(0);
         }
 
-        public static String seekTo(long position) {
+        public static String seekTo(long positionMs) {
             return "javascript:"
-                    + "player.seekTo(" + Utils.roundDouble(position / 1000d) + ", true);";
+                    + "player.seekTo(" + Utils.roundDouble(positionMs / 1000d) + ", true);";
         }
 
         public static String fastRewind() {
@@ -316,8 +316,8 @@ public final class Youtube {
             return seekTo(0);
         }
 
-        public static String seekTo(long position) {
-            double pos = position / 1000d;
+        public static String seekTo(long positionMs) {
+            double pos = positionMs / 1000d;
             return "javascript:var v = document.querySelector('video');\n" +
                     "if (v != null) v.currentTime = " + pos + ";";
         }
@@ -380,7 +380,7 @@ public final class Youtube {
 
         public static String loadPlaylist(String pId, @Nullable String vId, int index) {
             return URLs.WATCH + "?list=" + pId
-                    + (TextUtils.isEmpty(vId) ? "" : ("&v=" + vId))
+                    + (TextUtils.isEmpty(vId) ? "" : "&v=" + vId)
                     + (index == Constants.UNKNOWN ? "" : "&index=" + index);
         }
 

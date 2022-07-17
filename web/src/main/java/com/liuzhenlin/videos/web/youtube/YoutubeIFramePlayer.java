@@ -64,8 +64,8 @@ public class YoutubeIFramePlayer extends WebPlayer {
     }
 
     @Override
-    public void seekTo(long position) {
-        mWeb.loadUrl(Youtube.IFrameJsInterface.seekTo(position));
+    public void seekTo(long positionMs) {
+        mWeb.loadUrl(Youtube.IFrameJsInterface.seekTo(positionMs));
     }
 
     @Override

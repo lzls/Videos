@@ -38,7 +38,7 @@ public abstract class WebPlayer {
 
     public abstract void next();
 
-    public abstract void seekTo(long position);
+    public abstract void seekTo(long positionMs);
 
     public abstract void seekToDefault();
 
