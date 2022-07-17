@@ -24,13 +24,13 @@ public class YoutubePlayer extends WebPlayer {
     }
 
     @Override
-    public void loadVideo(String vid) {
-        mWeb.loadUrl(Youtube.JsInterface.loadVideo(vid));
+    public void loadVideo(String vid, long startMs) {
+        mWeb.loadUrl(Youtube.JsInterface.loadVideo(vid, startMs));
     }
 
     @Override
-    public void loadPlaylist(String pid, @Nullable String vid, int index) {
-        mWeb.loadUrl(Youtube.JsInterface.loadPlaylist(pid, vid, index));
+    public void loadPlaylist(String pid, @Nullable String vid, int index, long startMs) {
+        mWeb.loadUrl(Youtube.JsInterface.loadPlaylist(pid, vid, index, startMs));
     }
 
     @Override

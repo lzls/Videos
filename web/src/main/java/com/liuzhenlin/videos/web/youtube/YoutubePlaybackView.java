@@ -36,6 +36,7 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getPlaylistIdFromWatchOrShareUrl;
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIdFromWatchUrl;
 import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWatchOrShareUrl;
+import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFromWatchOrShareUrl;
 
 @NonNullApi
 /*package*/ class YoutubePlaybackView extends PlayerWebView {
@@ -58,24 +59,26 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWa
     }
 
     @Override
-    public void loadPlaylist(String playlistId, @Nullable String videoId, int videoIndex) {
+    public void loadPlaylist(
+            String playlistId, @Nullable String videoId, int videoIndex, long videoStartMs) {
         @Nullable WebPlayer player = getWebPlayer();
         if (player instanceof YoutubeIFramePlayer) {
-            loadDataWithBaseURL(Youtube.URLs.PLAYER_API, Youtube.getPlayListHTML(playlistId, videoId),
+            loadDataWithBaseURL(Youtube.URLs.PLAYER_API,
+                    Youtube.getPlayListHTML(playlistId, videoId, videoStartMs),
                     "text/html", null, null);
         } else if (player != null) {
-            player.loadPlaylist(playlistId, videoId, videoIndex);
+            player.loadPlaylist(playlistId, videoId, videoIndex, videoStartMs);
         }
     }
 
     @Override
-    public void loadVideo(String videoId) {
+    public void loadVideo(String videoId, long videoStartMs) {
         @Nullable WebPlayer player = getWebPlayer();
         if (player instanceof YoutubeIFramePlayer) {
-            loadDataWithBaseURL(Youtube.URLs.PLAYER_API, Youtube.getVideoHTML(videoId),
+            loadDataWithBaseURL(Youtube.URLs.PLAYER_API, Youtube.getVideoHTML(videoId, videoStartMs),
                     "text/html", null, null);
         } else if (player != null) {
-            player.loadVideo(videoId);
+            player.loadVideo(videoId, videoStartMs);
         }
     }
 
@@ -192,13 +195,14 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoIndexFromWa
                         || !TextUtils.equals(videoId, getVideoIdFromWatchUrl(v.mWatchUrl)))) {
                     boolean fullscreen = v.mChromeClient.mCustomView != null;
                     int videoIndex = getVideoIndexFromWatchOrShareUrl(url);
+                    long videoStartMs = getVideoStartMsFromWatchOrShareUrl(url);
                     // Player will probably not be ready to load the video from the new watch url
                     // immediately after this view goes back, at which point the player will be
                     // being reloaded.
                     YoutubePlaybackService.peekIfNonnullThenDo(service -> service.mPlayerReady = false);
                     v.goBack();
                     YoutubePlaybackService.startPlayback(
-                            v.mContext, playlistId, videoId, videoIndex, true);
+                            v.mContext, playlistId, videoId, videoIndex, videoStartMs, true);
                     if (fullscreen) {
                         YoutubePlaybackService.peekIfNonnullThenDo(
                                 service -> service.addPlayerListener(new PlayerListener() {

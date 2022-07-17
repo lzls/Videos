@@ -20,9 +20,9 @@ public abstract class WebPlayer {
         mWeb = web;
     }
 
-    public abstract void loadVideo(String vid);
+    public abstract void loadVideo(String vid, long startMs);
 
-    public abstract void loadPlaylist(String pid, @Nullable String vid, int index);
+    public abstract void loadPlaylist(String pid, @Nullable String vid, int index, long startMs);
 
     public abstract void skipAd();
 

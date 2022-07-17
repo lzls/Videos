@@ -9,6 +9,8 @@ public final class Constants {
 
     public static final int UNKNOWN = -1;
 
+    public static final long TIME_UNSET = Long.MIN_VALUE + 1;
+
     public static final String URL_BLANK = "about:blank";
 
     public static final class LinkType {
@@ -66,6 +68,7 @@ public final class Constants {
         public static final String VIDEO_ID = "videoId";
         public static final String PLAYLIST_ID = "playlistId";
         public static final String VIDEO_INDEX = "videoIndex";
+        public static final String VIDEO_START_MS = "videoStartMs";
 
         public static final String FROM_PLAYBACK_VIEW = "fromPlaybackView";
     }

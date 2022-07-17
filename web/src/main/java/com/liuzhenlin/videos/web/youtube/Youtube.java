@@ -13,7 +13,6 @@ import androidx.annotation.Nullable;
 
 import com.bumptech.glide.util.Preconditions;
 import com.liuzhenlin.common.utils.NonNullApi;
-import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.utils.prefs.PrefsHelper;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.Constants.Keys;
@@ -22,6 +21,7 @@ import com.liuzhenlin.videos.web.player.Constants.VideoQuality;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import static com.liuzhenlin.common.utils.Utils.roundDouble;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_PLAYLIST_INFO_RETRIEVED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_INFO_RETRIEVED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
@@ -131,8 +131,13 @@ public final class Youtube {
     public static final class IFrameJsInterface {
         private IFrameJsInterface() {}
 
-        public static String loadVideo(String vId) {
-            return "javascript:player.loadVideoById(\"" + vId + "\");";
+        public static String loadVideo(String vId, long startMs) {
+            String js = "javascript:player.loadVideoById({videoId:\"" + vId + "\"";
+            if (startMs != Constants.TIME_UNSET) {
+                js += ", startSeconds:" + (startMs / 1000d);
+            }
+            js += "});";
+            return js;
         }
 
         public static String playVideo() {
@@ -161,7 +166,7 @@ public final class Youtube {
 
         public static String seekTo(long positionMs) {
             return "javascript:"
-                    + "player.seekTo(" + Utils.roundDouble(positionMs / 1000d) + ", true);";
+                    + "player.seekTo(" + roundDouble(positionMs / 1000d) + ", true);";
         }
 
         public static String fastRewind() {
@@ -183,8 +188,13 @@ public final class Youtube {
             return "javascript:player." + (muted ? "mute" : "unMute") + "();";
         }
 
-        public static String loadPlaylist(String pId, int index) {
-            return "javascript:player.loadPlaylist({list:\"" + pId + "\", index:" + index + "});";
+        public static String loadPlaylist(String pId, int index, long startMs) {
+            String js = "javascript:player.loadPlaylist({list:\"" + pId + "\", index:" + index;
+            if (startMs != Constants.TIME_UNSET) {
+                js += ", startSeconds:" + (startMs / 1000d);
+            }
+            js += "});";
+            return js;
         }
 
         public static String setLoopPlaylist(boolean loop) {
@@ -275,8 +285,9 @@ public final class Youtube {
                     "if (v != null) v.muted=" + muted + ";";
         }
 
-        public static String loadVideo(String vId) {
-            return URLs.WATCH + "?v=" + vId;
+        public static String loadVideo(String vId, long startMs) {
+            return URLs.WATCH + "?v=" + vId
+                    + (startMs == Constants.TIME_UNSET ? "" : "&t=" + (startMs / 1000d) + "s");
         }
 
         public static String playVideo() {
@@ -378,10 +389,11 @@ public final class Youtube {
                     "setVideoQuality('" + quality + "', 0, true);";
         }
 
-        public static String loadPlaylist(String pId, @Nullable String vId, int index) {
+        public static String loadPlaylist(String pId, @Nullable String vId, int index, long startMs) {
             return URLs.WATCH + "?list=" + pId
                     + (TextUtils.isEmpty(vId) ? "" : "&v=" + vId)
-                    + (index == Constants.UNKNOWN ? "" : "&index=" + index);
+                    + (index == Constants.UNKNOWN ? "" : "&index=" + index)
+                    + (startMs == Constants.TIME_UNSET ? "" : "&t=" + (startMs / 1000d) + "s");
         }
 
         public static String setLoopPlaylist(boolean loop) {
@@ -615,19 +627,34 @@ public final class Youtube {
             return Constants.UNKNOWN;
         }
 
+        public static long getVideoStartMsFromWatchOrShareUrl(String url) {
+            url = normalizedServerUrl(url);
+            int startOfVideoStartTime = url.indexOf("t=");
+            if (startOfVideoStartTime > 0) {
+                try {
+                    String s = url.substring(startOfVideoStartTime + 2).split("&")[0]
+                            .replace("s", "");
+                    return Long.parseLong(s) * 1000L;
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+            return Constants.TIME_UNSET;
+        }
+
         private static String normalizedServerUrl(String url) {
             return url.split("#")[0];
         }
     }
 
-    public static String getVideoHTML(String videoId) {
+    public static String getVideoHTML(String videoId, long startMs) {
         return VIDEO_PLAYLIST_HTML_PATTERN
-                .replace(PLACEHOLDER_IFRAME_ELEMENT, getIFrameElement(null, videoId));
+                .replace(PLACEHOLDER_IFRAME_ELEMENT, getIFrameElement(null, videoId, startMs));
     }
 
-    public static String getPlayListHTML(String playlistId, @Nullable String videoId) {
+    public static String getPlayListHTML(String playlistId, @Nullable String videoId, long startMs) {
         return VIDEO_PLAYLIST_HTML_PATTERN
-                .replace(PLACEHOLDER_IFRAME_ELEMENT, getIFrameElement(playlistId, videoId));
+                .replace(PLACEHOLDER_IFRAME_ELEMENT, getIFrameElement(playlistId, videoId, startMs));
     }
 
     private static final String PLACEHOLDER_IFRAME_ELEMENT = "%s";
@@ -674,7 +701,8 @@ public final class Youtube {
             "  </body>\n" +
             "</html>";
 
-    private static String getIFrameElement(@Nullable String playlistId, @Nullable String videoId) {
+    private static String getIFrameElement(
+            @Nullable String playlistId, @Nullable String videoId, long startMs) {
         return "    <iframe style=\"display: block;\"\n" +
                "            id=\"player\"\n" +
                "            frameborder=\"0\"\n" +
@@ -682,6 +710,7 @@ public final class Youtube {
                "            height=\"100%\"\n" +
                "            src=\"https://www.youtube.com/embed/" + (videoId == null ? "" : videoId) +
                "?" + (TextUtils.isEmpty(playlistId) ? "" : ("list=" + playlistId + "&")) +
+               (startMs == Constants.TIME_UNSET ? "" : ("start=" + roundDouble(startMs / 1000d) + "&")) +
                "enablejsapi=1" +
                "&autoplay=1" +
                "&fs=" + EmbeddedPlayerConfigs.SHOW_FULLSCREEN_BUTTON +
