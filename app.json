@@ -58,39 +58,33 @@
       "9. 可以在YouTube播放设置中选定视频播放的优先画质（仅适用于原生播放UI）"
     ],
     "beta": {
-      "versionCode": 52,
-      "versionName": "2.1.1",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1.apk",
-      "appLength": 34435107,
-      "appSha1": "b1dda2f03d53875d4c3bd15fd66376a9eef5f264",
+      "versionCode": 53,
+      "versionName": "2.1.2-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2-beta01.apk",
+      "appLength": 34436952,
+      "appSha1": "b0dd662bdbc9169c61d19a58403737dca304bea0",
       "updateLogs": [
-        "1. 修复在原网页全屏播放YouTube视频时，如果关闭页面后点击播放控制通知重进，页面会空白的问题",
-        "2. 修复切换深浅色（黑白）主题时首页抽屉会自动关闭且标题栏文字显示靠中的问题",
-        "3. 修复当本地视频列表数据超过一屏时，长按屏幕底部最下方露出未超过一半的那行，在浮窗弹出后，该行视频缩略图不加载且多选按钮可能也不显示的问题",
-        "4. 修复当YouTube视频自动切到下一个进行播放时，视频会退出全屏或画中画的问题",
-        "5. 修复应用更新提示框中的更新简介即使在内容未超过一屏的情况下也可能不会一次性完全显示的问题",
-        "6. 优化YouTube播放控制通知的刷新速率",
-        "7. YouTube视频剩余时长也可显示在播放控制通知啦～",
-        "8. YouTube视频画中画播放时会在窗口底部显示播放进度条",
-        "9. 可以在YouTube播放设置中选定视频播放的优先画质（仅适用于原生播放UI）"
+        "1. 修复黑白主题切换时设置页面标题与内容不一致的问题",
+        "2. 修复后台播放控制通知的操作按钮颜色无法随着系统深浅色主题切换而发生变更的问题",
+        "3. 修复本地视频播放页面在由系统销毁后自动重建时用于视频显示的黑色背景区域会被拉伸至全屏的问题",
+        "4. 修复用户反馈页面在由系统销毁并自动重建后，触碰页面左侧边缘无法隐藏弹出的软键盘，且在右滑退出页面时填写的内容不会自动保存的问题",
+        "5. 暂时去掉YouTube视频后台播放的功能，以免导致系统持续卡顿和发热",
+        "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置"
       ]
     },
     "dev": {
-      "versionCode": 52,
-      "versionName": "2.1.1",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.1.apk",
-      "appLength": 34435107,
-      "appSha1": "b1dda2f03d53875d4c3bd15fd66376a9eef5f264",
+      "versionCode": 53,
+      "versionName": "2.1.2-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2-beta01.apk",
+      "appLength": 34436952,
+      "appSha1": "b0dd662bdbc9169c61d19a58403737dca304bea0",
       "updateLogs": [
-        "1. 修复在原网页全屏播放YouTube视频时，如果关闭页面后点击播放控制通知重进，页面会空白的问题",
-        "2. 修复切换深浅色（黑白）主题时首页抽屉会自动关闭且标题栏文字显示靠中的问题",
-        "3. 修复当本地视频列表数据超过一屏时，长按屏幕底部最下方露出未超过一半的那行，在浮窗弹出后，该行视频缩略图不加载且多选按钮可能也不显示的问题",
-        "4. 修复当YouTube视频自动切到下一个进行播放时，视频会退出全屏或画中画的问题",
-        "5. 修复应用更新提示框中的更新简介即使在内容未超过一屏的情况下也可能不会一次性完全显示的问题",
-        "6. 优化YouTube播放控制通知的刷新速率",
-        "7. YouTube视频剩余时长也可显示在播放控制通知啦～",
-        "8. YouTube视频画中画播放时会在窗口底部显示播放进度条",
-        "9. 可以在YouTube播放设置中选定视频播放的优先画质（仅适用于原生播放UI）"
+        "1. 修复黑白主题切换时设置页面标题与内容不一致的问题",
+        "2. 修复后台播放控制通知的操作按钮颜色无法随着系统深浅色主题切换而发生变更的问题",
+        "3. 修复本地视频播放页面在由系统销毁后自动重建时用于视频显示的黑色背景区域会被拉伸至全屏的问题",
+        "4. 修复用户反馈页面在由系统销毁并自动重建后，触碰页面左侧边缘无法隐藏弹出的软键盘，且在右滑退出页面时填写的内容不会自动保存的问题",
+        "5. 暂时去掉YouTube视频后台播放的功能，以免导致系统持续卡顿和发热",
+        "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
