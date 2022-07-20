@@ -7,11 +7,18 @@ package com.liuzhenlin.common.utils;
 
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextPaint;
-import android.util.Log;
+import android.text.style.LeadingMarginSpan;
+import android.text.style.TypefaceSpan;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author 刘振林
@@ -50,67 +57,61 @@ public class TextViewUtils {
         return Utils.roundFloat(fm.leading);
     }
 
-    public static void setHangingIndents(@NonNull TextView tv, int indentSpaceCount) {
-        if (indentSpaceCount <= 0) {
-            return;
-        }
-        final String text = tv.getText().toString();
+    public static final String REGEX_LEADING_OF_LINES_TO_INDENT = "(^\\d+\\. ?).+";
+
+    public static boolean setHangingIndents(@NonNull TextView tv) {
+        return setHangingIndents(tv, REGEX_LEADING_OF_LINES_TO_INDENT);
+    }
+
+    public static boolean setHangingIndents(
+            @NonNull TextView tv, @NonNull String leadingRegexForLinesToIndent) {
+        final String text = tv.getText().toString().replaceAll("\r", "");
         if (text.isEmpty()) {
-            return;
+            return false;
         }
-        if (tv.getMeasuredWidth() == 0) {
-            Log.e("TextViewUtils", "Failed to set hanging intents for the TextView " + tv
-                    + " because its width has not been determined yet."
-                    + " Probably you need to call this method after its layout is done.");
-            return;
+//        if (tv.getMeasuredWidth() == 0) {
+//            Log.e("TextViewUtils", "Failed to set hanging indents for the TextView " + tv
+//                    + " because its width has not been determined yet."
+//                    + " Probably you need to call this method after its layout is done.");
+//            return false;
+//        }
+
+        boolean textChanged = false;
+
+        // 画笔，包含字体信息
+        final Paint paint = tv.getPaint();
+        final Paint monospacePaint;
+        if (paint.getTypeface() != Typeface.MONOSPACE) {
+            monospacePaint = new Paint(paint);
+            monospacePaint.setTypeface(Typeface.MONOSPACE);
+        } else {
+            monospacePaint = paint;
         }
 
-        final int availableWidth = tv.getMeasuredWidth() - tv.getPaddingLeft() - tv.getPaddingRight();
-        final Paint paint = tv.getPaint(); // 画笔，包含字体信息
-
-        // 将缩进处理成空格
-        final StringBuilder indentSpace = new StringBuilder();
-        final float spaceWidth = paint.measureText(" ");
-        int i = 0;
-        for (; i < indentSpaceCount && i * spaceWidth < availableWidth; i++) {
-            indentSpace.append(" ");
-        }
-        final float indentWidth = i * spaceWidth;
-
-        final StringBuilder newText = new StringBuilder();
-        // 将原始文本按行拆分
-        final String[] textLines = text.replaceAll("\r", "").split("\n");
+        final Pattern leadingPatternForLinesToIndent = Pattern.compile(leadingRegexForLinesToIndent);
+        final SpannableString spannableText = new SpannableString(text);
+        final String[] textLines = text.split("\n");
+        int start = 0;
         for (String textLine : textLines) {
-            if (paint.measureText(textLine) <= availableWidth) {
-                // 如果整行宽度在控件可用宽度之内，就不处理了
-                newText.append(textLine);
-            } else {
-                // 如果整行宽度超过控件可用宽度，则按字符测量，在超过可用宽度的前一个字符处手动换行
-                float lineWidth = 0;
-                for (int index = 0, length = textLine.length(); index < length; index++) {
-                    final char ch = textLine.charAt(index);
-                    lineWidth += paint.measureText(String.valueOf(ch));
-                    if (lineWidth <= availableWidth) {
-                        newText.append(ch);
-                    } else {
-                        newText.append("\n");
-                        lineWidth = 0;
-                        index--;
-                    }
-                    // 从手动换行的第二行开始，加上悬挂缩进
-                    if (lineWidth < 0.1f && index != 0) {
-                        newText.append(indentSpace);
-                        lineWidth += indentWidth;
-                    }
-                }
+            Matcher leadingMatcherForLinesToIndent = leadingPatternForLinesToIndent.matcher(textLine);
+            if (leadingMatcherForLinesToIndent.matches()) {
+                String leading = leadingMatcherForLinesToIndent.group(1);
+                //noinspection ConstantConditions
+                spannableText.setSpan(new TypefaceSpan("monospace"),
+                        start, start + leading.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+                int indent = Utils.roundFloat(
+                        monospacePaint.measureText(text, start, start + leading.length()));
+                spannableText.setSpan(new LeadingMarginSpan.Standard(0, indent),
+                        start, start + textLine.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+                textChanged = true;
             }
-            newText.append("\n");
-        }
-        // 把结尾多余的\n去掉
-        if (!text.endsWith("\n")) {
-            newText.deleteCharAt(newText.length() - 1);
+            start += textLine.length() + 1;
         }
 
-        tv.setText(newText);
+        if (textChanged) {
+            tv.setText(spannableText);
+        }
+
+        return textChanged;
     }
 }
