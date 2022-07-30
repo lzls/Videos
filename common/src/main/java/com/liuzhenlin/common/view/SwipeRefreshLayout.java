@@ -38,6 +38,7 @@ import android.widget.ListView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Px;
@@ -264,6 +265,7 @@ public class SwipeRefreshLayout extends ViewGroup
             out.writeByte(mRefreshing ? (byte) 1 : (byte) 0);
         }
 
+        @Keep
         public static final Parcelable.Creator<SavedState> CREATOR =
                 new Parcelable.Creator<SavedState>() {
                     @Override

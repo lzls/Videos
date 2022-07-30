@@ -15,3 +15,16 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+-keepclassmembers,allowobfuscation class * extends com.liuzhenlin.texturevideoview.VideoPlayer {
+    <init>(android.content.Context);
+}
+
+-keep class org.videolan.libvlc.** { *; }
+
+-keep class com.danikula.videocache.** { *; }
+
+-keep class com.coremedia.iso.** { *; }
+-keep class com.googlecode.mp4parser.** { *; }
+-keep class com.mp4parser.** { *; }
+-keep class org.mp4parser.** { *; }

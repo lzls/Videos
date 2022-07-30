@@ -9,7 +9,6 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.Keep;
-import androidx.multidex.MultiDex;
 
 import com.taobao.sophix.SophixApplication;
 import com.taobao.sophix.SophixEntry;
@@ -31,7 +30,15 @@ public class SophixAppStub extends SophixApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        MultiDex.install(base);
+        if (BuildConfig.DEBUG) {
+            try {
+                Class<?> multiDexCls = getClassLoader().loadClass("androidx.multidex.MultiDex");
+                multiDexCls.getMethod("install", Context.class)
+                        .invoke(multiDexCls, base);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         loadVideosLib();
         initSophix();
     }
