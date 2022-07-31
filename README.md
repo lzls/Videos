@@ -6,6 +6,11 @@ where you can perform such ops as topping, deleting and playing. Also, there are
 from [YouTube](https://m.youtube.com) that you can find to play in the `Online Videos` plate of
 the application homepage.
 
+_NOTE: if you are satisfied with this application and **only planed to be a user**, it is
+recommended you download one of the [officially signed installation packages](
+https://github.com/lzls/Videos/blob/release/app.json) in order to get support for code hotfix and
+help me collect crash usages of this app from your device._
+
 ## Features
 - Videos are listed and classified by each item for the videos under the same directory or just
   a standalone file.
