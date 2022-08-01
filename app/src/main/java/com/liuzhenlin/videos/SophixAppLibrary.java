@@ -1,5 +1,5 @@
 /*
- * Created on 2022-1-3 11:22:26 AM.
+ * Created on 2022-8-1 7:49:17 PM.
  * Copyright © 2022 刘振林. All rights reserved.
  */
 
@@ -8,11 +8,11 @@ package com.liuzhenlin.videos;
 import com.google.android.exoplayer2.util.LibraryLoader;
 
 /** Configures and queries the underlying native library. */
-public final class VideosLibrary {
+public class SophixAppLibrary {
 
-    private static final LibraryLoader LOADER = new LibraryLoader("videos");
+    private static final LibraryLoader LOADER = new LibraryLoader("sophix_app");
 
-    private VideosLibrary() {}
+    private SophixAppLibrary() {}
 
     /** Returns whether the underlying library is available, loading it if necessary. */
     public static boolean isAvailable() {
@@ -22,8 +22,7 @@ public final class VideosLibrary {
     /** Throws if the underlying library is not loadable. */
     public static void throwIfNotAvailable() {
         if (!LOADER.isAvailable()) {
-            throw new RuntimeException("Failed to load videos native library.");
+            throw new RuntimeException("Failed to load sophix_app native library.");
         }
     }
 }
-

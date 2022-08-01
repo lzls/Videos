@@ -24,6 +24,7 @@ import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.Files;
+import com.liuzhenlin.videos.VideosLibrary;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -142,6 +143,7 @@ public final class AppPrefs {
                                 String data =
                                         IOUtils.decodeStringFromStream(new FileInputStream(guidFile));
                                 if (data != null) {
+                                    VideosLibrary.throwIfNotAvailable();
                                     guid = AESUtils.decrypt(mContext, data);
                                 }
                             } catch (IOException | GeneralSecurityException e) {
@@ -157,6 +159,7 @@ public final class AppPrefs {
                                 try {
                                     writer = new OutputStreamWriter(
                                             new FileOutputStream(guidFile), Configs.DEFAULT_CHARSET);
+                                    VideosLibrary.throwIfNotAvailable();
                                     writer.write(AESUtils.encrypt(mContext, finalGuid));
                                 } catch (GeneralSecurityException | IOException e) {
                                     ex = e;

@@ -39,16 +39,8 @@ public class SophixAppStub extends SophixApplication {
                 e.printStackTrace();
             }
         }
-        loadVideosLib();
+        SophixAppLibrary.throwIfNotAvailable();
         initSophix();
-    }
-
-    // MUST load the library after MultiDex was called to install or ClassNotFoundException
-    // might be thrown.
-    private static void loadVideosLib() {
-        if (!VideosLibrary.isAvailable()) {
-            throw new RuntimeException("Failed to load videos native library.");
-        }
     }
 
     private void initSophix() {
