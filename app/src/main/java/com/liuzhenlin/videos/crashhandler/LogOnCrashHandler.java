@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.Singleton;
+import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.dao.AppPrefs;
 
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.text.SimpleDateFormat;
 
 public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
@@ -71,17 +73,42 @@ public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
         sb.append("versionCode=").append(pkgInfo.versionCode).append('\n');
         sb.append('\n');
 
-        Field[] fields = Build.class.getFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            sb.append(field.getName()).append('=').append(field.get(null)).append('\n');
-        }
+        // TODO: appends version of the patch applied by Sophix
+//        sb.append("sophixPatchStateInfo=").append(SophixManager.getInstance().getPatchStateInfo())
+//                .append('\n').append('\n');
+
+        deepAppendClassConstantFields(sb, Build.class);
         sb.append('\n');
 
         sb.append("FATAL EXCEPTION: ").append(t.getName()).append('\n');
         sb.append(Log.getStackTraceString(e));
 
         return sb.toString();
+    }
+
+    private void deepAppendClassConstantFields(StringBuilder sb, Class<?> clazz) throws IllegalAccessException {
+        for (Field field : clazz.getFields()) {
+            if ((field.getModifiers() & (Modifier.STATIC | Modifier.FINAL))
+                    == (Modifier.STATIC | Modifier.FINAL)) {
+                Package pkg = clazz.getPackage();
+                String classSimpleName;
+                if (pkg == null) {
+                    classSimpleName = clazz.getName();
+                } else {
+                    classSimpleName = clazz.getName().replace(pkg.getName() + ".", "");
+                }
+                String fieldValue = Utils.objectToString(field.get(clazz));
+                sb.append(classSimpleName).append('.').append(field.getName())
+                        .append('=').append(fieldValue).append('\n');
+            }
+        }
+
+        Class<?>[] classes = clazz.getClasses();
+        if (classes.length > 0) {
+            for (Class<?> cls : classes) {
+                deepAppendClassConstantFields(sb, cls);
+            }
+        }
     }
 
     private void writeCrashLog(String log) throws IOException {

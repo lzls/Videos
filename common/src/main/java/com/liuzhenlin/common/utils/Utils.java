@@ -36,6 +36,7 @@ import androidx.core.view.ViewCompat;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.List;
 
 public class Utils {
@@ -408,5 +409,32 @@ public class Utils {
     @NonNull
     public static String emptyIfStringNull(@Nullable String str) {
         return str == null ? "" : str;
+    }
+
+    @NonNull
+    public static String objectToString(@Nullable Object value) {
+        if (value != null && value.getClass().isArray()) {
+            if (value.getClass() == boolean[].class) {
+                return Arrays.toString((boolean[]) value);
+            } else if (value.getClass() == byte[].class) {
+                return Arrays.toString((byte[]) value);
+            } else if (value.getClass() == char[].class) {
+                return Arrays.toString((char[]) value);
+            } else if (value.getClass() == double[].class) {
+                return Arrays.toString((double[]) value);
+            } else if (value.getClass() == float[].class) {
+                return Arrays.toString((float[]) value);
+            } else if (value.getClass() == int[].class) {
+                return Arrays.toString((int[]) value);
+            } else if (value.getClass() == long[].class) {
+                return Arrays.toString((long[]) value);
+            } else if (value.getClass() == short[].class) {
+                return Arrays.toString((short[]) value);
+            } else {
+                return Arrays.deepToString((Object[]) value);
+            }
+        } else {
+            return String.valueOf(value);
+        }
     }
 }
