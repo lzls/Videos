@@ -58,33 +58,35 @@
       "9. 可以在YouTube播放设置中选定视频播放的优先画质（仅适用于原生播放UI）"
     ],
     "beta": {
-      "versionCode": 53,
-      "versionName": "2.1.2-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2-beta01.apk",
-      "appLength": 34436952,
-      "appSha1": "b0dd662bdbc9169c61d19a58403737dca304bea0",
+      "versionCode": 54,
+      "versionName": "2.1.2-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2-beta02.apk",
+      "appLength": 31494365,
+      "appSha1": "1079986caa0c347076e485b9f1d4c7224c9914c9",
       "updateLogs": [
         "1. 修复黑白主题切换时设置页面标题与内容不一致的问题",
         "2. 修复后台播放控制通知的操作按钮颜色无法随着系统深浅色主题切换而发生变更的问题",
         "3. 修复本地视频播放页面在由系统销毁后自动重建时用于视频显示的黑色背景区域会被拉伸至全屏的问题",
         "4. 修复用户反馈页面在由系统销毁并自动重建后，触碰页面左侧边缘无法隐藏弹出的软键盘，且在右滑退出页面时填写的内容不会自动保存的问题",
-        "5. 暂时去掉YouTube视频后台播放的功能，以免导致系统持续卡顿和发热",
-        "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置"
+        "5. 暂时去掉YouTube视频后台播放的功能，以免导致设备持续卡顿和发热",
+        "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置",
+        "7. 优化更新日志悬挂缩进的效果"
       ]
     },
     "dev": {
-      "versionCode": 53,
-      "versionName": "2.1.2-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2-beta01.apk",
-      "appLength": 34436952,
-      "appSha1": "b0dd662bdbc9169c61d19a58403737dca304bea0",
+      "versionCode": 54,
+      "versionName": "2.1.2-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2-beta02.apk",
+      "appLength": 31494365,
+      "appSha1": "1079986caa0c347076e485b9f1d4c7224c9914c9",
       "updateLogs": [
         "1. 修复黑白主题切换时设置页面标题与内容不一致的问题",
         "2. 修复后台播放控制通知的操作按钮颜色无法随着系统深浅色主题切换而发生变更的问题",
         "3. 修复本地视频播放页面在由系统销毁后自动重建时用于视频显示的黑色背景区域会被拉伸至全屏的问题",
         "4. 修复用户反馈页面在由系统销毁并自动重建后，触碰页面左侧边缘无法隐藏弹出的软键盘，且在右滑退出页面时填写的内容不会自动保存的问题",
-        "5. 暂时去掉YouTube视频后台播放的功能，以免导致系统持续卡顿和发热",
-        "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置"
+        "5. 暂时去掉YouTube视频后台播放的功能，以免导致设备持续卡顿和发热",
+        "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置",
+        "7. 优化更新日志悬挂缩进的效果"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
