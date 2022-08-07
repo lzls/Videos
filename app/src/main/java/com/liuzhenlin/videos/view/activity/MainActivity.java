@@ -729,17 +729,18 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         if (text == null) return;
         tv.setText(text);
 
-        Utils.postOnLayoutValid(tv, () -> {
-            TextViewUtils.setHangingIndents(tv, 4);
+        /*Utils.postOnLayoutValid(tv, () -> */{
+            TextViewUtils.setHangingIndents(tv);
 
-            final String newText = tv.getText().toString();
+            final CharSequence newText = tv.getText();
+            final String newTextString = newText.toString();
             final SpannableString ss = new SpannableString(newText);
 
             final String start = getString(R.string.appName_chinese) + "v";
             final String end = getString(R.string.updateAppendedColon);
             for (int i = 0, count = BuildConfig.VERSION_CODE - 1, fromIndex = 0; i < count; i++) {
-                final int startIndex = newText.indexOf(start, fromIndex);
-                final int endIndex = newText.indexOf(end, startIndex) + end.length();
+                final int startIndex = newTextString.indexOf(start, fromIndex);
+                final int endIndex = newTextString.indexOf(end, startIndex) + end.length();
                 ss.setSpan(new TextAppearanceSpan(_this, R.style.TextAppearance_UpdateLogTitle),
                         startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 fromIndex = endIndex;
@@ -749,7 +750,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
             Utils.postOnLayoutValid(tv,
                     () -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
-        });
+        }//);
 
         Dialog dialog = new AppCompatDialog(_this, R.style.DialogStyle_MinWidth_NoTitle);
         dialog.setContentView(view);

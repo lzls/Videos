@@ -8,18 +8,23 @@ android {
         applicationId gradle.ext.applicationId
         minSdkVersion 16
         versionCode 43 // 43 -> 44
-        versionName "2.1.2-beta01"
+        versionName "2.1.2-beta02"
 
         vectorDrawables.useSupportLibrary = true
 
-        multiDexEnabled true
+        buildTypes {
+            debug {
+                multiDexEnabled true
+//              multiDexKeepProguard file('multidex-config.pro')
+            }
+        }
 
         ndk {
             abiFilters 'armeabi-v7a'/*, 'arm64-v8a'*/
         }
 
-        buildConfigField "int", 'DEV_VERSION_CODE', '53'
-        buildConfigField "int", 'BETA_VERSION_CODE', '53'
+        buildConfigField "int", 'DEV_VERSION_CODE', '54'
+        buildConfigField "int", 'BETA_VERSION_CODE', '54'
     }
 
     packagingOptions {

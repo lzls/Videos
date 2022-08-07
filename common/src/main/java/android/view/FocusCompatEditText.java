@@ -9,6 +9,7 @@ import android.content.Context;
 import android.os.Build;
 import android.util.AttributeSet;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatEditText;
@@ -35,11 +36,13 @@ public class FocusCompatEditText extends AppCompatEditText {
     }
 
     // Override method for APIs 16 and 17
+    @Keep
     void ensureInputFocusOnFirstFocusable() {
         rootViewRequestFocus();
     }
 
     // Override method for APIs 18+ but will not be called on platform versions higher than 20.
+    @Keep
     boolean rootViewRequestFocus() {
         if (!isInTouchMode()) {
             View root = getRootView();

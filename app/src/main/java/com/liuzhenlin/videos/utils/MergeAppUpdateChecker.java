@@ -72,7 +72,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import kotlin.collections.ArraysKt;
 
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
-import static com.liuzhenlin.common.utils.Utils.postOnLayoutValid;
 import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
 /**
@@ -292,7 +291,7 @@ public final class MergeAppUpdateChecker {
 
         TextView tv = view.findViewById(R.id.text_updateLog);
         tv.setText(mUpdateLog);
-        postOnLayoutValid(tv, () -> TextViewUtils.setHangingIndents(tv, 4));
+        TextViewUtils.setHangingIndents(tv);
 
         View.OnClickListener listener = v -> {
             switch (v.getId()) {

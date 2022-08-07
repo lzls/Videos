@@ -9,6 +9,7 @@ import android.content.Context;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -26,6 +27,7 @@ public abstract class VideosJsInterface {
         mContext = context;
     }
 
+    @Keep
     @JavascriptInterface
     public void onEvent(int event, @Nullable String data) {
         Executors.MAIN_EXECUTOR.execute(() -> handleEvent(event, data));

@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -170,6 +171,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
         }
     }
 
+    @Keep
     public static class GeneralFragment extends OpaquePreferenceFragment {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -178,6 +180,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
         }
     }
 
+    @Keep
     public static class YoutubePlaybackFragment extends OpaquePreferenceFragment {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

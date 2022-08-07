@@ -9,7 +9,6 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.Keep;
-import androidx.multidex.MultiDex;
 
 import com.taobao.sophix.SophixApplication;
 import com.taobao.sophix.SophixEntry;
@@ -31,17 +30,17 @@ public class SophixAppStub extends SophixApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        MultiDex.install(base);
-        loadVideosLib();
-        initSophix();
-    }
-
-    // MUST load the library after MultiDex was called to install or ClassNotFoundException
-    // might be thrown.
-    private static void loadVideosLib() {
-        if (!VideosLibrary.isAvailable()) {
-            throw new RuntimeException("Failed to load videos native library.");
+        if (BuildConfig.DEBUG) {
+            try {
+                Class<?> multiDexCls = getClassLoader().loadClass("androidx.multidex.MultiDex");
+                multiDexCls.getMethod("install", Context.class)
+                        .invoke(multiDexCls, base);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        SophixAppLibrary.throwIfNotAvailable();
+        initSophix();
     }
 
     private void initSophix() {
