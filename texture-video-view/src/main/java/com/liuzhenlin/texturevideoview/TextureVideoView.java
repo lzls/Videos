@@ -2345,7 +2345,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     final String result;
                     final String srcPath = FileUtils.UriResolver.getPath(mContext, videoUri);
                     if (srcPath == null) {
-                        Log.e(TAG, "Failed to resolve the path of the video being clipped.");
+                        Log.w(TAG, "Failed to resolve the path of the video being clipped.");
                         resultCode = -1;
                         result = mResources.getString(R.string.clippingFailed);
                     } else {
@@ -2364,7 +2364,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             try {
                                 destFile = VideoUtils.clip(srcPath, destPath, interval[0], interval[1]);
                             } catch (Throwable t) {
-                                t.printStackTrace();
+                                Log.w(TAG, "Clipping failed", t);
                             }
                         } else {
                             // TODO: the logic of cutting out a GIF

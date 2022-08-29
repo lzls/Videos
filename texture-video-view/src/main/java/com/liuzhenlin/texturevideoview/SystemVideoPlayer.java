@@ -214,7 +214,7 @@ public class SystemVideoPlayer extends VideoPlayer {
             mMediaPlayer.setOnBufferingUpdateListener(
                     (mp, percent) -> mBuffering = Utils.roundFloat(mVideoDuration * percent / 100f));
             mMediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "Error occurred while playing video: what= " + what + "; extra= " + extra);
+                Log.w(TAG, "Error occurred while playing video: what= " + what + "; extra= " + extra);
                 showVideoErrorToast(extra);
 
                 onVideoBufferingStateChanged(false);
@@ -291,7 +291,7 @@ public class SystemVideoPlayer extends VideoPlayer {
                 mMediaPlayer.prepareAsync();
 //                mMediaPlayer.setLooping(isSingleVideoLoopPlayback());
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
                 showVideoErrorToast(/* MediaPlayer.MEDIA_ERROR_IO */ -1004);
                 setPlaybackState(PLAYBACK_STATE_ERROR);
             }

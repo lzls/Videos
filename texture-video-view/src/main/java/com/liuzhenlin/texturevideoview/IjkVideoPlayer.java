@@ -238,7 +238,7 @@ public class IjkVideoPlayer extends VideoPlayer {
             mIjkPlayer.setOnBufferingUpdateListener(
                     (mp, percent) -> mBuffering = Utils.roundFloat(mVideoDuration * percent / 100f));
             mIjkPlayer.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "Error occurred while playing video: what= " + what + "; extra= " + extra);
+                Log.w(TAG, "Error occurred while playing video: what= " + what + "; extra= " + extra);
                 showVideoErrorToast(extra);
 
                 onVideoBufferingStateChanged(false);
@@ -341,7 +341,7 @@ public class IjkVideoPlayer extends VideoPlayer {
                 setPlaybackState(PLAYBACK_STATE_PREPARING);
                 mIjkPlayer.prepareAsync();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
                 showVideoErrorToast(IMediaPlayer.MEDIA_ERROR_IO);
                 setPlaybackState(PLAYBACK_STATE_ERROR);
             }

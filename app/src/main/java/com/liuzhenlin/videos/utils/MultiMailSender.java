@@ -72,7 +72,7 @@ public class MultiMailSender {
             // 设置邮件消息的接收者（Message.RecipientType.TO 属性表示接收者为直接接收邮件的人）
             mMessage.setRecipient(Message.RecipientType.TO, to);
         } catch (MessagingException | UnsupportedEncodingException e) {
-            e.printStackTrace();
+            Log.w(TAG, e);
         }
     }
 
@@ -109,8 +109,7 @@ public class MultiMailSender {
             Transport.send(mMessage);
             return true;
         } catch (MessagingException e) {
-            Log.e(TAG, "发送纯文本邮件失败");
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
         return false;
     }
@@ -142,8 +141,7 @@ public class MultiMailSender {
             Transport.send(mMessage);
             return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
-            Log.e(TAG, "发送正文带图片引用的邮件失败");
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
         return false;
     }
@@ -180,8 +178,7 @@ public class MultiMailSender {
             Transport.send(mMessage);
             return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
-            Log.e(TAG, "发送包含附件的邮件失败");
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
         return false;
     }
@@ -234,8 +231,7 @@ public class MultiMailSender {
             Transport.send(mMessage);
             return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
-            Log.e(TAG, "发送正文带图片引用且包含附件的邮件失败");
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
         return false;
     }

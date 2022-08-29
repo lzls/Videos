@@ -317,7 +317,7 @@ public class ExoVideoPlayer extends VideoPlayer {
 
                 @Override
                 public void onPlayerError(@NonNull PlaybackException error) {
-                    Log.e(TAG, "playback error", error);
+                    Log.w(TAG, "playback error", error);
                     // Show video error toast
                     final int stringRes;
                     if (error instanceof ExoPlaybackException

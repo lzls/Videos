@@ -193,14 +193,16 @@ public final class AppUpdateChecker {
 
                     // 连接服务器超时
                 } catch (ConnectTimeoutException e) {
+                    Log.w(TAG, e);
                     return RESULT_CONNECTION_TIMEOUT;
 
                     // 读取数据超时
                 } catch (SocketTimeoutException e) {
+                    Log.w(TAG, e);
                     return RESULT_READ_TIMEOUT;
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                     return 0;
 
                 } finally {
@@ -884,11 +886,13 @@ public final class AppUpdateChecker {
                         }
                     }
                 } catch (ConnectTimeoutException e) {
+                    Log.w(TAG, e);
                     onConnectionTimeout();
                 } catch (SocketTimeoutException e) {
+                    Log.w(TAG, e);
                     onReadTimeout();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                     onDownloadError();
                 } finally {
                     if (conn != null) {
@@ -1084,11 +1088,13 @@ public final class AppUpdateChecker {
                             }
                         }
                     } catch (ConnectTimeoutException e) {
+                        Log.w(TAG, e);
                         onConnectionTimeout();
                     } catch (SocketTimeoutException e) {
+                        Log.w(TAG, e);
                         onReadTimeout();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.w(TAG, e);
                         onDownloadError();
                     } finally {
                         IOUtils.closeSilently(out);
