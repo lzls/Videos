@@ -83,6 +83,9 @@ public final class Youtube {
 
         public static final String KEY_PIP = "youtube_pip";
 
+        public static final String KEY_RETAIN_HISTORY_VIDEO_PAGES =
+                "youtube_retain_history_video_pages";
+
         public static final String KEY_VIDEO_QUALITY = "youtube_video_quality";
 
         @SuppressWarnings("NotNullFieldNotInitialized")
@@ -109,6 +112,11 @@ public final class Youtube {
                     }
 
                     @Override
+                    public boolean retainHistoryVideoPages() {
+                        return mPrefsHelper.getBoolean(KEY_RETAIN_HISTORY_VIDEO_PAGES, true);
+                    }
+
+                    @Override
                     public String getVideoQuality() {
                         return mPrefsHelper.getString(KEY_VIDEO_QUALITY, VideoQuality.AUTO);
                     }
@@ -124,6 +132,8 @@ public final class Youtube {
         public abstract String getPlaybackPageStyle();
 
         public abstract boolean enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground();
+
+        public abstract boolean retainHistoryVideoPages();
 
         public abstract String getVideoQuality();
     }

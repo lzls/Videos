@@ -35,24 +35,6 @@ public abstract class PlayerWebView extends BackgroundbleWebView {
         return mPlayer;
     }
 
-    public boolean isInFullscreen() {
-        return false;
-    }
-
-    public boolean canEnterFullscreen() {
-        return true;
-    }
-
-    public boolean canExitFullscreen() {
-        return false;
-    }
-
-    public void exitFullscreen() {
-    }
-
-    public void enterFullscreen() {
-    }
-
     public abstract void loadPlaylist(
             String playlistId, @Nullable String videoId, int videoIndex, long videoStartMs);
 

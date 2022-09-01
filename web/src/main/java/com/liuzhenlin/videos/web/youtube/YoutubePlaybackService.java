@@ -23,6 +23,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.SystemClock;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.RemoteViews;
 
 import androidx.annotation.NonNull;
@@ -43,6 +44,7 @@ import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.videos.web.AndroidWebView;
 import com.liuzhenlin.videos.web.R;
 import com.liuzhenlin.videos.web.bean.Playlist;
 import com.liuzhenlin.videos.web.bean.Video;
@@ -377,6 +379,12 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         if (playerChanged || (!playlistId.equals(mPlaylistId) || !videoId.equals(mVideoId))) {
             mSeekOnPlayerReady = Constants.UNKNOWN;
             mReplayPlaylist = mReplayVideo = false;
+            if (Youtube.Prefs.get(mContext).retainHistoryVideoPages()) {
+                // We need a new page if the history video pages in the backstack are required
+                // by the user to be still held on to, so set mPlayerReady to false and use
+                // the view to load the video/playlist down below.
+                mPlayerReady = false;
+            }
             if (playlistId.isEmpty()) {
                 mLinkType = Constants.LinkType.SINGLES;
                 mVideoId = videoId;
@@ -420,6 +428,17 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 mView.exitFullscreen();
             }
             if (playerChanged) {
+                mView.addPageListener(new AndroidWebView.PageListener() {
+                    @Override
+                    public void onPageStarted(
+                            @NonNull WebView view, @NonNull String url, @Nullable Bitmap favicon) {
+                        // Clear history pages that used a different player
+                        // XXX: We prefer to retain the history so that WebView can go back later
+                        //      and resume them with the current player.
+                        view.clearHistory();
+                        mView.removePageListener(this);
+                    }
+                });
                 if (ytPlaybackActivity != null) {
                     ActivityCompat.recreate(ytPlaybackActivity);
                 }

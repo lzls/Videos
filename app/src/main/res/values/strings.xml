@@ -167,5 +167,8 @@
     <string name="youtube_pip_summary">
         Enters automatically when video is fullscreen and playback switches to the background
     </string>
+    <string name="youtube_retain_history_video_pages">Retain History Video Pages</string>
+    <string name="youtube_retain_history_video_pages_summary">
+        Keep historical video playback pages in the backstack for later resumption</string>
     <string name="youtube_video_quality_title">Video Quality (useless to the brief playback UI)</string>
 </resources>

@@ -6,15 +6,19 @@
 package com.liuzhenlin.videos.web;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import androidx.annotation.Nullable;
+import androidx.webkit.WebViewClientCompat;
 
 import com.liuzhenlin.common.Configs;
+import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.NonNullApi;
 
 import java.util.regex.Matcher;
@@ -26,6 +30,8 @@ import static java.util.Objects.requireNonNull;
 public class AndroidWebView extends WebView {
 
     protected final Context mContext;
+
+    protected final ListenerSet<PageListener> mPageListeners = new ListenerSet<>();
 
     public AndroidWebView(Context context) {
         this(context, null);
@@ -94,6 +100,77 @@ public class AndroidWebView extends WebView {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             setWebContentsDebuggingEnabled(com.liuzhenlin.videos.web.Configs.WEB_DEBUGGING_ENABLED);
+        }
+
+        setWebViewClient(createWebViewClient());
+        setWebChromeClient(createWebChromeClient());
+    }
+
+    protected ChromeClient createWebChromeClient() {
+        return new ChromeClient();
+    }
+
+    protected Client createWebViewClient() {
+        return new Client();
+    }
+
+    public boolean isInFullscreen() {
+        return false;
+    }
+
+    public boolean canEnterFullscreen() {
+        return true;
+    }
+
+    public boolean canExitFullscreen() {
+        return false;
+    }
+
+    public void exitFullscreen() {
+    }
+
+    public void enterFullscreen() {
+    }
+
+    public void addPageListener(@Nullable PageListener listener) {
+        mPageListeners.add(listener);
+    }
+
+    public void removePageListener(@Nullable PageListener listener) {
+        mPageListeners.remove(listener);
+    }
+
+    public interface PageListener {
+
+        default void onPageStarted(WebView view, String url, @Nullable Bitmap favicon) {}
+        default void onPageFinished(WebView view, String url) {}
+
+        default void onLoadingProgressChanged(WebView view, int newProgress) {}
+
+        default void onEnterFullscreen(WebView view) {}
+        default void onExitFullscreen(WebView view) {}
+    }
+
+    public class Client extends WebViewClientCompat {
+        @Override
+        public void onPageStarted(WebView view, String url, @Nullable Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            mPageListeners.forEach(listener -> listener.onPageStarted(view, url, favicon));
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            mPageListeners.forEach(listener -> listener.onPageFinished(view, url));
+        }
+    }
+
+    public class ChromeClient extends WebChromeClient {
+        @Override
+        public void onProgressChanged(WebView view, int newProgress) {
+            super.onProgressChanged(view, newProgress);
+            mPageListeners.forEach(
+                    listener -> listener.onLoadingProgressChanged(view, newProgress));
         }
     }
 

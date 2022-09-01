@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.util.Rational;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
@@ -28,6 +29,7 @@ import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.view.AspectRatioFrameLayout;
+import com.liuzhenlin.videos.web.AndroidWebView;
 import com.liuzhenlin.videos.web.R;
 import com.liuzhenlin.videos.web.bean.Video;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
@@ -57,6 +59,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     @Synthetic PlayerWebView mPlaybackView;
 
     @Synthetic YoutubePlaybackService mService;
+
+    private AndroidWebView.PageListener mWebPageListener;
 
     private ImageView mLockUnlockOrientationButton;
     private OnOrientationChangeListener mOnOrientationChangeListener;
@@ -211,6 +215,17 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
                 }
             };
 
+            mPlaybackView.addPageListener(mWebPageListener = new AndroidWebView.PageListener() {
+                @Override
+                public void onEnterFullscreen(@NonNull WebView view) {
+                    enterFullscreen();
+                }
+
+                @Override
+                public void onExitFullscreen(@NonNull WebView view) {
+                    exitFullscreen();
+                }
+            });
             if (mPlaybackView.isInFullscreen()) {
                 enterFullscreen();
             }
@@ -247,7 +262,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         return mService != null && mService.getWebPlayer() instanceof YoutubeIFramePlayer;
     }
 
-    /*package*/ void enterFullscreen() {
+    @Synthetic void enterFullscreen() {
         if (usingYoutubePlayer()) {
             SystemBarUtils.showSystemBars(getWindow(), false);
             setRequestedOrientation(SCREEN_ORIENTATION_SENSOR);
@@ -255,7 +270,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         }
     }
 
-    /*package*/ void exitFullscreen() {
+    @Synthetic void exitFullscreen() {
         if (usingYoutubePlayer()) {
             SystemBarUtils.showSystemBars(getWindow(), true);
             setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
@@ -353,6 +368,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         // Have the video view exit fullscreen here, to avoid it going fullscreen automatically
         // the next time user selects a video to play.
         if (mPlaybackView != null) {
+            mPlaybackView.removePageListener(mWebPageListener);
             mPlaybackView.exitFullscreen();
         }
     }

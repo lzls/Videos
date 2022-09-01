@@ -15,7 +15,6 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.annotation.Nullable;
 
@@ -24,6 +23,7 @@ import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.videos.web.AndroidWebView;
 import com.liuzhenlin.videos.web.Configs;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
@@ -44,7 +44,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
     @SuppressWarnings("NotNullFieldNotInitialized")
     @Synthetic ChromeClient mChromeClient;
 
-    private boolean mVisible;
+    @Synthetic boolean mVisible;
     // Always check the current url to see if it is changed even if the view is not visible,
     // just in case it changes in the background where it was not under our control.
     private static final boolean ALWAYS_CHECK_CURRENT_URL = true;
@@ -86,8 +86,16 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
     protected void setup(WebSettings settings) {
         super.setup(settings);
         addJavascriptInterface(new YoutubeJsInterface(mContext), YoutubeJsInterface.NAME);
-        setWebViewClient(new Client());
-        setWebChromeClient(mChromeClient = new ChromeClient());
+    }
+
+    @Override
+    protected AndroidWebView.Client createWebViewClient() {
+        return new Client();
+    }
+
+    @Override
+    protected AndroidWebView.ChromeClient createWebChromeClient() {
+        return mChromeClient = new ChromeClient();
     }
 
     @Override
@@ -196,11 +204,23 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
                     boolean fullscreen = v.mChromeClient.mCustomView != null;
                     int videoIndex = getVideoIndexFromWatchOrShareUrl(url);
                     long videoStartMs = getVideoStartMsFromWatchOrShareUrl(url);
-                    // Player will probably not be ready to load the video from the new watch url
-                    // immediately after this view goes back, at which point the player will be
-                    // being reloaded.
-                    YoutubePlaybackService.peekIfNonnullThenDo(service -> service.mPlayerReady = false);
-                    v.goBack();
+                    // FIXME: make this design more reasonable and generic, e.g., maybe in rare
+                    //        cases that the idler gets called before the playback url is loaded
+                    //        and this takes no effect for the YoutubeIFramePlayer in my tests.
+                    if (v.mVisible) {
+                        // Player will probably not be ready to load the video from the new watch url
+                        // immediately after this view goes back, at which point the player will be
+                        // being reloaded.
+                        YoutubePlaybackService.peekIfNonnullThenDo(
+                                service -> service.mPlayerReady = false);
+                        // Goes back to avoid loading a page same as the current loading one
+                        // through the url that we'll generate and that may be composed of
+                        // not quite the same args as the current url's, but only if this view
+                        // is visible to the user, in case this idler has a chance to be called
+                        // before the view loads the playback url, which otherwise will cause
+                        // the video from the previous url to be played again.
+                        v.goBack();
+                    }
                     YoutubePlaybackService.startPlayback(
                             v.mContext, playlistId, videoId, videoIndex, videoStartMs, true);
                     if (fullscreen) {
@@ -227,7 +247,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
         }
     }
 
-    private final class Client extends WebViewClient {
+    private final class Client extends AndroidWebView.Client {
         Client() {}
 
         @Override
@@ -240,12 +260,13 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
                     return true;
                 }
             }
-            return false;
+            return super.shouldOverrideUrlLoading(view, url);
         }
 
         @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            if (view.canGoBack()) {
+        public void onPageStarted(WebView view, String url, @Nullable Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            if (view.canGoBack() && !Youtube.Prefs.get(mContext).retainHistoryVideoPages()) {
                 if (getWebPlayer() instanceof YoutubeIFramePlayer) {
                     if (url.equals(Youtube.URLs.PLAYER_API)) {
                         view.clearHistory();
@@ -260,6 +281,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
 
         @Override
         public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
             @Nullable WebPlayer player = getWebPlayer();
             if (player instanceof YoutubePlayer) {
                 ((YoutubePlayer) player).attachListeners();
@@ -267,7 +289,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
         }
     }
 
-    private final class ChromeClient extends WebChromeClient {
+    private final class ChromeClient extends AndroidWebView.ChromeClient {
         @Nullable WebChromeClient.CustomViewCallback mCustomViewCallback;
         @Nullable View mCustomView;
 
@@ -289,10 +311,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
                 }
                 addView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 
-                @Nullable YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
-                if (ytPlaybackActivity != null) {
-                    ytPlaybackActivity.enterFullscreen();
-                }
+                mPageListeners.forEach(listener -> listener.onEnterFullscreen(YoutubePlaybackView.this));
             }
         }
 
@@ -307,10 +326,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
                 mCustomView = null;
                 mCustomViewCallback = null;
 
-                @Nullable YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
-                if (ytPlaybackActivity != null) {
-                    ytPlaybackActivity.exitFullscreen();
-                }
+                mPageListeners.forEach(listener -> listener.onExitFullscreen(YoutubePlaybackView.this));
             }
         }
 
