@@ -231,9 +231,9 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     }
 
     private void adjustStatusBar() {
-        if (usingYoutubeIFramePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), false);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        boolean showSystemBars = !usingYoutubeIFramePlayer();
+        SystemBarUtils.showSystemBars(getWindow(), showSystemBars);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && showSystemBars) {
             SystemBarUtils.setStatusBackgroundColorRes(
                     getWindow(), R.color.youtube_watch_page_actionbar_background);
         }
@@ -361,6 +361,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     public void onBackPressed() {
         if (mPlaybackView.canGoBack()) {
             mPlaybackView.goBack();
+        } else if (mService != null) {
+            mService.stop();
         } else {
             super.onBackPressed();
         }

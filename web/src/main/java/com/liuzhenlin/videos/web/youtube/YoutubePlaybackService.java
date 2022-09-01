@@ -27,6 +27,7 @@ import android.widget.RemoteViews;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.Consumer;
 
@@ -280,6 +281,17 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
     }
 
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        // Stops when user removes the task holding YoutubePlaybackActivity from the Recents,
+        // or closes that Activity in PiP through the 'Close' button, etc.
+        if (rootIntent != null && rootIntent.getComponent().getShortClassName()
+                .equals(YoutubePlaybackActivity.class.getName().replace(getPackageName(), ""))) {
+            stop();
+        }
+    }
+
     public void stop() {
         mRunning = false;
         stopForeground(true);
@@ -402,15 +414,15 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
         if (playerChanged || !fromPlaybackView) {
             YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
-            if (playerChanged) {
-                if (ytPlaybackActivity != null) {
-                    ytPlaybackActivity.finish();
-                }
-            }
             // Have the video view exit fullscreen first, to avoid it going fullscreen automatically
             // after it exits from PiP to the default display mode.
             if (ytPlaybackActivity != null && ytPlaybackActivity.isInPictureInPictureMode()) {
                 mView.exitFullscreen();
+            }
+            if (playerChanged) {
+                if (ytPlaybackActivity != null) {
+                    ActivityCompat.recreate(ytPlaybackActivity);
+                }
             }
             playInForeground();
         }
