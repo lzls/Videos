@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -57,6 +58,31 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
     private boolean mBackPressed;
     private boolean mExitOnBackPressed;
 
+    @Synthetic int mScrollY;
+    private final ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener =
+            new ViewTreeObserver.OnScrollChangedListener() {
+                @Override
+                public void onScrollChanged() {
+                    int scrollY = mYoutubeView.getScrollY();
+                    if (scrollY != mScrollY) {
+                        if (mCallback != null) {
+                            mCallback.onYoutubeViewScrollVertically(scrollY);
+                        }
+                        mScrollY = scrollY;
+                    }
+                }
+            };
+
+    @Synthetic Callback mCallback;
+
+    public interface Callback {
+        void onYoutubeViewScrollVertically(int scrollY);
+    }
+
+    public void setCallback(@Nullable Callback callback) {
+        mCallback = callback;
+    }
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -94,6 +120,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
             swipeRefreshLayout.setOnRequestDisallowInterceptTouchEventCallback(() -> true);
 
             mYoutubeView = view.findViewById(R.id.web_youtube);
+            mYoutubeView.getViewTreeObserver().addOnScrollChangedListener(mOnScrollChangedListener);
             mYoutubeView.getSettings().setJavaScriptEnabled(true);
             mYoutubeView.setWebViewClient(new WebViewClient() {
                 @Override
@@ -123,6 +150,14 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
             view.findViewById(R.id.btn_exit).setOnClickListener(this);
         }
         return view;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (mYoutubeView != null) {
+            mYoutubeView.getViewTreeObserver().removeOnScrollChangedListener(mOnScrollChangedListener);
+        }
     }
 
     @Override
