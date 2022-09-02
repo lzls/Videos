@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.compat.LooperCompat;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.Executors;
@@ -185,7 +186,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
     }
 
     private void setSwipeRefreshColorSchemeResources(SwipeRefreshLayout srl) {
-        srl.setColorSchemeResources(R.color.pink, R.color.lightBlue, R.color.purple);
+        srl.setColorSchemeResources(Configs.SWIPE_REFRESH_WIDGET_COLOR_SCHEME);
     }
 
     @Override
