@@ -5,8 +5,6 @@
 
 package com.liuzhenlin.common.utils;
 
-import java.util.regex.Pattern;
-
 /**
  * @author 刘振林
  */
@@ -88,7 +86,7 @@ public class URLUtils {
     /**
      * Regular expression pattern to match most part of RFC 3987 Internationalized URLs, aka IRIs.
      */
-    public static final Pattern PATTERN_WEB_URL = Pattern.compile("("
+    public static final Regex REGEX_WEB_URL = new Regex("("
             + "("
             + "(?:" + PROTOCOL + "(?:" + USER_INFO + ")?" + ")?"
             + "(?:" + DOMAIN_NAME_STR + ")"

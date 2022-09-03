@@ -194,8 +194,9 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
             if (v == null) {
                 return false;
             }
-            String url = v.getUrl();
-            if (!url.split("#")[0].equals(v.mWatchUrl) && url.matches(Youtube.REGEX_WATCH_URL)) {
+
+            String url = v.getUrl().split("#", 2)[0];
+            if (!url.equals(v.mWatchUrl) && Youtube.REGEX_WATCH_URL.matches(url)) {
                 @Nullable String playlistId = getPlaylistIdFromWatchOrShareUrl(url);
                 @Nullable String videoId = getVideoIdFromWatchUrl(url);
                 if ((playlistId != null && !playlistId.isEmpty() || videoId != null && !videoId.isEmpty())
@@ -272,7 +273,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
                         view.clearHistory();
                     }
                 } else {
-                    if (url.matches(Youtube.REGEX_WATCH_URL)) {
+                    if (Youtube.REGEX_WATCH_URL.matches(url)) {
                         view.clearHistory();
                     }
                 }

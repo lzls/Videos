@@ -88,13 +88,13 @@ public class TextViewUtils {
             monospacePaint = paint;
         }
 
-        final Pattern leadingPatternForLinesToIndent = Pattern.compile(leadingRegexForLinesToIndent);
+        final Matcher leadingMatcherForLinesToIndent =
+                Pattern.compile(leadingRegexForLinesToIndent).matcher("");
         final SpannableString spannableText = new SpannableString(text);
         final String[] textLines = text.split("\n");
         int start = 0;
         for (String textLine : textLines) {
-            Matcher leadingMatcherForLinesToIndent = leadingPatternForLinesToIndent.matcher(textLine);
-            if (leadingMatcherForLinesToIndent.matches()) {
+            if (leadingMatcherForLinesToIndent.reset(textLine).matches()) {
                 String leading = leadingMatcherForLinesToIndent.group(1);
                 //noinspection ConstantConditions
                 spannableText.setSpan(new TypefaceSpan("monospace"),

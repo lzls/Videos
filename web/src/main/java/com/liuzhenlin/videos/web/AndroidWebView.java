@@ -20,9 +20,7 @@ import androidx.webkit.WebViewClientCompat;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.NonNullApi;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.liuzhenlin.common.utils.Regex;
 
 import static java.util.Objects.requireNonNull;
 
@@ -178,8 +176,7 @@ public class AndroidWebView extends WebView {
     public static final class UserAgent {
         private UserAgent() {}
 
-        private static final Pattern pattern =
-                Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
+        private static final String REGEX = ".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+";
         @Nullable static String ua;
         @Nullable static String uaDesktop;
 
@@ -194,17 +191,16 @@ public class AndroidWebView extends WebView {
             if (ua != null) return ua;
 
             String ua = s.getUserAgentString();
-            Matcher m = pattern.matcher(ua);
-
-            if (m.matches()) {
+            Regex regex = new Regex(REGEX);
+            if (regex.matches(ua)) {
                 String av;
 //                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 //                    av = Build.VERSION.RELEASE_OR_CODENAME;
 //                } else {
-                av = Build.VERSION.RELEASE;
+                    av = Build.VERSION.RELEASE;
 //                }
-                String wv = requireNonNull(m.group(1));
-                String cv = requireNonNull(m.group(2));
+                String wv = requireNonNull(regex.group(1));
+                String cv = requireNonNull(regex.group(2));
                 UserAgent.ua = USER_AGENT
                         .replace("{ANDROID_VERSION}", av)
                         .replace("{WEBKIT_VERSION}", wv)
@@ -212,7 +208,7 @@ public class AndroidWebView extends WebView {
                 UserAgent.ua = normalize(UserAgent.ua);
                 if (UserAgent.ua.isEmpty()) UserAgent.ua = ua;
             } else {
-//                Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
+//                Log.w("User-Agent does not match the regex ", regex, ": " + ua);
                 UserAgent.ua = ua;
             }
 
@@ -223,16 +219,15 @@ public class AndroidWebView extends WebView {
             if (uaDesktop != null) return uaDesktop;
 
             String ua = s.getUserAgentString();
-            Matcher m = pattern.matcher(ua);
-
-            if (m.matches()) {
-                String wv = requireNonNull(m.group(1));
-                String cv = requireNonNull(m.group(2));
+            Regex regex = new Regex(REGEX);
+            if (regex.matches(ua)) {
+                String wv = requireNonNull(regex.group(1));
+                String cv = requireNonNull(regex.group(2));
                 uaDesktop = USER_AGENT_DESKTOP
                         .replace("{WEBKIT_VERSION}", wv)
                         .replace("{CHROME_VERSION}", cv);
             } else {
-//                Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
+//                Log.w("User-Agent does not match the regex ", regex, ": " + ua);
                 int i1 = ua.indexOf('(') + 1;
                 int i2 = ua.indexOf(')', i1);
                 uaDesktop = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)

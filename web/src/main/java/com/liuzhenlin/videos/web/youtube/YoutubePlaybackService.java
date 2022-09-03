@@ -311,9 +311,9 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         int videoIndex;
         long videoStartMs;
 
-        if (url.matches(Youtube.REGEX_WATCH_URL)) {
+        if (Youtube.REGEX_WATCH_URL.matches(url)) {
             videoId = Youtube.Util.getVideoIdFromWatchUrl(url);
-        } else if (url.matches(Youtube.REGEX_SHARE_URL)) {
+        } else if (Youtube.REGEX_SHARE_URL.matches(url)) {
             videoId = Youtube.Util.getVideoIdFromShareUrl(url);
         } else {
             return false;
