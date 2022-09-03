@@ -56,7 +56,12 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
                 } else if (Youtube.REGEX_SHORTS_URL.matches(url)) {
                     isShortsUrl = true;
                 }
-                mIsShortsUrl = isShortsUrl;
+                if (isShortsUrl != mIsShortsUrl) {
+                    if (mCallback != null) {
+                        mCallback.collapseYoutubeActionBar(isShortsUrl, isShortsUrl, true);
+                    }
+                    mIsShortsUrl = isShortsUrl;
+                }
                 mUrl = url;
             }
             return true;
@@ -86,6 +91,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
 
     public interface Callback {
         void onYoutubeViewScrollVertically(int scrollY);
+        void collapseYoutubeActionBar(boolean collapse, boolean always, boolean animate);
     }
 
     public void setCallback(@Nullable Callback callback) {

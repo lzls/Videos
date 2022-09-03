@@ -117,6 +117,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     private DrawerArrowDrawable mDrawerArrowDrawable;
     private final MainActivityToolbarActions mToolbarActions = new MainActivityToolbarActions(this);
     @Synthetic boolean mActionBarCollapsedInYoutube;
+    private boolean mCollapseActionBarIgnoreYoutubePageScrollChanges;
 
     // 临时缓存LocalSearchedVideosFragment或LocalFoldedVideosFragment的ActionBar
     private ViewGroup mTmpActionBar;
@@ -993,16 +994,19 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     @Override
     public void onYoutubeViewScrollVertically(int scrollY) {
-        if (scrollY == 0 || Math.abs(scrollY - mYoutubeLastScrollY) >= getScaledTouchSlop()) {
+        if (!mCollapseActionBarIgnoreYoutubePageScrollChanges
+                && (scrollY == 0 || Math.abs(scrollY - mYoutubeLastScrollY) >= getScaledTouchSlop())) {
             if (!TransitionUtils.hasTransitions((ViewGroup) mSlidingDrawerLayout.getChildAt(1))) {
-                collapseYoutubeActionBar(scrollY > mYoutubeLastScrollY, true);
+                collapseYoutubeActionBar(scrollY > mYoutubeLastScrollY, false, true);
             }
             mYoutubeLastScrollY = scrollY;
         }
     }
 
-    private void collapseYoutubeActionBar(boolean collapse, boolean animate) {
+    @Override
+    public void collapseYoutubeActionBar(boolean collapse, boolean always, boolean animate) {
         mActionBarCollapsedInYoutube = collapse;
+        mCollapseActionBarIgnoreYoutubePageScrollChanges = always;
         if (mFragmentViewPager.getCurrentItem() == INDEX_YOUTUBE_FRAGMENT
                 && mDrawerScrollPercent == 0
                 && mSlidingDrawerLayout.getScrollState() == SlidingDrawerLayout.SCROLL_STATE_IDLE) {
