@@ -43,16 +43,24 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
 
     @Synthetic WebView mYoutubeView;
     @Synthetic String mUrl = Constants.URL_BLANK;
-    private final MessageQueue.IdleHandler mCheckCurrentUrlIdleHandler = () -> {
-        WebView view = mYoutubeView;
-        String url = view.getUrl();
-        if (!url.equals(mUrl)) {
-            if (YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(view.getContext(), url)) {
-                view.goBack();
+    @Synthetic boolean mIsShortsUrl;
+    private final MessageQueue.IdleHandler mCheckCurrentUrlIdleHandler = new MessageQueue.IdleHandler() {
+        @Override
+        public boolean queueIdle() {
+            WebView view = mYoutubeView;
+            String url = view.getUrl();
+            if (!url.equals(mUrl)) {
+                boolean isShortsUrl = false;
+                if (YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(view.getContext(), url)) {
+                    view.goBack();
+                } else if (Youtube.REGEX_SHORTS_URL.matches(url)) {
+                    isShortsUrl = true;
+                }
+                mIsShortsUrl = isShortsUrl;
+                mUrl = url;
             }
-            mUrl = url;
+            return true;
         }
-        return true;
     };
     private boolean mIdleHandlerAdded;
 
@@ -107,7 +115,8 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
                     }
                 });
         swipeRefreshLayout.setOnChildScrollUpCallback(
-                (parent, child) -> mYoutubeView != null && mYoutubeView.getScrollY() > 0);
+                (parent, child) ->
+                        mYoutubeView != null && mYoutubeView.getScrollY() > 0 || mIsShortsUrl);
 
         ViewStub viewStub = view.findViewById(R.id.viewStub);
         if (NetworkUtil.isNetworkConnected(mContext)) {
@@ -122,7 +131,6 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
 
             mYoutubeView = view.findViewById(R.id.web_youtube);
             mYoutubeView.getViewTreeObserver().addOnScrollChangedListener(mOnScrollChangedListener);
-            mYoutubeView.getSettings().setJavaScriptEnabled(true);
             mYoutubeView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {

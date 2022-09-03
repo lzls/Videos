@@ -226,7 +226,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
             srl.setOnChildScrollUpCallback(
                     (_parent, _child) ->
                             mPlaybackView.getScrollY() > 0
-                                    || !usingYoutubeIFramePlayer && mPlaybackView.isInFullscreen());
+                                    || !usingYoutubeIFramePlayer && mPlaybackView.isInFullscreen()
+                                    || Youtube.REGEX_SHORTS_URL.matches(mPlaybackView.getUrl()));
 
             mPlaybackView.addPageListener(mWebPageListener = new AndroidWebView.PageListener() {
                 @Override

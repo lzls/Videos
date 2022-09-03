@@ -5,11 +5,12 @@
 
 package com.liuzhenlin.videos.web;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -51,27 +52,40 @@ public class AndroidWebView extends WebView {
         setup(getSettings());
 
         // So that we can catch the back button
-        setFocusableInTouchMode(true);
+//        setFocusableInTouchMode(true);
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && canGoBack()) {
-            event.startTracking();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        if (keyCode == KeyEvent.KEYCODE_BACK && canGoBack()) {
+//            event.startTracking();
+//            return true;
+//        }
+//        return super.onKeyDown(keyCode, event);
+//    }
 
+//    @Override
+//    public boolean onKeyUp(int keyCode, KeyEvent event) {
+//        if (keyCode == KeyEvent.KEYCODE_BACK) {
+//            if (canGoBack()) {
+//                goBack();
+//                return true;
+//            }
+//        }
+//        return super.onKeyUp(keyCode, event);
+//    }
+
+    @SuppressLint("ClickableViewAccessibility")
     @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (canGoBack()) {
-                goBack();
-                return true;
-            }
+    public boolean onTouchEvent(MotionEvent event) {
+        boolean consumed = super.onTouchEvent(event);
+        if (consumed && event.getAction() == MotionEvent.ACTION_DOWN
+                && getScrollY() == 0) {
+            // Avoids touch conflicts between this view and SwipeRefreshLayout, where the scrollY
+            // is 0 but this view is actually scrolling a child panel up.
+            setScrollY(1);
         }
-        return super.onKeyUp(keyCode, event);
+        return consumed;
     }
 
     protected void setup(WebSettings settings) {

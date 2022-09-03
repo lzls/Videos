@@ -49,6 +49,8 @@ public final class Youtube {
 
     public static final Regex REGEX_WATCH_URL = new Regex(
             "^(" + REGEX_PROTOCOL + REGEX_WATCH_URL_HOST + "/watch\\?).+");
+    public static final Regex REGEX_SHORTS_URL = new Regex(
+            "^(" + REGEX_PROTOCOL + REGEX_WATCH_URL_HOST + "/shorts/).+");
     public static final Regex REGEX_SHARE_URL = new Regex(
             "^" + REGEX_PROTOCOL + REGEX_SHARE_URL_HOST + "/((\\?list=)?[A-Za-z0-9_-]+)+.*");
 
@@ -61,6 +63,8 @@ public final class Youtube {
         public static final String PLAYER_API = HOME + "/player_api";
 
         public static final String WATCH = HOME + "/watch";
+
+        public static final String SHORTS = HOME + "/shorts";
     }
 
     @IntDef({
