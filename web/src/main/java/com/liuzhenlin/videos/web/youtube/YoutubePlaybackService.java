@@ -611,7 +611,10 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         RemoteViews viewBig = new RemoteViews(pkgName, R.layout.web_player_notification_view_large);
         RemoteViews viewSmall = new RemoteViews(pkgName, R.layout.web_player_notification_view_small);
 
+        Bitmap[] thumb = new Bitmap[1];
+        String[] title_author = new String[2];
         CountDownLatch[] latch = new CountDownLatch[1];
+
         if (loadInfo) {
             latch[0] = new CountDownLatch(2);
             Executors.MAIN_EXECUTOR.execute(() -> {
@@ -619,11 +622,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 InternetResourceLoadTask.ofBitmap("https://i.ytimg.com/vi/" + videoId + "/mqdefault.jpg")
                         .onResult(new InternetResourceLoadTask.ResultCallback<Bitmap>() {
                             @Override
-                            public void onCompleted(Bitmap thumb) {
-                                if (thumb != null) {
-                                    viewBig.setImageViewBitmap(R.id.image_thumbnail, thumb);
-                                    viewSmall.setImageViewBitmap(R.id.image_thumbnail, thumb);
-                                }
+                            public void onCompleted(Bitmap _thumb) {
+                                thumb[0] = _thumb;
                                 latch[0].countDown();
                             }
                         }).executeOnExecutor(workerExecutor);
@@ -636,13 +636,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                                 if (details != null) {
                                     try {
                                         JSONObject detailsJson = new JSONObject(details);
-                                        String title = detailsJson.getString("title");
-                                        String author = detailsJson.getString("author_name");
-                                        builder.setTicker(title);
-                                        viewBig.setTextViewText(R.id.text_title, title);
-                                        viewBig.setTextViewText(R.id.text_author, author);
-                                        viewSmall.setTextViewText(R.id.text_title, title);
-                                        viewSmall.setTextViewText(R.id.text_author, author);
+                                        title_author[0] = detailsJson.getString("title");
+                                        title_author[1] = detailsJson.getString("author_name");
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
@@ -720,6 +715,23 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+
+            Bitmap _thumb = thumb[0];
+            String title = title_author[0];
+            String author = title_author[1];
+            if (_thumb != null) {
+                viewBig.setImageViewBitmap(R.id.image_thumbnail, _thumb);
+                viewSmall.setImageViewBitmap(R.id.image_thumbnail, _thumb);
+            }
+            if (title != null) {
+                builder.setTicker(title);
+                viewBig.setTextViewText(R.id.text_title, title);
+                viewSmall.setTextViewText(R.id.text_title, title);
+            }
+            if (author != null) {
+                viewBig.setTextViewText(R.id.text_author, author);
+                viewSmall.setTextViewText(R.id.text_author, author);
             }
         }
 
