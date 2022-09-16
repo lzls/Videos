@@ -6,6 +6,7 @@
 package com.liuzhenlin.videos.crashhandler;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,8 @@ import com.google.gson.JsonParser;
 import com.liuzhenlin.common.utils.HttpRequester;
 import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.ResponseNotOKException;
+import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.ExtentionsKt;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.bean.Device;
@@ -26,6 +29,7 @@ import com.liuzhenlin.videos.dao.AppPrefs;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 
 public abstract class CrashReporter {
 
@@ -46,8 +50,21 @@ public abstract class CrashReporter {
         File crashLogsDir = Files.getCrashLogsDir(mContext);
         File[] logs = crashLogsDir.listFiles();
         if (logs != null && logs.length > 0) {
-            String deviceId = AppPrefs.getSingleton(mContext).getGUID();
-            if (isDeviceFiltered(new Device(deviceId, Build.MANUFACTURER, Build.MODEL))) {
+            boolean officialApp = false;
+            try {
+                officialApp = Utils.areAppSignaturesMatch(mContext, BuildConfig.RELEASE_SIGN_MD5);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            String deviceId = officialApp ? AppPrefs.getSingleton(mContext).getGUID() : null;
+            if (!officialApp
+                    || isDeviceFiltered(new Device(deviceId, Build.MANUFACTURER, Build.MODEL))) {
+                // Don't send crash logs to me if this app is not the officially signed one or
+                // the device is included in the remote device blacklist.
                 deleteCrashLogs(logs);
             } else {
                 boolean ret = sendInternal(logs);

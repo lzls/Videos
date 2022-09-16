@@ -25,6 +25,7 @@ android {
 
         buildConfigField "int", 'DEV_VERSION_CODE', '55'
         buildConfigField "int", 'BETA_VERSION_CODE', '55'
+        buildConfigField 'String', 'RELEASE_SIGN_MD5', '"C739175007731374EA0A6CC1C706D5CD"'
     }
 
     packagingOptions {
