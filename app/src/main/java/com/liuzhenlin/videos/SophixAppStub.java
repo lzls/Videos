@@ -10,6 +10,7 @@ import android.util.Log;
 
 import androidx.annotation.Keep;
 
+import com.liuzhenlin.common.utils.Utils;
 import com.taobao.sophix.SophixApplication;
 import com.taobao.sophix.SophixEntry;
 import com.taobao.sophix.SophixManager;
@@ -51,7 +52,7 @@ public class SophixAppStub extends SophixApplication {
         tags.add("production");
         SophixManager.getInstance()
                 .setContext(this)
-                .setAppVersion(BuildConfig.VERSION_NAME)
+                .setAppVersion(Utils.getAppVersionName(this))
                 .setTags(tags)
                 .setSecretMetaData(nGetIdSecret(this), nGetAppSecret(this), nGetRsaSecret(this))
                 .setEnableDebug(DEBUG)

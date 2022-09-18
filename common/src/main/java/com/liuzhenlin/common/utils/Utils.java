@@ -327,6 +327,20 @@ public class Utils {
         return true;
     }
 
+    /** Gets the version name of this application, or an empty string if the get fails. */
+    @NonNull
+    public static String getAppVersionName(@NonNull Context context) {
+        String appVersion = "";
+        try {
+            appVersion = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0)
+                    .versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return appVersion;
+    }
+
     /**
      * Creates a new MotionEvent with {@link MotionEvent#ACTION_CANCEL} action being performed,
      * filling in a subset of the basic motion values. Those not specified here are:
