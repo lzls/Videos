@@ -26,7 +26,6 @@ import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -59,8 +58,6 @@ import com.liuzhenlin.common.utils.ColorUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.IOUtils;
-import com.liuzhenlin.common.utils.OSHelper;
-import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.TransitionUtils;
@@ -866,23 +863,6 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                             true);
                 }
                 break;
-        }
-    }
-
-    @Override
-    public void setLightStatus(boolean light) {
-        Window window = getWindow();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            SystemBarUtils.setLightStatus(window, light);
-            // MIUI6...
-        } else if (OSHelper.getMiuiVersion() >= 6) {
-            SystemBarUtils.setLightStatusForMIUI(window, light);
-            // FlyMe4...
-        } else if (OSHelper.isFlyme4OrLater()) {
-            SystemBarUtils.setLightStatusForFlyme(window, light);
-
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            SystemBarUtils.setTranslucentStatus(window, light);
         }
     }
 

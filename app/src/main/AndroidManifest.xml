@@ -15,6 +15,8 @@
 
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <uses-sdk tools:overrideLibrary="androidx.core.splashscreen" />
+
     <application
         android:name=".SophixAppStub"
         android:icon="@mipmap/ic_launcher"
@@ -29,7 +31,7 @@
 
         <activity
             android:name=".view.activity.BootstrapActivity"
-            android:theme="@style/ActivityStyle_Translucent"
+            android:theme="@style/ActivityStyle_Bootstrap"
             android:configChanges="uiMode"
             android:exported="true">
             <intent-filter>

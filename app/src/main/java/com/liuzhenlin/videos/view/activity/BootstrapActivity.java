@@ -15,8 +15,10 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.splashscreen.SplashScreen;
 
 import com.liuzhenlin.common.utils.FileUtils;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.web.youtube.YoutubePlaybackService;
 
@@ -53,9 +55,12 @@ public class BootstrapActivity extends BaseActivity
                 Build.VERSION.SDK_INT == Build.VERSION_CODES.O
                         ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                         : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            SplashScreen.installSplashScreen(this);
+        }
         super.onCreate(savedInstanceState);
-
         setAsNonSwipeBackActivity();
+        setLightStatus(!ThemeUtils.isNightMode(this));
 
         checkStoragePermission();
     }
