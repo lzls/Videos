@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.util.Rational;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -64,6 +65,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     @Synthetic YoutubePlaybackService mService;
 
     private AndroidWebView.PageListener mWebPageListener;
+
+    private boolean mShowSystemBars;
 
     private ImageView mLockUnlockOrientationButton;
     private OnOrientationChangeListener mOnOrientationChangeListener;
@@ -186,7 +189,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
             setRequestedOrientation(
                     usingYoutubeIFramePlayer
                             ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
-            adjustStatusBar();
+            initStatusBar();
             setContentView(R.layout.activity_youtube_playback);
 
             mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
@@ -270,13 +273,17 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         }
     }
 
-    private void adjustStatusBar() {
+    private void initStatusBar() {
         boolean showSystemBars = !usingYoutubeIFramePlayer();
-        SystemBarUtils.showSystemBars(getWindow(), showSystemBars);
+        Window window = getWindow();
+        SystemBarUtils.showSystemBars(window, showSystemBars);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && showSystemBars) {
             SystemBarUtils.setStatusBackgroundColorRes(
-                    getWindow(), R.color.youtube_watch_page_actionbar_background);
+                    window, R.color.youtube_watch_page_actionbar_background);
         }
+        mShowSystemBars = showSystemBars;
+        window.getDecorView().setOnSystemUiVisibilityChangeListener(
+                visibility -> SystemBarUtils.showSystemBars(window, mShowSystemBars));
     }
 
     @Synthetic boolean usingYoutubePlayer() {
@@ -289,7 +296,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
 
     @Synthetic void enterFullscreen() {
         if (usingYoutubePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), false);
+            SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = false);
             setRequestedOrientation(SCREEN_ORIENTATION_SENSOR);
             setOnOrientationChangeListenerEnabled(true);
         }
@@ -297,7 +304,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
 
     @Synthetic void exitFullscreen() {
         if (usingYoutubePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), true);
+            SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = true);
             setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
             setOnOrientationChangeListenerEnabled(false);
             showLockUnlockOrientationButton(false);
