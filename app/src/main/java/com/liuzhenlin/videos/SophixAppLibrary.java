@@ -5,12 +5,20 @@
 
 package com.liuzhenlin.videos;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.util.LibraryLoader;
 
 /** Configures and queries the underlying native library. */
 public class SophixAppLibrary {
 
-    private static final LibraryLoader LOADER = new LibraryLoader("sophix_app");
+    private static final LibraryLoader LOADER =
+            new LibraryLoader("sophix_app") {
+                @Override
+                protected void loadLibrary(@NonNull String name) {
+                    System.loadLibrary(name);
+                }
+            };
 
     private SophixAppLibrary() {}
 

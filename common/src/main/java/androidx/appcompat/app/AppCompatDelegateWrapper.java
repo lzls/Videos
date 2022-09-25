@@ -242,7 +242,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     private void recreateHostWhenDayNightAppliedToResourcesConfigIfNeeded(
             AppCompatDelegateImpl baseDelegate, boolean night) {
-        if (!baseDelegate.mIsDestroyed
+        if (!baseDelegate.mDestroyed
                 && mBaseContextAttached
                 && (sCanReturnDifferentContext || mCreated)
                 && baseDelegate.mHost instanceof Activity && !((Activity) baseDelegate.mHost).isChild()
@@ -405,27 +405,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     @Override
     public boolean applyDayNight() {
-         boolean[] handled = { mDelegate.applyDayNight() };
-         doIfDelegateIsTheBase(baseDelegate -> {
-             Configuration newConfig = baseDelegate.mContext.getResources().getConfiguration();
-             int uiModeMask = Configuration.UI_MODE_NIGHT_MASK;
-             // Always check for whether uiMode is changed if the Activity has declared to handle
-             // UI mode changes in manifest because the uiMode from newConfig, even the newConfig
-             // itself, can be the same value across multiple Activities.
-             // Besides, an Activity instance that was not started could not have its
-             // onConfigurationChanged() called even if super updated the Configuration with a new
-             // UI mode. So we can not just rely on the return value from super to suppose that
-             // the onConfigurationChanged() of our host Activity has been called to update the UI.
-             if (!baseDelegate.mIsDestroyed
-                     && ((mConfig.uiMode & uiModeMask) != (newConfig.uiMode & uiModeMask))
-                     && baseDelegate.mHost instanceof Activity
-                     && isActivityManifestHandlingUiMode()) {
-                 ((Activity) baseDelegate.mHost).onConfigurationChanged(
-                         baseDelegate.mContext.getResources().getConfiguration());
-                 handled[0] = true;
-             }
-         });
-         return handled[0];
+        return mDelegate.applyDayNight();
     }
 
     @Override

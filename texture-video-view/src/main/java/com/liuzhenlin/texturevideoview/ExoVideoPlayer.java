@@ -32,7 +32,6 @@ import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.source.MergingMediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.SingleSampleMediaSource;
@@ -42,7 +41,7 @@ import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.rtsp.RtspMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
-import com.google.android.exoplayer2.text.Cue;
+import com.google.android.exoplayer2.text.CueGroup;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
@@ -83,8 +82,8 @@ public class ExoVideoPlayer extends VideoPlayer {
 
     @Synthetic ExoPlayer mExoPlayer;
     private DefaultTrackSelector mTrackSelector;
-    private MediaSourceFactory mMediaSourceFactory;
-    private MediaSourceFactory mTmpMediaSourceFactory;
+    private MediaSource.Factory mMediaSourceFactory;
+    private MediaSource.Factory mTmpMediaSourceFactory;
     private SimpleArrayMap<Uri, String[]/*{mimeType, language}*/> mSubtitles;
     private static SingleSampleMediaSource.Factory sSubtitleSourceFactory;
     private static DataSource.Factory sDefaultDataSourceFactory;
@@ -136,7 +135,8 @@ public class ExoVideoPlayer extends VideoPlayer {
     private final AudioFocusRequest mAudioFocusRequest =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
                     new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                            .setAudioAttributes(sDefaultAudioAttrs.getAudioAttributesV21())
+                            .setAudioAttributes(
+                                    sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes)
                             .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
                             .setAcceptsDelayedFocusGain(true)
                             .build()
@@ -147,11 +147,11 @@ public class ExoVideoPlayer extends VideoPlayer {
     }
 
     /**
-     * @return the user (the person that may be using this class) specified {@link MediaSourceFactory}
+     * @return the user (the person that may be using this class) specified {@link MediaSource.Factory}
      *         for reading the media content(s)
      */
     @Nullable
-    public MediaSourceFactory getMediaSourceFactory() {
+    public MediaSource.Factory getMediaSourceFactory() {
         return mMediaSourceFactory;
     }
 
@@ -161,9 +161,9 @@ public class ExoVideoPlayer extends VideoPlayer {
      * with {@link DefaultDataSource.Factory} will be created to read the media, based on
      * the corresponding media stream type.
      *
-     * @param factory a subclass instance of {@link MediaSourceFactory}
+     * @param factory a subclass instance of {@link MediaSource.Factory}
      */
-    public void setMediaSourceFactory(@Nullable MediaSourceFactory factory) {
+    public void setMediaSourceFactory(@Nullable MediaSource.Factory factory) {
         mMediaSourceFactory = factory;
         if (mMediaSourceFactory != null) {
             mTmpMediaSourceFactory = null;
@@ -179,7 +179,7 @@ public class ExoVideoPlayer extends VideoPlayer {
 
     /**
      * @return the default {@link DataSource.Factory} created by this class, which will be used for
-     *         various of {@link MediaSourceFactory}s (if the user specified one is not set).
+     *         various of {@link MediaSource.Factory}s (if the user specified one is not set).
      */
     @NonNull
     public DataSource.Factory getDefaultDataSourceFactory() {
@@ -219,7 +219,7 @@ public class ExoVideoPlayer extends VideoPlayer {
      * @return a user agent string based on the application name resolved from the context object
      *         of the view this player is bound to and the `exoplayer-core` library version,
      *         which can be used to create a {@link com.google.android.exoplayer2.upstream.DataSource.Factory}
-     *         instance for the {@link MediaSourceFactory} subclasses.
+     *         instance for the {@link MediaSource.Factory} subclasses.
      */
     @NonNull
     public String getUserAgent() {
@@ -349,9 +349,9 @@ public class ExoVideoPlayer extends VideoPlayer {
                 }
 
                 @Override
-                public void onCues(@NonNull List<Cue> cues) {
+                public void onCues(@NonNull CueGroup cueGroup) {
                     if (mVideoView != null) {
-                        mVideoView.showSubtitles(cues);
+                        mVideoView.showSubtitles(cueGroup.cues);
                     }
                 }
             });
@@ -372,8 +372,9 @@ public class ExoVideoPlayer extends VideoPlayer {
             mVideoView.cancelDraggingVideoSeekBar(false);
         }
         if (mVideoUri != null) {
-            //noinspection deprecation
-            MediaSource mediaSource = obtainMediaSourceFactory(mVideoUri).createMediaSource(mVideoUri);
+            MediaSource mediaSource =
+                    obtainMediaSourceFactory(mVideoUri)
+                            .createMediaSource(MediaItem.fromUri(mVideoUri));
             if (mSubtitles != null && !mSubtitles.isEmpty()) {
                 int size = mSubtitles.size();
                 MediaSource[] mediaSources = new MediaSource[size + 1];
@@ -404,41 +405,41 @@ public class ExoVideoPlayer extends VideoPlayer {
         }
     }
 
-    /*package*/ MediaSourceFactory obtainMediaSourceFactory(Uri uri) {
+    /*package*/ MediaSource.Factory obtainMediaSourceFactory(Uri uri) {
         if (mMediaSourceFactory != null) return mMediaSourceFactory;
 
-        int type = Util.inferContentType(uri, null);
+        int type = Util.inferContentType(uri);
         //noinspection SwitchIntDef
         switch (type) {
-            case C.TYPE_DASH:
+            case C.CONTENT_TYPE_DASH:
                 if (mTmpMediaSourceFactory instanceof DashMediaSource.Factory) {
                     return mTmpMediaSourceFactory;
                 }
                 return mTmpMediaSourceFactory =
                         new DashMediaSource.Factory(getDefaultDataSourceFactory());
 
-            case C.TYPE_SS:
+            case C.CONTENT_TYPE_SS:
                 if (mTmpMediaSourceFactory instanceof SsMediaSource.Factory) {
                     return mTmpMediaSourceFactory;
                 }
                 return mTmpMediaSourceFactory =
                         new SsMediaSource.Factory(getDefaultDataSourceFactory());
 
-            case C.TYPE_HLS:
+            case C.CONTENT_TYPE_HLS:
                 if (mTmpMediaSourceFactory instanceof HlsMediaSource.Factory) {
                     return mTmpMediaSourceFactory;
                 }
                 return mTmpMediaSourceFactory =
                         new HlsMediaSource.Factory(getDefaultDataSourceFactory());
 
-            case C.TYPE_RTSP:
+            case C.CONTENT_TYPE_RTSP:
                 if (mTmpMediaSourceFactory instanceof RtspMediaSource.Factory) {
                     return mTmpMediaSourceFactory;
                 }
                 return mTmpMediaSourceFactory =
                         new RtspMediaSource.Factory().setUserAgent(getUserAgent());
 
-            case C.TYPE_OTHER:
+            case C.CONTENT_TYPE_OTHER:
                 if (mTmpMediaSourceFactory instanceof ProgressiveMediaSource.Factory) {
                     return mTmpMediaSourceFactory;
                 }
@@ -886,7 +887,7 @@ public class ExoVideoPlayer extends VideoPlayer {
         MappingTrackSelector.MappedTrackInfo mappedTrackInfo = getCurrentMappedTrackInfo();
         if (mappedTrackInfo == null) return;
 
-        DefaultTrackSelector.ParametersBuilder builder = mTrackSelector.buildUponParameters();
+        DefaultTrackSelector.Parameters.Builder builder = mTrackSelector.buildUponParameters();
         for (int rendererIndex = 0, rendererCount = mappedTrackInfo.getRendererCount();
              rendererIndex < rendererCount;
              rendererIndex++) {

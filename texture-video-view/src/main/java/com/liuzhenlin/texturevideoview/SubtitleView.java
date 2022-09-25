@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.text.Cue;
+import com.google.android.exoplayer2.text.CueGroup;
 import com.google.android.exoplayer2.text.TextOutput;
 import com.google.android.exoplayer2.util.Util;
 
@@ -80,8 +81,8 @@ public final class SubtitleView extends View implements TextOutput {
   }
 
   @Override
-  public void onCues(@NonNull List<Cue> cues) {
-    setCues(cues);
+  public void onCues(@NonNull CueGroup cueGroup) {
+    setCues(cueGroup.cues);
   }
 
   /**

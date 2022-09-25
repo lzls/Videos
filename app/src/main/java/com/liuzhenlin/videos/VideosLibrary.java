@@ -5,12 +5,20 @@
 
 package com.liuzhenlin.videos;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.util.LibraryLoader;
 
 /** Configures and queries the underlying native library. */
 public final class VideosLibrary {
 
-    private static final LibraryLoader LOADER = new LibraryLoader("videos");
+    private static final LibraryLoader LOADER =
+            new LibraryLoader("videos") {
+                @Override
+                protected void loadLibrary(@NonNull String name) {
+                    System.loadLibrary(name);
+                }
+            };
 
     private VideosLibrary() {}
 

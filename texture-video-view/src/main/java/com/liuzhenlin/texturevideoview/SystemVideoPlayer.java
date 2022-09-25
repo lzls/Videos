@@ -124,7 +124,8 @@ public class SystemVideoPlayer extends VideoPlayer {
     private final AudioFocusRequest mAudioFocusRequest =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
                     new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                            .setAudioAttributes(sDefaultAudioAttrs.getAudioAttributesV21())
+                            .setAudioAttributes(
+                                    sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes)
                             .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
                             .setAcceptsDelayedFocusGain(true)
                             .build()
@@ -172,7 +173,8 @@ public class SystemVideoPlayer extends VideoPlayer {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setSurface(surface);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mMediaPlayer.setAudioAttributes(sDefaultAudioAttrs.getAudioAttributesV21());
+                mMediaPlayer.setAudioAttributes(
+                        sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes);
             } else {
                 mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             }
