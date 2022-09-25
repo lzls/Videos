@@ -16,8 +16,10 @@ def exoplayer2ExtensionModulesPrefix = gradle.ext.exoplayer2ExtensionModulesPref
 
 dependencies {
     api project(':common')
+    // TODO: Remove this dependency once its version from the material lib is upgraded to the latest.
+    //       The version 2.0.1 in the current material lib (v1.6.1) will cause a bug on the
+    //       TextureVideoView's resizing.
     api 'androidx.constraintlayout:constraintlayout:2.1.4'
-    api 'androidx.recyclerview:recyclerview:1.2.1'
 
     api "com.google.android.exoplayer:exoplayer-core:$rootProject.ext.exoplayer2Version"
     api "com.google.android.exoplayer:exoplayer-dash:$rootProject.ext.exoplayer2Version"
