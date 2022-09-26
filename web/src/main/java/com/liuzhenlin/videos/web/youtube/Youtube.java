@@ -290,9 +290,32 @@ public final class Youtube {
 
         public static String skipAd() {
             return "javascript:\n" +
+                    "function skipAdPoster(attempt) {\n" +
+                    "  var btn = document.querySelector('.ytp-ad-skip-button');\n" +
+                    "  if (btn != null) {\n" +
+                    "    console.debug('Clicking skip-ad button...');\n" +
+                    "    btn.click();\n" +
+                    "    return true;\n" +
+                    "  }\n" +
+                    "  if (attempt < 10) {\n" +
+                    "    console.debug('Retry skipping AD poster...');\n" +
+                    "    setTimeout(skipAdPoster, 100, attempt + 1);\n" +
+                    "    return false;\n" +
+                    "  }\n" +
+                    "  if (document.querySelector('.ad-showing') != null) {\n" +
+                    "    " + JSI_ON_EVENT + "(" + JSE_ERR + ", 'Failed to skip AD poster');\n" +
+                    "    return false;\n" +
+                    "  }\n" +
+                    "  console.debug('No AD poster to skip');\n" +
+                    "  return true;\n" +
+                    "}\n" +
                     "if (document.querySelector('.ad-showing') != null) {\n" +
-                    "  var video = document.querySelector('video');\n" +
-                    "  if (video != null) video.currentTime = video.duration;\n" +
+                    "  let video = document.querySelector('video');\n" +
+                    "  if (video != null) {\n" +
+                    "    video.currentTime = video.duration;\n" +
+                    "    console.debug('Start skipping AD poster...');\n" +
+                    "    setTimeout(skipAdPoster, 100, 0);\n" +
+                    "  }\n" +
                     "}";
         }
 
