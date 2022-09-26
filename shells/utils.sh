@@ -162,3 +162,18 @@ function trace() {
 
   "$@"
 }
+
+function parsePath() {
+  local path=$1
+  local _pwd=
+  if [[ "$2" == --pwd=* ]]; then
+    _pwd=${2:6}
+  else
+    _pwd=${2:-$(pwd)}
+  fi
+  case $path in
+    /*) echo "$path";;
+    \~/*) echo "$(echo ~)/${path:2}";;
+    ./*|../*) echo "$_pwd/$path";;
+  esac
+}

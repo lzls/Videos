@@ -36,7 +36,7 @@ function __parseShellArgs() {
   local amend='--amend'
   for arg in "$@"; do
     case $arg in
-    ${projectsRootPrefix}*) PROJECTS_ROOT=${arg:${#projectsRootPrefix}} ;;
+    ${projectsRootPrefix}*) PROJECTS_ROOT=$(parsePath "${arg:${#projectsRootPrefix}}") ;;
     ${versionNamePrefix}*) APP_VERSION_NAME=${arg:${#versionNamePrefix}} ;;
     ${partsCountPrefix}*) APK_PARTS_COUNT=${arg:${#partsCountPrefix}} ;;
     $beta) BETA=$true ;;
