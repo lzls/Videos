@@ -5,12 +5,15 @@ import android.app.PictureInPictureParams;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Rational;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
@@ -20,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
 import androidx.appcompat.app.PlatformPendingTransitionOverrides;
 
+import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.utils.ActivityUtils;
@@ -28,6 +32,8 @@ import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.view.AspectRatioFrameLayout;
+import com.liuzhenlin.common.view.SwipeRefreshLayout;
+import com.liuzhenlin.videos.web.AndroidWebView;
 import com.liuzhenlin.videos.web.R;
 import com.liuzhenlin.videos.web.bean.Video;
 import com.liuzhenlin.videos.web.player.PlayerWebView;
@@ -57,6 +63,10 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     @Synthetic PlayerWebView mPlaybackView;
 
     @Synthetic YoutubePlaybackService mService;
+
+    private AndroidWebView.PageListener mWebPageListener;
+
+    private boolean mShowSystemBars;
 
     private ImageView mLockUnlockOrientationButton;
     private OnOrientationChangeListener mOnOrientationChangeListener;
@@ -174,22 +184,13 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
                 ScreenUtils.setKeepWindowBright(getWindow(), true);
             }
 
-            setRequestedOrientation(
-                    usingYoutubeIFramePlayer()
-                            ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
-            adjustStatusBar();
-            setContentView(R.layout.activity_youtube_playback);
+            boolean usingYoutubeIFramePlayer = usingYoutubeIFramePlayer();
 
-            mPlaybackView = mService.mView;
-            ViewGroup parent = (ViewGroup) mPlaybackView.getParent();
-            if (parent != null) {
-                parent.removeView(mPlaybackView);
-            }
-            // Showing Dialog or any kind of child Window from JS will need an Activity instance
-            // with a valid Window token.
-            setPlaybackViewBaseContext(this);
-            mPlaybackViewContainer = findViewById(R.id.videoViewContainer);
-            mPlaybackViewContainer.addView(mPlaybackView, 0);
+            setRequestedOrientation(
+                    usingYoutubeIFramePlayer
+                            ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
+            initStatusBar();
+            setContentView(R.layout.activity_youtube_playback);
 
             mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
 
@@ -211,6 +212,48 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
                 }
             };
 
+            mPlaybackView = mService.mView;
+            ViewGroup parent = (ViewGroup) mPlaybackView.getParent();
+            if (parent != null) {
+                parent.removeView(mPlaybackView);
+            }
+            // Showing Dialog or any kind of child Window from JS will need an Activity instance
+            // with a valid Window token.
+            setPlaybackViewBaseContext(this);
+            mPlaybackViewContainer = findViewById(R.id.videoViewContainer);
+            mPlaybackViewContainer.addView(mPlaybackView, 0);
+
+            SwipeRefreshLayout srl = findViewById(R.id.swipeRefreshLayout);
+            srl.setColorSchemeResources(Configs.SWIPE_REFRESH_WIDGET_COLOR_SCHEME);
+            srl.setOnRefreshListener(() -> mPlaybackView.reload());
+            srl.setOnChildScrollUpCallback(
+                    (_parent, _child) ->
+                            mPlaybackView.getScrollY() > 0
+                                    || !usingYoutubeIFramePlayer && mPlaybackView.isInFullscreen()
+                                    || Youtube.REGEX_SHORTS_URL.matches(mPlaybackView.getUrl()));
+
+            mPlaybackView.addPageListener(mWebPageListener = new AndroidWebView.PageListener() {
+                @Override
+                public void onPageStarted(
+                        @NonNull WebView view, @NonNull String url, @Nullable Bitmap favicon) {
+                    srl.setRefreshing(true);
+                }
+
+                @Override
+                public void onPageFinished(@NonNull WebView view, @NonNull String url) {
+                    srl.setRefreshing(false);
+                }
+
+                @Override
+                public void onEnterFullscreen(@NonNull WebView view) {
+                    enterFullscreen();
+                }
+
+                @Override
+                public void onExitFullscreen(@NonNull WebView view) {
+                    exitFullscreen();
+                }
+            });
             if (mPlaybackView.isInFullscreen()) {
                 enterFullscreen();
             }
@@ -230,13 +273,17 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         }
     }
 
-    private void adjustStatusBar() {
-        if (usingYoutubeIFramePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), false);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    private void initStatusBar() {
+        boolean showSystemBars = !usingYoutubeIFramePlayer();
+        Window window = getWindow();
+        SystemBarUtils.showSystemBars(window, showSystemBars);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && showSystemBars) {
             SystemBarUtils.setStatusBackgroundColorRes(
-                    getWindow(), R.color.youtube_watch_page_actionbar_background);
+                    window, R.color.youtube_watch_page_actionbar_background);
         }
+        mShowSystemBars = showSystemBars;
+        window.getDecorView().setOnSystemUiVisibilityChangeListener(
+                visibility -> SystemBarUtils.showSystemBars(window, mShowSystemBars));
     }
 
     @Synthetic boolean usingYoutubePlayer() {
@@ -247,17 +294,17 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         return mService != null && mService.getWebPlayer() instanceof YoutubeIFramePlayer;
     }
 
-    /*package*/ void enterFullscreen() {
+    @Synthetic void enterFullscreen() {
         if (usingYoutubePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), false);
+            SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = false);
             setRequestedOrientation(SCREEN_ORIENTATION_SENSOR);
             setOnOrientationChangeListenerEnabled(true);
         }
     }
 
-    /*package*/ void exitFullscreen() {
+    @Synthetic void exitFullscreen() {
         if (usingYoutubePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), true);
+            SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = true);
             setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
             setOnOrientationChangeListenerEnabled(false);
             showLockUnlockOrientationButton(false);
@@ -353,6 +400,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         // Have the video view exit fullscreen here, to avoid it going fullscreen automatically
         // the next time user selects a video to play.
         if (mPlaybackView != null) {
+            mPlaybackView.removePageListener(mWebPageListener);
             mPlaybackView.exitFullscreen();
         }
     }
@@ -361,6 +409,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     public void onBackPressed() {
         if (mPlaybackView.canGoBack()) {
             mPlaybackView.goBack();
+        } else if (mService != null) {
+            mService.stop();
         } else {
             super.onBackPressed();
         }

@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import com.bumptech.glide.util.Preconditions;
 import com.liuzhenlin.common.utils.NonNullApi;
+import com.liuzhenlin.common.utils.Regex;
 import com.liuzhenlin.common.utils.prefs.PrefsHelper;
 import com.liuzhenlin.videos.web.player.Constants;
 import com.liuzhenlin.videos.web.player.Constants.Keys;
@@ -45,10 +46,13 @@ public final class Youtube {
     /*package*/ static final String REGEX_PROTOCOL = "http(s)?://";
     /*package*/ static final String REGEX_WATCH_URL_HOST = "(m|www)\\.youtube\\.com";
     /*package*/ static final String REGEX_SHARE_URL_HOST = "youtu\\.be";
-    public static final String REGEX_WATCH_URL =
-            "^(" + REGEX_PROTOCOL + REGEX_WATCH_URL_HOST + "/watch\\?).+";
-    public static final String REGEX_SHARE_URL =
-            "^" + REGEX_PROTOCOL + REGEX_SHARE_URL_HOST + "/((\\?list=)?[A-Za-z0-9_-]+)+.*";
+
+    public static final Regex REGEX_WATCH_URL = new Regex(
+            "^(" + REGEX_PROTOCOL + REGEX_WATCH_URL_HOST + "/watch\\?).+");
+    public static final Regex REGEX_SHORTS_URL = new Regex(
+            "^(" + REGEX_PROTOCOL + REGEX_WATCH_URL_HOST + "/shorts/).+");
+    public static final Regex REGEX_SHARE_URL = new Regex(
+            "^" + REGEX_PROTOCOL + REGEX_SHARE_URL_HOST + "/((\\?list=)?[A-Za-z0-9_-]+)+.*");
 
     // For mobile terminal
     public static final class URLs {
@@ -59,6 +63,8 @@ public final class Youtube {
         public static final String PLAYER_API = HOME + "/player_api";
 
         public static final String WATCH = HOME + "/watch";
+
+        public static final String SHORTS = HOME + "/shorts";
     }
 
     @IntDef({
@@ -82,6 +88,9 @@ public final class Youtube {
         public static final String PLAYBACK_PAGE_STYLE_BRIEF = "brief";
 
         public static final String KEY_PIP = "youtube_pip";
+
+        public static final String KEY_RETAIN_HISTORY_VIDEO_PAGES =
+                "youtube_retain_history_video_pages";
 
         public static final String KEY_VIDEO_QUALITY = "youtube_video_quality";
 
@@ -109,6 +118,11 @@ public final class Youtube {
                     }
 
                     @Override
+                    public boolean retainHistoryVideoPages() {
+                        return mPrefsHelper.getBoolean(KEY_RETAIN_HISTORY_VIDEO_PAGES, true);
+                    }
+
+                    @Override
                     public String getVideoQuality() {
                         return mPrefsHelper.getString(KEY_VIDEO_QUALITY, VideoQuality.AUTO);
                     }
@@ -124,6 +138,8 @@ public final class Youtube {
         public abstract String getPlaybackPageStyle();
 
         public abstract boolean enterPipWhenVideoIsFullscreenAndPlaybackSwitchesToBackground();
+
+        public abstract boolean retainHistoryVideoPages();
 
         public abstract String getVideoQuality();
     }
@@ -261,7 +277,7 @@ public final class Youtube {
                     "    if (v.getAttribute('qualitySet') === 'true') return;\n" +
                     "    v.setAttribute('qualitySet', 'true');\n" +
                     "    " + setPlaybackQuality(Prefs.get(context).getVideoQuality())
-                                    .replaceFirst("javascript:", "") + "\n" +
+                                    .replace("javascript:", "") + "\n" +
                     "  });\n" +
                     "}\n" +
                     "function findVideo() {\n" +
@@ -274,9 +290,32 @@ public final class Youtube {
 
         public static String skipAd() {
             return "javascript:\n" +
+                    "function skipAdPoster(attempt) {\n" +
+                    "  var btn = document.querySelector('.ytp-ad-skip-button');\n" +
+                    "  if (btn != null) {\n" +
+                    "    console.debug('Clicking skip-ad button...');\n" +
+                    "    btn.click();\n" +
+                    "    return true;\n" +
+                    "  }\n" +
+                    "  if (attempt < 10) {\n" +
+                    "    console.debug('Retry skipping AD poster...');\n" +
+                    "    setTimeout(skipAdPoster, 100, attempt + 1);\n" +
+                    "    return false;\n" +
+                    "  }\n" +
+                    "  if (document.querySelector('.ad-showing') != null) {\n" +
+                    "    " + JSI_ON_EVENT + "(" + JSE_ERR + ", 'Failed to skip AD poster');\n" +
+                    "    return false;\n" +
+                    "  }\n" +
+                    "  console.debug('No AD poster to skip');\n" +
+                    "  return true;\n" +
+                    "}\n" +
                     "if (document.querySelector('.ad-showing') != null) {\n" +
-                    "  var video = document.querySelector('video');\n" +
-                    "  if (video != null) video.currentTime = video.duration;\n" +
+                    "  let video = document.querySelector('video');\n" +
+                    "  if (video != null) {\n" +
+                    "    video.currentTime = video.duration;\n" +
+                    "    console.debug('Start skipping AD poster...');\n" +
+                    "    setTimeout(skipAdPoster, 100, 0);\n" +
+                    "  }\n" +
                     "}";
         }
 
@@ -407,7 +446,7 @@ public final class Youtube {
                     "  e = e[0].getElementsByClassName('icon-button endscreen-replay-button');\n" +
                     "if (e.length > 0) e[0].click();\n" +
                     "else {\n" +
-                    "  " + playVideoAt(0).replaceFirst("javascript:", "") + "\n" +
+                    "  " + playVideoAt(0).replace("javascript:", "") + "\n" +
                     "}";
         }
 
@@ -425,7 +464,7 @@ public final class Youtube {
                     + "', but got ' + " + index + ");\n" +
                     "  }\n" +
                     "} else if (" + index + " == 0) {\n" +
-                    "  " + playVideo().replaceFirst("javascript:", "") + "\n" +
+                    "  " + playVideo().replace("javascript:", "") + "\n" +
                     "} else {\n" +
                     "  " + JSI_ON_EVENT + "(" + JSE_ERR
                     + ", 'Expected maximum index for video to be played 0, but got ' + " + index + ");\n" +
@@ -458,7 +497,7 @@ public final class Youtube {
                     "      var videos = new Array();\n" +
                     "      for (let i = e.length - 1; i >= 0; i--) {\n" +
                     "        let href = e[i].querySelector('a').href;\n" +
-                    "        videos[i] = href.substring(href.indexOf('v=') + 2).split('&')[0];\n" +
+                    "        videos[i] = href.substring(href.indexOf('v=') + 2).split('&', 2)[0];\n" +
                     "      }\n" +
                     "      return videos;\n" +
                     "    }\n" +
@@ -477,7 +516,7 @@ public final class Youtube {
                     "    e = e[0].querySelector('div.compact-media-item');\n" +
                     "    if (e != null) {\n" +
                     "      let href = e.querySelector('a').href;\n" +
-                    "      let pid = href.substring(href.indexOf('list=') + 5).split('&')[0];\n" +
+                    "      let pid = href.substring(href.indexOf('list=') + 5).split('&', 2)[0];\n" +
                     "      return pid;\n" +
                     "    }\n" +
                     "  }\n" +
@@ -493,7 +532,7 @@ public final class Youtube {
                     "    let embedUrl = json.embedUrl;\n" +
                     "    let embedUrlInfix = 'youtube.com/embed/';\n" +
                     "    let vid = embedUrl.substring(embedUrl.indexOf(embedUrlInfix)"
-                    + " + embedUrlInfix.length).split('?')[0];\n" +
+                    + " + embedUrlInfix.length).split('?', 2)[0];\n" +
                     "    return vid;\n" +
                     "  }\n" +
                     "  return null;\n" +
@@ -589,7 +628,7 @@ public final class Youtube {
             url = normalizedServerUrl(url);
             int startOfListId = url.indexOf("list=");
             if (startOfListId > 0) {
-                return url.substring(startOfListId + 5).split("&")[0];
+                return url.substring(startOfListId + 5).split("&", 2)[0];
             }
             return null;
         }
@@ -599,7 +638,7 @@ public final class Youtube {
             watchUrl = normalizedServerUrl(watchUrl);
             int startOfVideoId = watchUrl.indexOf("v=");
             if (startOfVideoId > 0) {
-                return watchUrl.substring(startOfVideoId + 2).split("&")[0];
+                return watchUrl.substring(startOfVideoId + 2).split("&", 2)[0];
             }
             return null;
         }
@@ -609,7 +648,7 @@ public final class Youtube {
             shareUrl = normalizedServerUrl(shareUrl);
             int startOfVideoId = shareUrl.indexOf("youtu.be/");
             if (startOfVideoId > 0) {
-                return shareUrl.substring(startOfVideoId + 9).split("\\?")[0];
+                return shareUrl.substring(startOfVideoId + 9).split("\\?", 2)[0];
             }
             return null;
         }
@@ -619,7 +658,7 @@ public final class Youtube {
             int startOfVideoIndex = url.indexOf("index=");
             if (startOfVideoIndex > 0) {
                 try {
-                    return Integer.parseInt(url.substring(startOfVideoIndex + 6).split("&")[0]);
+                    return Integer.parseInt(url.substring(startOfVideoIndex + 6).split("&", 2)[0]);
                 } catch (NumberFormatException e) {
                     e.printStackTrace();
                 }
@@ -632,7 +671,7 @@ public final class Youtube {
             int startOfVideoStartTime = url.indexOf("t=");
             if (startOfVideoStartTime > 0) {
                 try {
-                    String s = url.substring(startOfVideoStartTime + 2).split("&")[0]
+                    String s = url.substring(startOfVideoStartTime + 2).split("&", 2)[0]
                             .replace("s", "");
                     return Long.parseLong(s) * 1000L;
                 } catch (NumberFormatException e) {
@@ -643,7 +682,7 @@ public final class Youtube {
         }
 
         private static String normalizedServerUrl(String url) {
-            return url.split("#")[0];
+            return url.split("#", 2)[0];
         }
     }
 

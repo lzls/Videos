@@ -8,16 +8,19 @@ package com.liuzhenlin.videos.utils;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -30,16 +33,22 @@ import android.widget.Toast;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatDialog;
+import androidx.appcompat.app.AppCompatDialogFragment;
+import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.ObjectsCompat;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
 import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.liuzhenlin.common.compat.FragmentManagerCompat;
 import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
@@ -50,6 +59,7 @@ import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Configs;
+import com.liuzhenlin.videos.ExtentionsKt;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.Prefs;
 import com.liuzhenlin.videos.R;
@@ -65,6 +75,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
@@ -94,6 +105,7 @@ public final class AppUpdateChecker {
     @Synthetic String mAppSha1;
     @Synthetic StringBuilder mUpdateLog;
     @Synthetic String mPromptDialogAnchorActivityClsName;
+    @Synthetic boolean mNewVersionFound;
 
     @Synthetic final Context mContext;
     @Synthetic final H mH;
@@ -181,14 +193,16 @@ public final class AppUpdateChecker {
 
                     // 连接服务器超时
                 } catch (ConnectTimeoutException e) {
+                    Log.w(TAG, e);
                     return RESULT_CONNECTION_TIMEOUT;
 
                     // 读取数据超时
                 } catch (SocketTimeoutException e) {
+                    Log.w(TAG, e);
                     return RESULT_READ_TIMEOUT;
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                     return 0;
 
                 } finally {
@@ -237,6 +251,8 @@ public final class AppUpdateChecker {
                     }
                     mUpdateLog.deleteCharAt(mUpdateLog.length() - 1);
                 }
+
+                mNewVersionFound = findNewVersion;
                 return findNewVersion ? RESULT_FIND_NEW_VERSION : RESULT_NO_NEW_VERSION;
             }
 
@@ -287,53 +303,7 @@ public final class AppUpdateChecker {
             return;
         }
 
-        Dialog dialog = new AppCompatDialog(anchorActivity, R.style.DialogStyle_MinWidth_NoTitle);
-
-        View view = View.inflate(anchorActivity, R.layout.dialog_app_update_prompt, null);
-
-        view.<TextView>findViewById(R.id.text_updateLogTitle)
-                .setText(mContext.getString(R.string.updateLog, mAppName, mVersionName));
-
-        TextView tv = view.findViewById(R.id.text_updateLog);
-        tv.setText(mUpdateLog);
-        TextViewUtils.setHangingIndents(tv);
-
-        View.OnClickListener listener = v -> {
-            switch (v.getId()) {
-                // 当点确定按钮时从服务器上下载新的apk，然后安装
-                case R.id.btn_confirm:
-                    dialog.cancel();
-                    if (FileUtils.isExternalStorageMounted()) {
-                        mServiceIntent = new Intent(mContext, UpdateAppService.class)
-                                .putExtra(EXTRA_APP_NAME, mAppName)
-                                .putExtra(EXTRA_VERSION_NAME, mVersionName)
-                                .putExtra(EXTRA_APP_LINK, mAppLink)
-                                .putExtra(EXTRA_APP_SHA1, mAppSha1);
-                        mContext.startService(mServiceIntent);
-                    } else {
-                        reset();
-                        Toast.makeText(mContext, R.string.pleaseInsertSdCardOnYourDeviceFirst,
-                                Toast.LENGTH_SHORT).show();
-                    }
-                    break;
-                // 当点取消按钮时不做任何举动
-                case R.id.btn_cancel:
-                    dialog.cancel();
-                    reset();
-                    break;
-            }
-        };
-        view.findViewById(R.id.btn_cancel).setOnClickListener(listener);
-        view.findViewById(R.id.btn_confirm).setOnClickListener(listener);
-
-//        dialog.getWindow().setType(
-//                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-//                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-//                        : WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-        dialog.setContentView(view);
-        dialog.setCancelable(false);
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
+        UpdatePromptDialogFragmentHelper.showFragmentOn(anchorActivity);
     }
 
     @Synthetic void reset() {
@@ -342,6 +312,7 @@ public final class AppUpdateChecker {
         mAppLink = null;
         mUpdateLog = null;
         mPromptDialogAnchorActivityClsName = null;
+        mNewVersionFound = false;
         mCheckInProgress = false;
         mServiceIntent = null;
     }
@@ -351,6 +322,8 @@ public final class AppUpdateChecker {
         static final int MSG_STOP_UPDATE_APP_SERVICE = -1;
         static final int MSG_NO_NEW_VERSION = 0;
         static final int MSG_FIND_NEW_VERSION = 1;
+        static final int MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD = 2;
+        static final int MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD = 3;
 
         H() {
         }
@@ -373,8 +346,347 @@ public final class AppUpdateChecker {
                         }
                     }
                     break;
+                case MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD: {
+                    android.app.FragmentManager fm = (android.app.FragmentManager) msg.obj;
+                    boolean hasAttemptedBefore = msg.arg1 ==
+                            UpdatePromptDialogFragmentHelper.HAS_ATTEMPTED_TO_ADD_FRAGMENT_TWICE;
+                    UpdatePromptDialogFragmentHelper.removeFragmentManagersPendingAdd(
+                            fm, hasAttemptedBefore);
+                    break;
+                }
+                case MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD: {
+                    FragmentManager fm = (FragmentManager) msg.obj;
+                    boolean hasAttemptedBefore = msg.arg1 ==
+                            UpdatePromptDialogFragmentHelper.HAS_ATTEMPTED_TO_ADD_FRAGMENT_TWICE;
+                    UpdatePromptDialogFragmentHelper.removeSupportFragmentManagersPendingAdd(
+                            fm, hasAttemptedBefore);
+                    break;
+                }
             }
             super.handleMessage(msg);
+        }
+    }
+
+    private interface IUpdatePromptDialogFragment {
+
+        default void onCreate(@Nullable Bundle savedInstanceState) {
+            if (savedInstanceState != null
+                    && !AppUpdateChecker.getSingleton(getThemedContext()).mNewVersionFound) {
+                // This Fragment is being recreated during state restoration and no new app version
+                // has been found due to app info maybe not fetched so far in the background.
+                // So remove it to ensure no dialog to be unexpectedly created later.
+                setShowsDialog(false);
+                dismissAllowingStateLoss();
+            }
+        }
+
+        @NonNull
+        default Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+            Context themedContext = getThemedContext();
+            AppUpdateChecker auc = AppUpdateChecker.getSingleton(themedContext);
+            Dialog dialog = new AppCompatDialog(themedContext, R.style.DialogStyle_MinWidth_NoTitle);
+            View view = View.inflate(themedContext, R.layout.dialog_app_update_prompt, null);
+
+            view.<TextView>findViewById(R.id.text_updateLogTitle)
+                    .setText(getString(R.string.updateLog, auc.mAppName, auc.mVersionName));
+
+            TextView tv = view.findViewById(R.id.text_updateLog);
+            tv.setText(auc.mUpdateLog);
+            TextViewUtils.setHangingIndents(tv);
+
+            View.OnClickListener listener = v -> {
+                switch (v.getId()) {
+                    // 当点确定按钮时从服务器上下载新的apk，然后安装
+                    case R.id.btn_confirm:
+                        if (FileUtils.isExternalStorageMounted()) {
+                            auc.mServiceIntent = new Intent(auc.mContext, UpdateAppService.class)
+                                    .putExtra(EXTRA_APP_NAME, auc.mAppName)
+                                    .putExtra(EXTRA_VERSION_NAME, auc.mVersionName)
+                                    .putExtra(EXTRA_APP_LINK, auc.mAppLink)
+                                    .putExtra(EXTRA_APP_SHA1, auc.mAppSha1);
+                            auc.mContext.startService(auc.mServiceIntent);
+                        } else {
+                            auc.reset();
+                            Toast.makeText(auc.mContext, R.string.pleaseInsertSdCardOnYourDeviceFirst,
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                        dismissAllowingStateLoss();
+                        break;
+                    // 当点取消按钮时不做任何举动
+                    case R.id.btn_cancel:
+                        auc.reset();
+                        dismissAllowingStateLoss();
+                        break;
+                }
+            };
+            view.findViewById(R.id.btn_cancel).setOnClickListener(listener);
+            view.findViewById(R.id.btn_confirm).setOnClickListener(listener);
+
+//            dialog.getWindow().setType(
+//                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+//                            ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+//                            : WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            dialog.setContentView(view);
+            dialog.setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+
+            return dialog;
+        }
+
+        Context getThemedContext();
+
+        String getString(@StringRes int resId, Object... formatArgs);
+
+        void setShowsDialog(boolean showsDialog);
+
+        void dismissAllowingStateLoss();
+
+        default void onDismiss(@NonNull DialogInterface dialog) {
+            // Resets AppUpdateChecker in case the dialog was accidentally dismissed, e.g.,
+            // Activity recreation, so as not to block the next update check request and causing
+            // serious unresponsiveness issue.
+            AppUpdateChecker auc = AppUpdateChecker.getSingleton(getThemedContext());
+            if (auc.mServiceIntent == null) {
+                auc.reset();
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @VisibleForTesting
+    public static final class UpdatePromptDialogFragment extends DialogFragment
+            implements IUpdatePromptDialogFragment {
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            IUpdatePromptDialogFragment.super.onCreate(savedInstanceState);
+        }
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+            return IUpdatePromptDialogFragment.super.onCreateDialog(savedInstanceState);
+        }
+
+        @Override
+        public void onDismiss(@NonNull DialogInterface dialog) {
+            super.onDismiss(dialog);
+            IUpdatePromptDialogFragment.super.onDismiss(dialog);
+        }
+
+        @Override
+        public Context getThemedContext() {
+            Context ctx = getActivity();
+            if (ctx == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ctx = getContext();
+            }
+            return ctx;
+        }
+    }
+
+    @VisibleForTesting
+    public static final class SupportUpdatePromptDialogFragment extends AppCompatDialogFragment
+            implements IUpdatePromptDialogFragment {
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            IUpdatePromptDialogFragment.super.onCreate(savedInstanceState);
+        }
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+            return IUpdatePromptDialogFragment.super.onCreateDialog(savedInstanceState);
+        }
+
+        @Override
+        public void onDismiss(@NonNull DialogInterface dialog) {
+            super.onDismiss(dialog);
+            IUpdatePromptDialogFragment.super.onDismiss(dialog);
+        }
+
+        @Override
+        public Context getThemedContext() {
+            return ExtentionsKt.getContextThemedFirst(this);
+        }
+    }
+
+    private static final class UpdatePromptDialogFragmentHelper {
+
+        static void showFragmentOn(Activity activity) {
+            AppUpdateChecker auc = AppUpdateChecker.getSingleton(activity);
+            // If we have a pending Fragment, we need to continue to use the pending Fragment.
+            // Otherwise there's a race where an old Fragment could be added and retrieved here
+            // before our logic to add our pending Fragment notices. That can then result in
+            // both the pending Fragment and the old Fragment having dialogs running for them,
+            // which is impossible to safely unwind.
+            if (activity instanceof FragmentActivity) {
+                FragmentManager fm = ((FragmentActivity) activity).getSupportFragmentManager();
+                SupportUpdatePromptDialogFragment f =
+                        sPendingSupportUpdatePromptDialogFragments.get(fm);
+                if (f == null) {
+                    f = (SupportUpdatePromptDialogFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+                    if (f == null) {
+                        f = new SupportUpdatePromptDialogFragment();
+                        fm.beginTransaction()
+                                .add(f, FRAGMENT_TAG)
+                                .commitAllowingStateLoss();
+                        sPendingSupportUpdatePromptDialogFragments.put(fm, f);
+                        auc.mH.obtainMessage(H.MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD, fm)
+                                .sendToTarget();
+                    }
+                }
+            } else {
+                android.app.FragmentManager fm = activity.getFragmentManager();
+                UpdatePromptDialogFragment f = sPendingUpdatePromptDialogFragments.get(fm);
+                if (f == null) {
+                    f = (UpdatePromptDialogFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+                    if (f == null) {
+                        f = new UpdatePromptDialogFragment();
+                        fm.beginTransaction()
+                                .add(f, FRAGMENT_TAG)
+                                .commitAllowingStateLoss();
+                        sPendingUpdatePromptDialogFragments.put(fm, f);
+                        auc.mH.obtainMessage(H.MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD, fm)
+                                .sendToTarget();
+                    }
+                }
+            }
+        }
+
+        private static final String FRAGMENT_TAG = UpdatePromptDialogFragment.class.getName();
+
+        /** Pending adds for UpdatePromptDialogFragment. */
+        private static final Map<android.app.FragmentManager, UpdatePromptDialogFragment>
+                sPendingUpdatePromptDialogFragments = new ArrayMap<>();
+
+        /** Pending adds for SupportUpdatePromptDialogFragment. */
+        private static final Map<FragmentManager, SupportUpdatePromptDialogFragment>
+                sPendingSupportUpdatePromptDialogFragments = new ArrayMap<>();
+
+        // Indicates that we've tried to add a UpdatePromptDialogFragment twice previously and is
+        // used as a signal to give up and tear down the fragment.
+        static final int HAS_ATTEMPTED_TO_ADD_FRAGMENT_TWICE = 1;
+
+        static void removeFragmentManagersPendingAdd(
+                android.app.FragmentManager fm, boolean hasAttemptedBefore) {
+            if (verifyOurFragmentWasAddedOrCantBeAdded(fm, hasAttemptedBefore)) {
+                Object removed = sPendingUpdatePromptDialogFragments.remove(fm);
+                if (removed == null) {
+                    Log.w(TAG, "Failed to remove expected update prompt dialog fragment," +
+                            " manager: " + fm);
+                }
+            }
+        }
+
+        static void removeSupportFragmentManagersPendingAdd(
+                FragmentManager fm, boolean hasAttemptedBefore) {
+            if (verifyOurSupportFragmentWasAddedOrCantBeAdded(fm, hasAttemptedBefore)) {
+                Object removed = sPendingSupportUpdatePromptDialogFragments.remove(fm);
+                if (removed == null) {
+                    Log.w(TAG, "Failed to remove expected update prompt dialog fragment," +
+                            " manager: " + fm);
+                }
+            }
+        }
+
+        // We care about the instance specifically.
+        @SuppressWarnings({"ReferenceEquality", "PMD.CompareObjectsWithEquals"})
+        private static boolean verifyOurFragmentWasAddedOrCantBeAdded(
+                android.app.FragmentManager fm, boolean hasAttemptedToAddFragmentTwice) {
+            UpdatePromptDialogFragment newlyAddedFragment =
+                    sPendingUpdatePromptDialogFragments.get(fm);
+
+            UpdatePromptDialogFragment actualFragment =
+                    (UpdatePromptDialogFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+            if (actualFragment == newlyAddedFragment) {
+                return true;
+            }
+
+            if (actualFragment != null) {
+                throw new IllegalStateException(
+                        "We've added two fragments!"
+                                + " Old: " + actualFragment + " New: " + newlyAddedFragment);
+            }
+
+            // If our parent was destroyed, we're never going to be able to add our fragment, so we
+            // should just clean it up and abort.
+            // Similarly if we've already tried to add the fragment, waited a frame, then tried to
+            // add the fragment a second time and still the fragment isn't present, we're unlikely
+            // to be able to do so if we retry a third time. This is easy to reproduce in Robolectric
+            // by obtaining an Activity but not creating it. If we continue to loop forever,
+            // we break tests and, if it happens in the real world, might leak memory and waste
+            // a bunch of CPU/battery.
+            boolean fmDestroyed = FragmentManagerCompat.isDestroyed(fm);
+            if (hasAttemptedToAddFragmentTwice || fmDestroyed) {
+                if (fmDestroyed) {
+                    Log.w(TAG, "Parent was destroyed before our Fragment could be added");
+                } else {
+                    Log.e(TAG, "Tried adding Fragment twice and failed twice, giving up!");
+                }
+                return true;
+            }
+
+            // Otherwise we should make another attempt to commit the fragment and loop back again
+            // in the next frame to verify.
+            fm.beginTransaction().add(newlyAddedFragment, FRAGMENT_TAG).commitAllowingStateLoss();
+            AppUpdateChecker.getSingleton(newlyAddedFragment.getThemedContext()).mH
+                    .obtainMessage(
+                            H.MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD,
+                            HAS_ATTEMPTED_TO_ADD_FRAGMENT_TWICE, /* arg2= */ 0, fm)
+                    .sendToTarget();
+            Log.d(TAG, "We failed to add our Fragment the first time around, trying again...");
+            return false;
+        }
+
+        // We care about the instance specifically.
+        @SuppressWarnings({"ReferenceEquality", "PMD.CompareObjectsWithEquals"})
+        private static boolean verifyOurSupportFragmentWasAddedOrCantBeAdded(
+                FragmentManager fm, boolean hasAttemptedToAddFragmentTwice) {
+            SupportUpdatePromptDialogFragment newlyAddedFragment =
+                    sPendingSupportUpdatePromptDialogFragments.get(fm);
+
+            SupportUpdatePromptDialogFragment actualFragment =
+                    (SupportUpdatePromptDialogFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+            if (actualFragment == newlyAddedFragment) {
+                return true;
+            }
+
+            if (actualFragment != null) {
+                throw new IllegalStateException(
+                        "We've added two fragments!"
+                                + " Old: " + actualFragment + " New: " + newlyAddedFragment);
+            }
+
+            // If our parent was destroyed, we're never going to be able to add our fragment, so we
+            // should just clean it up and abort.
+            // Similarly if we've already tried to add the fragment, waited a frame, then tried to
+            // add the fragment a second time and still the fragment isn't present, we're unlikely
+            // to be able to do so if we retry a third time. This is easy to reproduce in Robolectric
+            // by obtaining an Activity but not creating it. If we continue to loop forever,
+            // we break tests and, if it happens in the real world, might leak memory and waste
+            // a bunch of CPU/battery.
+            if (hasAttemptedToAddFragmentTwice || fm.isDestroyed()) {
+                if (fm.isDestroyed()) {
+                    Log.w(TAG, "Parent was destroyed before our Fragment could be added");
+                } else {
+                    Log.e(TAG, "Tried adding Fragment twice and failed twice, giving up!");
+                }
+                return true;
+            }
+
+            // Otherwise we should make another attempt to commit the fragment and loop back again
+            // in the next frame to verify.
+            fm.beginTransaction().add(newlyAddedFragment, FRAGMENT_TAG).commitNowAllowingStateLoss();
+            AppUpdateChecker.getSingleton(newlyAddedFragment.getThemedContext()).mH
+                    .obtainMessage(
+                            H.MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD,
+                            HAS_ATTEMPTED_TO_ADD_FRAGMENT_TWICE, /* arg2= */ 0, fm)
+                    .sendToTarget();
+            Log.d(TAG, "We failed to add our Fragment the first time around, trying again...");
+            return false;
         }
     }
 
@@ -574,11 +886,13 @@ public final class AppUpdateChecker {
                         }
                     }
                 } catch (ConnectTimeoutException e) {
+                    Log.w(TAG, e);
                     onConnectionTimeout();
                 } catch (SocketTimeoutException e) {
+                    Log.w(TAG, e);
                     onReadTimeout();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                     onDownloadError();
                 } finally {
                     if (conn != null) {
@@ -774,11 +1088,13 @@ public final class AppUpdateChecker {
                             }
                         }
                     } catch (ConnectTimeoutException e) {
+                        Log.w(TAG, e);
                         onConnectionTimeout();
                     } catch (SocketTimeoutException e) {
+                        Log.w(TAG, e);
                         onReadTimeout();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.w(TAG, e);
                         onDownloadError();
                     } finally {
                         IOUtils.closeSilently(out);

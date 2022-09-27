@@ -18,6 +18,7 @@ import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.utils.IOUtils;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.dao.AppPrefs;
 
@@ -26,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 
 public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
@@ -64,13 +66,19 @@ public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
     }
 
     private String collectCrashLog(Thread t, Throwable e)
-            throws PackageManager.NameNotFoundException, IllegalAccessException {
+            throws PackageManager.NameNotFoundException, IOException, NoSuchAlgorithmException,
+            IllegalAccessException {
         StringBuilder sb = new StringBuilder();
 
-        PackageInfo pkgInfo = mContext.getPackageManager()
-                .getPackageInfo(mContext.getPackageName(), 0);
+        PackageInfo pkgInfo =
+                mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0);
+        sb.append("packageName=").append(pkgInfo.packageName).append('\n');
         sb.append("versionName=").append(pkgInfo.versionName).append('\n');
         sb.append("versionCode=").append(pkgInfo.versionCode).append('\n');
+        sb.append("buildVariant=").append(BuildConfig.BUILD_TYPE).append('\n');
+        sb.append("isOfficialApp=")
+                .append(Utils.areAppSignaturesMatch(mContext, BuildConfig.RELEASE_SIGN_MD5))
+                .append('\n');
         sb.append('\n');
 
         // TODO: appends version of the patch applied by Sophix

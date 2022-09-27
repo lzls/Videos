@@ -113,7 +113,7 @@ public class FileUtils {
             IOUtils.copy(in, out);
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
             return false;
         }
     }

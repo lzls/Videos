@@ -92,7 +92,7 @@ import androidx.transition.TransitionManager;
 import androidx.transition.TransitionSet;
 
 import com.bumptech.glide.util.Synthetic;
-import com.google.android.exoplayer2.source.MediaSourceFactory;
+import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.material.snackbar.Snackbar;
@@ -2345,7 +2345,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     final String result;
                     final String srcPath = FileUtils.UriResolver.getPath(mContext, videoUri);
                     if (srcPath == null) {
-                        Log.e(TAG, "Failed to resolve the path of the video being clipped.");
+                        Log.w(TAG, "Failed to resolve the path of the video being clipped.");
                         resultCode = -1;
                         result = mResources.getString(R.string.clippingFailed);
                     } else {
@@ -2364,7 +2364,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             try {
                                 destFile = VideoUtils.clip(srcPath, destPath, interval[0], interval[1]);
                             } catch (Throwable t) {
-                                t.printStackTrace();
+                                Log.w(TAG, "Clipping failed", t);
                             }
                         } else {
                             // TODO: the logic of cutting out a GIF
@@ -2407,7 +2407,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         svlp.dimensionRatio = String.valueOf(videoAspectRatio);
 
         final SurfaceHolder holder = sv.getHolder();
-        final MediaSourceFactory factory =
+        final MediaSource.Factory factory =
                 canUseExoPlayer() && videoPlayer instanceof ExoVideoPlayer
                         ? ((ExoVideoPlayer) videoPlayer).obtainMediaSourceFactory(videoUri) : null;
         final VideoClipPlayer player =

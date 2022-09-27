@@ -6,7 +6,7 @@ android {
     defaultConfig {
         //noinspection MinSdkTooLow
         minSdkVersion 11
-        versionCode 9
-        versionName "2.0"
+        versionCode 10
+        versionName "2.0.1"
     }
 }

@@ -7,12 +7,15 @@ package com.liuzhenlin.videos.view.activity;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Window;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
 
+import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
+import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.swipeback.SwipeBackActivity;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
 
@@ -52,6 +55,22 @@ public class BaseActivity extends SwipeBackActivity {
         swipeBackLayout.setEnabledEdges(0);
 
         getWindow().setWindowAnimations(mThemeWindowAnimations);
+    }
+
+    public void setLightStatus(boolean light) {
+        Window window = getWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            SystemBarUtils.setLightStatus(window, light);
+            // MIUI6...
+        } else if (OSHelper.getMiuiVersion() >= 6) {
+            SystemBarUtils.setLightStatusForMIUI(window, light);
+            // FlyMe4...
+        } else if (OSHelper.isFlyme4OrLater()) {
+            SystemBarUtils.setLightStatusForFlyme(window, light);
+
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            SystemBarUtils.setTranslucentStatus(window, light);
+        }
     }
 
     /**

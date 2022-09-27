@@ -14,4 +14,7 @@ public class Configs {
     @SuppressWarnings({"PointlessBooleanExpression", "ConstantConditions"})
     public static final boolean DEBUG_DAY_NIGHT_SWITCH = BuildConfig.DEBUG && false;
     public static final String TAG_DAY_NIGHT_SWITCH = "DayNightSwitch";
+
+    public static final int[] SWIPE_REFRESH_WIDGET_COLOR_SCHEME =
+            {R.color.pink, R.color.lightBlue, R.color.purple};
 }

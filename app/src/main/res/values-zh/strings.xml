@@ -145,5 +145,7 @@
     <string name="youtube_playback_page_style_dialog_title">页面风格（在下次选中视频播放时生效）</string>
     <string name="youtube_pip_title">画中画</string>
     <string name="youtube_pip_summary">当视频全屏且播放切到后台时自动进入</string>
+    <string name="youtube_retain_history_video_pages">保留历史页面</string>
+    <string name="youtube_retain_history_video_pages_summary">在回退栈中保留历史视频播放页，以供下次恢复使用</string>
     <string name="youtube_video_quality_title">视频清晰度（对简洁的播放UI无效）</string>
 </resources>

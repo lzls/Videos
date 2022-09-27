@@ -46,7 +46,7 @@ open class MainActivityToolbarActions(private val mActivity: MainActivity) {
                             R.string.pleaseInputVideoLinkFirst, Toast.LENGTH_SHORT).show()
                     return@OnClickListener
                 }
-                if (link.matches(URLUtils.PATTERN_WEB_URL.toRegex())) {
+                if (URLUtils.REGEX_WEB_URL.matches(link)) {
                     if (!YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(v.context, link)) {
                         v.context.playVideo(link,
                                 (linkTiet.tag as TextInputEditText).text!!.trim().toString()

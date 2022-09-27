@@ -151,6 +151,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
             case Youtube.Prefs.KEY_PLAYBACK_PAGE_STYLE:
             case Youtube.Prefs.KEY_PIP:
             case Youtube.Prefs.KEY_VIDEO_QUALITY:
+            case Youtube.Prefs.KEY_RETAIN_HISTORY_VIDEO_PAGES:
                 return true;
         }
         return false;

@@ -19,7 +19,6 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.MediaSourceFactory;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
@@ -39,7 +38,7 @@ import java.io.IOException;
             @NonNull SurfaceHolder surfaceHolder,
             @NonNull Uri videoUri,
             @NonNull String userAgent,
-            @Nullable MediaSourceFactory mediaSourceFactory) {
+            @Nullable MediaSource.Factory mediaSourceFactory) {
         /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             IMPL = new VideoClipPlayerApi17Impl(context, surfaceHolder, videoUri);
         } else*/ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -238,7 +237,7 @@ import java.io.IOException;
                 @NonNull SurfaceHolder surfaceHolder,
                 @NonNull Uri videoUri,
                 @NonNull String userAgent,
-                @Nullable MediaSourceFactory mediaSourceFactory) {
+                @Nullable MediaSource.Factory mediaSourceFactory) {
             mContext = context.getApplicationContext();
             mSurfaceHolder = surfaceHolder;
             if (mediaSourceFactory == null) {
@@ -413,7 +412,8 @@ import java.io.IOException;
                 }
                 mMediaPlayer.setDisplay(mSurfaceHolder);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    mMediaPlayer.setAudioAttributes(VideoPlayer.sDefaultAudioAttrs.getAudioAttributesV21());
+                    mMediaPlayer.setAudioAttributes(
+                            VideoPlayer.sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes);
                 } else {
                     mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 }

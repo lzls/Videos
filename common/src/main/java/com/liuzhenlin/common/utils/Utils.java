@@ -11,6 +11,9 @@ import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -34,7 +37,10 @@ import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.RoundingMode;
+import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
@@ -275,6 +281,64 @@ public class Utils {
         ClipData cd = ClipData.newPlainText(label, text);
         // 将ClipData内容放到系统剪贴板里
         cm.setPrimaryClip(cd);
+    }
+
+    /**
+     * Tells if the application, whose environment information the {@code context} is about,
+     * was signed and only signed with the given set of certificates by comparing the MD5 sums
+     * of its signatures to the expected ones. A {@code null} or empty certificate set will
+     * just check whether the app is unsigned.
+     */
+    public static boolean areAppSignaturesMatch(
+            @NonNull Context context, @Nullable String... expectedSignatureMd5s)
+            throws PackageManager.NameNotFoundException, IOException, NoSuchAlgorithmException {
+        boolean checkAppUnsigned =
+                expectedSignatureMd5s == null || expectedSignatureMd5s.length == 0;
+
+        PackageManager pm = context.getPackageManager();
+        String pkgName = context.getPackageName();
+        Signature[] signatures;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            PackageInfo pkgInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES);
+            if (pkgInfo.signingInfo.hasMultipleSigners()) {
+                signatures = pkgInfo.signingInfo.getApkContentsSigners();
+            } else {
+                signatures = pkgInfo.signingInfo.getSigningCertificateHistory();
+            }
+        } else {
+            @SuppressLint("PackageManagerGetSignatures")
+            PackageInfo pkgInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES);
+            signatures = pkgInfo.signatures;
+        }
+
+        if (checkAppUnsigned) {
+            return signatures == null || signatures.length == 0;
+        }
+
+        for (Signature signature : signatures) {
+            String signatureMd5 =
+                    IOUtils.getDigest(new ByteArrayInputStream(signature.toByteArray()), "MD5");
+            for (String expectedSignatureMd5 : expectedSignatureMd5s) {
+                if (!signatureMd5.equalsIgnoreCase(expectedSignatureMd5)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Gets the version name of this application, or an empty string if the get fails. */
+    @NonNull
+    public static String getAppVersionName(@NonNull Context context) {
+        String appVersion = "";
+        try {
+            appVersion = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0)
+                    .versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return appVersion;
     }
 
     /**

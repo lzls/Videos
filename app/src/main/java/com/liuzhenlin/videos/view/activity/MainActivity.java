@@ -24,8 +24,8 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.SubMenu;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -44,6 +44,8 @@ import androidx.core.view.MarginLayoutParamsCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.transition.ChangeBounds;
+import androidx.transition.TransitionManager;
 import androidx.viewpager.widget.ViewPager;
 
 import com.bumptech.glide.util.Synthetic;
@@ -56,10 +58,9 @@ import com.liuzhenlin.common.utils.ColorUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.IOUtils;
-import com.liuzhenlin.common.utils.OSHelper;
-import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.TransitionUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.view.ScrollDisableListView;
@@ -89,7 +90,7 @@ import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_LIGHT;
  */
 public class MainActivity extends StatusBarTransparentActivity implements View.OnClickListener,
         AdapterView.OnItemClickListener, SlidingDrawerLayout.OnDrawerScrollListener,
-        LocalVideosFragment.InteractionCallback {
+        LocalVideosFragment.InteractionCallback, YoutubeFragment.Callback {
 
     @SuppressLint("StaticFieldLeak")
     @Nullable
@@ -112,6 +113,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     @Synthetic ImageButton mActionButton;
     private DrawerArrowDrawable mDrawerArrowDrawable;
     private final MainActivityToolbarActions mToolbarActions = new MainActivityToolbarActions(this);
+    @Synthetic boolean mActionBarCollapsedInYoutube;
+    private boolean mCollapseActionBarIgnoreYoutubePageScrollChanges;
 
     // 临时缓存LocalSearchedVideosFragment或LocalFoldedVideosFragment的ActionBar
     private ViewGroup mTmpActionBar;
@@ -135,6 +138,9 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     private boolean mIsBackPressed;
 
+    private int mScaledTouchSlop;
+    private int mYoutubeLastScrollY;
+
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
@@ -153,9 +159,10 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this$ = this;
-
         setAsNonSwipeBackActivity();
+
         setContentView(R.layout.activity_main);
+
         if (savedInstanceState == null) {
             mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT] = new LocalVideosFragment();
             mFragments[INDEX_YOUTUBE_FRAGMENT] = new YoutubeFragment();
@@ -168,6 +175,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                 }
             }
         }
+        ((YoutubeFragment) mFragments[INDEX_YOUTUBE_FRAGMENT]).setCallback(this);
+
         initViews();
     }
 
@@ -279,11 +288,13 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                 if (fragment instanceof LocalVideosFragment) {
                     mActionButton.setId(R.id.btn_search);
                     mActionButton.setImageResource(R.drawable.ic_search);
+                    collapseActionBar(false, true);
                     mSlidingDrawerLayout.setContentSensitiveEdgeSize(screenWidth);
 
                 } else if (fragment instanceof YoutubeFragment) {
                     mActionButton.setId(R.id.btn_link);
                     mActionButton.setImageResource(R.drawable.ic_link);
+                    collapseActionBar(mActionBarCollapsedInYoutube, true);
                     mSlidingDrawerLayout.setContentSensitiveEdgeSize(
                             DensityUtils.dp2px(app, SlidingDrawerLayout.DEFAULT_EDGE_SIZE));
                 }
@@ -839,29 +850,19 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                 mTitleText.setLayerType(View.LAYER_TYPE_HARDWARE, null);
                 mActionButton.setLayerType(View.LAYER_TYPE_HARDWARE, null);
                 mFragmentTabLayout.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                collapseActionBar(false, false);
                 break;
             case SlidingDrawerLayout.SCROLL_STATE_IDLE:
                 mTitleText.setLayerType(View.LAYER_TYPE_NONE, null);
                 mActionButton.setLayerType(View.LAYER_TYPE_NONE, null);
                 mFragmentTabLayout.setLayerType(View.LAYER_TYPE_NONE, null);
+                if (mDrawerScrollPercent == 0) {
+                    collapseActionBar(
+                            mActionBarCollapsedInYoutube
+                                    && mFragmentViewPager.getCurrentItem() == INDEX_YOUTUBE_FRAGMENT,
+                            true);
+                }
                 break;
-        }
-    }
-
-    @Override
-    public void setLightStatus(boolean light) {
-        Window window = getWindow();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            SystemBarUtils.setLightStatus(window, light);
-            // MIUI6...
-        } else if (OSHelper.getMiuiVersion() >= 6) {
-            SystemBarUtils.setLightStatusForMIUI(window, light);
-            // FlyMe4...
-        } else if (OSHelper.isFlyme4OrLater()) {
-            SystemBarUtils.setLightStatusForFlyme(window, light);
-
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            SystemBarUtils.setTranslucentStatus(window, light);
         }
     }
 
@@ -962,5 +963,54 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 //        mActionBar.setVisibility(View.VISIBLE)
         mActionBarContainer.removeView(mTmpActionBar);
         mTmpActionBar = null;
+    }
+
+    private int getScaledTouchSlop() {
+        if (mScaledTouchSlop == 0) {
+            mScaledTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+        }
+        return mScaledTouchSlop;
+    }
+
+    @Override
+    public void onYoutubeViewScrollVertically(int scrollY) {
+        if (!mCollapseActionBarIgnoreYoutubePageScrollChanges
+                && (scrollY == 0 || Math.abs(scrollY - mYoutubeLastScrollY) >= getScaledTouchSlop())) {
+            if (!TransitionUtils.hasTransitions((ViewGroup) mSlidingDrawerLayout.getChildAt(1))) {
+                collapseYoutubeActionBar(scrollY > mYoutubeLastScrollY, false, true);
+            }
+            mYoutubeLastScrollY = scrollY;
+        }
+    }
+
+    @Override
+    public void collapseYoutubeActionBar(boolean collapse, boolean always, boolean animate) {
+        mActionBarCollapsedInYoutube = collapse;
+        mCollapseActionBarIgnoreYoutubePageScrollChanges = always;
+        if (mFragmentViewPager.getCurrentItem() == INDEX_YOUTUBE_FRAGMENT
+                && mDrawerScrollPercent == 0
+                && mSlidingDrawerLayout.getScrollState() == SlidingDrawerLayout.SCROLL_STATE_IDLE) {
+            collapseActionBar(collapse, animate);
+        }
+    }
+
+    @Synthetic void collapseActionBar(boolean collapse, boolean animate) {
+        ViewGroup.LayoutParams lp = mActionBarContainer.getLayoutParams();
+        int lastHeight = lp.height;
+        if (collapse) {
+            lp.height = App.getInstance(this).getStatusHeightInPortrait();
+        } else {
+            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        }
+        if (lp.height != lastHeight) {
+            if (animate) {
+                TransitionManager.beginDelayedTransition(
+                        (ViewGroup) mSlidingDrawerLayout.getChildAt(1), new ChangeBounds());
+            }
+            mActionBarContainer.setLayoutParams(lp);
+            for (int i = mActionBar.getChildCount() - 1; i >= 0; i--) {
+                mActionBar.getChildAt(i).setVisibility(collapse ? View.GONE : View.VISIBLE);
+            }
+        }
     }
 }

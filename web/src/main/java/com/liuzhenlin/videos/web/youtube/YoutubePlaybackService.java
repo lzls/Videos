@@ -23,10 +23,12 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.SystemClock;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.RemoteViews;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.Consumer;
 
@@ -42,6 +44,7 @@ import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.videos.web.AndroidWebView;
 import com.liuzhenlin.videos.web.R;
 import com.liuzhenlin.videos.web.bean.Playlist;
 import com.liuzhenlin.videos.web.bean.Video;
@@ -280,6 +283,17 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
     }
 
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        // Stops when user removes the task holding YoutubePlaybackActivity from the Recents,
+        // or closes that Activity in PiP through the 'Close' button, etc.
+        if (rootIntent != null && rootIntent.getComponent().getShortClassName()
+                .equals(YoutubePlaybackActivity.class.getName().replace(getPackageName(), ""))) {
+            stop();
+        }
+    }
+
     public void stop() {
         mRunning = false;
         stopForeground(true);
@@ -297,9 +311,9 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         int videoIndex;
         long videoStartMs;
 
-        if (url.matches(Youtube.REGEX_WATCH_URL)) {
+        if (Youtube.REGEX_WATCH_URL.matches(url)) {
             videoId = Youtube.Util.getVideoIdFromWatchUrl(url);
-        } else if (url.matches(Youtube.REGEX_SHARE_URL)) {
+        } else if (Youtube.REGEX_SHARE_URL.matches(url)) {
             videoId = Youtube.Util.getVideoIdFromShareUrl(url);
         } else {
             return false;
@@ -365,6 +379,12 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         if (playerChanged || (!playlistId.equals(mPlaylistId) || !videoId.equals(mVideoId))) {
             mSeekOnPlayerReady = Constants.UNKNOWN;
             mReplayPlaylist = mReplayVideo = false;
+            if (Youtube.Prefs.get(mContext).retainHistoryVideoPages()) {
+                // We need a new page if the history video pages in the backstack are required
+                // by the user to be still held on to, so set mPlayerReady to false and use
+                // the view to load the video/playlist down below.
+                mPlayerReady = false;
+            }
             if (playlistId.isEmpty()) {
                 mLinkType = Constants.LinkType.SINGLES;
                 mVideoId = videoId;
@@ -402,15 +422,26 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
         if (playerChanged || !fromPlaybackView) {
             YoutubePlaybackActivity ytPlaybackActivity = YoutubePlaybackActivity.get();
-            if (playerChanged) {
-                if (ytPlaybackActivity != null) {
-                    ytPlaybackActivity.finish();
-                }
-            }
             // Have the video view exit fullscreen first, to avoid it going fullscreen automatically
             // after it exits from PiP to the default display mode.
             if (ytPlaybackActivity != null && ytPlaybackActivity.isInPictureInPictureMode()) {
                 mView.exitFullscreen();
+            }
+            if (playerChanged) {
+                mView.addPageListener(new AndroidWebView.PageListener() {
+                    @Override
+                    public void onPageStarted(
+                            @NonNull WebView view, @NonNull String url, @Nullable Bitmap favicon) {
+                        // Clear history pages that used a different player
+                        // XXX: We prefer to retain the history so that WebView can go back later
+                        //      and resume them with the current player.
+                        view.clearHistory();
+                        mView.removePageListener(this);
+                    }
+                });
+                if (ytPlaybackActivity != null) {
+                    ActivityCompat.recreate(ytPlaybackActivity);
+                }
             }
             playInForeground();
         }
@@ -580,7 +611,10 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         RemoteViews viewBig = new RemoteViews(pkgName, R.layout.web_player_notification_view_large);
         RemoteViews viewSmall = new RemoteViews(pkgName, R.layout.web_player_notification_view_small);
 
+        Bitmap[] thumb = new Bitmap[1];
+        String[] title_author = new String[2];
         CountDownLatch[] latch = new CountDownLatch[1];
+
         if (loadInfo) {
             latch[0] = new CountDownLatch(2);
             Executors.MAIN_EXECUTOR.execute(() -> {
@@ -588,11 +622,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 InternetResourceLoadTask.ofBitmap("https://i.ytimg.com/vi/" + videoId + "/mqdefault.jpg")
                         .onResult(new InternetResourceLoadTask.ResultCallback<Bitmap>() {
                             @Override
-                            public void onCompleted(Bitmap thumb) {
-                                if (thumb != null) {
-                                    viewBig.setImageViewBitmap(R.id.image_thumbnail, thumb);
-                                    viewSmall.setImageViewBitmap(R.id.image_thumbnail, thumb);
-                                }
+                            public void onCompleted(Bitmap _thumb) {
+                                thumb[0] = _thumb;
                                 latch[0].countDown();
                             }
                         }).executeOnExecutor(workerExecutor);
@@ -605,13 +636,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                                 if (details != null) {
                                     try {
                                         JSONObject detailsJson = new JSONObject(details);
-                                        String title = detailsJson.getString("title");
-                                        String author = detailsJson.getString("author_name");
-                                        builder.setTicker(title);
-                                        viewBig.setTextViewText(R.id.text_title, title);
-                                        viewBig.setTextViewText(R.id.text_author, author);
-                                        viewSmall.setTextViewText(R.id.text_title, title);
-                                        viewSmall.setTextViewText(R.id.text_author, author);
+                                        title_author[0] = detailsJson.getString("title");
+                                        title_author[1] = detailsJson.getString("author_name");
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
@@ -689,6 +715,23 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+
+            Bitmap _thumb = thumb[0];
+            String title = title_author[0];
+            String author = title_author[1];
+            if (_thumb != null) {
+                viewBig.setImageViewBitmap(R.id.image_thumbnail, _thumb);
+                viewSmall.setImageViewBitmap(R.id.image_thumbnail, _thumb);
+            }
+            if (title != null) {
+                builder.setTicker(title);
+                viewBig.setTextViewText(R.id.text_title, title);
+                viewSmall.setTextViewText(R.id.text_title, title);
+            }
+            if (author != null) {
+                viewBig.setTextViewText(R.id.text_author, author);
+                viewSmall.setTextViewText(R.id.text_author, author);
             }
         }
 

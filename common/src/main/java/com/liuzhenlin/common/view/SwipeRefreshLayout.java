@@ -138,6 +138,7 @@ public class SwipeRefreshLayout extends ViewGroup
 
     private float mInitialMotionY;
     private float mInitialDownY;
+    private float mInitialDownX;
     private boolean mIsBeingDragged;
     private int mActivePointerId = INVALID_POINTER;
     // Whether this item is scaled up rather than clipped
@@ -769,6 +770,7 @@ public class SwipeRefreshLayout extends ViewGroup
                 if (pointerIndex < 0) {
                     return false;
                 }
+                mInitialDownX = ev.getX(pointerIndex);
                 mInitialDownY = ev.getY(pointerIndex);
                 break;
 
@@ -782,8 +784,7 @@ public class SwipeRefreshLayout extends ViewGroup
                 if (pointerIndex < 0) {
                     return false;
                 }
-                final float y = ev.getY(pointerIndex);
-                startDragging(y);
+                startDragging(ev.getX(pointerIndex), ev.getY(pointerIndex));
                 break;
 
             case MotionEvent.ACTION_POINTER_UP:
@@ -1252,8 +1253,9 @@ public class SwipeRefreshLayout extends ViewGroup
                     return false;
                 }
 
+                final float x = ev.getX(pointerIndex);
                 final float y = ev.getY(pointerIndex);
-                startDragging(y);
+                startDragging(x, y);
 
                 if (mIsBeingDragged) {
                     final float overscrollTop = (y - mInitialMotionY) * DRAG_RATE;
@@ -1306,9 +1308,10 @@ public class SwipeRefreshLayout extends ViewGroup
         return true;
     }
 
-    private void startDragging(float y) {
+    private void startDragging(float x, float y) {
+        final float xDiff = x - mInitialDownX;
         final float yDiff = y - mInitialDownY;
-        if (yDiff > mTouchSlop && !mIsBeingDragged) {
+        if (!mIsBeingDragged && yDiff > mTouchSlop && yDiff > Math.abs(xDiff)) {
             mInitialMotionY = mInitialDownY + mTouchSlop;
             mIsBeingDragged = true;
             mProgress.setAlpha(STARTING_PROGRESS_ALPHA);

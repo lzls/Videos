@@ -2187,9 +2187,9 @@ public class SlidingDrawerLayout extends ViewGroup {
             openDrawerInternal(drawer, animate);
 
         } else if (drawer == mLeftDrawer) {
-            Log.w(TAG, "Can't open the left drawer while the right is open.");
+            Log.e(TAG, "Can't open the left drawer while the right is open.");
         } else if (drawer == mRightDrawer) {
-            Log.w(TAG, "Can't open the right drawer while the left is open.");
+            Log.e(TAG, "Can't open the right drawer while the left is open.");
         }
     }
 

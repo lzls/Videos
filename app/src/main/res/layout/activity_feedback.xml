@@ -71,13 +71,14 @@
                 <EditText
                     android:id="@+id/editor_enterProblemsOrAdvice"
                     android:layout_width="match_parent"
-                    android:layout_height="90dp"
+                    android:layout_height="wrap_content"
                     android:background="@null"
                     android:hint="@string/pleaseEnterTheIssuesYouEncounteredOrYourAdvice"
                     android:textSize="@dimen/primary_text_size"
                     android:textColor="@color/textColorPrimary"
                     android:maxLength="500"
-                    android:maxLines="3"
+                    android:maxLines="10"
+                    android:minLines="5"
                     android:inputType="textMultiLine"
                     android:gravity="top"
                     tools:ignore="Autofill" />
@@ -86,9 +87,10 @@
                     android:id="@+id/text_wordCountIndicator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
                     android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
-                    android:layout_alignBottom="@id/editor_enterProblemsOrAdvice"
+                    android:layout_below="@id/editor_enterProblemsOrAdvice"
                     android:text="0/500"
                     android:textSize="@dimen/secondary_text_size"
                     tools:ignore="HardcodedText" />

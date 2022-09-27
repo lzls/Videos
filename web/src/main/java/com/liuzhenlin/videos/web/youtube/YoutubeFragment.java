@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -25,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.compat.LooperCompat;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.Executors;
@@ -41,21 +43,60 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
 
     @Synthetic WebView mYoutubeView;
     @Synthetic String mUrl = Constants.URL_BLANK;
-    private final MessageQueue.IdleHandler mCheckCurrentUrlIdleHandler = () -> {
-        WebView view = mYoutubeView;
-        String url = view.getUrl();
-        if (!url.equals(mUrl)) {
-            if (YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(view.getContext(), url)) {
-                view.goBack();
+    @Synthetic boolean mIsShortsUrl;
+    private final MessageQueue.IdleHandler mCheckCurrentUrlIdleHandler = new MessageQueue.IdleHandler() {
+        @Override
+        public boolean queueIdle() {
+            WebView view = mYoutubeView;
+            String url = view.getUrl();
+            if (!url.equals(mUrl)) {
+                boolean isShortsUrl = false;
+                if (YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(view.getContext(), url)) {
+                    view.goBack();
+                } else if (Youtube.REGEX_SHORTS_URL.matches(url)) {
+                    isShortsUrl = true;
+                }
+                if (isShortsUrl != mIsShortsUrl) {
+                    if (mCallback != null) {
+                        mCallback.collapseYoutubeActionBar(isShortsUrl, isShortsUrl, true);
+                    }
+                    mIsShortsUrl = isShortsUrl;
+                }
+                mUrl = url;
             }
-            mUrl = url;
+            return true;
         }
-        return true;
     };
     private boolean mIdleHandlerAdded;
 
     private boolean mBackPressed;
     private boolean mExitOnBackPressed;
+
+    @Synthetic int mScrollY;
+    private final ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener =
+            new ViewTreeObserver.OnScrollChangedListener() {
+                @Override
+                public void onScrollChanged() {
+                    int scrollY = mYoutubeView.getScrollY();
+                    if (scrollY != mScrollY) {
+                        if (mCallback != null) {
+                            mCallback.onYoutubeViewScrollVertically(scrollY);
+                        }
+                        mScrollY = scrollY;
+                    }
+                }
+            };
+
+    @Synthetic Callback mCallback;
+
+    public interface Callback {
+        void onYoutubeViewScrollVertically(int scrollY);
+        void collapseYoutubeActionBar(boolean collapse, boolean always, boolean animate);
+    }
+
+    public void setCallback(@Nullable Callback callback) {
+        mCallback = callback;
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -80,7 +121,8 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
                     }
                 });
         swipeRefreshLayout.setOnChildScrollUpCallback(
-                (parent, child) -> mYoutubeView != null && mYoutubeView.getScrollY() > 0);
+                (parent, child) ->
+                        mYoutubeView != null && mYoutubeView.getScrollY() > 0 || mIsShortsUrl);
 
         ViewStub viewStub = view.findViewById(R.id.viewStub);
         if (NetworkUtil.isNetworkConnected(mContext)) {
@@ -94,7 +136,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
             swipeRefreshLayout.setOnRequestDisallowInterceptTouchEventCallback(() -> true);
 
             mYoutubeView = view.findViewById(R.id.web_youtube);
-            mYoutubeView.getSettings().setJavaScriptEnabled(true);
+            mYoutubeView.getViewTreeObserver().addOnScrollChangedListener(mOnScrollChangedListener);
             mYoutubeView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -126,6 +168,14 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (mYoutubeView != null) {
+            mYoutubeView.getViewTreeObserver().removeOnScrollChangedListener(mOnScrollChangedListener);
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         if (mYoutubeView != null && !mIdleHandlerAdded) {
@@ -150,7 +200,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
     }
 
     private void setSwipeRefreshColorSchemeResources(SwipeRefreshLayout srl) {
-        srl.setColorSchemeResources(R.color.pink, R.color.lightBlue, R.color.purple);
+        srl.setColorSchemeResources(Configs.SWIPE_REFRESH_WIDGET_COLOR_SCHEME);
     }
 
     @Override

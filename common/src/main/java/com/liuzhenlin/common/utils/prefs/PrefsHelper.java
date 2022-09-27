@@ -14,6 +14,7 @@ import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 
 import com.liuzhenlin.common.utils.NonNullApi;
+import com.liuzhenlin.common.utils.Regex;
 
 import static com.liuzhenlin.common.utils.prefs.Constants.ACTION_CLEAR;
 import static com.liuzhenlin.common.utils.prefs.Constants.ACTION_CONTAINS;
@@ -214,6 +215,8 @@ public class PrefsHelper {
             int keyIndex = cursor.getColumnIndex(CURSOR_COLUMN_KEY);
             int typeIndex = cursor.getColumnIndex(CURSOR_COLUMN_TYPE);
             int valueIndex = cursor.getColumnIndex(CURSOR_COLUMN_VALUE);
+            Regex arrayRegex = new Regex(REGEX_ARRAY);
+            Regex strElementSplitter = new Regex(STRING_ELEMENT_SEPARATOR);
             do {
                 String key = cursor.getString(keyIndex);
                 String type = cursor.getString(typeIndex);
@@ -222,9 +225,9 @@ public class PrefsHelper {
                     value = cursor.getString(valueIndex);
                     if (((String) value).contains(STRING_ELEMENT_SEPARATOR_REPLACEMENT)) {
                         String str = (String) value;
-                        if (str.matches(REGEX_ARRAY)) {
+                        if (arrayRegex.matches(str)) {
                             String substr = str.substring(1, str.length() - 1);
-                            String[] ss = substr.split(STRING_ELEMENT_SEPARATOR);
+                            String[] ss = strElementSplitter.split(substr);
                             Set<String> strings = new ArraySet<>();
                             for (String s : ss) {
                                 strings.add(

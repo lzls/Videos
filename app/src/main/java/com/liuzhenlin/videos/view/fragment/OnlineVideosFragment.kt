@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
+import com.liuzhenlin.common.Configs
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
@@ -98,7 +99,7 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
     @SuppressLint("ClickableViewAccessibility")
     private fun initViews(contentView: View) {
         mSwipeRefreshLayout = contentView.findViewById(R.id.swipeRefreshLayout)
-        mSwipeRefreshLayout.setColorSchemeResources(R.color.pink, R.color.lightBlue, R.color.purple)
+        mSwipeRefreshLayout.setColorSchemeResources(*Configs.SWIPE_REFRESH_WIDGET_COLOR_SCHEME)
 //        mSwipeRefreshLayout.setOnRequestDisallowInterceptTouchEventCallback { true }
         mSwipeRefreshLayout.setOnRefreshListener {
             loadTvs()

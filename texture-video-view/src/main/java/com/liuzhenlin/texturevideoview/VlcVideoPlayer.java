@@ -121,7 +121,8 @@ public class VlcVideoPlayer extends VideoPlayer {
     private final AudioFocusRequest mAudioFocusRequest =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
                     new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                            .setAudioAttributes(sDefaultAudioAttrs.getAudioAttributesV21())
+                            .setAudioAttributes(
+                                    sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes)
                             .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
                             .setAcceptsDelayedFocusGain(true)
                             .build()

@@ -5,20 +5,23 @@
 
 package com.liuzhenlin.videos.web;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import androidx.annotation.Nullable;
+import androidx.webkit.WebViewClientCompat;
 
 import com.liuzhenlin.common.Configs;
+import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.NonNullApi;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.liuzhenlin.common.utils.Regex;
 
 import static java.util.Objects.requireNonNull;
 
@@ -26,6 +29,8 @@ import static java.util.Objects.requireNonNull;
 public class AndroidWebView extends WebView {
 
     protected final Context mContext;
+
+    protected final ListenerSet<PageListener> mPageListeners = new ListenerSet<>();
 
     public AndroidWebView(Context context) {
         this(context, null);
@@ -47,27 +52,40 @@ public class AndroidWebView extends WebView {
         setup(getSettings());
 
         // So that we can catch the back button
-        setFocusableInTouchMode(true);
+//        setFocusableInTouchMode(true);
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && canGoBack()) {
-            event.startTracking();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        if (keyCode == KeyEvent.KEYCODE_BACK && canGoBack()) {
+//            event.startTracking();
+//            return true;
+//        }
+//        return super.onKeyDown(keyCode, event);
+//    }
 
+//    @Override
+//    public boolean onKeyUp(int keyCode, KeyEvent event) {
+//        if (keyCode == KeyEvent.KEYCODE_BACK) {
+//            if (canGoBack()) {
+//                goBack();
+//                return true;
+//            }
+//        }
+//        return super.onKeyUp(keyCode, event);
+//    }
+
+    @SuppressLint("ClickableViewAccessibility")
     @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (canGoBack()) {
-                goBack();
-                return true;
-            }
+    public boolean onTouchEvent(MotionEvent event) {
+        boolean consumed = super.onTouchEvent(event);
+        if (consumed && event.getAction() == MotionEvent.ACTION_DOWN
+                && getScrollY() == 0) {
+            // Avoids touch conflicts between this view and SwipeRefreshLayout, where the scrollY
+            // is 0 but this view is actually scrolling a child panel up.
+            setScrollY(1);
         }
-        return super.onKeyUp(keyCode, event);
+        return consumed;
     }
 
     protected void setup(WebSettings settings) {
@@ -95,14 +113,84 @@ public class AndroidWebView extends WebView {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             setWebContentsDebuggingEnabled(com.liuzhenlin.videos.web.Configs.WEB_DEBUGGING_ENABLED);
         }
+
+        setWebViewClient(createWebViewClient());
+        setWebChromeClient(createWebChromeClient());
+    }
+
+    protected ChromeClient createWebChromeClient() {
+        return new ChromeClient();
+    }
+
+    protected Client createWebViewClient() {
+        return new Client();
+    }
+
+    public boolean isInFullscreen() {
+        return false;
+    }
+
+    public boolean canEnterFullscreen() {
+        return true;
+    }
+
+    public boolean canExitFullscreen() {
+        return false;
+    }
+
+    public void exitFullscreen() {
+    }
+
+    public void enterFullscreen() {
+    }
+
+    public void addPageListener(@Nullable PageListener listener) {
+        mPageListeners.add(listener);
+    }
+
+    public void removePageListener(@Nullable PageListener listener) {
+        mPageListeners.remove(listener);
+    }
+
+    public interface PageListener {
+
+        default void onPageStarted(WebView view, String url, @Nullable Bitmap favicon) {}
+        default void onPageFinished(WebView view, String url) {}
+
+        default void onLoadingProgressChanged(WebView view, int newProgress) {}
+
+        default void onEnterFullscreen(WebView view) {}
+        default void onExitFullscreen(WebView view) {}
+    }
+
+    public class Client extends WebViewClientCompat {
+        @Override
+        public void onPageStarted(WebView view, String url, @Nullable Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            mPageListeners.forEach(listener -> listener.onPageStarted(view, url, favicon));
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            mPageListeners.forEach(listener -> listener.onPageFinished(view, url));
+        }
+    }
+
+    public class ChromeClient extends WebChromeClient {
+        @Override
+        public void onProgressChanged(WebView view, int newProgress) {
+            super.onProgressChanged(view, newProgress);
+            mPageListeners.forEach(
+                    listener -> listener.onLoadingProgressChanged(view, newProgress));
+        }
     }
 
     // Copied from Fermata
     public static final class UserAgent {
         private UserAgent() {}
 
-        private static final Pattern pattern =
-                Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
+        private static final String REGEX = ".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+";
         @Nullable static String ua;
         @Nullable static String uaDesktop;
 
@@ -117,17 +205,16 @@ public class AndroidWebView extends WebView {
             if (ua != null) return ua;
 
             String ua = s.getUserAgentString();
-            Matcher m = pattern.matcher(ua);
-
-            if (m.matches()) {
+            Regex regex = new Regex(REGEX);
+            if (regex.matches(ua)) {
                 String av;
 //                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 //                    av = Build.VERSION.RELEASE_OR_CODENAME;
 //                } else {
-                av = Build.VERSION.RELEASE;
+                    av = Build.VERSION.RELEASE;
 //                }
-                String wv = requireNonNull(m.group(1));
-                String cv = requireNonNull(m.group(2));
+                String wv = requireNonNull(regex.group(1));
+                String cv = requireNonNull(regex.group(2));
                 UserAgent.ua = USER_AGENT
                         .replace("{ANDROID_VERSION}", av)
                         .replace("{WEBKIT_VERSION}", wv)
@@ -135,7 +222,7 @@ public class AndroidWebView extends WebView {
                 UserAgent.ua = normalize(UserAgent.ua);
                 if (UserAgent.ua.isEmpty()) UserAgent.ua = ua;
             } else {
-//                Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
+//                Log.w("User-Agent does not match the regex ", regex, ": " + ua);
                 UserAgent.ua = ua;
             }
 
@@ -146,16 +233,15 @@ public class AndroidWebView extends WebView {
             if (uaDesktop != null) return uaDesktop;
 
             String ua = s.getUserAgentString();
-            Matcher m = pattern.matcher(ua);
-
-            if (m.matches()) {
-                String wv = requireNonNull(m.group(1));
-                String cv = requireNonNull(m.group(2));
+            Regex regex = new Regex(REGEX);
+            if (regex.matches(ua)) {
+                String wv = requireNonNull(regex.group(1));
+                String cv = requireNonNull(regex.group(2));
                 uaDesktop = USER_AGENT_DESKTOP
                         .replace("{WEBKIT_VERSION}", wv)
                         .replace("{CHROME_VERSION}", cv);
             } else {
-//                Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
+//                Log.w("User-Agent does not match the regex ", regex, ": " + ua);
                 int i1 = ua.indexOf('(') + 1;
                 int i2 = ua.indexOf(')', i1);
                 uaDesktop = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)

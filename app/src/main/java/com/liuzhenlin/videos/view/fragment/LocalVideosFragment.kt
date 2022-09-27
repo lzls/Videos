@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.liuzhenlin.common.Configs
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
 import com.liuzhenlin.swipeback.SwipeBackLayout
@@ -54,7 +55,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
     private fun initViews(contentView: View) {
         mSwipeRefreshLayout = contentView.findViewById(R.id.swipeRefreshLayout)
-        mSwipeRefreshLayout.setColorSchemeResources(R.color.pink, R.color.lightBlue, R.color.purple)
+        mSwipeRefreshLayout.setColorSchemeResources(*Configs.SWIPE_REFRESH_WIDGET_COLOR_SCHEME)
         mSwipeRefreshLayout.setOnRequestDisallowInterceptTouchEventCallback { true }
     }
 
