@@ -754,6 +754,7 @@ public final class MergeAppUpdateChecker {
                     .setOnlyAlertOnce(true)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                    .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                     .setVisibility(NotificationCompat.VISIBILITY_SECRET);
 
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
