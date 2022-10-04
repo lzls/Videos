@@ -32,6 +32,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.Consumer;
 
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.compat.RemoteViewsCompat;
 import com.liuzhenlin.common.notification.style.DecoratedMediaCustomViewStyle;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
@@ -659,12 +660,10 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         // Stop service using doThings Intent
         viewSmall.setOnClickPendingIntent(
                 R.id.btn_close,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.STOP_SELF), 0));
+                getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.STOP_SELF)));
         viewBig.setOnClickPendingIntent(
                 R.id.btn_close,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.STOP_SELF), 0));
+                getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.STOP_SELF)));
 
         RemoteViewsCompat.setImageViewResourceWithTint(this,
                 viewBig, R.id.btn_play_pause, mPlayPauseBtnImgSrc, iconTint);
@@ -673,29 +672,27 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         // Play, Pause video using doThings Intent
         viewBig.setOnClickPendingIntent(
                 R.id.btn_play_pause,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.PLAY_PAUSE), 0));
+                getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.PLAY_PAUSE)));
 
         RemoteViewsCompat.setImageViewResourceWithTint(this,
                 viewBig, R.id.btn_next, R.drawable.ic_skip_next_white_24dp, iconTint);
         // Next video using doThings Intent
         viewBig.setOnClickPendingIntent(
                 R.id.btn_next,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.NEXT), 0));
+                getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.NEXT)));
 
         RemoteViewsCompat.setImageViewResourceWithTint(this,
                 viewBig, R.id.btn_previous, R.drawable.ic_skip_previous_white_24dp, iconTint);
         // Previous video using doThings Intent
         viewBig.setOnClickPendingIntent(
                 R.id.btn_previous,
-                PendingIntent.getService(mContext, 0,
-                        doThings.setAction(Constants.Actions.PREV), 0));
+                getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.PREV)));
 
         Intent it = new Intent(mContext, YoutubePlaybackActivity.class)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
                         Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pit = PendingIntent.getActivity(mContext, 0, it, 0);
+        PendingIntent pit = PendingIntent.getActivity(
+                mContext, 0, it, Consts.PENDING_INTENT_FLAG_IMMUTABLE);
         builder.setSmallIcon(R.drawable.ic_media_app_notification)
                 .setStyle(new DecoratedMediaCustomViewStyle())
                 .setDefaults(0)
@@ -750,6 +747,10 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
 
         return builder.build();
+    }
+
+    private PendingIntent getNotificationActionPendingIntent(Intent intent) {
+        return PendingIntent.getService(mContext, 0, intent, Consts.PENDING_INTENT_FLAG_IMMUTABLE);
     }
 
     /**

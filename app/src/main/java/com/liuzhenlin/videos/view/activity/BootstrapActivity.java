@@ -17,9 +17,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.splashscreen.SplashScreen;
 
+import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.videos.LegacyExternalStorageDataMigrator;
 import com.liuzhenlin.videos.R;
+import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.web.youtube.YoutubePlaybackService;
 
 import java.util.List;
@@ -89,6 +92,22 @@ public class BootstrapActivity extends BaseActivity
     }
 
     private void onPermissionGranted() {
+        AppPrefs appPrefs = AppPrefs.getSingleton(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                && !appPrefs.isLegacyExternalStorageDataMigrated()) {
+            Executors.THREAD_POOL_EXECUTOR.execute(() -> {
+                LegacyExternalStorageDataMigrator legacyExternalStorageDataMigrator =
+                        new LegacyExternalStorageDataMigrator(this);
+                boolean migrated = true;
+                if (legacyExternalStorageDataMigrator.isLegacyDataAccessible()) {
+                    migrated = legacyExternalStorageDataMigrator.migrate();
+                }
+                if (migrated) {
+                    appPrefs.edit().setLegacyExternalStorageDataMigrated(true).apply();
+                }
+            });
+        }
+
         Intent intent = getIntent();
         String action = intent.getAction();
         try {

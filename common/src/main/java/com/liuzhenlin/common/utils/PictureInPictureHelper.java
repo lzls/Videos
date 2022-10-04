@@ -32,6 +32,7 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 
 import com.liuzhenlin.common.BuildConfig;
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.R;
 
 import java.util.LinkedList;
@@ -177,12 +178,11 @@ public class PictureInPictureHelper {
         // This is the PendingIntent that is invoked when a user clicks on the action item.
         // You need to use distinct request codes for play, pause, fast forward, and fast rewind,
         // or the PendingIntent won't be properly updated.
-        @SuppressLint("UnspecifiedImmutableFlag")
         PendingIntent intent = PendingIntent.getBroadcast(
                 mActivity,
                 requestCode,
                 new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_PIP_ACTION, pipAction),
-                0);
+                Consts.PENDING_INTENT_FLAG_IMMUTABLE);
         Icon icon = IconCompat.createWithResource(mActivity, iconId).toIcon(mActivity);
         return new RemoteAction(icon, title, title, intent);
     }

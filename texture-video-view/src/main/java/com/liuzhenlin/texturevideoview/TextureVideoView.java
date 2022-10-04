@@ -245,7 +245,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
          * will be created (if it does not exist) as the basis.
          */
         @Nullable
-        default String getAppExternalFilesDir() {
+        default String getAppExternalFilesDir(@NonNull String dirType) {
             return null;
         }
     }
@@ -2126,7 +2126,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     mVideoPlayer.pause(true);
                 }
 
-                final String appExternalFilesDir = obtainAppExternalFilesDir();
+                final String appExternalPicturesDir =
+                        obtainAppExternalFilesDir(Environment.DIRECTORY_PICTURES);
                 mSaveCapturedPhotoTask = new AsyncTask<Void, Void, File>() {
                     @SuppressLint("SimpleDateFormat")
                     @Override
@@ -2136,7 +2137,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                                 bitmap,
                                 /* format= */ Bitmap.CompressFormat.PNG,
                                 /* quality= */ 100,
-                                /* directory= */ appExternalFilesDir + "/screenshots",
+                                /* directory= */ appExternalPicturesDir + "/screenshots",
                                 /* fileName= */ mTitle + "_"
                                         + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS") //@formatter:off
                                                 .format(System.currentTimeMillis()) //@formatter:on
@@ -2242,13 +2243,18 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         content.startAnimation(animation);
     }
 
-    @Synthetic String obtainAppExternalFilesDir() {
+    @Synthetic String obtainAppExternalFilesDir(String dirType) {
         String directory = null;
         if (mOpCallback != null) {
-            directory = mOpCallback.getAppExternalFilesDir();
+            directory = mOpCallback.getAppExternalFilesDir(dirType);
         }
         if (directory == null) {
-            directory = Environment.getExternalStorageDirectory() + "/" + mAppName;
+            //noinspection deprecation
+            directory =
+                    (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q
+                            ? Environment.getExternalStoragePublicDirectory(dirType)
+                            : Environment.getExternalStorageDirectory()
+                    ) + "/" + mAppName;
         }
         return directory;
     }
@@ -2350,8 +2356,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         result = mResources.getString(R.string.clippingFailed);
                     } else {
                         //noinspection ConstantConditions
-                        final String destDirectory = obtainAppExternalFilesDir()
-                                + "/clips/" + (cutoutShortVideo ? "ShortVideos" : "GIFs");
+                        final String destDirectory =
+                                obtainAppExternalFilesDir(
+                                        cutoutShortVideo
+                                                ? Environment.DIRECTORY_MOVIES
+                                                : Environment.DIRECTORY_PICTURES
+                                ) + "/" + (cutoutShortVideo ? "ShortClips" : "GifClips");
                         //noinspection ConstantConditions
                         final String destName = mTitle + "_"
                                 + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS") //@formatter:off

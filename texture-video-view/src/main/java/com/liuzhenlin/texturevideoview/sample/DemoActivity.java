@@ -150,7 +150,7 @@ public class DemoActivity extends AppCompatActivity {
             // (the primary external storage directory concatenating with this application name).
             @Nullable
             @Override
-            public String getAppExternalFilesDir() {
+            public String getAppExternalFilesDir(@NonNull String dirType) {
                 return null;
             }
         });

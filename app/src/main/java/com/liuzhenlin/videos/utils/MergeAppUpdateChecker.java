@@ -21,6 +21,7 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -82,6 +83,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import kotlin.collections.ArraysKt;
 
+import static com.liuzhenlin.common.Consts.PENDING_INTENT_FLAG_IMMUTABLE;
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
 import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
@@ -764,7 +766,8 @@ public final class MergeAppUpdateChecker {
 
             Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                 //noinspection ConstantConditions
-                mApk = new File(Files.getAppExternalFilesDir(),
+                mApk = new File(
+                        Files.getAppExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                         intent.getStringExtra(EXTRA_APP_NAME) + " "
                                 + intent.getStringExtra(EXTRA_VERSION_NAME).replace(".", "_")
                                 + ".apk");
@@ -816,7 +819,6 @@ public final class MergeAppUpdateChecker {
             }
         }
 
-        @SuppressLint("UnspecifiedImmutableFlag")
         @Synthetic RemoteViews createNotificationView() {
             RemoteViews nv = new RemoteViews(mPkgName, R.layout.notification_download_app);
             nv.setOnClickPendingIntent(R.id.btn_cancel_danv,
@@ -824,7 +826,7 @@ public final class MergeAppUpdateChecker {
                             mContext,
                             0,
                             new Intent(CancelAppUpdateReceiver.ACTION),
-                            0));
+                            PENDING_INTENT_FLAG_IMMUTABLE));
             return nv;
         }
 
@@ -937,8 +939,8 @@ public final class MergeAppUpdateChecker {
 
             String channelId = NotificationChannelManager.getMessageNotificationChannelId(mContext);
             String title = mContext.getString(R.string.newAppDownloaded);
-            @SuppressLint("UnspecifiedImmutableFlag")
-            PendingIntent pi = PendingIntent.getActivity(mContext, 0, it, 0);
+            PendingIntent pi = PendingIntent.getActivity(
+                    mContext, 0, it, PENDING_INTENT_FLAG_IMMUTABLE);
             mNotificationManager.notify(
                     ID_NOTIFICATION,
                     mNotificationBuilder

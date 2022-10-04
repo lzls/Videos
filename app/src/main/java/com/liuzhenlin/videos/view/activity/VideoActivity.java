@@ -485,8 +485,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             @NonNull
             @Override
-            public String getAppExternalFilesDir() {
-                return Files.getAppExternalFilesDir().getPath();
+            public String getAppExternalFilesDir(@NonNull String dirType) {
+                return Files.getAppExternalFilesDir(dirType).getPath();
             }
         });
         App.getInstance(this).addOnSystemUiNightModeChangedListener(mVideoView);

@@ -21,6 +21,7 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -78,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.liuzhenlin.common.Consts.PENDING_INTENT_FLAG_IMMUTABLE;
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
 import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
@@ -802,7 +804,6 @@ public final class AppUpdateChecker {
                         .setVisibility(NotificationCompat.VISIBILITY_SECRET);
             }
 
-            @SuppressLint("UnspecifiedImmutableFlag")
             @Synthetic RemoteViews createNotificationView() {
                 RemoteViews nv = new RemoteViews(mPkgName, R.layout.notification_download_app);
                 nv.setOnClickPendingIntent(R.id.btn_cancel_danv,
@@ -810,7 +811,7 @@ public final class AppUpdateChecker {
                                 mContext,
                                 0,
                                 new Intent(CancelAppUpdateReceiver.ACTION),
-                                0));
+                                PENDING_INTENT_FLAG_IMMUTABLE));
                 return nv;
             }
 
@@ -836,7 +837,8 @@ public final class AppUpdateChecker {
                     } else if (mApkLength <= 0) {
                         onDownloadError();
                     } else {
-                        mApk = new File(Files.getAppExternalFilesDir(),
+                        mApk = new File(
+                                Files.getAppExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                                 strings[INDEX_APP_NAME] + " "
                                         + strings[INDEX_VERSION_NAME].replace(".", "_")
                                         + ".apk");
@@ -993,8 +995,8 @@ public final class AppUpdateChecker {
 
                 String channelId = NotificationChannelManager.getMessageNotificationChannelId(mContext);
                 String title = mContext.getString(R.string.newAppDownloaded);
-                @SuppressLint("UnspecifiedImmutableFlag")
-                PendingIntent pi = PendingIntent.getActivity(mContext, 0, it, 0);
+                PendingIntent pi = PendingIntent.getActivity(
+                        mContext, 0, it, PENDING_INTENT_FLAG_IMMUTABLE);
                 mNotificationManager.notify(
                         ID_NOTIFICATION,
                         mNotificationBuilder

@@ -12,6 +12,8 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.text.style.TextAppearanceSpan;
 
 import androidx.annotation.AnimRes;
 import androidx.annotation.AnyRes;
@@ -81,23 +83,28 @@ public class ThemeUtils {
 
     /** Returns the default text color of a given text appearance. */
     public static int getTextAppearanceDefaultTextColor(@NonNull Context context, @StyleRes int appearance) {
-        ClassLoader loader = context.getClassLoader();
-        ensureTextAppearanceStyleableFetched(context, loader);
-        if (sTextAppearanceStyleable != null) {
-            ensureTextAppearanceStyleableTextColorIndexFetched(context, loader);
-            if (sTextAppearanceStyleableTextColorIndex != 0) {
-                TypedArray ta = context.obtainStyledAttributes(appearance, sTextAppearanceStyleable);
-                try {
-                    ColorStateList csl = ta.getColorStateList(sTextAppearanceStyleableTextColorIndex);
-                    if (csl != null) {
-                        return csl.getDefaultColor();
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
+                || context.getApplicationInfo().targetSdkVersion <= Build.VERSION_CODES.Q) {
+            ClassLoader loader = context.getClassLoader();
+            ensureTextAppearanceStyleableFetched(context, loader);
+            if (sTextAppearanceStyleable != null) {
+                ensureTextAppearanceStyleableTextColorIndexFetched(context, loader);
+                if (sTextAppearanceStyleableTextColorIndex != 0) {
+                    TypedArray ta =
+                            context.obtainStyledAttributes(appearance, sTextAppearanceStyleable);
+                    try {
+                        ColorStateList csl =
+                                ta.getColorStateList(sTextAppearanceStyleableTextColorIndex);
+                        if (csl != null) {
+                            return csl.getDefaultColor();
+                        }
+                    } finally {
+                        ta.recycle();
                     }
-                } finally {
-                    ta.recycle();
                 }
             }
         }
-        return 0;
+        return new TextAppearanceSpan(context, appearance).getTextColor().getDefaultColor();
     }
 
     /** Retrieves the platform default value for {@link android.R.attr.activityOpenEnterAnimation} */

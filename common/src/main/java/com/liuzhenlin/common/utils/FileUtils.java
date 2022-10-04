@@ -44,6 +44,19 @@ public class FileUtils {
     private FileUtils() {
     }
 
+    public static void rmrf(@NonNull File file) {
+        if (file.isDirectory()) {
+            File[] fs = file.listFiles();
+            if (fs != null) {
+                for (File f : fs) {
+                    rmrf(f);
+                }
+            }
+        }
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
+    }
+
     @NonNull
     public static String formatFileSize(double size) {
         // 如果字节数少于1024，则直接以B为单位，否则先除于1024
