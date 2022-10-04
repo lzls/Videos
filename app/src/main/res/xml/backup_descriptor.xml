@@ -9,4 +9,7 @@
     <include
         domain="sharedpref"
         path="SavedFeedback.sp.xml" />
+    <include
+        domain="sharedpref"
+        path="com.liuzhenlin.videos_preferences.xml" />
 </full-backup-content>
