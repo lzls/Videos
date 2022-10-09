@@ -224,17 +224,23 @@ public class CircularCheckBox extends View implements Checkable {
     public CircularCheckBox(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.CircularCheckBox);
-        mStrokeColor = ta.getColor(R.styleable
-                .CircularCheckBox_color_stroke, getColor(R.color.strokeColor));
-        mUncheckedSolidPaint.setColor(ta.getColor(R.styleable
-                .CircularCheckBox_color_solid_unchecked, getColor(R.color.uncheckSolidColor)));
-        mCheckedRingColor = ta.getColor(R.styleable
-                .CircularCheckBox_color_ring_checked, COLOR_RING_CHECKED);
+        mStrokeColor =
+                ta.getColor(
+                        R.styleable.CircularCheckBox_color_stroke, getColor(R.color.strokeColor));
+        mUncheckedSolidPaint.setColor(
+                ta.getColor(
+                        R.styleable.CircularCheckBox_color_solid_unchecked,
+                        getColor(R.color.uncheckSolidColor)));
+        mCheckedRingColor =
+                ta.getColor(
+                        R.styleable.CircularCheckBox_color_ring_checked, COLOR_RING_CHECKED);
         mTickPaint.setColor(ta.getColor(R.styleable.CircularCheckBox_color_tick, COLOR_TICK));
-        mStrokeWidth = ta.getDimensionPixelSize(R.styleable
-                .CircularCheckBox_strokeWidth, Utils.dp2px(context, 1));
-        mTickStrokeWidth = ta.getDimensionPixelSize(R.styleable
-                .CircularCheckBox_tickStrokeWidth, Utils.dp2px(context, 2));
+        mStrokeWidth =
+                ta.getDimensionPixelSize(
+                        R.styleable.CircularCheckBox_strokeWidth, Utils.dp2px(context, 1));
+        mTickStrokeWidth =
+                ta.getDimensionPixelSize(
+                        R.styleable.CircularCheckBox_tickStrokeWidth, Utils.dp2px(context, 2));
         mDuration = ta.getInt(R.styleable.CircularCheckBox_duration, DEF_DURATION);
         ta.recycle();
 
@@ -455,8 +461,8 @@ public class CircularCheckBox extends View implements Checkable {
     }
 
     private void drawRing(Canvas canvas) {
-        final float strokeWidth = mCenterPoint.x *
-                (mDrawingRingOuterCircleScale - mDrawingRingInnerCircleScale);
+        final float strokeWidth =
+                mCenterPoint.x * (mDrawingRingOuterCircleScale - mDrawingRingInnerCircleScale);
         final float strokeCenterToPadding = strokeWidth / 2f
                 + (1.0f - mDrawingRingOuterCircleScale) * mCenterPoint.x;
 //        final float left = strokeCenterToPadding + getPaddingLeft();
@@ -495,10 +501,10 @@ public class CircularCheckBox extends View implements Checkable {
                 mTickLength = mTickLeftPartLength;
             }
 
-            final float stopX = mTickKeyPoints[0].x + (mTickKeyPoints[1].x - mTickKeyPoints[0].x) *
-                    mTickLength / mTickLeftPartLength;
-            final float stopY = mTickKeyPoints[0].y + (mTickKeyPoints[1].y - mTickKeyPoints[0].y) *
-                    mTickLength / mTickLeftPartLength;
+            final float stopX = mTickKeyPoints[0].x + (mTickKeyPoints[1].x - mTickKeyPoints[0].x)
+                    * mTickLength / mTickLeftPartLength;
+            final float stopY = mTickKeyPoints[0].y + (mTickKeyPoints[1].y - mTickKeyPoints[0].y)
+                    * mTickLength / mTickLeftPartLength;
 
             mTickPath.reset();
             mTickPath.moveTo(mTickKeyPoints[0].x, mTickKeyPoints[0].y);
@@ -518,10 +524,10 @@ public class CircularCheckBox extends View implements Checkable {
                 mTickLength = mTickLeftPartLength + mTickRightPartLength;
             }
 
-            final float stopX = mTickKeyPoints[1].x + (mTickKeyPoints[2].x - mTickKeyPoints[1].x) *
-                    (mTickLength - mTickLeftPartLength) / mTickRightPartLength;
-            final float stopY = mTickKeyPoints[1].y - (mTickKeyPoints[1].y - mTickKeyPoints[2].y) *
-                    (mTickLength - mTickLeftPartLength) / mTickRightPartLength;
+            final float stopX = mTickKeyPoints[1].x + (mTickKeyPoints[2].x - mTickKeyPoints[1].x)
+                    * (mTickLength - mTickLeftPartLength) / mTickRightPartLength;
+            final float stopY = mTickKeyPoints[1].y - (mTickKeyPoints[1].y - mTickKeyPoints[2].y)
+                    * (mTickLength - mTickLeftPartLength) / mTickRightPartLength;
 
             mTickPath.reset();
             mTickPath.moveTo(mTickKeyPoints[1].x, mTickKeyPoints[1].y);

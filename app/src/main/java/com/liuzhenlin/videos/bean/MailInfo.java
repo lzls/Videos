@@ -171,17 +171,17 @@ public class MailInfo {
         if (o == null || getClass() != o.getClass()) return false;
 
         MailInfo mailInfo = (MailInfo) o;
-        return validate == mailInfo.validate &&
-                ObjectsCompat.equals(mailServerHost, mailInfo.mailServerHost) &&
-                ObjectsCompat.equals(mailServerPort, mailInfo.mailServerPort) &&
-                ObjectsCompat.equals(userName, mailInfo.userName) &&
-                ObjectsCompat.equals(password, mailInfo.password) &&
-                ObjectsCompat.equals(fromAddress, mailInfo.fromAddress) &&
-                ObjectsCompat.equals(toAddress, mailInfo.toAddress) &&
-                ObjectsCompat.equals(title, mailInfo.title) &&
-                ObjectsCompat.equals(text, mailInfo.text) &&
-                ObjectsCompat.equals(textRelatedImagePath, mailInfo.textRelatedImagePath) &&
-                Arrays.equals(attachmentPaths, mailInfo.attachmentPaths);
+        return validate == mailInfo.validate
+                && ObjectsCompat.equals(mailServerHost, mailInfo.mailServerHost)
+                && ObjectsCompat.equals(mailServerPort, mailInfo.mailServerPort)
+                && ObjectsCompat.equals(userName, mailInfo.userName)
+                && ObjectsCompat.equals(password, mailInfo.password)
+                && ObjectsCompat.equals(fromAddress, mailInfo.fromAddress)
+                && ObjectsCompat.equals(toAddress, mailInfo.toAddress)
+                && ObjectsCompat.equals(title, mailInfo.title)
+                && ObjectsCompat.equals(text, mailInfo.text)
+                && ObjectsCompat.equals(textRelatedImagePath, mailInfo.textRelatedImagePath)
+                && Arrays.equals(attachmentPaths, mailInfo.attachmentPaths);
     }
 
     @Override

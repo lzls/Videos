@@ -244,7 +244,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                     mHomeAsUpIndicator.getLayoutParams();
             ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
                     mTitleText.getLayoutParams();
-            MarginLayoutParamsCompat.setMarginStart(ttlp,
+            MarginLayoutParamsCompat.setMarginStart(
+                    ttlp,
                     DensityUtils.dp2px(app, 10f) /* margin */
                             + app.getVideoThumbWidth()
                             - hauilp.leftMargin - hauilp.rightMargin
@@ -256,7 +257,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         mFragmentViewPager.setScrollEnabled(false);
         //noinspection deprecation
         mFragmentViewPager.setAdapter(
-                new FragmentPagerAdapter(getSupportFragmentManager(),
+                new FragmentPagerAdapter(
+                        getSupportFragmentManager(),
                         FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
                     final String[] fragmentTittles = {
                             getString(R.string.localVideos), getString(R.string.onlineVideos)
@@ -283,8 +285,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             @Override
             public void onPageSelected(int position) {
                 //noinspection ConstantConditions,deprecation
-                Fragment fragment = ((FragmentPagerAdapter) mFragmentViewPager.getAdapter())
-                        .getItem(position);
+                Fragment fragment =
+                        ((FragmentPagerAdapter) mFragmentViewPager.getAdapter()).getItem(position);
                 if (fragment instanceof LocalVideosFragment) {
                     mActionButton.setId(R.id.btn_search);
                     mActionButton.setImageResource(R.drawable.ic_search);
@@ -325,9 +327,9 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         AppPrefs.getSingleton(this).edit().setLightDrawerIcons(light).apply();
 
         final boolean nightMode = ThemeUtils.isNightMode(this);
-        final int colorRes = nightMode && light || !nightMode && !light
-                ? R.color.textColorSecondary
-                : R.color.textColorSecondary_inverse;
+        final int colorRes =
+                nightMode && light || !nightMode && !light ?
+                        R.color.textColorSecondary : R.color.textColorSecondary_inverse;
         ImageViewCompat.setImageTintList(mSettingsBtn, ContextCompat.getColorStateList(this, colorRes));
     }
 
@@ -449,8 +451,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         if (!mIsBackPressed) {
             mIsBackPressed = true;
             mSlidingDrawerLayout.postDelayed(() -> mIsBackPressed = false, 1500);
-            UiUtils.showUserCancelableSnackbar(mSlidingDrawerLayout,
-                    R.string.pressAgainToExitApp, Snackbar.LENGTH_SHORT);
+            UiUtils.showUserCancelableSnackbar(
+                    mSlidingDrawerLayout, R.string.pressAgainToExitApp, Snackbar.LENGTH_SHORT);
         } else {
             super.onBackPressed();
         }
@@ -631,8 +633,9 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             vh.text.setTextColor(mTextColor);
             if (position == 0 && !TextUtils.isEmpty(mCheckUpdateResultText)) {
                 vh.subText.setText(mCheckUpdateResultText);
-                vh.subText.setTextColor(mFindNewVersion.equals(mCheckUpdateResultText) ?
-                        SUBTEXT_HIGHLIGHT_COLOR : mSubTextColor);
+                vh.subText.setTextColor(
+                        mFindNewVersion.equals(mCheckUpdateResultText) ?
+                                SUBTEXT_HIGHLIGHT_COLOR : mSubTextColor);
                 vh.subText.setCompoundDrawables(null, null, null, null);
             } else {
                 vh.subText.setText(EMPTY_STRING);
@@ -653,8 +656,9 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             final TextView subText;
 
             ViewHolder(ViewGroup adapterView) {
-                itemView = LayoutInflater.from(adapterView.getContext())
-                        .inflate(R.layout.item_drawer_list, adapterView, false);
+                itemView =
+                        LayoutInflater.from(adapterView.getContext())
+                                .inflate(R.layout.item_drawer_list, adapterView, false);
                 text = itemView.findViewById(R.id.text_list);
                 subText = itemView.findViewById(R.id.subtext_list);
             }
@@ -759,8 +763,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
             tv.setText(ss);
 
-            Utils.postOnLayoutValid(tv,
-                    () -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
+            Utils.postOnLayoutValid(
+                    tv, () -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
         }//);
 
         Dialog dialog = new AppCompatDialog(_this, R.style.DialogStyle_MinWidth_NoTitle);
@@ -934,11 +938,13 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     @Override
     public void onLocalSearchedVideosFragmentAttached() {
-        mTmpActionBar = (ViewGroup) LayoutInflater.from(this)
-                .inflate(R.layout.actionbar_local_searched_videos_fragment, mActionBarContainer, false);
+        mTmpActionBar = (ViewGroup)
+                LayoutInflater.from(this)
+                        .inflate(R.layout.actionbar_local_searched_videos_fragment,
+                                mActionBarContainer, false);
         if (isLayoutUnderStatusBar()) {
-            UiUtils.setViewMargins(mTmpActionBar,
-                    0, App.getInstance(this).getStatusHeightInPortrait(), 0, 0);
+            UiUtils.setViewMargins(
+                    mTmpActionBar, 0, App.getInstance(this).getStatusHeightInPortrait(), 0, 0);
         }
         mActionBarContainer.addView(mTmpActionBar);
     }
@@ -952,8 +958,10 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     @Override
     public void onLocalFoldedVideosFragmentAttached() {
         mActionBar.setVisibility(View.GONE);
-        mTmpActionBar = (ViewGroup) LayoutInflater.from(this)
-                .inflate(R.layout.actionbar_local_folded_videos_fragment, mActionBarContainer, false);
+        mTmpActionBar = (ViewGroup)
+                LayoutInflater.from(this)
+                        .inflate(R.layout.actionbar_local_folded_videos_fragment,
+                                mActionBarContainer, false);
         mActionBarContainer.addView(mTmpActionBar);
         insertTopPaddingToActionBarIfNeeded(mTmpActionBar);
     }

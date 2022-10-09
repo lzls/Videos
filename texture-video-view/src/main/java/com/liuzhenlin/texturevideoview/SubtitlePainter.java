@@ -181,8 +181,8 @@ import com.liuzhenlin.common.utils.Utils;
         // Nothing to draw.
         return;
       }
-      windowColor = (cue.windowColorSet && applyEmbeddedStyles)
-          ? cue.windowColor : style.windowColor;
+      windowColor =
+          (cue.windowColorSet && applyEmbeddedStyles) ? cue.windowColor : style.windowColor;
     }
     if (areCharSequencesEqual(this.cueText, cue.text)
         && Util.areEqual(this.cueTextAlignment, cue.textAlignment)

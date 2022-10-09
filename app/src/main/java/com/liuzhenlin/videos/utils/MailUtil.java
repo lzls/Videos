@@ -105,15 +105,15 @@ public class MailUtil {
             if (mProgressDialog != null) {
                 mProgressDialog.dismiss();
             }
-            Toast.makeText(mContext, successful ? R.string.sendSuccessful
-                    : R.string.sendFailed, Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, successful ? R.string.sendSuccessful : R.string.sendFailed,
+                    Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onCancel(DialogInterface dialog) {
             mProgressDialog = null;
-            Toast.makeText(mContext, R.string.hasBeenPlacedInTheBackground,
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, R.string.hasBeenPlacedInTheBackground, Toast.LENGTH_SHORT)
+                    .show();
         }
     }
 }

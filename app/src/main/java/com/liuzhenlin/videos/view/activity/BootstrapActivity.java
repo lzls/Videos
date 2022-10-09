@@ -76,7 +76,8 @@ public class BootstrapActivity extends BaseActivity
         } else {
             // Ask for one permission
             EasyPermissions.requestPermissions(
-                    new PermissionRequest.Builder(this, //@formatter:off
+                    new PermissionRequest.Builder( //@formatter:off
+                                    this,
                                     REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION,
                                     Manifest.permission.WRITE_EXTERNAL_STORAGE) //@formatter:on
                             .setTheme(R.style.DialogStyle_MinWidth_NoTitle)

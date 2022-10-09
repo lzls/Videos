@@ -49,8 +49,8 @@ public class ScrollerLinearLayout extends LinearLayout implements ScrollerView {
         final int scrollY = getScrollY();
 
         final boolean finished = mScroller.isFinished();
-        if (finished && (scrollX != x || scrollY != y) ||
-                !finished && (mScroller.getFinalX() != x || mScroller.getFinalY() != y)) {
+        if (finished && (scrollX != x || scrollY != y)
+                || !finished && (mScroller.getFinalX() != x || mScroller.getFinalY() != y)) {
 
             final int deltaX = x - scrollX;
             final int deltaY = y - scrollY;

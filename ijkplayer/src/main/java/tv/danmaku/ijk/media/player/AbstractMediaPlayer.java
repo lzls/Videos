@@ -95,11 +95,9 @@ public abstract class AbstractMediaPlayer implements IMediaPlayer {
             mOnSeekCompleteListener.onSeekComplete(this);
     }
 
-    protected final void notifyOnVideoSizeChanged(int width, int height,
-                                                  int sarNum, int sarDen) {
+    protected final void notifyOnVideoSizeChanged(int width, int height, int sarNum, int sarDen) {
         if (mOnVideoSizeChangedListener != null)
-            mOnVideoSizeChangedListener.onVideoSizeChanged(this, width, height,
-                    sarNum, sarDen);
+            mOnVideoSizeChangedListener.onVideoSizeChanged(this, width, height, sarNum, sarDen);
     }
 
     protected final boolean notifyOnError(int what, int extra) {

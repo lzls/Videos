@@ -49,8 +49,8 @@ public class WebService extends Service {
                         WebView web = service.mView;
                         if (web != null
                                 && WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                            WebSettingsCompat.setForceDark(web.getSettings(),
-                                    Utils.nightModeToWebSettingsForceDarkInt(mode));
+                            WebSettingsCompat.setForceDark(
+                                    web.getSettings(), Utils.nightModeToWebSettingsForceDarkInt(mode));
                         }
                     });
                 });

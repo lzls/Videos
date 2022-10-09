@@ -163,9 +163,9 @@ public class FileUtils {
                     while (true) {
                         filePartLength = filePart.length();
                         remainingBytesToWrite = filePartLengthLimit - filePartLength;
-                        bytesToRead = remainingBytesToWrite > buffer.length
-                                ? buffer.length
-                                : (int) remainingBytesToWrite;
+                        bytesToRead =
+                                remainingBytesToWrite > buffer.length ?
+                                        buffer.length : (int) remainingBytesToWrite;
                         if (bytesToRead > 0 && (readBytes = in.read(buffer, 0, bytesToRead)) != -1) {
                             out.write(buffer, 0, readBytes);
                         } else {
@@ -289,8 +289,8 @@ public class FileUtils {
                         default:
                             mimeType = null;
                     }
-                    recordMediaFileToDatabaseAndScan(context,
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, file, mimeType);
+                    recordMediaFileToDatabaseAndScan(
+                            context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, file, mimeType);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

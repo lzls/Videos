@@ -113,7 +113,7 @@ public final class AppPrefs {
                 key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
             }
             return mSP.getBoolean(key,
-                    defaultFollowsNight && nightMode  || !defaultFollowsNight && !nightMode);
+                    defaultFollowsNight && nightMode || !defaultFollowsNight && !nightMode);
         } finally {
             readLock.unlock();
         }

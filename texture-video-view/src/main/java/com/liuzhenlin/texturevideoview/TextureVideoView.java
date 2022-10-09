@@ -863,8 +863,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
             mSpeedSpinner.setPopupBackgroundResource(R.color.bg_popup);
             mSpeedSpinner.setAdapter(adapter);
-            final float playbackSpeed = mVideoPlayer == null ?
-                    IVideoPlayer.DEFAULT_PLAYBACK_SPEED : mVideoPlayer.mPlaybackSpeed;
+            final float playbackSpeed =
+                    mVideoPlayer == null ?
+                            IVideoPlayer.DEFAULT_PLAYBACK_SPEED : mVideoPlayer.mPlaybackSpeed;
             mSpeedSpinner.setSelection(indexOfPlaybackSpeed(playbackSpeed), false);
             mSpeedSpinner.setOnTouchListener(mOnChildTouchListener);
             mSpeedSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -1399,10 +1400,11 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }
             inflateBottomControls();
 
-            final int mode = fullscreen
-                    ? isVideoStretchedToFitFullscreenLayout() ? //@formatter:off
-                            VIEW_MODE_VIDEO_STRETCHED_FULLSCREEN : VIEW_MODE_FULLSCREEN //@formatter:on
-                    : VIEW_MODE_DEFAULT;
+            final int mode =
+                    fullscreen
+                            ? isVideoStretchedToFitFullscreenLayout() ? //@formatter:off
+                                    VIEW_MODE_VIDEO_STRETCHED_FULLSCREEN : VIEW_MODE_FULLSCREEN //@formatter:on
+                            : VIEW_MODE_DEFAULT;
             setViewMode(mode, true);
         }
     }
@@ -1445,10 +1447,11 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     final int height = mContentView.getHeight();
                     if (!Utils.areEqualIgnorePrecisionError(
                             (float) width / height, (float) videoWidth / videoHeight)) {
-                        final float scale = stretched ?
-                                Math.max((float) width / mTextureView.getWidth(),
-                                        (float) height / mTextureView.getHeight())
-                                : 1.0f;
+                        final float scale =
+                                stretched
+                                        ? Math.max((float) width / mTextureView.getWidth(),
+                                                (float) height / mTextureView.getHeight())
+                                        : 1.0f;
                         ViewPropertyAnimatorCompat vpac = ViewCompat.animate(mTextureView);
                         vpac.withLayer()
                                 .scaleX(scale)
@@ -1565,8 +1568,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 if ((openState & (FLAG_IS_OPENING | FLAG_IS_CLOSING)) != 0) {
                     if (mDragHelper == null) {
                         final int absHG = Utils.getAbsoluteHorizontalGravity(this, lp.gravity);
-                        mDragHelper = (ViewDragHelper) (absHG == Gravity.LEFT ?
-                                sLeftDraggerField.get(this) : sRightDraggerField.get(this));
+                        mDragHelper = (ViewDragHelper) (
+                                absHG == Gravity.LEFT ?
+                                        sLeftDraggerField.get(this) : sRightDraggerField.get(this));
                     }
                     //noinspection ConstantConditions
                     if (mDragHelper.getViewDragState() == ViewDragHelper.STATE_SETTLING) {
@@ -1750,7 +1754,6 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
                     TransitionManager.beginDelayedTransition(mContentView,
                             new TransitionSet().addTransition(topAndMiddle).addTransition(bottom));
-
                 }
                 showControls(false, false);
             }
@@ -1953,7 +1956,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 cues.add(new Cue(text));
             } else {
                 //noinspection ConstantConditions,deprecation
-                cues.add(new Cue(text,
+                cues.add(new Cue(
+                        text,
                         /* textAlignment= */ null,
                         /* line= */(float) textBounds.top / viewportH,
                         /* lineType= */ Cue.LINE_TYPE_FRACTION,
@@ -2088,8 +2092,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         final Bitmap bitmap = mTextureView.getBitmap(width, height);
 
-        final float oldAspectRatio = mCapturedPhotoView == null ?
-                0 : (float) mCapturedBitmap.getWidth() / mCapturedBitmap.getHeight();
+        final float oldAspectRatio =
+                mCapturedPhotoView == null ?
+                        0 : (float) mCapturedBitmap.getWidth() / mCapturedBitmap.getHeight();
         final float aspectRatio = (float) width / height;
 
         final boolean capturedPhotoViewValid;
@@ -2297,8 +2302,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         final int[] interval = new int[2];
 
-        final ViewGroup view = (ViewGroup) LayoutInflater.from(mContext)
-                .inflate(R.layout.layout_video_clip, mContentView, false);
+        final ViewGroup view = (ViewGroup)
+                LayoutInflater.from(mContext)
+                        .inflate(R.layout.layout_video_clip, mContentView, false);
         mClipView = view;
         final View cutoutShortVideoButton = view.findViewById(R.id.btn_cutoutShortVideo);
         final View cutoutGifButton = view.findViewById(R.id.btn_cutoutGif);
@@ -2325,14 +2331,15 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             } else if (v == okButton) {
                 final boolean cutoutShortVideo = cutoutShortVideoButton.isSelected();
                 if (!cutoutShortVideo) {
-                    UiUtils.showUserCancelableSnackbar(this,
-                            R.string.gifClippingIsNotYetSupported, Snackbar.LENGTH_SHORT);
+                    UiUtils.showUserCancelableSnackbar(
+                            this, R.string.gifClippingIsNotYetSupported, Snackbar.LENGTH_SHORT);
                     return;
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                    ViewGroup overlay = (ViewGroup) LayoutInflater.from(mContext)
-                            .inflate(R.layout.layout_clipping_overlay, view, false);
+                    ViewGroup overlay = (ViewGroup)
+                            LayoutInflater.from(mContext)
+                                    .inflate(R.layout.layout_clipping_overlay, view, false);
                     overlay.measure(MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
                             MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
                     overlay.layout(0, 0, view.getWidth(), view.getHeight());
@@ -2386,15 +2393,19 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             resultCode = 0;
                             //noinspection ConstantConditions
                             if (cutoutShortVideo) {
-                                FileUtils.recordMediaFileToDatabaseAndScan(mContext,
+                                FileUtils.recordMediaFileToDatabaseAndScan(
+                                        mContext,
                                         MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                        destFile, "video/mp4");
+                                        destFile,
+                                        "video/mp4");
                                 result = mResources.getString(
                                         R.string.shortVideoHasBeenSavedTo, destName, destDirectory);
                             } else {
-                                FileUtils.recordMediaFileToDatabaseAndScan(mContext,
+                                FileUtils.recordMediaFileToDatabaseAndScan(
+                                        mContext,
                                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                        destFile, "image/gif");
+                                        destFile,
+                                        "image/gif");
                                 result = mResources.getString(
                                         R.string.gifHasBeenSavedTo, destName, destDirectory);
                             }
@@ -2463,7 +2474,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 final String s = mResources.getString(
                         R.string.canTakeUpToXSecondsXSecondsSelected, total, selected);
                 final SpannableString ss = new SpannableString(s);
-                ss.setSpan(colorAccentSpan,
+                ss.setSpan(
+                        colorAccentSpan,
                         s.lastIndexOf(String.valueOf(selected)),
                         s.lastIndexOf(seconds) + seconds.length(),
                         Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -2671,7 +2683,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             mBrightnessOrVolumeText.setText(
                     brightnessFollowsSystem
                             ? mStringBrightnessFollowsSystem
-                            : mResources.getString(R.string.brightnessProgress, //@formatter:off
+                            : mResources.getString( //@formatter:off
+                                    R.string.brightnessProgress,
                                     (float) progress / MAX_BRIGHTNESS * 100f)); //@formatter:on
             mBrightnessOrVolumeProgress.setProgress(brightnessFollowsSystem ? 0 : progress);
         }
@@ -2681,7 +2694,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         if ((mOnChildTouchListener.touchFlags & OnChildTouchListener.TFLAG_ADJUSTING_VOLUME)
                 == OnChildTouchListener.TFLAG_ADJUSTING_VOLUME) {
             mBrightnessOrVolumeText.setText(
-                    mResources.getString(R.string.volumeProgress,
+                    mResources.getString(
+                            R.string.volumeProgress,
                             (float) progress / volumeToProgress(mMaxVolume) * 100f));
             mBrightnessOrVolumeProgress.setProgress(progress);
         }
@@ -2696,12 +2710,14 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         if (videoPlayer == null) progress = 0;
         final int videoBufferProgress = videoPlayer == null ? 0 : videoPlayer.getVideoBufferProgress();
         final int videoDuration = videoPlayer == null ? 0 : videoPlayer.getNoNegativeVideoDuration();
-        final String videoDurationString = videoPlayer == null ?
-                VideoPlayer.DEFAULT_STRING_VIDEO_DURATION : videoPlayer.mVideoDurationString;
+        final String videoDurationString =
+                videoPlayer == null ?
+                        VideoPlayer.DEFAULT_STRING_VIDEO_DURATION : videoPlayer.mVideoDurationString;
         if (!isLocked$()) {
             if (isInFullscreenMode()) {
                 mVideoProgressDurationText.setText(
-                        mResources.getString(R.string.progress_duration,
+                        mResources.getString(
+                                R.string.progress_duration,
                                 TimeUtil.formatTimeByColon(progress), videoDurationString));
             } else {
                 mVideoProgressText.setText(TimeUtil.formatTimeByColon(progress));
@@ -3095,8 +3111,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
                         case TFLAG_ADJUSTING_BRIGHTNESS_OR_VOLUME:
                             //noinspection IntegerDivisionInFloatingPointContext
-                            if (mOpCallback != null &&
-                                    (!rtl && x < mContentView.getWidth() / 2
+                            if (mOpCallback != null
+                                    && (!rtl && x < mContentView.getWidth() / 2
                                             || rtl && x > mContentView.getWidth() / 2)) {
                                 touchFlags = touchFlags & ~TFLAG_ADJUSTING_BRIGHTNESS_OR_VOLUME
                                         | TFLAG_ADJUSTING_BRIGHTNESS;
@@ -3524,8 +3540,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 if (translateAnimator == null) {
                     View target = mmr == null ? mSeekingTextProgressFrame : mSeekingVideoThumbText;
                     boolean rtl = Utils.isLayoutRtl(mContentView);
-                    float end = !rtl && progress > start || rtl && progress < start ?
-                            mSeekingViewHorizontalOffset : -mSeekingViewHorizontalOffset;
+                    float end =
+                            !rtl && progress > start || rtl && progress < start ?
+                                    mSeekingViewHorizontalOffset : -mSeekingViewHorizontalOffset;
                     ValueAnimator ta = ValueAnimator.ofFloat(0, end);
                     translateAnimator = ta;
                     ta.addListener(animatorListener);
@@ -3623,8 +3640,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             }
 
                             if (isFadeAnimation) {
-                                animation.setDuration(isReverse || isThumbVisible ?
-                                        DURATION : Utils.roundFloat(DURATION * 2f / 3f));
+                                animation.setDuration(
+                                        isReverse || isThumbVisible ?
+                                                DURATION : Utils.roundFloat(DURATION * 2f / 3f));
                             }
                         }
 
@@ -3891,8 +3909,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             UiUtils.showUserCancelableSnackbar(videoView,
                                     (CharSequence) msg.obj, true, Snackbar.LENGTH_INDEFINITE);
                         } else {
-                            UiUtils.showUserCancelableSnackbar(videoView,
-                                    (CharSequence) msg.obj, Snackbar.LENGTH_SHORT);
+                            UiUtils.showUserCancelableSnackbar(
+                                    videoView, (CharSequence) msg.obj, Snackbar.LENGTH_SHORT);
                         }
                     }
                     break;

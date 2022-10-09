@@ -29,8 +29,8 @@ public class ScreenUtils {
     public static int getScreenBrightness(@NonNull Context context) {
         int brightness = 0;
         try {
-            brightness = Settings.System.getInt(context.getContentResolver(),
-                    Settings.System.SCREEN_BRIGHTNESS);
+            brightness = Settings.System.getInt(
+                    context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS);
         } catch (Settings.SettingNotFoundException e) {
             e.printStackTrace();
         }
@@ -96,8 +96,9 @@ public class ScreenUtils {
      */
     public static boolean isRotationEnabled(@NonNull Context context) {
         try {
-            return Settings.System.getInt(context.getContentResolver(),
-                    Settings.System.ACCELEROMETER_ROTATION) == 1;
+            return 1 ==
+                    Settings.System.getInt(
+                            context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION);
         } catch (Settings.SettingNotFoundException e) {
             e.printStackTrace();
         }
@@ -111,8 +112,8 @@ public class ScreenUtils {
         if (isRotationEnabled(context) != enabled) {
             ContentResolver resolver = context.getContentResolver();
             Uri uri = Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION);
-            Settings.System.putInt(resolver,
-                    Settings.System.ACCELEROMETER_ROTATION, enabled ? 1 : 0);
+            Settings.System.putInt(
+                    resolver, Settings.System.ACCELEROMETER_ROTATION, enabled ? 1 : 0);
             // 通知改变
             resolver.notifyChange(uri, null);
         }

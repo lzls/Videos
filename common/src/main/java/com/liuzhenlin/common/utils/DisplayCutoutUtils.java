@@ -38,11 +38,10 @@ public class DisplayCutoutUtils {
      */
     public static boolean hasNotchInScreenForEMUI(@NonNull Context context) {
         try {
-            Class<?> hwNotchSizeUtil = context.getClassLoader()
-                    .loadClass("com.huawei.android.util.HwNotchSizeUtil");
-            Boolean ret = (Boolean) hwNotchSizeUtil
-                    .getMethod("hasNotchInScreen")
-                    .invoke(hwNotchSizeUtil);
+            Class<?> hwNotchSizeUtil =
+                    context.getClassLoader().loadClass("com.huawei.android.util.HwNotchSizeUtil");
+            Boolean ret = (Boolean)
+                    hwNotchSizeUtil.getMethod("hasNotchInScreen").invoke(hwNotchSizeUtil);
             return ret != null && ret;
         } catch (Exception e) {
             //
@@ -56,12 +55,10 @@ public class DisplayCutoutUtils {
     @NonNull
     public static int[] getNotchSizeForEMUI(@NonNull Context context) {
         try {
-            Class<?> HwNotchSizeUtil = context.getClassLoader()
-                    .loadClass("com.huawei.android.util.HwNotchSizeUtil");
+            Class<?> HwNotchSizeUtil =
+                    context.getClassLoader().loadClass("com.huawei.android.util.HwNotchSizeUtil");
             //noinspection ConstantConditions
-            return (int[]) HwNotchSizeUtil
-                    .getMethod("getNotchSize")
-                    .invoke(HwNotchSizeUtil);
+            return (int[]) HwNotchSizeUtil.getMethod("getNotchSize").invoke(HwNotchSizeUtil);
         } catch (Exception e) {
             //
         }
@@ -88,9 +85,10 @@ public class DisplayCutoutUtils {
         WindowManager.LayoutParams layoutParams = window.getAttributes();
         try {
             Class<?> layoutParamsExCls = Class.forName("com.huawei.android.view.LayoutParamsEx");
-            Object layoutParamsExObj = layoutParamsExCls
-                    .getConstructor(WindowManager.LayoutParams.class)
-                    .newInstance(layoutParams);
+            Object layoutParamsExObj =
+                    layoutParamsExCls
+                            .getConstructor(WindowManager.LayoutParams.class)
+                            .newInstance(layoutParams);
             layoutParamsExCls
                     .getMethod(in ? "addHwFlags" : "clearHwFlags", int.class)
                     .invoke(layoutParamsExObj, 0x00010000);
@@ -147,11 +145,12 @@ public class DisplayCutoutUtils {
     public static boolean hasNotchInScreenForFuntouchOS(@NonNull Context context) {
         try {
             @SuppressLint("PrivateApi")
-            Class<?> ftFeature = context.getClassLoader()
-                    .loadClass("android.util.FtFeature");
-            Boolean ret = (Boolean) ftFeature
-                    .getMethod("isFeatureSupport", int.class)
-                    .invoke(ftFeature, VIVO_FLAG_HAS_NOTCH_IN_SCREEN);
+            Class<?> ftFeature =
+                    context.getClassLoader().loadClass("android.util.FtFeature");
+            Boolean ret = (Boolean)
+                    ftFeature
+                            .getMethod("isFeatureSupport", int.class)
+                            .invoke(ftFeature, VIVO_FLAG_HAS_NOTCH_IN_SCREEN);
             return ret != null && ret;
         } catch (Exception e) {
             //
@@ -224,9 +223,9 @@ public class DisplayCutoutUtils {
     @RequiresApi(Build.VERSION_CODES.P)
     public static void setLayoutInDisplayCutoutSinceP(@NonNull Window window, boolean in) {
         WindowManager.LayoutParams lp = window.getAttributes();
-        lp.layoutInDisplayCutoutMode = in
-                ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
+        lp.layoutInDisplayCutoutMode =
+                in ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                   : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
         window.setAttributes(lp);
     }
 }

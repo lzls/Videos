@@ -259,8 +259,9 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     private boolean isActivityManifestHandlingUiMode() {
         try {
             if (sIsActivityManifestHandlingUiModeMethod == null) {
-                sIsActivityManifestHandlingUiModeMethod = AppCompatDelegateImpl.class
-                        .getDeclaredMethod("isActivityManifestHandlingUiMode");
+                sIsActivityManifestHandlingUiModeMethod =
+                        AppCompatDelegateImpl.class
+                                .getDeclaredMethod("isActivityManifestHandlingUiMode");
                 sIsActivityManifestHandlingUiModeMethod.setAccessible(true);
             }
             Boolean ret = (Boolean) sIsActivityManifestHandlingUiModeMethod.invoke(mDelegate);

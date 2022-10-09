@@ -289,8 +289,9 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         super.onTaskRemoved(rootIntent);
         // Stops when user removes the task holding YoutubePlaybackActivity from the Recents,
         // or closes that Activity in PiP through the 'Close' button, etc.
-        if (rootIntent != null && rootIntent.getComponent().getShortClassName()
-                .equals(YoutubePlaybackActivity.class.getName().replace(getPackageName(), ""))) {
+        if (rootIntent != null
+                && rootIntent.getComponent().getShortClassName()
+                        .equals(YoutubePlaybackActivity.class.getName().replace(getPackageName(), ""))) {
             stop();
         }
     }
@@ -345,9 +346,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         intent.putExtra(Constants.Extras.VIDEO_START_MS, videoStartMs);
         intent.putExtra(Constants.Extras.FROM_PLAYBACK_VIEW, fromPlaybackView);
         intent.setAction(
-                Utils.isServiceRunning(context, YoutubePlaybackService.class)
-                        ? Constants.Actions.START
-                        : Constants.Actions.START_FOREGROUND);
+                Utils.isServiceRunning(context, YoutubePlaybackService.class) ?
+                        Constants.Actions.START : Constants.Actions.START_FOREGROUND);
         context.startService(intent);
     }
 
@@ -653,10 +653,10 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         Intent doThings = new Intent(mContext, YoutubePlaybackService.class);
         int iconTint = getNotificationActionIconTint();
 
-        RemoteViewsCompat.setImageViewResourceWithTint(this,
-                viewSmall, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
-        RemoteViewsCompat.setImageViewResourceWithTint(this,
-                viewBig, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
+        RemoteViewsCompat.setImageViewResourceWithTint(
+                this, viewSmall, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
+        RemoteViewsCompat.setImageViewResourceWithTint(
+                this, viewBig, R.id.btn_close, R.drawable.ic_close_white_20dp, iconTint);
         // Stop service using doThings Intent
         viewSmall.setOnClickPendingIntent(
                 R.id.btn_close,
@@ -665,8 +665,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 R.id.btn_close,
                 getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.STOP_SELF)));
 
-        RemoteViewsCompat.setImageViewResourceWithTint(this,
-                viewBig, R.id.btn_play_pause, mPlayPauseBtnImgSrc, iconTint);
+        RemoteViewsCompat.setImageViewResourceWithTint(
+                this, viewBig, R.id.btn_play_pause, mPlayPauseBtnImgSrc, iconTint);
         RemoteViewsCompat.setContentDescription(
                 viewBig, R.id.btn_play_pause, getText(mPlayPauseBtnContentDesc));
         // Play, Pause video using doThings Intent
@@ -674,23 +674,23 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 R.id.btn_play_pause,
                 getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.PLAY_PAUSE)));
 
-        RemoteViewsCompat.setImageViewResourceWithTint(this,
-                viewBig, R.id.btn_next, R.drawable.ic_skip_next_white_24dp, iconTint);
+        RemoteViewsCompat.setImageViewResourceWithTint(
+                this, viewBig, R.id.btn_next, R.drawable.ic_skip_next_white_24dp, iconTint);
         // Next video using doThings Intent
         viewBig.setOnClickPendingIntent(
                 R.id.btn_next,
                 getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.NEXT)));
 
-        RemoteViewsCompat.setImageViewResourceWithTint(this,
-                viewBig, R.id.btn_previous, R.drawable.ic_skip_previous_white_24dp, iconTint);
+        RemoteViewsCompat.setImageViewResourceWithTint(
+                this, viewBig, R.id.btn_previous, R.drawable.ic_skip_previous_white_24dp, iconTint);
         // Previous video using doThings Intent
         viewBig.setOnClickPendingIntent(
                 R.id.btn_previous,
                 getNotificationActionPendingIntent(doThings.setAction(Constants.Actions.PREV)));
 
         Intent it = new Intent(mContext, YoutubePlaybackActivity.class)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pit = PendingIntent.getActivity(
                 mContext, 0, it, Consts.PENDING_INTENT_FLAG_IMMUTABLE);
         builder.setSmallIcon(R.drawable.ic_media_app_notification)

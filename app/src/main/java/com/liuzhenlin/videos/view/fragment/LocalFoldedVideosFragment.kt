@@ -185,8 +185,8 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
 
         targetFragment?.onActivityResult(targetRequestCode, RESULT_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT,
                 Intent().putExtra(KEY_DIRECTORY_PATH, mVideoDir?.path)
-                        .putParcelableArrayListExtra(KEY_VIDEOS,
-                                mVideos as? ArrayList<Video> ?: ArrayList(mVideos)))
+                        .putParcelableArrayListExtra(
+                                KEY_VIDEOS, mVideos as? ArrayList<Video> ?: ArrayList(mVideos)))
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -303,8 +303,8 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                     mVideos.add(newIndex, mVideos.removeAt(index))
                     mAdapter.notifyItemRemoved(index)
                     mAdapter.notifyItemInserted(newIndex)
-                    mAdapter.notifyItemRangeChanged(min(index, newIndex),
-                            abs(newIndex - index) + 1)
+                    mAdapter.notifyItemRangeChanged(
+                            min(index, newIndex), abs(newIndex - index) + 1)
                 }
             }
             R.id.btn_delete -> {
@@ -371,8 +371,8 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                         mVideos.add(newIndex, mVideos.removeAt(index))
                         mAdapter.notifyItemRemoved(index)
                         mAdapter.notifyItemInserted(newIndex)
-                        mAdapter.notifyItemRangeChanged(min(index, newIndex),
-                                abs(newIndex - index) + 1)
+                        mAdapter.notifyItemRangeChanged(
+                                min(index, newIndex), abs(newIndex - index) + 1)
                     }
                 }
             }
@@ -397,8 +397,8 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                     || mInteractionCallback.isRefreshLayoutRefreshing) {
                 false
             } else {
-                UiUtils.setRuleForRelativeLayoutChild(mRecyclerView,
-                        RelativeLayout.ABOVE, mOptionsFrameTopDivider.id)
+                UiUtils.setRuleForRelativeLayoutChild(
+                        mRecyclerView, RelativeLayout.ABOVE, mOptionsFrameTopDivider.id)
                 mRecyclerView.isItemDraggable = false
                 mInteractionCallback.isRefreshLayoutEnabled = false
                 mBackButton.visibility = View.GONE
@@ -424,7 +424,8 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
 
                     mVideos[selection].isChecked = true
                     notifyItemChanged(selection,
-                            PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
+                            PAYLOAD_CHANGE_CHECKBOX_VISIBILITY
+                                    or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
                     onVideoCheckedChange()
                 }
 

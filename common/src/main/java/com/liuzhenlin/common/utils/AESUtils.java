@@ -141,10 +141,10 @@ public class AESUtils {
         n |= n >>> 4;
         n |= n >>> 8;
         n |= n >>> 16;
-        return (n < 0) ? 1 :
-                (n <= MIN_KEY_LENGTH)
-                        ? MIN_KEY_LENGTH
-                        : (n >= MAX_KEY_LENGTH) ? MAX_KEY_LENGTH : n + 1;
+        return (n < 0)
+                ? 1
+                : (n <= MIN_KEY_LENGTH) ?
+                        MIN_KEY_LENGTH : (n >= MAX_KEY_LENGTH) ? MAX_KEY_LENGTH : n + 1;
     }
 
     private static byte[] base64Decode(String data) {

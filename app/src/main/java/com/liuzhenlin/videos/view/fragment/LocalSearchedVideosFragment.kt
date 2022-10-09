@@ -160,8 +160,9 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
         mRecyclerView = contentView.findViewById(R.id.recycler_searchedVideoList)
         mRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
         mRecyclerView.adapter = mAdapterWrapper.also {
-            mSearchResultTextView = LayoutInflater.from(contentView.context)
-                    .inflate(R.layout.text_search_result, mRecyclerView, false) as TextView
+            mSearchResultTextView =
+                    LayoutInflater.from(contentView.context)
+                            .inflate(R.layout.text_search_result, mRecyclerView, false) as TextView
             it.addHeaderView(mSearchResultTextView)
         }
         mRecyclerView.addItemDecoration(DividerItemDecoration(contentView.context))
@@ -233,8 +234,8 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                 R.drawable.ic_edit_24dp_menu -> mVideoOpCallback?.showRenameItemDialog(video) {
                     mVideos.sortByElementName()
 
-                    if (mSearchText.length ==
-                            AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
+                    if (mSearchText.length
+                            == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
                         mSearchedVideos.sortByElementName()
                         val newIndex = mSearchedVideos.indexOf(video)
                         if (newIndex == index) {
@@ -243,8 +244,8 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                             val newPosition = headersCount + newIndex
                             mAdapterWrapper.notifyItemRemoved(position)
                             mAdapterWrapper.notifyItemInserted(newPosition)
-                            mAdapterWrapper.notifyItemRangeChanged(min(position, newPosition),
-                                    abs(newPosition - position) + 1)
+                            mAdapterWrapper.notifyItemRangeChanged(
+                                    min(position, newPosition), abs(newPosition - position) + 1)
                         }
                     } else {
                         mSearchedVideos.removeAt(index)
@@ -332,8 +333,8 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
         var searchedVideos: MutableList<Video>? = null
         if (mSearchText.isNotEmpty()) {
             for (video in mVideos) {
-                if (mSearchText.length ==
-                        AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
+                if (mSearchText.length
+                        == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
                     if (searchedVideos == null) searchedVideos = mutableListOf()
                     searchedVideos.add(video)
                 }
@@ -465,8 +466,8 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                 holder.selectorView.setBackgroundColor(
                         ContextCompat.getColor(holder.itemView.context, R.color.selectorColor))
             } else {
-                ViewCompat.setBackground(holder.selectorView,
-                        holder.selectorView.tag as Drawable? ?: return)
+                ViewCompat.setBackground(
+                        holder.selectorView, holder.selectorView.tag as Drawable? ?: return)
             }
         }
 

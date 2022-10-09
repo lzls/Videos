@@ -69,11 +69,11 @@ public class VideoTrackInfo extends MediaTrackInfo implements Parcelable {
         if (o == null || getClass() != o.getClass()) return false;
 
         VideoTrackInfo that = (VideoTrackInfo) o;
-        return width == that.width &&
-                height == that.height &&
-                frameRate == that.frameRate &&
-                bitrate == that.bitrate &&
-                ObjectsCompat.equals(codec, that.codec);
+        return width == that.width
+                && height == that.height
+                && frameRate == that.frameRate
+                && bitrate == that.bitrate
+                && ObjectsCompat.equals(codec, that.codec);
     }
 
     @Override

@@ -52,9 +52,9 @@ public class Playlist {
         if (o == null || getClass() != o.getClass()) return false;
 
         Playlist playlist = (Playlist) o;
-        return videoIndex == playlist.videoIndex &&
-                ObjectsCompat.equals(id, playlist.id) &&
-                Arrays.equals(videoIds, playlist.videoIds);
+        return videoIndex == playlist.videoIndex
+                && ObjectsCompat.equals(id, playlist.id)
+                && Arrays.equals(videoIds, playlist.videoIds);
     }
 
     @Override

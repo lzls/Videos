@@ -74,15 +74,15 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
                 when (cause) {
                     // 连接服务器超时
                     is @kotlin.Suppress("DEPRECATION") org.apache.http.conn.ConnectTimeoutException ->
-                        UiUtils.showUserCancelableSnackbar(view!!,
-                                R.string.connectionTimeout, Snackbar.LENGTH_SHORT)
+                        UiUtils.showUserCancelableSnackbar(
+                                view!!, R.string.connectionTimeout, Snackbar.LENGTH_SHORT)
                     // 读取数据超时
                     is SocketTimeoutException ->
-                        UiUtils.showUserCancelableSnackbar(view!!,
-                                R.string.readTimeout, Snackbar.LENGTH_SHORT)
+                        UiUtils.showUserCancelableSnackbar(
+                                view!!, R.string.readTimeout, Snackbar.LENGTH_SHORT)
                     else -> {
-                        UiUtils.showUserCancelableSnackbar(view!!,
-                                R.string.refreshError, Snackbar.LENGTH_SHORT)
+                        UiUtils.showUserCancelableSnackbar(
+                                view!!, R.string.refreshError, Snackbar.LENGTH_SHORT)
                         cause.printStackTrace()
                     }
                 }

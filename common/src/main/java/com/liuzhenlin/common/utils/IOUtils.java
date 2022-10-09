@@ -99,8 +99,8 @@ public class IOUtils {
         int bytesToRead;
         int len;
         for (; ; ) {
-            bytesToRead = limit < 0
-                    ? buffer.length : Math.min((int) (limit - bytesRead) & MAX_INT, buffer.length);
+            bytesToRead = limit < 0 ?
+                    buffer.length : Math.min((int) (limit - bytesRead) & MAX_INT, buffer.length);
             if (bytesToRead == 0) {
                 break;
             }

@@ -236,8 +236,9 @@ public class BitmapUtils {
 
         // 取 drawable 的颜色格式
         @SuppressWarnings("deprecation")
-        Bitmap.Config config = drawable.getOpacity() == PixelFormat.OPAQUE ?
-                Bitmap.Config.RGB_565 : Bitmap.Config.ARGB_8888;
+        Bitmap.Config config =
+                drawable.getOpacity() == PixelFormat.OPAQUE ?
+                        Bitmap.Config.RGB_565 : Bitmap.Config.ARGB_8888;
         // 建立对应 bitmap
         Bitmap bitmap = Bitmap.createBitmap(w, h, config);
         // 建立对应 bitmap 的画布
@@ -250,12 +251,13 @@ public class BitmapUtils {
 
     @ColorInt
     public static int getDominantColorOrThrow(@NonNull Bitmap bitmap) {
-        Palette.Swatch swatch = new Palette.Builder(bitmap)
-                .maximumColorCount(24)
-                .clearFilters()
-                .addFilter(DEFAULT_FILTER)
-                .generate()
-                .getDominantSwatch();
+        Palette.Swatch swatch =
+                new Palette.Builder(bitmap)
+                        .maximumColorCount(24)
+                        .clearFilters()
+                        .addFilter(DEFAULT_FILTER)
+                        .generate()
+                        .getDominantSwatch();
         if (swatch != null) {
             return swatch.getRgb();
         }

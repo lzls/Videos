@@ -48,8 +48,8 @@ public class TVGroup {
         if (o == null || getClass() != o.getClass()) return false;
 
         TVGroup tvGroup = (TVGroup) o;
-        return ObjectsCompat.equals(name, tvGroup.name) &&
-                Arrays.equals(tvs, tvGroup.tvs);
+        return ObjectsCompat.equals(name, tvGroup.name)
+                && Arrays.equals(tvs, tvGroup.tvs);
     }
 
     @Override

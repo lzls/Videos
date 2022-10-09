@@ -77,12 +77,12 @@ public class Video {
         if (o == null || getClass() != o.getClass()) return false;
 
         Video video = (Video) o;
-        return width == video.width &&
-                height == video.height &&
-                duration == video.duration &&
-                bufferedPosition == video.bufferedPosition &&
-                currentPosition == video.currentPosition &&
-                ObjectsCompat.equals(id, video.id);
+        return width == video.width
+                && height == video.height
+                && duration == video.duration
+                && bufferedPosition == video.bufferedPosition
+                && currentPosition == video.currentPosition
+                && ObjectsCompat.equals(id, video.id);
     }
 
     @Override

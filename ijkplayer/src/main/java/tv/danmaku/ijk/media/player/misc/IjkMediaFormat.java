@@ -210,8 +210,8 @@ public class IjkMediaFormat implements IMediaFormat {
                 } else if (sarNum <= 0 || sarDen <= 0) {
                     return String.format(Locale.US, "%d x %d", width, height);
                 } else {
-                    return String.format(Locale.US, "%d x %d [SAR %d:%d]", width,
-                            height, sarNum, sarDen);
+                    return String.format(Locale.US, "%d x %d [SAR %d:%d]", width, height,
+                            sarNum, sarDen);
                 }
             }
         });

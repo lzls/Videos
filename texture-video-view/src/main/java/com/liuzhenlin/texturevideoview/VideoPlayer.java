@@ -591,8 +591,9 @@ public abstract class VideoPlayer implements IVideoPlayer {
     protected void onVideoDurationChanged(int duration) {
         if (mVideoDuration != duration) {
             mVideoDuration = duration;
-            mVideoDurationString = duration == TIME_UNSET ?
-                    DEFAULT_STRING_VIDEO_DURATION : TimeUtil.formatTimeByColon(duration);
+            mVideoDurationString =
+                    duration == TIME_UNSET ?
+                            DEFAULT_STRING_VIDEO_DURATION : TimeUtil.formatTimeByColon(duration);
 
             if (mVideoView != null) {
                 mVideoView.onVideoDurationChanged(duration);
@@ -784,8 +785,8 @@ public abstract class VideoPlayer implements IVideoPlayer {
             if (videoPlayer == null) return;
 
             AbsTextureVideoView videoView = videoPlayer.mVideoView;
-            if (!(videoView != null &&
-                    (videoView.isInForeground() || videoPlayer.isAudioAllowedToPlayInBackground()))) {
+            if (!(videoView != null
+                    && (videoView.isInForeground() || videoPlayer.isAudioAllowedToPlayInBackground()))) {
                 return;
             }
 

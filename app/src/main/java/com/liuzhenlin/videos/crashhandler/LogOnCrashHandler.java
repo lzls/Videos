@@ -122,8 +122,8 @@ public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
     private void writeCrashLog(String log) throws IOException {
         @SuppressLint("SimpleDateFormat") File crashLogFile = new File(
                 Files.getCrashLogsDir(mContext),
-                AppPrefs.getSingleton(mContext).getGUID() + "_" +
-                        new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS")
+                AppPrefs.getSingleton(mContext).getGUID() + "_"
+                        + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS")
                                 .format(System.currentTimeMillis()) + ".txt");
         FileOutputStream out = null;
         try {

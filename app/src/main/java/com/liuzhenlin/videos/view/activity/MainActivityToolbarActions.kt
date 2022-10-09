@@ -42,13 +42,14 @@ open class MainActivityToolbarActions(private val mActivity: MainActivity) {
                 val linkTiet = mOpenVideoLinkDialog!!.window!!.decorView.tag as TextInputEditText
                 val link = linkTiet.text!!.trim().toString()
                 if (link.isEmpty()) {
-                    Toast.makeText(v.context,
-                            R.string.pleaseInputVideoLinkFirst, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(v.context, R.string.pleaseInputVideoLinkFirst, Toast.LENGTH_SHORT)
+                            .show()
                     return@OnClickListener
                 }
                 if (URLUtils.REGEX_WEB_URL.matches(link)) {
                     if (!YoutubePlaybackService.startPlaybackIfUrlIsWatchUrl(v.context, link)) {
-                        v.context.playVideo(link,
+                        v.context.playVideo(
+                                link,
                                 (linkTiet.tag as TextInputEditText).text!!.trim().toString()
                                         .run {
                                             if (isEmpty()) null else this
@@ -69,11 +70,12 @@ open class MainActivityToolbarActions(private val mActivity: MainActivity) {
         dialog.show()
 
         val tiet_videoTitle =
-            dialog.findViewById<OnBackPressedPreImeEventInterceptableTextInputEditText>(
-                R.id.textinput_videoTitle)!!
+                dialog.findViewById<OnBackPressedPreImeEventInterceptableTextInputEditText>(
+                        R.id.textinput_videoTitle)!!
 
-        val tiet_videoLink = dialog.findViewById<
-                OnBackPressedPreImeEventInterceptableTextInputEditText>(R.id.textinput_videoLink)!!
+        val tiet_videoLink =
+                dialog.findViewById<OnBackPressedPreImeEventInterceptableTextInputEditText>(
+                        R.id.textinput_videoLink)!!
         tiet_videoLink.tag = tiet_videoTitle
 
         UiUtils.showSoftInputForEditingViewsAccordingly(dialog, tiet_videoTitle, tiet_videoLink)

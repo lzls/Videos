@@ -130,8 +130,8 @@ public class IjkVideoPlayer extends VideoPlayer {
         }
     };
     private final AudioFocusRequest mAudioFocusRequest =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
-                    new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                             .setAudioAttributes(
                                     sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes)
                             .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
@@ -158,8 +158,8 @@ public class IjkVideoPlayer extends VideoPlayer {
     @Override
     public void setVideoResourceId(@RawRes int resId) {
         Log.e(TAG,
-                "", new UnsupportedOperationException(
-                        "Play via raw resource id is not yet supported"));
+                "",
+                new UnsupportedOperationException("Play via raw resource id is not yet supported"));
     }
 
     @Override
@@ -286,14 +286,15 @@ public class IjkVideoPlayer extends VideoPlayer {
 //        }
         ijkPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
         // We prefer the hw decoder
-        ijkPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,
-                "mediacodec-all-videos", MEDIA_CODEC_ENABLED);
-        ijkPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,
-                "mediacodec-auto-rotate", MEDIA_CODEC_ENABLED);
-        ijkPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,
+        ijkPlayer.setOption(
+                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-all-videos", MEDIA_CODEC_ENABLED);
+        ijkPlayer.setOption(
+                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", MEDIA_CODEC_ENABLED);
+        ijkPlayer.setOption(
+                IjkMediaPlayer.OPT_CATEGORY_PLAYER,
                 "mediacodec-handle-resolution-change", MEDIA_CODEC_ENABLED);
-        ijkPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,
-                "mediacodec-sync", MEDIA_CODEC_ENABLED);
+        ijkPlayer.setOption(
+                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-sync", MEDIA_CODEC_ENABLED);
         // Enable accurate seek
         ijkPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "enable-accurate-seek", 1);
         // Enable subtitles
@@ -399,8 +400,8 @@ public class IjkVideoPlayer extends VideoPlayer {
             // Opens the video only if this is a user request
             if (fromUser) {
                 // If the video playback finished, skip to the next video if possible
-                if (playbackState == PLAYBACK_STATE_COMPLETED && !isSingleVideoLoopPlayback() &&
-                        skipToNextIfPossible() && mIjkPlayer != null) {
+                if (playbackState == PLAYBACK_STATE_COMPLETED && !isSingleVideoLoopPlayback()
+                        && skipToNextIfPossible() && mIjkPlayer != null) {
                     return;
                 }
 
@@ -440,19 +441,18 @@ public class IjkVideoPlayer extends VideoPlayer {
                 break;
 
             case PLAYBACK_STATE_COMPLETED:
-                if (!isSingleVideoLoopPlayback() &&
-                        skipToNextIfPossible() && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
+                if (!isSingleVideoLoopPlayback()
+                        && skipToNextIfPossible() && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
                     break;
                 }
                 // Starts the video only if we have prepared it for the player
             case PLAYBACK_STATE_PREPARED:
             case PLAYBACK_STATE_PAUSED:
-                //@formatter:off
-                final int result = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        ? mAudioManager.requestAudioFocus(mAudioFocusRequest)
-                        : mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener,
-                                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-                //@formatter:on
+                final int result =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                                ? mAudioManager.requestAudioFocus(mAudioFocusRequest)
+                                : mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener,
+                                        AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 switch (result) {
                     case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
                         Log.w(TAG, "Failed to request audio focus");
@@ -692,8 +692,9 @@ public class IjkVideoPlayer extends VideoPlayer {
                         if (mediaFormat == null) {
                             trackInfo = new VideoTrackInfo();
                         } else {
-                            final float fps = mediaFormat.mFpsNum > 0 && mediaFormat.mFpsDen > 0
-                                    ? (float) mediaFormat.mFpsNum / mediaFormat.mFpsDen : 0;
+                            final float fps =
+                                    mediaFormat.mFpsNum > 0 && mediaFormat.mFpsDen > 0 ?
+                                            (float) mediaFormat.mFpsNum / mediaFormat.mFpsDen : 0;
                             trackInfo = new VideoTrackInfo(
                                     mediaFormat.mCodecName,
                                     mediaFormat.mWidth, // FIXME: take rotation degrees into account

@@ -333,8 +333,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
                                     mVideoListItems.add(newIndex, mVideoListItems.removeAt(i))
                                     mAdapter.notifyItemRemoved(i)
                                     mAdapter.notifyItemInserted(newIndex)
-                                    mAdapter.notifyItemRangeChanged(min(i, newIndex),
-                                            abs(newIndex - i) + 1)
+                                    mAdapter.notifyItemRangeChanged(
+                                            min(i, newIndex), abs(newIndex - i) + 1)
                                 }
                             }
                             else -> {
@@ -358,8 +358,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
                                         mVideoListItems.add(newIndex, mVideoListItems.removeAt(i))
                                         mAdapter.notifyItemRemoved(i)
                                         mAdapter.notifyItemInserted(newIndex)
-                                        mAdapter.notifyItemRangeChanged(min(i, newIndex),
-                                                abs(newIndex - i) + 1)
+                                        mAdapter.notifyItemRangeChanged(
+                                                min(i, newIndex), abs(newIndex - i) + 1)
                                     }
                                 } else if (item is VideoDirectory) {
                                     val oldVideos = item.videos
@@ -702,8 +702,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     mVideoListItems.add(newPosition, mVideoListItems.removeAt(position))
                     mAdapter.notifyItemRemoved(position)
                     mAdapter.notifyItemInserted(newPosition)
-                    mAdapter.notifyItemRangeChanged(min(position, newPosition),
-                            abs(newPosition - position) + 1)
+                    mAdapter.notifyItemRangeChanged(
+                            min(position, newPosition), abs(newPosition - position) + 1)
                 }
             }
 
@@ -822,8 +822,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
                                 mVideoListItems.add(newPosition, mVideoListItems.removeAt(position))
                                 mAdapter.notifyItemRemoved(position)
                                 mAdapter.notifyItemInserted(newPosition)
-                                mAdapter.notifyItemRangeChanged(min(position, newPosition),
-                                        abs(newPosition - position) + 1)
+                                mAdapter.notifyItemRangeChanged(
+                                        min(position, newPosition), abs(newPosition - position) + 1)
                             }
                         }
                     }
@@ -876,8 +876,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     return false
                 }
 
-                mTitleWindowFrame = View.inflate(v.context,
-                        R.layout.popup_window_main_title, null) as FrameLayout
+                mTitleWindowFrame = View.inflate(
+                        v.context, R.layout.popup_window_main_title, null) as FrameLayout
                 Utils.postOnLayoutValid(mTitleWindowFrame!!, object : Runnable {
                     init {
                         mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
@@ -962,7 +962,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
                         // 勾选当前长按的itemView
                         mVideoListItems[selection].isChecked = true
                         notifyItemChanged(selection,
-                                PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
+                                PAYLOAD_CHANGE_CHECKBOX_VISIBILITY
+                                        or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
                         onItemCheckedChange()
                     }
                 })
@@ -1052,11 +1053,11 @@ class LocalVideoListFragment : SwipeBackFragment(),
         cancel.id = R.id.btn_cancel_deleteVideoListItemDialog
         cancel.setOnClickListener(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            UiUtils.setRuleForRelativeLayoutChild(cancel,
-                    RelativeLayout.START_OF, R.id.btn_confirm_deleteVideoListItemDialog)
+            UiUtils.setRuleForRelativeLayoutChild(
+                    cancel, RelativeLayout.START_OF, R.id.btn_confirm_deleteVideoListItemDialog)
         } else {
-            UiUtils.setRuleForRelativeLayoutChild(cancel,
-                    RelativeLayout.LEFT_OF, R.id.btn_confirm_deleteVideoListItemDialog)
+            UiUtils.setRuleForRelativeLayoutChild(
+                    cancel, RelativeLayout.LEFT_OF, R.id.btn_confirm_deleteVideoListItemDialog)
         }
 
         val confirm = view.findViewById<TextView>(R.id.btn_ok)
@@ -1077,8 +1078,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
     override fun showDeleteItemsPopupWindow(vararg items: VideoListItem, onDeleteAction: (() -> Unit)?) {
         if (items.isEmpty()) return
 
-        val view = View.inflate(contextThemedFirst,
-                R.layout.popup_window_delete_video_list_items, null) as ViewGroup
+        val view = View.inflate(
+                contextThemedFirst, R.layout.popup_window_delete_video_list_items, null) as ViewGroup
         view.findViewById<TextView>(R.id.text_message).text = if (items.size == 1) {
             when (items[0]) {
                 is Video -> getString(R.string.areYouSureToDeleteSth, items[0].name)
@@ -1094,8 +1095,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         val fadedContentView = requireView().rootView as FrameLayout // DecorView
 
-        mDeleteItemsWindow = PopupWindow(view,
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        mDeleteItemsWindow = PopupWindow(
+                view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         mDeleteItemsWindow!!.isTouchable = true
         mDeleteItemsWindow!!.isFocusable = true
         // 这是必须的，否则'setFocusable'将无法在Android 6.0以下运行
@@ -1146,7 +1147,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
                 .into(thumbImage)
 
         val editText =
-            view.findViewById<OnBackPressedPreImeEventInterceptableEditText>(R.id.editor_rename)
+                view.findViewById<OnBackPressedPreImeEventInterceptableEditText>(R.id.editor_rename)
         editText.hint = name
         editText.setText(name.replace(postfix, EMPTY_STRING))
         editText.setSelection(editText.text!!.length)
@@ -1160,18 +1161,18 @@ class LocalVideoListFragment : SwipeBackFragment(),
         completeButton.tag = editText
 
         mRenameItemDialog = FocusObservableDialog(context, R.style.DialogStyle_MinWidth_NoTitle)
-            .apply {
-                setContentView(view)
-                show()
-                setCancelable(true)
-                setCanceledOnTouchOutside(false)
-                setOnDismissListener {
-                    mRenameItemDialog = null
-                    glideRequestManager.clear(thumbImage)
-                }
+                .apply {
+                    setContentView(view)
+                    show()
+                    setCancelable(true)
+                    setCanceledOnTouchOutside(false)
+                    setOnDismissListener {
+                        mRenameItemDialog = null
+                        glideRequestManager.clear(thumbImage)
+                    }
 
-                UiUtils.showSoftInputForEditingViewsAccordingly(this, editText)
-            }
+                    UiUtils.showSoftInputForEditingViewsAccordingly(this, editText)
+                }
 
         val window = mRenameItemDialog!!.window!!
         val decorView = window.decorView as ViewGroup

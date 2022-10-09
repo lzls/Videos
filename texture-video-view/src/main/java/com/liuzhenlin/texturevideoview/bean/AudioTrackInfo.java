@@ -69,11 +69,11 @@ public class AudioTrackInfo extends MediaTrackInfo implements Parcelable {
         if (o == null || getClass() != o.getClass()) return false;
 
         AudioTrackInfo that = (AudioTrackInfo) o;
-        return channelCount == that.channelCount &&
-                sampleRate == that.sampleRate &&
-                bitrate == that.bitrate &&
-                ObjectsCompat.equals(codec, that.codec) &&
-                ObjectsCompat.equals(language, that.language);
+        return channelCount == that.channelCount
+                && sampleRate == that.sampleRate
+                && bitrate == that.bitrate
+                && ObjectsCompat.equals(codec, that.codec)
+                && ObjectsCompat.equals(language, that.language);
     }
 
     @Override

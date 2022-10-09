@@ -76,16 +76,18 @@ public class DefaultTrackNameProvider implements TrackNameProvider {
     private String buildFrameRateString(VideoTrackInfo info) {
         float frameRate = info.frameRate;
         return frameRate > 0
-                ? resources.getString(R.string.track_frameRate,
-                /* formatArgs= */ Utils.roundDecimalUpTo2FractionDigitsString(frameRate))
+                ? resources.getString(
+                        R.string.track_frameRate,
+                        Utils.roundDecimalUpTo2FractionDigitsString(frameRate))
                 : "";
     }
 
     private String buildBitrateString(MediaTrackInfo info) {
         float bitrate = info.bitrate;
         return bitrate > 0
-                ? resources.getString(R.string.track_bitrate,
-                /* formatArgs= */ Utils.roundDecimalUpTo2FractionDigitsString(bitrate / 1000000f))
+                ? resources.getString(
+                        R.string.track_bitrate,
+                        Utils.roundDecimalUpTo2FractionDigitsString(bitrate / 1000000f))
                 : "";
     }
 
@@ -128,8 +130,9 @@ public class DefaultTrackNameProvider implements TrackNameProvider {
     private String buildSampleRateString(AudioTrackInfo info) {
         float sampleRate = info.sampleRate;
         return sampleRate > 0
-                ? resources.getString(R.string.track_sampleRate,
-                /* formatArgs= */ Utils.roundDecimalUpTo2FractionDigitsString(sampleRate / 1000f))
+                ? resources.getString(
+                        R.string.track_sampleRate,
+                        Utils.roundDecimalUpTo2FractionDigitsString(sampleRate / 1000f))
                 : "";
     }
 

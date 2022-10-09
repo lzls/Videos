@@ -47,7 +47,7 @@ data class VideoDirectory(override var name: String = "",
         other as VideoDirectory
 
         if (!(name == other.name && path == other.path
-                    && size == other.size && isTopped == other.isTopped)) {
+                && size == other.size && isTopped == other.isTopped)) {
             return false
         }
         if (videos.size != other.videos.size) {

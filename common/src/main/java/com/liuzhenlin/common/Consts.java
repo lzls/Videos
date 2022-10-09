@@ -28,8 +28,8 @@ public class Consts {
     public static final int PENDING_INTENT_FLAG_IMMUTABLE = PendingIntent.FLAG_IMMUTABLE;
 
     public static final String DIRECTORY_DOCUMENTS =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
-                    ? Environment.DIRECTORY_DOCUMENTS : "Documents";
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ?
+                    Environment.DIRECTORY_DOCUMENTS : "Documents";
 
     public static Handler getMainThreadHandler() {
         return NoPreloadHolder.MAIN_THREAD_HANDLER;

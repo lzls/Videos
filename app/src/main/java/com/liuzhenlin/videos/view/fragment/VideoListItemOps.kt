@@ -93,11 +93,14 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
             // 该路径下存在相同名称的视频文件
             if (!newName.equals(item.name, ignoreCase = true) && newFile.exists()) {
                 if (view == null) {
-                    Toast.makeText(context,
+                    Toast.makeText(
+                            context,
                             R.string.renameFailedForThatDirectoryHasSomeFileWithTheSameName,
-                            Toast.LENGTH_SHORT).show()
+                            Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    UiUtils.showUserCancelableSnackbar(view,
+                    UiUtils.showUserCancelableSnackbar(
+                            view,
                             R.string.renameFailedForThatDirectoryHasSomeFileWithTheSameName,
                             Snackbar.LENGTH_SHORT)
                 }
@@ -109,8 +112,8 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
                 if (view == null) {
                     Toast.makeText(context, R.string.renameFailed, Toast.LENGTH_SHORT).show()
                 } else {
-                    UiUtils.showUserCancelableSnackbar(view,
-                            R.string.renameFailed, Snackbar.LENGTH_SHORT)
+                    UiUtils.showUserCancelableSnackbar(
+                            view, R.string.renameFailed, Snackbar.LENGTH_SHORT)
                 }
                 return false
             }
@@ -121,16 +124,16 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
                 if (view == null) {
                     Toast.makeText(context, R.string.renameSuccessful, Toast.LENGTH_SHORT).show()
                 } else {
-                    UiUtils.showUserCancelableSnackbar(view,
-                            R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
+                    UiUtils.showUserCancelableSnackbar(
+                            view, R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
                 }
                 true
             } else {
                 if (view == null) {
                     Toast.makeText(context, R.string.renameFailed, Toast.LENGTH_SHORT).show()
                 } else {
-                    UiUtils.showUserCancelableSnackbar(view,
-                            R.string.renameFailed, Snackbar.LENGTH_SHORT)
+                    UiUtils.showUserCancelableSnackbar(
+                            view, R.string.renameFailed, Snackbar.LENGTH_SHORT)
                 }
                 false
             }
@@ -140,16 +143,16 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
                 if (view == null) {
                     Toast.makeText(context, R.string.renameSuccessful, Toast.LENGTH_SHORT).show()
                 } else {
-                    UiUtils.showUserCancelableSnackbar(view,
-                            R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
+                    UiUtils.showUserCancelableSnackbar(
+                            view, R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
                 }
                 true
             } else {
                 if (view == null) {
                     Toast.makeText(context, R.string.renameFailed, Toast.LENGTH_SHORT).show()
                 } else {
-                    UiUtils.showUserCancelableSnackbar(view,
-                            R.string.renameFailed, Snackbar.LENGTH_SHORT)
+                    UiUtils.showUserCancelableSnackbar(
+                            view, R.string.renameFailed, Snackbar.LENGTH_SHORT)
                 }
                 false
             }
@@ -166,7 +169,8 @@ fun Context?.shareVideo(video: Video) {
     val app = App.getInstanceUnsafe()!!
     val context = this ?: app
     if (URLUtils.isNetworkUrl(video.path)) {
-        ShareUtils.shareText(context,
+        ShareUtils.shareText(
+                context,
                 FileUtils.getFileTitleFromFileName(video.name) + "：" + video.path,
                 "text/plain")
     } else {
