@@ -206,8 +206,7 @@ public class IjkMediaMeta {
         int audioStreamIndex = meta.getInt(IJKM_KEY_AUDIO_STREAM, -1);
         int subtitleStreamIndex = meta.getInt(IJKM_KEY_TIMEDTEXT_STREAM, -1);
 
-        ArrayList<Bundle> streams = meta
-                .getParcelableArrayList(IJKM_KEY_STREAMS);
+        ArrayList<Bundle> streams = meta.getParcelableArrayList(IJKM_KEY_STREAMS);
         if (streams == null)
             return meta;
 
@@ -227,10 +226,8 @@ public class IjkMediaMeta {
                 continue;
 
             streamMeta.mCodecName = streamMeta.getString(IJKM_KEY_CODEC_NAME);
-            streamMeta.mCodecProfile = streamMeta
-                    .getString(IJKM_KEY_CODEC_PROFILE);
-            streamMeta.mCodecLongName = streamMeta
-                    .getString(IJKM_KEY_CODEC_LONG_NAME);
+            streamMeta.mCodecProfile = streamMeta.getString(IJKM_KEY_CODEC_PROFILE);
+            streamMeta.mCodecLongName = streamMeta.getString(IJKM_KEY_CODEC_LONG_NAME);
             streamMeta.mBitrate = streamMeta.getInt(IJKM_KEY_BITRATE);
 
             if (streamMeta.mType.equalsIgnoreCase(IJKM_VAL_TYPE__VIDEO)) {
@@ -247,10 +244,8 @@ public class IjkMediaMeta {
                     meta.mVideoStream = streamMeta;
                 }
             } else if (streamMeta.mType.equalsIgnoreCase(IJKM_VAL_TYPE__AUDIO)) {
-                streamMeta.mSampleRate = streamMeta
-                        .getInt(IJKM_KEY_SAMPLE_RATE);
-                streamMeta.mChannelLayout = streamMeta
-                        .getLong(IJKM_KEY_CHANNEL_LAYOUT);
+                streamMeta.mSampleRate = streamMeta.getInt(IJKM_KEY_SAMPLE_RATE);
+                streamMeta.mChannelLayout = streamMeta.getLong(IJKM_KEY_CHANNEL_LAYOUT);
 
                 if (audioStreamIndex == index) {
                     meta.mAudioStream = streamMeta;
@@ -353,8 +348,8 @@ public class IjkMediaMeta {
             } else if (mSarNum <= 0 || mSarDen <= 0) {
                 return String.format(Locale.US, "%d x %d", mWidth, mHeight);
             } else {
-                return String.format(Locale.US, "%d x %d [SAR %d:%d]", mWidth,
-                        mHeight, mSarNum, mSarDen);
+                return String.format(Locale.US, "%d x %d [SAR %d:%d]", mWidth, mHeight,
+                        mSarNum, mSarDen);
             }
         }
 

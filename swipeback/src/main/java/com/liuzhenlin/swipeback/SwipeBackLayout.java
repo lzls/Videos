@@ -620,8 +620,8 @@ public class SwipeBackLayout extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         if (mContentView != null) {
-            mContentView.layout(mContentLeft, top,
-                    mContentLeft + mContentView.getMeasuredWidth(), bottom);
+            mContentView.layout(
+                    mContentLeft, top, mContentLeft + mContentView.getMeasuredWidth(), bottom);
         }
     }
 
@@ -775,8 +775,8 @@ public class SwipeBackLayout extends FrameLayout {
 
         @Override
         public int getViewHorizontalDragRange(@NonNull View child) {
-            if ((mViewFlags & (EDGE_LEFT | EDGE_RIGHT)) != 0 &&
-                    (mFragment != null || mActivity != null && mActivity.canSwipeBackToFinish())) {
+            if ((mViewFlags & (EDGE_LEFT | EDGE_RIGHT)) != 0
+                    && (mFragment != null || mActivity != null && mActivity.canSwipeBackToFinish())) {
                 return 1;
             }
             return 0;
@@ -799,14 +799,14 @@ public class SwipeBackLayout extends FrameLayout {
             switch (mDraggedEdge) {
                 case EDGE_LEFT:
                     if (xvel > 0 || xvel == 0 && mScrollPercent > mScrollThreshold) {
-                        finalLeft = releasedChild.getWidth() +
-                                (mShadowLeft == null ? 0 : mShadowLeft.getIntrinsicWidth());
+                        finalLeft = releasedChild.getWidth()
+                                + (mShadowLeft == null ? 0 : mShadowLeft.getIntrinsicWidth());
                     }
                     break;
                 case EDGE_RIGHT:
                     if (xvel < 0 || xvel == 0 && mScrollPercent > mScrollThreshold) {
-                        finalLeft = -(releasedChild.getWidth() +
-                                (mShadowRight == null ? 0 : mShadowRight.getIntrinsicWidth()));
+                        finalLeft = -(releasedChild.getWidth()
+                                + (mShadowRight == null ? 0 : mShadowRight.getIntrinsicWidth()));
                     }
                     break;
             }
@@ -939,12 +939,12 @@ public class SwipeBackLayout extends FrameLayout {
 
         int left = 0;
         if ((mViewFlags & EDGE_LEFT) != 0) {
-            left = mContentView.getWidth() +
-                    (mShadowLeft == null ? 0 : mShadowLeft.getIntrinsicWidth());
+            left = mContentView.getWidth()
+                    + (mShadowLeft == null ? 0 : mShadowLeft.getIntrinsicWidth());
             mDraggedEdge = EDGE_LEFT;
         } else if ((mViewFlags & EDGE_RIGHT) != 0) {
-            left = -(mContentView.getWidth() +
-                    (mShadowRight == null ? 0 : mShadowRight.getIntrinsicWidth()));
+            left = -(mContentView.getWidth()
+                    + (mShadowRight == null ? 0 : mShadowRight.getIntrinsicWidth()));
             mDraggedEdge = EDGE_RIGHT;
         }
 

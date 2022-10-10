@@ -61,9 +61,10 @@ public class ScrollDisableListView extends ListView {
                     break;
                 }
 
-                if (mScrollEnabledOnTouchMoveAfterDisabled ||
-                        mPressPosition != INVALID_POSITION
-                                && mPressPosition != pointToPosition((int) ev.getX(), (int) ev.getY())) {
+                if (mScrollEnabledOnTouchMoveAfterDisabled
+                        || (mPressPosition != INVALID_POSITION
+                                && mPressPosition !=
+                                        pointToPosition((int) ev.getX(), (int) ev.getY()))) {
                     mScrollEnabledOnTouchMoveAfterDisabled = false;
                     mPressPosition = INVALID_POSITION;
 
@@ -76,8 +77,8 @@ public class ScrollDisableListView extends ListView {
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (!mScrollEnabledOnTouchMoveAfterDisabled &&
-                        !mScrollEnabled && mPressPosition == INVALID_POSITION) {
+                if (!mScrollEnabledOnTouchMoveAfterDisabled
+                        && !mScrollEnabled && mPressPosition == INVALID_POSITION) {
                     return true;
                 }
 

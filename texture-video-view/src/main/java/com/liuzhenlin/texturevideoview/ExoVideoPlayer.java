@@ -133,8 +133,8 @@ public class ExoVideoPlayer extends VideoPlayer {
         }
     };
     private final AudioFocusRequest mAudioFocusRequest =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
-                    new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                             .setAudioAttributes(
                                     sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes)
                             .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
@@ -227,8 +227,10 @@ public class ExoVideoPlayer extends VideoPlayer {
             if (mVideoView != null) {
                 mUserAgent = mVideoView.mExoUserAgent;
             } else {
-                mUserAgent = Util.getUserAgent(mContext,
-                        mContext.getApplicationInfo().loadLabel(mContext.getPackageManager()).toString());
+                mUserAgent = Util.getUserAgent(
+                        mContext,
+                        mContext.getApplicationInfo()
+                                .loadLabel(mContext.getPackageManager()).toString());
             }
         }
         return mUserAgent;
@@ -470,8 +472,8 @@ public class ExoVideoPlayer extends VideoPlayer {
             mSeekOnPlay = TIME_UNSET;
         }
         if (mExoPlayer != null) {
-            if (restorePlaybackPosition &&
-                    mSeekOnPlay == TIME_UNSET && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
+            if (restorePlaybackPosition
+                    && mSeekOnPlay == TIME_UNSET && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
                 mSeekOnPlay = getVideoProgress();
             }
             if (restoreTrackSelections) {
@@ -505,8 +507,8 @@ public class ExoVideoPlayer extends VideoPlayer {
             // Opens the video only if this is a user request
             if (fromUser) {
                 // If the video playback finished, skip to the next video if possible
-                if (playbackState == PLAYBACK_STATE_COMPLETED && !isSingleVideoLoopPlayback() &&
-                        skipToNextIfPossible() && mExoPlayer != null) {
+                if (playbackState == PLAYBACK_STATE_COMPLETED && !isSingleVideoLoopPlayback()
+                        && skipToNextIfPossible() && mExoPlayer != null) {
                     return;
                 }
 
@@ -538,19 +540,18 @@ public class ExoVideoPlayer extends VideoPlayer {
                 break;
 
             case PLAYBACK_STATE_COMPLETED:
-                if (!isSingleVideoLoopPlayback() &&
-                        skipToNextIfPossible() && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
+                if (!isSingleVideoLoopPlayback()
+                        && skipToNextIfPossible() && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
                     break;
                 }
                 // Starts the video only if we have prepared it for the player
             case PLAYBACK_STATE_PREPARED:
             case PLAYBACK_STATE_PAUSED:
-                //@formatter:off
-                final int result = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        ? mAudioManager.requestAudioFocus(mAudioFocusRequest)
-                        : mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener,
-                                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-                //@formatter:on
+                final int result =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                                ? mAudioManager.requestAudioFocus(mAudioFocusRequest)
+                                : mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener,
+                                        AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 switch (result) {
                     case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
                         Log.w(TAG, "Failed to request audio focus");

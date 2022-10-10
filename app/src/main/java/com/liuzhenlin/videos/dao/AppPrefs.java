@@ -9,7 +9,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.os.Environment;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -18,6 +17,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import com.bumptech.glide.util.Synthetic;
 import com.liuzhenlin.common.Configs;
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.utils.AESUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.IOUtils;
@@ -57,6 +57,9 @@ public final class AppPrefs {
     private static final String DEFAULT_NIGHT_MODE = "defaultNightMode";
 
     private static final String GUID = "GUID";
+
+    private static final String IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED =
+            "isLegacyExternalStorageDataMigrated";
 
     private static final Singleton<Context, AppPrefs> sAppPrefsSingleton =
             new Singleton<Context, AppPrefs>() {
@@ -110,7 +113,7 @@ public final class AppPrefs {
                 key += KEY_POSTFIX_NIGHT_UI_WITH_NO_DRAWER_BACKGROUND;
             }
             return mSP.getBoolean(key,
-                    defaultFollowsNight && nightMode  || !defaultFollowsNight && !nightMode);
+                    defaultFollowsNight && nightMode || !defaultFollowsNight && !nightMode);
         } finally {
             readLock.unlock();
         }
@@ -137,7 +140,7 @@ public final class AppPrefs {
                     if (!mSP.contains(GUID)) {
                         String guid = null;
                         File guidFile = new File(
-                                Environment.getExternalStorageDirectory(), ".guid__lzls_videos");
+                                Files.getAppExternalFilesDir(Consts.DIRECTORY_DOCUMENTS), Files.GUID);
                         if (guidFile.exists()) {
                             try {
                                 String data =
@@ -186,6 +189,10 @@ public final class AppPrefs {
         } finally {
             readLock.unlock();
         }
+    }
+
+    public boolean isLegacyExternalStorageDataMigrated() {
+        return mSP.getBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, false);
     }
 
     @NonNull
@@ -248,6 +255,11 @@ public final class AppPrefs {
 
         public AppPrefs.Editor setDefaultNightMode(int mode) {
             mEditor.putInt(DEFAULT_NIGHT_MODE, mode);
+            return this;
+        }
+
+        public AppPrefs.Editor setLegacyExternalStorageDataMigrated(boolean migrated) {
+            mEditor.putBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, migrated);
             return this;
         }
 

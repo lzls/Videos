@@ -63,7 +63,8 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
             String playlistId, @Nullable String videoId, int videoIndex, long videoStartMs) {
         @Nullable WebPlayer player = getWebPlayer();
         if (player instanceof YoutubeIFramePlayer) {
-            loadDataWithBaseURL(Youtube.URLs.PLAYER_API,
+            loadDataWithBaseURL(
+                    Youtube.URLs.PLAYER_API,
                     Youtube.getPlayListHTML(playlistId, videoId, videoStartMs),
                     "text/html", null, null);
         } else if (player != null) {
@@ -103,8 +104,8 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
         super.setWebPlayer(player);
         WebSettings settings = getSettings();
         settings.setUserAgentString(
-                player instanceof YoutubeIFramePlayer
-                        ? UserAgent.getUaDesktop(settings) : UserAgent.getUa(settings));
+                player instanceof YoutubeIFramePlayer ?
+                        UserAgent.getUaDesktop(settings) : UserAgent.getUa(settings));
         addOrRemoveIdleHandler();
     }
 
@@ -201,7 +202,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
                 @Nullable String videoId = getVideoIdFromWatchUrl(url);
                 if ((playlistId != null && !playlistId.isEmpty() || videoId != null && !videoId.isEmpty())
                         && (!TextUtils.equals(playlistId, getPlaylistIdFromWatchOrShareUrl(v.mWatchUrl))
-                        || !TextUtils.equals(videoId, getVideoIdFromWatchUrl(v.mWatchUrl)))) {
+                                || !TextUtils.equals(videoId, getVideoIdFromWatchUrl(v.mWatchUrl)))) {
                     boolean fullscreen = v.mChromeClient.mCustomView != null;
                     int videoIndex = getVideoIndexFromWatchOrShareUrl(url);
                     long videoStartMs = getVideoStartMsFromWatchOrShareUrl(url);
@@ -321,8 +322,8 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
             if (mCustomView != null) {
                 removeView(mCustomView);
                 if (mScrollX != 0 || mScrollY != 0) {
-                    Utils.postOnLayoutValid(YoutubePlaybackView.this,
-                            () -> scrollTo(mScrollX, mScrollY));
+                    Utils.postOnLayoutValid(
+                            YoutubePlaybackView.this, () -> scrollTo(mScrollX, mScrollY));
                 }
                 mCustomView = null;
                 mCustomViewCallback = null;

@@ -155,20 +155,20 @@ public class ShareUtils {
 
         void startChooserActivity(Context context, List<Intent> choices) {
             if (choices == null || choices.isEmpty()) {
-                Toast.makeText(context, R.string.noAppsCanPerformThisAction,
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.noAppsCanPerformThisAction, Toast.LENGTH_SHORT)
+                        .show();
                 return;
             }
 
-            Intent target = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+            Intent target =
                     // Creating a chooser with an empty intent can solve the empty cells problem
                     // that occurs when the underlying platform version is greater than 22.
-                    ? new Intent()
-                    : choices.remove(0);
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? new Intent()
+                                                                   : choices.remove(0);
             Intent chooser = createChooser(context, target);
             //noinspection ToArrayCallWithZeroLengthArrayArgument
-            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
-                    choices.toArray(new Parcelable[choices.size()]));
+            chooser.putExtra(
+                    Intent.EXTRA_INITIAL_INTENTS, choices.toArray(new Parcelable[choices.size()]));
             context.startActivity(chooser);
         }
 
@@ -186,8 +186,8 @@ public class ShareUtils {
                         continue outer;
                     }
                 }
-                Intent target = new LabeledIntent(base, activityInfo.packageName,
-                        activityInfo.labelRes, activityInfo.icon);
+                Intent target = new LabeledIntent(
+                        base, activityInfo.packageName, activityInfo.labelRes, activityInfo.icon);
                 target.setClassName(activityInfo.packageName, activityInfo.name);
                 targets.add(target);
             }

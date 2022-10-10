@@ -21,6 +21,7 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -82,6 +83,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import kotlin.collections.ArraysKt;
 
+import static com.liuzhenlin.common.Consts.PENDING_INTENT_FLAG_IMMUTABLE;
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
 import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
@@ -218,8 +220,9 @@ public final class MergeAppUpdateChecker {
                 }
 
                 //noinspection ConstantConditions
-                JsonObject appInfos = JsonParser.parseString(json).getAsJsonObject()
-                        .get("appInfos").getAsJsonObject();
+                JsonObject appInfos =
+                        JsonParser.parseString(json).getAsJsonObject()
+                                .get("appInfos").getAsJsonObject();
 
                 final boolean findNewVersion = Configs.DEBUG_APP_UPDATE
                         || appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
@@ -261,22 +264,22 @@ public final class MergeAppUpdateChecker {
                     case RESULT_NO_NEW_VERSION:
                         mH.sendEmptyMessage(H.MSG_NO_NEW_VERSION);
                         if (mToastResult) {
-                            Toast.makeText(mContext,
-                                    R.string.isTheLatestVersion, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mContext, R.string.isTheLatestVersion, Toast.LENGTH_SHORT)
+                                    .show();
                         }
                         reset();
                         break;
                     case RESULT_CONNECTION_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext,
-                                    R.string.connectionTimeout, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
+                                    .show();
                         }
                         reset();
                         break;
                     case RESULT_READ_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext,
-                                    R.string.readTimeout, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
+                                    .show();
                         }
                     default:
                         reset();
@@ -610,9 +613,8 @@ public final class MergeAppUpdateChecker {
             }
 
             if (actualFragment != null) {
-                throw new IllegalStateException(
-                        "We've added two fragments!"
-                                + " Old: " + actualFragment + " New: " + newlyAddedFragment);
+                throw new IllegalStateException("We've added two fragments!" +
+                        " Old: " + actualFragment + " New: " + newlyAddedFragment);
             }
 
             // If our parent was destroyed, we're never going to be able to add our fragment, so we
@@ -659,9 +661,8 @@ public final class MergeAppUpdateChecker {
             }
 
             if (actualFragment != null) {
-                throw new IllegalStateException(
-                        "We've added two fragments!"
-                                + " Old: " + actualFragment + " New: " + newlyAddedFragment);
+                throw new IllegalStateException("We've added two fragments!" +
+                        " Old: " + actualFragment + " New: " + newlyAddedFragment);
             }
 
             // If our parent was destroyed, we're never going to be able to add our fragment, so we
@@ -754,6 +755,7 @@ public final class MergeAppUpdateChecker {
                     .setOnlyAlertOnce(true)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                    .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                     .setVisibility(NotificationCompat.VISIBILITY_SECRET);
 
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
@@ -763,7 +765,8 @@ public final class MergeAppUpdateChecker {
 
             Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                 //noinspection ConstantConditions
-                mApk = new File(Files.getAppExternalFilesDir(),
+                mApk = new File(
+                        Files.getAppExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                         intent.getStringExtra(EXTRA_APP_NAME) + " "
                                 + intent.getStringExtra(EXTRA_VERSION_NAME).replace(".", "_")
                                 + ".apk");
@@ -815,15 +818,15 @@ public final class MergeAppUpdateChecker {
             }
         }
 
-        @SuppressLint("UnspecifiedImmutableFlag")
         @Synthetic RemoteViews createNotificationView() {
             RemoteViews nv = new RemoteViews(mPkgName, R.layout.notification_download_app);
-            nv.setOnClickPendingIntent(R.id.btn_cancel_danv,
+            nv.setOnClickPendingIntent(
+                    R.id.btn_cancel_danv,
                     PendingIntent.getBroadcast(
                             mContext,
                             0,
                             new Intent(CancelAppUpdateReceiver.ACTION),
-                            0));
+                            PENDING_INTENT_FLAG_IMMUTABLE));
             return nv;
         }
 
@@ -936,8 +939,8 @@ public final class MergeAppUpdateChecker {
 
             String channelId = NotificationChannelManager.getMessageNotificationChannelId(mContext);
             String title = mContext.getString(R.string.newAppDownloaded);
-            @SuppressLint("UnspecifiedImmutableFlag")
-            PendingIntent pi = PendingIntent.getActivity(mContext, 0, it, 0);
+            PendingIntent pi = PendingIntent.getActivity(
+                    mContext, 0, it, PENDING_INTENT_FLAG_IMMUTABLE);
             mNotificationManager.notify(
                     ID_NOTIFICATION,
                     mNotificationBuilder
@@ -967,8 +970,8 @@ public final class MergeAppUpdateChecker {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
                     cancel(false);
-                    Toast.makeText(mContext,
-                            R.string.connectionTimeout, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
+                            .show();
                 });
             }
         }
@@ -977,8 +980,8 @@ public final class MergeAppUpdateChecker {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
                     cancel(false);
-                    Toast.makeText(mContext,
-                            R.string.readTimeout, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
+                            .show();
                 });
             }
         }
@@ -987,8 +990,8 @@ public final class MergeAppUpdateChecker {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
                     cancel(false);
-                    Toast.makeText(mContext,
-                            R.string.downloadError, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, R.string.downloadError, Toast.LENGTH_SHORT)
+                            .show();
                 });
             }
         }
@@ -1063,10 +1066,13 @@ public final class MergeAppUpdateChecker {
                 float progressPercent = (float) progress / (float) mApkLength * 100f;
                 RemoteViews nv = createNotificationView();
                 nv.setProgressBar(R.id.progress, mApkLength, progress, false);
-                nv.setTextViewText(R.id.text_percentProgress,
+                nv.setTextViewText(
+                        R.id.text_percentProgress,
                         mContext.getString(R.string.percentProgress, progressPercent));
-                nv.setTextViewText(R.id.text_charsequenceProgress,
-                        mContext.getString(R.string.charsequenceProgress,
+                nv.setTextViewText(
+                        R.id.text_charsequenceProgress,
+                        mContext.getString(
+                                R.string.charsequenceProgress,
                                 FileUtils.formatFileSize(progress),
                                 FileUtils.formatFileSize(mApkLength)));
 

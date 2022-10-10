@@ -332,9 +332,10 @@ public class Utils {
     public static String getAppVersionName(@NonNull Context context) {
         String appVersion = "";
         try {
-            appVersion = context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), 0)
-                    .versionName;
+            appVersion =
+                    context.getPackageManager()
+                            .getPackageInfo(context.getPackageName(), 0)
+                            .versionName;
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }

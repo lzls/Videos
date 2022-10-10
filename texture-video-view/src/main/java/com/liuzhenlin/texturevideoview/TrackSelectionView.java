@@ -98,7 +98,9 @@ public class TrackSelectionView extends LinearLayout {
         mViewPager = findViewById(R.id.viewpager2);
         mViewPager.setAdapter(new PagerAdapter());
         mViewPager.setOffscreenPageLimit(TRACK_GROUP_COUNT - 1);
-        new TabLayoutMediator(findViewById(R.id.tablayout), mViewPager,
+        new TabLayoutMediator(
+                findViewById(R.id.tablayout),
+                mViewPager,
                 (tab, position) -> {
                     switch (position) {
                         case 0:
@@ -111,7 +113,8 @@ public class TrackSelectionView extends LinearLayout {
                             tab.setText(context.getString(R.string.subtitle));
                             break;
                     }
-                }).attach();
+                }
+        ).attach();
     }
 
     @Synthetic TrackNameProvider getTrackNameProvider() {

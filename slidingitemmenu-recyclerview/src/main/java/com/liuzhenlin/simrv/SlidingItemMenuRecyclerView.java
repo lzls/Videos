@@ -182,8 +182,8 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mItemMinimumFlingVelocity = 200f * getResources().getDisplayMetrics().density;
 
-        final TypedArray ta = context.obtainStyledAttributes(attrs,
-                R.styleable.SlidingItemMenuRecyclerView, defStyle, 0);
+        final TypedArray ta = context.obtainStyledAttributes(
+                attrs, R.styleable.SlidingItemMenuRecyclerView, defStyle, 0);
         if (ta.hasValue(R.styleable.SlidingItemMenuRecyclerView_itemDraggable)) {
             setItemDraggable(ta.getBoolean(R.styleable
                     .SlidingItemMenuRecyclerView_itemDraggable, true));
@@ -207,8 +207,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         if (itemView.getVisibility() != VISIBLE) return false;
 
         final int itemChildCount = itemView.getChildCount();
-        final View itemLastChild = itemView.getChildAt(itemChildCount >= 2 ?
-                itemChildCount - 1 : 1);
+        final View itemLastChild = itemView.getChildAt(itemChildCount >= 2 ? itemChildCount - 1 : 1);
         if (!(itemLastChild instanceof FrameLayout)) return false;
 
         final FrameLayout itemMenu = (FrameLayout) itemLastChild;
@@ -216,12 +215,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         final int[] menuItemWidths = new int[menuItemCount];
         int itemMenuWidth = 0;
         for (int i = 0; i < menuItemCount; i++) {
-            //@formatter:off
-            menuItemWidths[i] = ((FrameLayout) itemMenu
-                                .getChildAt(i))
-                                .getChildAt(0)
-                                .getWidth();
-            //@formatter:on
+            menuItemWidths[i] = ((FrameLayout) itemMenu.getChildAt(i)).getChildAt(0).getWidth();
             itemMenuWidth += menuItemWidths[i];
         }
         if (itemMenuWidth > 0) {
@@ -234,8 +228,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
 
     private void resolveActiveItemMenuBounds() {
         final int itemMenuWidth = (int) mActiveItem.getTag(TAG_ITEM_MENU_WIDTH);
-        final int left = Utils.isLayoutRtl(mActiveItem) ?
-                0 : mActiveItem.getRight() - itemMenuWidth;
+        final int left = Utils.isLayoutRtl(mActiveItem) ? 0 : mActiveItem.getRight() - itemMenuWidth;
         final int right = left + itemMenuWidth;
         mActiveItemMenuBounds.set(left, mActiveItemBounds.top,
                 right, mActiveItemBounds.bottom);
@@ -362,9 +355,9 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
                     // Positive when the itemView scrolls towards the right.
                     final float translationX = mActiveItem.getChildAt(0).getTranslationX();
                     final boolean rtl = Utils.isLayoutRtl(mActiveItem);
-                    final int finalXFromEndToStart = rtl
-                            ? (int) mActiveItem.getTag(TAG_ITEM_MENU_WIDTH)
-                            : -(int) (mActiveItem.getTag(TAG_ITEM_MENU_WIDTH));
+                    final int finalXFromEndToStart =
+                            rtl ? (int) mActiveItem.getTag(TAG_ITEM_MENU_WIDTH)
+                                : -(int) (mActiveItem.getTag(TAG_ITEM_MENU_WIDTH));
                     // Swipe the itemView towards the horizontal start over the width of
                     // the itemView's menu.
                     if (!rtl && dx + translationX < finalXFromEndToStart
@@ -407,9 +400,9 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
                         mFullyOpenedItem = mActiveItem;
 
                     } else {
-                        final float dx = rtl
-                                ? mTouchX[mTouchX.length - 2] - mTouchX[mTouchX.length - 1]
-                                : mTouchX[mTouchX.length - 1] - mTouchX[mTouchX.length - 2];
+                        final float dx =
+                                rtl ? mTouchX[mTouchX.length - 2] - mTouchX[mTouchX.length - 1]
+                                    : mTouchX[mTouchX.length - 1] - mTouchX[mTouchX.length - 2];
                         mVelocityTracker.computeCurrentVelocity(1000);
                         final float velocityX = Math.abs(mVelocityTracker.getXVelocity());
                         // If the speed at which the user's finger lifted is greater than 200 dp/s
@@ -635,8 +628,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
     }
 
     private void smoothTranslateItemViewXTo(ViewGroup itemView, float x, int duration) {
-        smoothTranslateItemViewXBy(itemView, x - itemView.getChildAt(0).getTranslationX(),
-                duration);
+        smoothTranslateItemViewXBy(itemView, x - itemView.getChildAt(0).getTranslationX(), duration);
     }
 
     private void smoothTranslateItemViewXBy(ViewGroup itemView, float dx, int duration) {
@@ -657,8 +649,9 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
             animator.setFloatValues(0, dx);
 
             final boolean rtl = Utils.isLayoutRtl(itemView);
-            final Interpolator interpolator = !rtl && dx < 0 || rtl && dx > 0 ?
-                    sOvershootInterpolator : sViscousFluidInterpolator;
+            final Interpolator interpolator =
+                    !rtl && dx < 0 || rtl && dx > 0 ?
+                            sOvershootInterpolator : sViscousFluidInterpolator;
 
             animator.setInterpolator(interpolator);
             animator.setDuration(duration);

@@ -129,8 +129,8 @@ public class DemoActivity extends AppCompatActivity {
 
             @Override
             public void onShareCapturedVideoPhoto(@NonNull File photo) {
-                ShareUtils.shareFile(DemoActivity.this, getPackageName() + ".provider",
-                        photo, "image/*");
+                ShareUtils.shareFile(
+                        DemoActivity.this, getPackageName() + ".provider", photo, "image/*");
             }
         });
         mVideoView.setOpCallback(new TextureVideoView.OpCallback() {
@@ -150,7 +150,7 @@ public class DemoActivity extends AppCompatActivity {
             // (the primary external storage directory concatenating with this application name).
             @Nullable
             @Override
-            public String getAppExternalFilesDir() {
+            public String getAppExternalFilesDir(@NonNull String dirType) {
                 return null;
             }
         });

@@ -69,8 +69,8 @@ public final class VideoListItemDao implements IVideoListItemDao {
     private static final String SEPARATOR_LOWERCASE_X = "x";
     private static final String SEPARATOR_MULTIPLE_SIGN = "×";
     private static final String DEFAULT_RESOLUTION_SEPARATOR =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                    ? SEPARATOR_MULTIPLE_SIGN : SEPARATOR_LOWERCASE_X;
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ?
+                    SEPARATOR_MULTIPLE_SIGN : SEPARATOR_LOWERCASE_X;
 
     private static final Singleton<Context, VideoListItemDao> sVideoListItemDaoSingleton =
             new Singleton<Context, VideoListItemDao>() {
@@ -236,10 +236,10 @@ public final class VideoListItemDao implements IVideoListItemDao {
         return mContentResolver.query(
                 VIDEO_URI,
                 PROJECTION_VIDEO_URI,
-                "SUBSTR(" + VIDEO_PATH + ",1," + strlength + ")='" +
-                        escapedComparisionString(directory) + "' COLLATE NOCASE " +
-                        "AND SUBSTR(" + VIDEO_PATH + "," + (strlength + 2) + ") " +
-                        "NOT LIKE '%" + File.separator + "%'", null,
+                "SUBSTR(" + VIDEO_PATH + ",1," + strlength + ")='"
+                        + escapedComparisionString(directory) + "' COLLATE NOCASE "
+                        + "AND SUBSTR(" + VIDEO_PATH + "," + (strlength + 2) + ") "
+                        + "NOT LIKE '%" + File.separator + "%'", null,
                 null);
     }
 

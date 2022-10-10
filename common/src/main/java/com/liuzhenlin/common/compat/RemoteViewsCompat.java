@@ -54,7 +54,8 @@ public class RemoteViewsCompat {
             @DrawableRes int resId,
             @Nullable ColorStateList tintList) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            remoteViews.setImageViewIcon(viewId,
+            remoteViews.setImageViewIcon(
+                    viewId,
                     IconCompat.createWithResource(ctx, resId)
                             .setTintList(tintList)
                             .toIcon(ctx));

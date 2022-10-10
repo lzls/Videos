@@ -187,8 +187,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
             boolean usingYoutubeIFramePlayer = usingYoutubeIFramePlayer();
 
             setRequestedOrientation(
-                    usingYoutubeIFramePlayer
-                            ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
+                    usingYoutubeIFramePlayer ?
+                            SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
             initStatusBar();
             setContentView(R.layout.activity_youtube_playback);
 

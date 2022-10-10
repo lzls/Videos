@@ -32,6 +32,7 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 
 import com.liuzhenlin.common.BuildConfig;
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.R;
 
 import java.util.LinkedList;
@@ -136,23 +137,28 @@ public class PictureInPictureHelper {
     public void updatePictureInPictureActions(int pipActions) {
         List<RemoteAction> actions = new LinkedList<>();
         if ((pipActions & PIP_ACTION_FAST_REWIND) != 0) {
-            actions.add(createPipAction(R.drawable.ic_fast_rewind_white_24dp,
-                    mFastRewind, PIP_ACTION_FAST_REWIND, REQUEST_FAST_REWIND));
+            actions.add(
+                    createPipAction(R.drawable.ic_fast_rewind_white_24dp, mFastRewind,
+                            PIP_ACTION_FAST_REWIND, REQUEST_FAST_REWIND));
         }
         if ((pipActions & PIP_ACTION_PLAY) != 0) {
-            actions.add(createPipAction(R.drawable.ic_play_white_24dp,
-                    mPlay, PIP_ACTION_PLAY, REQUEST_PLAY));
+            actions.add(
+                    createPipAction(R.drawable.ic_play_white_24dp, mPlay,
+                            PIP_ACTION_PLAY, REQUEST_PLAY));
 
         } else if ((pipActions & PIP_ACTION_PAUSE) != 0) {
-            actions.add(createPipAction(R.drawable.ic_pause_white_24dp,
-                    mPause, PIP_ACTION_PAUSE, REQUEST_PAUSE));
+            actions.add(
+                    createPipAction(R.drawable.ic_pause_white_24dp, mPause,
+                            PIP_ACTION_PAUSE, REQUEST_PAUSE));
         }
         if ((pipActions & PIP_ACTION_FAST_FORWARD) != 0) {
-            actions.add(createPipAction(R.drawable.ic_fast_forward_white_24dp,
-                    mFastForward, PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD));
+            actions.add(
+                    createPipAction(R.drawable.ic_fast_forward_white_24dp, mFastForward,
+                            PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD));
         } else {
-            RemoteAction action = createPipAction(R.drawable.ic_fast_forward_darkerlightgray_24dp,
-                    mFastForward, PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD);
+            RemoteAction action =
+                    createPipAction(R.drawable.ic_fast_forward_darkerlightgray_24dp, mFastForward,
+                            PIP_ACTION_FAST_FORWARD, REQUEST_FAST_FORWARD);
             action.setEnabled(false);
             actions.add(action);
         }
@@ -177,12 +183,11 @@ public class PictureInPictureHelper {
         // This is the PendingIntent that is invoked when a user clicks on the action item.
         // You need to use distinct request codes for play, pause, fast forward, and fast rewind,
         // or the PendingIntent won't be properly updated.
-        @SuppressLint("UnspecifiedImmutableFlag")
         PendingIntent intent = PendingIntent.getBroadcast(
                 mActivity,
                 requestCode,
                 new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_PIP_ACTION, pipAction),
-                0);
+                Consts.PENDING_INTENT_FLAG_IMMUTABLE);
         Icon icon = IconCompat.createWithResource(mActivity, iconId).toIcon(mActivity);
         return new RemoteAction(icon, title, title, intent);
     }
@@ -320,8 +325,8 @@ public class PictureInPictureHelper {
 
     public boolean doesSdkVersionSupportPiP() {
         return Build.VERSION.SDK_INT >=
-                (mAdapter != null && mAdapter.shouldOnlySupportResizablePiP()
-                        ? SDK_VERSION_SUPPORTS_RESIZABLE_PIP : SDK_VERSION_SUPPORTS_PIP);
+                (mAdapter != null && mAdapter.shouldOnlySupportResizablePiP() ?
+                        SDK_VERSION_SUPPORTS_RESIZABLE_PIP : SDK_VERSION_SUPPORTS_PIP);
     }
 
     @SuppressLint("InlinedApi")

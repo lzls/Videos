@@ -54,8 +54,8 @@ import java.lang.annotation.RetentionPolicy;
  * <p>While this may be used to draw an indeterminate spinner using {@link #start()} and {@link
  * #stop()} methods, this may also be used to draw a progress arc using {@link
  * #setStartEndTrim(float, float)} method. CircularProgressDrawable also supports adding an arrow
- * at the end of the arc by {@link #setArrowEnabled(boolean)} and {@link #setArrowDimensions(float,
- * float)} methods.
+ * at the end of the arc by {@link #setArrowEnabled(boolean)} and {@link #setArrowDimensions(
+ * float, float)} methods.
  *
  * <p>To use one of the pre-defined sizes instead of using your own, {@link #setStyle(int)} should
  * be called with one of the {@link #DEFAULT} or {@link #LARGE} styles as its parameter. Doing it
@@ -493,8 +493,10 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
      */
     @Synthetic void updateRingColor(float interpolatedTime, Ring ring) {
         if (interpolatedTime > COLOR_CHANGE_OFFSET) {
-            ring.setColor(evaluateColorChange((interpolatedTime - COLOR_CHANGE_OFFSET)
-                            / (1f - COLOR_CHANGE_OFFSET), ring.getStartingColor(),
+            ring.setColor(
+                    evaluateColorChange(
+                            (interpolatedTime - COLOR_CHANGE_OFFSET)
+                                    / (1f - COLOR_CHANGE_OFFSET), ring.getStartingColor(),
                     ring.getNextColor()));
         } else {
             ring.setColor(ring.getStartingColor());
@@ -688,7 +690,8 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
                 arcRadius = Math.min(bounds.width(), bounds.height()) / 2f - Math.max(
                         (mArrowWidth * mArrowScale) / 2f, mStrokeWidth / 2f);
             }
-            arcBounds.set(bounds.centerX() - arcRadius,
+            arcBounds.set(
+                    bounds.centerX() - arcRadius,
                     bounds.centerY() - arcRadius,
                     bounds.centerX() + arcRadius,
                     bounds.centerY() + arcRadius);
@@ -737,8 +740,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
                 mArrowPaint.setColor(mCurrentColor);
                 mArrowPaint.setAlpha(mAlpha);
                 c.save();
-                c.rotate(startAngle + sweepAngle, bounds.centerX(),
-                        bounds.centerY());
+                c.rotate(startAngle + sweepAngle, bounds.centerX(), bounds.centerY());
                 c.drawPath(mArrow, mArrowPaint);
                 c.restore();
             }

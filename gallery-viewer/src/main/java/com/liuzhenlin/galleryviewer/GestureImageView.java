@@ -161,7 +161,8 @@ public class GestureImageView extends AppCompatImageView {
 
     public GestureImageView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.GestureImageView, defStyleAttr, 0);
+        TypedArray ta = context.obtainStyledAttributes(
+                attrs, R.styleable.GestureImageView, defStyleAttr, 0);
         setImageGesturesEnabled(ta.getBoolean(R.styleable
                 .GestureImageView_imageGesturesEnabled, true));
         setMoveUnmagnifiedImageViaSingleFingerAllowed(ta.getBoolean(R.styleable

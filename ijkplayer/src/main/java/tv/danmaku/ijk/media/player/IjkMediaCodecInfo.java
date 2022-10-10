@@ -135,8 +135,7 @@ public class IjkMediaCodecInfo {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    public static IjkMediaCodecInfo setupCandidate(MediaCodecInfo codecInfo,
-            String mimeType) {
+    public static IjkMediaCodecInfo setupCandidate(MediaCodecInfo codecInfo, String mimeType) {
         if (codecInfo == null
                 || Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN)
             return null;
@@ -175,8 +174,7 @@ public class IjkMediaCodecInfo {
                 rank = knownRank;
             } else {
                 try {
-                    CodecCapabilities cap = codecInfo
-                            .getCapabilitiesForType(mimeType);
+                    CodecCapabilities cap = codecInfo.getCapabilitiesForType(mimeType);
                     if (cap != null)
                         rank = RANK_ACCEPTABLE;
                     else
@@ -200,8 +198,7 @@ public class IjkMediaCodecInfo {
             return;
 
         try {
-            CodecCapabilities caps = mCodecInfo
-                    .getCapabilitiesForType(mimeType);
+            CodecCapabilities caps = mCodecInfo.getCapabilitiesForType(mimeType);
             int maxProfile = 0;
             int maxLevel = 0;
             if (caps != null) {
@@ -216,9 +213,7 @@ public class IjkMediaCodecInfo {
                 }
             }
 
-            Log.i(TAG,
-                    String.format(Locale.US, "%s",
-                            getProfileLevelName(maxProfile, maxLevel)));
+            Log.i(TAG, String.format(Locale.US, "%s", getProfileLevelName(maxProfile, maxLevel)));
         } catch (Throwable e) {
             Log.i(TAG, "profile-level: exception");
         }

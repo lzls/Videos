@@ -215,10 +215,10 @@ public class AndroidWebView extends WebView {
 //                }
                 String wv = requireNonNull(regex.group(1));
                 String cv = requireNonNull(regex.group(2));
-                UserAgent.ua = USER_AGENT
-                        .replace("{ANDROID_VERSION}", av)
-                        .replace("{WEBKIT_VERSION}", wv)
-                        .replace("{CHROME_VERSION}", cv);
+                UserAgent.ua =
+                        USER_AGENT.replace("{ANDROID_VERSION}", av)
+                                .replace("{WEBKIT_VERSION}", wv)
+                                .replace("{CHROME_VERSION}", cv);
                 UserAgent.ua = normalize(UserAgent.ua);
                 if (UserAgent.ua.isEmpty()) UserAgent.ua = ua;
             } else {
@@ -237,16 +237,18 @@ public class AndroidWebView extends WebView {
             if (regex.matches(ua)) {
                 String wv = requireNonNull(regex.group(1));
                 String cv = requireNonNull(regex.group(2));
-                uaDesktop = USER_AGENT_DESKTOP
-                        .replace("{WEBKIT_VERSION}", wv)
-                        .replace("{CHROME_VERSION}", cv);
+                uaDesktop =
+                        USER_AGENT_DESKTOP
+                                .replace("{WEBKIT_VERSION}", wv)
+                                .replace("{CHROME_VERSION}", cv);
             } else {
 //                Log.w("User-Agent does not match the regex ", regex, ": " + ua);
                 int i1 = ua.indexOf('(') + 1;
                 int i2 = ua.indexOf(')', i1);
-                uaDesktop = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)
-                        .replace(" Mobile ", " ")
-                        .replaceFirst(" Version/\\d+\\.\\d+ ", " ");
+                uaDesktop =
+                        ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)
+                                .replace(" Mobile ", " ")
+                                .replaceFirst(" Version/\\d+\\.\\d+ ", " ");
             }
 
             return uaDesktop = normalize(uaDesktop);

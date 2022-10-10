@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.view.View;
@@ -143,16 +144,29 @@ public class Utils {
      */
     public static boolean isWindowTranslucentOrFloatingTheme(Window window) {
         try {
-            @SuppressLint("PrivateApi")
-            Class<?> styleableClass =
-                    window.getContext().getClassLoader()
-                            .loadClass("com.android.internal.R$styleable");
-            return getWindowStyleBoolean(window, styleableClass, "Window_windowIsTranslucent", false)
-                    || getWindowStyleBoolean(window, styleableClass, "Window_windowIsFloating", false);
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                //noinspection JavaReflectionMemberAccess
+                Method isTranslucentOrFloatingMethod =
+                        ActivityInfo.class
+                                .getMethod("isTranslucentOrFloating", TypedArray.class);
+                Boolean ret = (Boolean)
+                        isTranslucentOrFloatingMethod.invoke(
+                                ActivityInfo.class, window.getWindowStyle());
+                return ret != null && ret;
+            } else {
+                @SuppressLint("PrivateApi")
+                Class<?> styleableClass =
+                        window.getContext().getClassLoader()
+                                .loadClass("com.android.internal.R$styleable");
+                return getWindowStyleBoolean(
+                                window, styleableClass, "Window_windowIsTranslucent", false)
+                        || getWindowStyleBoolean(
+                                window, styleableClass, "Window_windowIsFloating", false);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return false;
+        return window.isFloating() /*|| window.isTranslucent()*/;
     }
 
     private static boolean getWindowStyleBoolean(

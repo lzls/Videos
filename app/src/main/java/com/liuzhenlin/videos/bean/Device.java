@@ -66,9 +66,9 @@ public class Device {
         if (o == null || getClass() != o.getClass()) return false;
 
         Device device = (Device) o;
-        return ObjectsCompat.equals(id, device.id) &&
-                ObjectsCompat.equals(manufacturer, device.manufacturer) &&
-                ObjectsCompat.equals(model, device.model);
+        return ObjectsCompat.equals(id, device.id)
+                && ObjectsCompat.equals(manufacturer, device.manufacturer)
+                && ObjectsCompat.equals(model, device.model);
     }
 
     @Override

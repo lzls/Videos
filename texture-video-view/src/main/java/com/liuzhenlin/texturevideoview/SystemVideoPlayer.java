@@ -122,8 +122,8 @@ public class SystemVideoPlayer extends VideoPlayer {
         }
     };
     private final AudioFocusRequest mAudioFocusRequest =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
-                    new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                             .setAudioAttributes(
                                     sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes)
                             .setOnAudioFocusChangeListener(mOnAudioFocusChangeListener)
@@ -149,8 +149,8 @@ public class SystemVideoPlayer extends VideoPlayer {
 
     @Override
     public final void setVideoResourceId(@RawRes int resId) {
-        setVideoPath(resId == 0 ?
-                null : "android.resource://" + mContext.getPackageName() + "/" + resId);
+        setVideoPath(
+                resId == 0 ? null : "android.resource://" + mContext.getPackageName() + "/" + resId);
     }
 
     @Override
@@ -348,8 +348,8 @@ public class SystemVideoPlayer extends VideoPlayer {
             // Opens the video only if this is a user request
             if (fromUser) {
                 // If the video playback finished, skip to the next video if possible
-                if (playbackState == PLAYBACK_STATE_COMPLETED && !isSingleVideoLoopPlayback() &&
-                        skipToNextIfPossible() && mMediaPlayer != null) {
+                if (playbackState == PLAYBACK_STATE_COMPLETED && !isSingleVideoLoopPlayback()
+                        && skipToNextIfPossible() && mMediaPlayer != null) {
                     return;
                 }
 
@@ -389,19 +389,18 @@ public class SystemVideoPlayer extends VideoPlayer {
                 break;
 
             case PLAYBACK_STATE_COMPLETED:
-                if (!isSingleVideoLoopPlayback() &&
-                        skipToNextIfPossible() && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
+                if (!isSingleVideoLoopPlayback()
+                        && skipToNextIfPossible() && getPlaybackState() != PLAYBACK_STATE_COMPLETED) {
                     break;
                 }
                 // Starts the video only if we have prepared it for the player
             case PLAYBACK_STATE_PREPARED:
             case PLAYBACK_STATE_PAUSED:
-                //@formatter:off
-                final int result = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        ? mAudioManager.requestAudioFocus(mAudioFocusRequest)
-                        : mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener,
-                                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-                //@formatter:on
+                final int result =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                                ? mAudioManager.requestAudioFocus(mAudioFocusRequest)
+                                : mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener,
+                                        AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 switch (result) {
                     case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
                         Log.w(TAG, "Failed to request audio focus");
@@ -850,7 +849,8 @@ public class SystemVideoPlayer extends VideoPlayer {
                 final String msg = e.getMessage();
                 if (msg != null && msg.startsWith("Illegal mimeType")) {
                     Log.e(TAG,
-                            "", new IllegalArgumentException(
+                            "",
+                            new IllegalArgumentException(
                                     "Illegal mimeType for subtitle source: " + mimeType));
                 }
             } catch (RuntimeException ignored) {

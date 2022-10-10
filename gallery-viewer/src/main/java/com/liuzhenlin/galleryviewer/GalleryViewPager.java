@@ -113,8 +113,8 @@ public class GalleryViewPager extends ViewPager {
     public GalleryViewPager(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.GalleryViewPager, 0, 0);
-        setImageOverScrollEnabled(ta.getBoolean(R.styleable.
-                GalleryViewPager_imageOverScrollEnabled, true));
+        setImageOverScrollEnabled(
+                ta.getBoolean(R.styleable.GalleryViewPager_imageOverScrollEnabled, true));
         ta.recycle();
 
         final float dp = getResources().getDisplayMetrics().density;

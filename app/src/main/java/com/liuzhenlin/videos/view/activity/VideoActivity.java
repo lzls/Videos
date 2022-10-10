@@ -274,9 +274,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 adapter.notifyDataSetChanged();
             }
             //noinspection unchecked
-            mVideoView.setPlayListAdapter(needPlaylist
-                    ? adapter == null ? mPresenter.newPlaylistAdapter() : adapter
-                    : null);
+            mVideoView.setPlayListAdapter(
+                    needPlaylist
+                            ? adapter == null ? mPresenter.newPlaylistAdapter() : adapter
+                            : null);
             mVideoView.setCanSkipToPrevious(needPlaylist);
             mVideoView.setCanSkipToNext(needPlaylist);
 
@@ -297,8 +298,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
 
         mVideoView = findViewById(R.id.videoview);
-        VideoPlayer videoPlayer = canUseExoPlayer()
-                ? new ExoVideoPlayer(this) : new IjkVideoPlayer(this);
+        VideoPlayer videoPlayer = canUseExoPlayer() ?
+                new ExoVideoPlayer(this) : new IjkVideoPlayer(this);
         mVideoPlayer = videoPlayer;
         videoPlayer.setVideoView(mVideoView);
         mVideoView.setVideoPlayer(videoPlayer);
@@ -374,8 +375,9 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                     mPrivateFlags &= ~PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE;
                     if (mScreenOrientation == SCREEN_ORIENTATION_PORTRAIT
                             && mVideoView.isInFullscreenMode()) {
-                        mScreenOrientation = mDeviceOrientation == SCREEN_ORIENTATION_PORTRAIT
-                                ? SCREEN_ORIENTATION_LANDSCAPE : mDeviceOrientation;
+                        mScreenOrientation =
+                                mDeviceOrientation == SCREEN_ORIENTATION_PORTRAIT ?
+                                        SCREEN_ORIENTATION_LANDSCAPE : mDeviceOrientation;
                         setRequestedOrientation(mScreenOrientation);
                         setFullscreenMode(true);
                     }
@@ -485,8 +487,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             @NonNull
             @Override
-            public String getAppExternalFilesDir() {
-                return Files.getAppExternalFilesDir().getPath();
+            public String getAppExternalFilesDir(@NonNull String dirType) {
+                return Files.getAppExternalFilesDir(dirType).getPath();
             }
         });
         App.getInstance(this).addOnSystemUiNightModeChangedListener(mVideoView);
@@ -792,12 +794,12 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         showSystemBars(!fullscreen);
         //@formatter:off
         mVideoView.setFullscreenMode(fullscreen,
-            fullscreen && (
-                   !getDisplayCutoutManager().isNotchSupport()
-                || (mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) == 0
-                          ) ? getDisplayCutoutManager().isNotchSupport() ?
-                                sStatusHeightInLandscapeOfNotchSupportDevice : sStatusHeight
-                            : 0);
+                fullscreen && (
+                       !getDisplayCutoutManager().isNotchSupport()
+                    || (mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) == 0
+                              ) ? getDisplayCutoutManager().isNotchSupport() ?
+                                    sStatusHeightInLandscapeOfNotchSupportDevice : sStatusHeight
+                                : 0);
         //@formatter:on
         if (lastFullscreen != fullscreen || mVideoView.isControlsShowing()) {
             mVideoView.showControls(true, false);
@@ -813,10 +815,11 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             return;
         }
         if ((mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) == 0) {
-            mScreenOrientation = fullscreen ?
-                    mDeviceOrientation == SCREEN_ORIENTATION_PORTRAIT
-                            ? SCREEN_ORIENTATION_LANDSCAPE : mDeviceOrientation
-                    : SCREEN_ORIENTATION_PORTRAIT;
+            mScreenOrientation =
+                    fullscreen
+                            ? mDeviceOrientation == SCREEN_ORIENTATION_PORTRAIT ?
+                                    SCREEN_ORIENTATION_LANDSCAPE : mDeviceOrientation
+                            : SCREEN_ORIENTATION_PORTRAIT;
             setRequestedOrientation(mScreenOrientation);
         }
         setFullscreenMode(fullscreen);

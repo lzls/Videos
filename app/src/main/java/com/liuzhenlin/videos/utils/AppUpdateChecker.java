@@ -21,6 +21,7 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -78,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.liuzhenlin.common.Consts.PENDING_INTENT_FLAG_IMMUTABLE;
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
 import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
 
@@ -212,8 +214,9 @@ public final class AppUpdateChecker {
                 }
 
                 //noinspection ConstantConditions
-                JsonObject appInfos = JsonParser.parseString(json).getAsJsonObject()
-                        .get("appInfos").getAsJsonObject();
+                JsonObject appInfos =
+                        JsonParser.parseString(json).getAsJsonObject()
+                                .get("appInfos").getAsJsonObject();
 
                 mAppName = appInfos.get("appName").getAsString();
                 mPromptDialogAnchorActivityClsName =
@@ -266,22 +269,22 @@ public final class AppUpdateChecker {
                     case RESULT_NO_NEW_VERSION:
                         mH.sendEmptyMessage(H.MSG_NO_NEW_VERSION);
                         if (mToastResult) {
-                            Toast.makeText(mContext,
-                                    R.string.isTheLatestVersion, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mContext, R.string.isTheLatestVersion, Toast.LENGTH_SHORT)
+                                    .show();
                         }
                         reset();
                         break;
                     case RESULT_CONNECTION_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext,
-                                    R.string.connectionTimeout, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
+                                    .show();
                         }
                         reset();
                         break;
                     case RESULT_READ_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext,
-                                    R.string.readTimeout, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
+                                    .show();
                         }
                     default:
                         reset();
@@ -606,9 +609,8 @@ public final class AppUpdateChecker {
             }
 
             if (actualFragment != null) {
-                throw new IllegalStateException(
-                        "We've added two fragments!"
-                                + " Old: " + actualFragment + " New: " + newlyAddedFragment);
+                throw new IllegalStateException("We've added two fragments!" +
+                        " Old: " + actualFragment + " New: " + newlyAddedFragment);
             }
 
             // If our parent was destroyed, we're never going to be able to add our fragment, so we
@@ -655,9 +657,8 @@ public final class AppUpdateChecker {
             }
 
             if (actualFragment != null) {
-                throw new IllegalStateException(
-                        "We've added two fragments!"
-                                + " Old: " + actualFragment + " New: " + newlyAddedFragment);
+                throw new IllegalStateException("We've added two fragments!" +
+                        " Old: " + actualFragment + " New: " + newlyAddedFragment);
             }
 
             // If our parent was destroyed, we're never going to be able to add our fragment, so we
@@ -798,18 +799,19 @@ public final class AppUpdateChecker {
                         .setOnlyAlertOnce(true)
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                         .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                         .setVisibility(NotificationCompat.VISIBILITY_SECRET);
             }
 
-            @SuppressLint("UnspecifiedImmutableFlag")
             @Synthetic RemoteViews createNotificationView() {
                 RemoteViews nv = new RemoteViews(mPkgName, R.layout.notification_download_app);
-                nv.setOnClickPendingIntent(R.id.btn_cancel_danv,
+                nv.setOnClickPendingIntent(
+                        R.id.btn_cancel_danv,
                         PendingIntent.getBroadcast(
                                 mContext,
                                 0,
                                 new Intent(CancelAppUpdateReceiver.ACTION),
-                                0));
+                                PENDING_INTENT_FLAG_IMMUTABLE));
                 return nv;
             }
 
@@ -835,7 +837,8 @@ public final class AppUpdateChecker {
                     } else if (mApkLength <= 0) {
                         onDownloadError();
                     } else {
-                        mApk = new File(Files.getAppExternalFilesDir(),
+                        mApk = new File(
+                                Files.getAppExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                                 strings[INDEX_APP_NAME] + " "
                                         + strings[INDEX_VERSION_NAME].replace(".", "_")
                                         + ".apk");
@@ -867,8 +870,9 @@ public final class AppUpdateChecker {
                                     mDownloadAppTasks = new ArrayList<>(COUNT_DOWNLOAD_APP_TASK);
                                     for (int i = 0; i < COUNT_DOWNLOAD_APP_TASK; i++) {
                                         final int start = i * blockSize;
-                                        final int end = i == COUNT_DOWNLOAD_APP_TASK - 1 ?
-                                                mApkLength : (i + 1) * blockSize - 1;
+                                        final int end =
+                                                i == COUNT_DOWNLOAD_APP_TASK - 1 ?
+                                                        mApkLength : (i + 1) * blockSize - 1;
                                         mDownloadAppTasks.add(new DownloadAppTask());
                                         mDownloadAppTasks.get(i).executeOnExecutor(
                                                 Executors.THREAD_POOL_EXECUTOR, start, end);
@@ -992,8 +996,8 @@ public final class AppUpdateChecker {
 
                 String channelId = NotificationChannelManager.getMessageNotificationChannelId(mContext);
                 String title = mContext.getString(R.string.newAppDownloaded);
-                @SuppressLint("UnspecifiedImmutableFlag")
-                PendingIntent pi = PendingIntent.getActivity(mContext, 0, it, 0);
+                PendingIntent pi = PendingIntent.getActivity(
+                        mContext, 0, it, PENDING_INTENT_FLAG_IMMUTABLE);
                 mNotificationManager.notify(
                         ID_NOTIFICATION,
                         mNotificationBuilder
@@ -1023,8 +1027,8 @@ public final class AppUpdateChecker {
                 if (!isCancelled()) {
                     getHandler().post(() -> {
                         cancels(false);
-                        Toast.makeText(mContext,
-                                R.string.connectionTimeout, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
+                                .show();
                     });
                 }
             }
@@ -1033,8 +1037,8 @@ public final class AppUpdateChecker {
                 if (!isCancelled()) {
                     getHandler().post(() -> {
                         cancels(false);
-                        Toast.makeText(mContext,
-                                R.string.readTimeout, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
+                                .show();
                     });
                 }
             }
@@ -1043,8 +1047,8 @@ public final class AppUpdateChecker {
                 if (!isCancelled()) {
                     getHandler().post(() -> {
                         cancels(false);
-                        Toast.makeText(mContext,
-                                R.string.downloadError, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, R.string.downloadError, Toast.LENGTH_SHORT)
+                                .show();
                     });
                 }
             }
@@ -1116,10 +1120,13 @@ public final class AppUpdateChecker {
                     float progressPercent = (float) progress / (float) mApkLength * 100f;
                     RemoteViews nv = createNotificationView();
                     nv.setProgressBar(R.id.progress, mApkLength, progress, false);
-                    nv.setTextViewText(R.id.text_percentProgress,
+                    nv.setTextViewText(
+                            R.id.text_percentProgress,
                             mContext.getString(R.string.percentProgress, progressPercent));
-                    nv.setTextViewText(R.id.text_charsequenceProgress,
-                            mContext.getString(R.string.charsequenceProgress,
+                    nv.setTextViewText(
+                            R.id.text_charsequenceProgress,
+                            mContext.getString(
+                                    R.string.charsequenceProgress,
                                     FileUtils.formatFileSize(progress),
                                     FileUtils.formatFileSize(mApkLength)));
 

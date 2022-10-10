@@ -154,8 +154,8 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
     override fun goToLocalFoldedVideosFragment(args: Bundle) {
         mLocalFoldedVideosFragment = LocalFoldedVideosFragment()
         mLocalFoldedVideosFragment!!.arguments = args
-        mLocalFoldedVideosFragment!!.setTargetFragment(mLocalVideoListFragment,
-                REQUEST_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT)
+        mLocalFoldedVideosFragment!!.setTargetFragment(
+                mLocalVideoListFragment, REQUEST_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT)
 
         childFragmentManager.beginTransaction()
                 .setCustomAnimations(
@@ -173,8 +173,8 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
         mLocalSearchedVideosFragment = LocalSearchedVideosFragment()
         mLocalSearchedVideosFragment!!.arguments = args
-        mLocalSearchedVideosFragment!!.setTargetFragment(mLocalVideoListFragment,
-                REQUEST_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
+        mLocalSearchedVideosFragment!!.setTargetFragment(
+                mLocalVideoListFragment, REQUEST_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
 
         childFragmentManager.beginTransaction()
                 .add(R.id.container_child_fragments, mLocalSearchedVideosFragment!!, TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT)

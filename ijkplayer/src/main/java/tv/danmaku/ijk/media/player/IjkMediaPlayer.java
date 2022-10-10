@@ -304,8 +304,7 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
     @Override
     public void setSurface(Surface surface) {
         if (mScreenOnWhilePlaying && surface != null) {
-            DebugLog.w(TAG,
-                    "setScreenOnWhilePlaying(true) is ineffective for Surface");
+            DebugLog.w(TAG, "setScreenOnWhilePlaying(true) is ineffective for Surface");
         }
         mSurfaceHolder = null;
         _setVideoSurface(surface);
@@ -348,8 +347,8 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
         } else if (ContentResolver.SCHEME_CONTENT.equals(scheme)
                 && Settings.AUTHORITY.equals(uri.getAuthority())) {
             // Redirect ringtones to go directly to underlying provider
-            uri = RingtoneManager.getActualDefaultRingtoneUri(context,
-                    RingtoneManager.getDefaultType(uri));
+            uri = RingtoneManager.getActualDefaultRingtoneUri(
+                    context, RingtoneManager.getDefaultType(uri));
             if (uri == null) {
                 throw new FileNotFoundException("Failed to resolve default ringtone");
             }
@@ -553,10 +552,9 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
             mWakeLock = null;
         }
 
-        PowerManager pm = (PowerManager) context
-                .getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(mode | PowerManager.ON_AFTER_RELEASE,
-                IjkMediaPlayer.class.getName());
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        mWakeLock = pm.newWakeLock(
+                mode | PowerManager.ON_AFTER_RELEASE, IjkMediaPlayer.class.getName());
         mWakeLock.setReferenceCounted(false);
         if (washeld) {
             mWakeLock.acquire();
@@ -970,8 +968,7 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
         public void handleMessage(Message msg) {
             IjkMediaPlayer player = mWeakPlayer.get();
             if (player == null || player.mNativeMediaPlayer == 0) {
-                DebugLog.w(TAG,
-                        "IjkMediaPlayer went away with unhandled events");
+                DebugLog.w(TAG, "IjkMediaPlayer went away with unhandled events");
                 return;
             }
 
@@ -1064,8 +1061,8 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
      * it. (This is the cookie passed to native_setup().)
      */
     @CalledByNative
-    private static void postEventFromNative(Object weakThiz, int what,
-            int arg1, int arg2, Object obj) {
+    private static void postEventFromNative(
+            Object weakThiz, int what, int arg1, int arg2, Object obj) {
         if (weakThiz == null)
             return;
 

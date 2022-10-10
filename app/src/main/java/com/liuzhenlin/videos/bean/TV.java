@@ -46,8 +46,8 @@ public class TV {
         if (o == null || getClass() != o.getClass()) return false;
 
         TV tv = (TV) o;
-        return ObjectsCompat.equals(name, tv.name) &&
-                ObjectsCompat.equals(url, tv.url);
+        return ObjectsCompat.equals(name, tv.name)
+                && ObjectsCompat.equals(url, tv.url);
     }
 
     @Override

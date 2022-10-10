@@ -167,9 +167,9 @@ public class DecoratedMediaCustomViewStyle extends NotificationCompat.Style {
             return null;
         }
 
-        RemoteViews innerView = mBuilder.getBigContentView() != null
-                ? mBuilder.getBigContentView()
-                : mBuilder.getContentView();
+        RemoteViews innerView =
+                mBuilder.getBigContentView() != null ?
+                        mBuilder.getBigContentView() : mBuilder.getContentView();
         if (innerView == null) {
             // No expandable notification
             return null;
@@ -203,9 +203,9 @@ public class DecoratedMediaCustomViewStyle extends NotificationCompat.Style {
             return null;
         }
 
-        RemoteViews innerView = mBuilder.getHeadsUpContentView() != null
-                ? mBuilder.getHeadsUpContentView()
-                : mBuilder.getContentView();
+        RemoteViews innerView =
+                mBuilder.getHeadsUpContentView() != null ?
+                        mBuilder.getHeadsUpContentView() : mBuilder.getContentView();
         if (innerView == null) {
             // No expandable notification
             return null;
@@ -221,10 +221,11 @@ public class DecoratedMediaCustomViewStyle extends NotificationCompat.Style {
 
     private void setBackgroundColor(RemoteViews views) {
         @SuppressLint("PrivateResource") //@formatter:off
-        final int color = mBuilder.getColor() != NotificationCompat.COLOR_DEFAULT
-                ? mBuilder.getColor()
-                : mBuilder.mContext.getResources().getColor(
-                        R.color.notification_material_background_media_default_color); //@formatter:on
+        final int color =
+                mBuilder.getColor() != NotificationCompat.COLOR_DEFAULT
+                        ? mBuilder.getColor()
+                        : mBuilder.mContext.getResources().getColor(
+                                R.color.notification_material_background_media_default_color); //@formatter:on
         views.setInt(R.id.notification_main_column_container, "setBackgroundColor", color);
     }
 }

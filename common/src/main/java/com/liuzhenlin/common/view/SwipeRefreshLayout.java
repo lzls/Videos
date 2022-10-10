@@ -693,10 +693,13 @@ public class SwipeRefreshLayout extends ViewGroup
         if (mTarget == null) {
             return;
         }
-        mTarget.measure(MeasureSpec.makeMeasureSpec(
-                getMeasuredWidth() - getPaddingLeft() - getPaddingRight(),
-                MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(
-                getMeasuredHeight() - getPaddingTop() - getPaddingBottom(), MeasureSpec.EXACTLY));
+        mTarget.measure(
+                MeasureSpec.makeMeasureSpec(
+                        getMeasuredWidth() - getPaddingLeft() - getPaddingRight(),
+                        MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(
+                        getMeasuredHeight() - getPaddingTop() - getPaddingBottom(),
+                        MeasureSpec.EXACTLY));
         mCircleView.measure(MeasureSpec.makeMeasureSpec(mCircleDiameter, MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(mCircleDiameter, MeasureSpec.EXACTLY));
         mCircleViewIndex = -1;
@@ -1044,8 +1047,8 @@ public class SwipeRefreshLayout extends ViewGroup
             @Nullable int[] offsetInWindow, @ViewCompat.NestedScrollType int type,
             @NonNull int[] consumed) {
         if (type == ViewCompat.TYPE_TOUCH) {
-            mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed,
-                    dyUnconsumed, offsetInWindow, type, consumed);
+            mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
+                    dxUnconsumed, dyUnconsumed, offsetInWindow, type, consumed);
         }
     }
 
@@ -1079,8 +1082,8 @@ public class SwipeRefreshLayout extends ViewGroup
     @Override
     public boolean dispatchNestedPreScroll(
             int dx, int dy, int[] consumed, int[] offsetInWindow, int type) {
-        return type == ViewCompat.TYPE_TOUCH && dispatchNestedPreScroll(dx, dy, consumed,
-                offsetInWindow);
+        return type == ViewCompat.TYPE_TOUCH
+                && dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow);
     }
 
     // NestedScrollingChild 1
@@ -1146,11 +1149,11 @@ public class SwipeRefreshLayout extends ViewGroup
         float dragPercent = Math.min(1f, Math.abs(originalDragPercent));
         float adjustedPercent = (float) Math.max(dragPercent - .4, 0) * 5 / 3;
         float extraOS = Math.abs(overscrollTop) - mTotalDragDistance;
-        float slingshotDist = mCustomSlingshotDistance > 0
-                ? mCustomSlingshotDistance
-                : (mUsingCustomStart
-                ? mSpinnerOffsetEnd - mOriginalOffsetTop
-                : mSpinnerOffsetEnd);
+        float slingshotDist =
+                mCustomSlingshotDistance > 0
+                        ? mCustomSlingshotDistance
+                        : (mUsingCustomStart ?
+                                mSpinnerOffsetEnd - mOriginalOffsetTop : mSpinnerOffsetEnd);
         float tensionSlingshotPercent = Math.max(0, Math.min(extraOS, slingshotDist * 2)
                 / slingshotDist);
         float tensionPercent = (float) ((tensionSlingshotPercent / 4) - Math.pow(

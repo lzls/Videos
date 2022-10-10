@@ -157,9 +157,10 @@ public class ActivityUtils {
 
             // public static ActivityThread currentActivityThread() {...}
             @SuppressWarnings("unchecked")
-            Object currentActivityThread = activityThreadClass
-                    .getMethod("currentActivityThread")
-                    .invoke(activityThreadClass);
+            Object currentActivityThread =
+                    activityThreadClass
+                            .getMethod("currentActivityThread")
+                            .invoke(activityThreadClass);
 
             // /*package*/ final ArrayMap<IBinder, ActivityClientRecord> mActivities
             Field activitiesField = activityThreadClass.getDeclaredField("mActivities");

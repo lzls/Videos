@@ -44,6 +44,19 @@ public class FileUtils {
     private FileUtils() {
     }
 
+    public static void rmrf(@NonNull File file) {
+        if (file.isDirectory()) {
+            File[] fs = file.listFiles();
+            if (fs != null) {
+                for (File f : fs) {
+                    rmrf(f);
+                }
+            }
+        }
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
+    }
+
     @NonNull
     public static String formatFileSize(double size) {
         // 如果字节数少于1024，则直接以B为单位，否则先除于1024
@@ -150,9 +163,9 @@ public class FileUtils {
                     while (true) {
                         filePartLength = filePart.length();
                         remainingBytesToWrite = filePartLengthLimit - filePartLength;
-                        bytesToRead = remainingBytesToWrite > buffer.length
-                                ? buffer.length
-                                : (int) remainingBytesToWrite;
+                        bytesToRead =
+                                remainingBytesToWrite > buffer.length ?
+                                        buffer.length : (int) remainingBytesToWrite;
                         if (bytesToRead > 0 && (readBytes = in.read(buffer, 0, bytesToRead)) != -1) {
                             out.write(buffer, 0, readBytes);
                         } else {
@@ -276,8 +289,8 @@ public class FileUtils {
                         default:
                             mimeType = null;
                     }
-                    recordMediaFileToDatabaseAndScan(context,
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, file, mimeType);
+                    recordMediaFileToDatabaseAndScan(
+                            context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, file, mimeType);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

@@ -215,7 +215,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        mPresenter.saveData(outState,
+        mPresenter.saveData(
+                outState,
                 mEnterProblemsOrAdviceEditor.getText().toString(),
                 mEnterContactWayEditor.getText().toString().trim());
     }
@@ -406,7 +407,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             mWindow = getWindow();
 
             //noinspection ConstantConditions
-            View view = View.inflate(mContext,
+            View view = View.inflate(
+                    mContext,
                     R.layout.dialog_picture_preview,
                     mWindow.getDecorView().findViewById(Window.ID_ANDROID_CONTENT));
 
@@ -461,8 +463,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                 @Override
                 public void onOrientationChange(int orientation) {
                     if (orientation != SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
-                        if (!mIsRotationEnabled &&
-                                !(orientation != SCREEN_ORIENTATION_PORTRAIT
+                        if (!mIsRotationEnabled
+                                && !(orientation != SCREEN_ORIENTATION_PORTRAIT
                                         && mScreenOrientation != SCREEN_ORIENTATION_PORTRAIT)) {
                             setOrientation(mScreenOrientation);
                             return;

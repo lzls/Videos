@@ -321,8 +321,8 @@ public class VideoClipView extends FrameLayout {
 
                 @Override
                 public void onSelectionChange(int start, int end, int selection, boolean fromUser) {
-                    Log.d(TAG, "onSelectionChange: " +
-                            start + "    " + end + "    " + selection + "    " + fromUser);
+                    Log.d(TAG, "onSelectionChange: "
+                            + start + "    " + end + "    " + selection + "    " + fromUser);
                 }
 
                 @Override
@@ -487,10 +487,10 @@ public class VideoClipView extends FrameLayout {
         mFirstLayout = false;
 
         mThumbGalleryWidth = mThumbGallery.getWidth();
-        mMaximumClipBackwardsForwardGap = mThumbGalleryWidth *
-                (float) mMaximumClipDuration / (mMaximumClipDuration + mMinimumUnselectedClipDuration);
-        mMinimumClipBackwardsForwardGap = mMaximumClipBackwardsForwardGap *
-                (float) mMinimumClipDuration / mMaximumClipDuration;
+        mMaximumClipBackwardsForwardGap = (float) mThumbGalleryWidth
+                * mMaximumClipDuration / (mMaximumClipDuration + mMinimumUnselectedClipDuration);
+        mMinimumClipBackwardsForwardGap = mMaximumClipBackwardsForwardGap
+                * mMinimumClipDuration / mMaximumClipDuration;
     }
 
     @Override
@@ -835,8 +835,8 @@ public class VideoClipView extends FrameLayout {
                                 clampFrameLeftOffset(deltaX);
                             }
                         }
-                        if ((mTouchFlags & TFLAG_FRAME_BEING_DRAGGED) == TFLAG_FRAME_BEING_DRAGGED &&
-                                !Utils.areEqualIgnorePrecisionError(
+                        if ((mTouchFlags & TFLAG_FRAME_BEING_DRAGGED) == TFLAG_FRAME_BEING_DRAGGED
+                                && !Utils.areEqualIgnorePrecisionError(
                                         mFrameLeftOffset - frameLeftOffset,
                                         frameRightOffset - mFrameRightOffset)) {
                             // Not allow inconsistent delta side offsets to the selection frame
