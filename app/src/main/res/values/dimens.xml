@@ -21,4 +21,6 @@
     <dimen name="notification_title_text_size">14sp</dimen>
     <dimen name="notification_progress_text_size">12sp</dimen>
     <dimen name="notification_button_text_size">13sp</dimen>
+
+    <dimen name="videoThumbWidth">90dp</dimen>
 </resources>

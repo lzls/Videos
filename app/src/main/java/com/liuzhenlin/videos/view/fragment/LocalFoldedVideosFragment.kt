@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.listener.OnBackPressedListener
@@ -29,7 +30,6 @@ import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
-import com.liuzhenlin.swipeback.SwipeBackFragment
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -48,7 +48,7 @@ import kotlin.math.min
 /**
  * @author 刘振林
  */
-class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, View.OnLongClickListener,
+class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListener,
         OnReloadVideosListener, SwipeRefreshLayout.OnRefreshListener, OnBackPressedListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
@@ -225,6 +225,11 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
         mRenameButton.setOnClickListener(this)
         mShareButton.setOnClickListener(this)
         mDetailsButton.setOnClickListener(this)
+    }
+
+    override fun onScreenWidthDpLevelChanged(
+            oldLevel: ScreenWidthDpLevel, level: ScreenWidthDpLevel) {
+        mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount, PAYLOAD_REFRESH_VIDEO_THUMB)
     }
 
     override fun onBackPressed() =
@@ -578,6 +583,9 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                 } else if (payload and PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR != 0) {
                     holder.checkBox.setChecked(video.isChecked, true)
                 }
+                if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
+                    loadItemImagesIfNotScrolling(holder)
+                }
                 if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
                     holder.videoNameText.text = video.name
                 }
@@ -656,8 +664,6 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                 deleteButton.setOnClickListener(this@LocalFoldedVideosFragment)
 
                 itemVisibleFrame.setOnLongClickListener(this@LocalFoldedVideosFragment)
-
-                VideoUtils2.adjustVideoThumbView(videoImage)
             }
         }
     }

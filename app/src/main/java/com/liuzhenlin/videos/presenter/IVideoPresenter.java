@@ -22,8 +22,9 @@ import java.io.File;
  */
 public interface IVideoPresenter extends IPresenter<IVideoView> {
 
-    int PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED = 1;
-    int PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED = 1 << 1;
+    int PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB = 1;
+    int PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED = 1 << 1;
+    int PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED = 1 << 2;
 
     boolean initPlaylist(@Nullable Bundle savedInstanceState, @NonNull Intent intent);
     boolean initPlaylistAndRecordCurrentVideoProgress(

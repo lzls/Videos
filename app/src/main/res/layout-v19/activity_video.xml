@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,11 +14,18 @@
         android:visibility="gone"
         tools:ignore="InconsistentLayout" />
 
-    <com.liuzhenlin.texturevideoview.TextureVideoView
-        android:id="@+id/videoview"
+    <com.liuzhenlin.common.view.AspectRatioFrameLayout
+        android:id="@+id/container_videoview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/view_statusBar" />
+        app:resize_mode="fixed_width"
+        android:layout_below="@id/view_statusBar">
+
+        <com.liuzhenlin.texturevideoview.TextureVideoView
+            android:id="@+id/videoview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </com.liuzhenlin.common.view.AspectRatioFrameLayout>
 
     <ImageView
         android:id="@+id/btn_lockUnlockOrientation"

@@ -121,8 +121,13 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
                     }
                 });
         swipeRefreshLayout.setOnChildScrollUpCallback(
-                (parent, child) ->
-                        mYoutubeView != null && mYoutubeView.getScrollY() > 0 || mIsShortsUrl);
+                (parent, child) -> {
+                    if (mYoutubeView != null) {
+                        return mYoutubeView.getScrollY() > 0 || mIsShortsUrl;
+                    }
+                    // no internet layout
+                    return parent.findViewById(R.id.scrollView).getScrollY() > 0;
+                });
 
         ViewStub viewStub = view.findViewById(R.id.viewStub);
         if (NetworkUtil.isNetworkConnected(mContext)) {

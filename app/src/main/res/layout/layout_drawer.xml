@@ -15,17 +15,18 @@
         android:id="@+id/list_drawer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:overScrollMode="never"
-        android:layout_gravity="center_vertical" />
+        android:paddingTop="20dp"
+        android:paddingBottom="50dp"
+        android:layout_gravity="center_vertical"
+        android:scrollbars="vertical" />
 
     <com.liuzhenlin.common.view.TranslucentOnPressedImageView
         android:id="@+id/btn_settings_drawer"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_gravity="bottom|end"
         android:padding="5dp"
-        android:layout_margin="15dp"
+        android:layout_margin="10dp"
+        android:layout_gravity="bottom|end"
         app:srcCompat="@drawable/ic_settings_white_24dp"
         android:contentDescription="@string/settings" />
 </FrameLayout>

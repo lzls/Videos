@@ -334,7 +334,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             convertView = vh.itemView;
             convertView.setTag(vh);
 
-            final int screenWidth = App.getInstance(this).getScreenWidthIgnoreOrientation();
+            final int screenWidth = App.getInstance(this).getRealScreenWidthIgnoreOrientation();
             final int dp_20 = DensityUtils.dp2px(this, 20f);
 
             ViewGroup.LayoutParams lp = convertView.getLayoutParams();
@@ -380,6 +380,15 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         }
     }
 
+    @Override
+    public void onMultiWindowModeChanged(boolean isInMultiWindowMode) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode);
+        if (mPicturePreviewDialog != null) {
+            ((PicturePreviewDialog) mPicturePreviewDialog)
+                    .onMultiWindowModeChanged(isInMultiWindowMode);
+        }
+    }
+
     private final class PicturePreviewDialog extends Dialog implements DialogInterface.OnDismissListener,
             View.OnClickListener, View.OnLongClickListener, DisplayCutoutManager.OnNotchSwitchListener {
         final Context mContext = FeedbackActivity.this;
@@ -398,6 +407,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         int mScreenOrientation = SCREEN_ORIENTATION_PORTRAIT;
 
         DisplayCutoutManager mDisplayCutoutManager;
+
+        boolean mIsInMultiWindowMode;
 
         PicturePreviewDialog(List<Bitmap> pictures, int currentItem) {
             super(FeedbackActivity.this, R.style.DialogStyle_PicturePreview);
@@ -443,11 +454,14 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                 return;
             }
 
-            setLayoutInDisplayCutout();
+            mIsInMultiWindowMode = isInMultiWindowMode();
+            if (!mIsInMultiWindowMode) {
+                setLayoutInDisplayCutout(true);
+            }
             mWindow.getDecorView().setOnSystemUiVisibilityChangeListener(
                     visibility -> {
                         // FIXME: 对于Dialog, 在API24（Android 7.0）及以下不起作用
-                        SystemBarUtils.showSystemBars(mWindow, false);
+                        SystemBarUtils.showSystemBars(mWindow, mIsInMultiWindowMode);
                     });
             super.show();
 
@@ -471,6 +485,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                         }
                         mScreenOrientation = orientation;
                         setRequestedOrientation(orientation);
+                        adjustVisibleRegion();
                     }
                 }
             };
@@ -546,16 +561,37 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             return false;
         }
 
+        void onMultiWindowModeChanged(boolean isInMultiWindowMode) {
+            mIsInMultiWindowMode = isInMultiWindowMode;
+            setLayoutInDisplayCutout(!isInMultiWindowMode);
+        }
+
         // 使View占用刘海区（如果有）
-        void setLayoutInDisplayCutout() {
-            mDisplayCutoutManager = new DisplayCutoutManager(mParentWindow, mWindow);
-            mDisplayCutoutManager.setLayoutInDisplayCutout(true);
-            mDisplayCutoutManager.addOnNotchSwitchListener(this);
+        void setLayoutInDisplayCutout(boolean in) {
+            DisplayCutoutManager cutoutManager = getDisplayCutoutManager();
+            cutoutManager.setLayoutInDisplayCutout(in);
+            if (in) {
+                cutoutManager.addOnNotchSwitchListener(this);
+            } else {
+                cutoutManager.removeOnNotchSwitchListener(this);
+            }
             adjustVisibleRegion();
         }
 
+        DisplayCutoutManager getDisplayCutoutManager() {
+            if (mDisplayCutoutManager == null) {
+                mDisplayCutoutManager = new DisplayCutoutManager(mParentWindow, mWindow);
+            }
+            return mDisplayCutoutManager;
+        }
+
         void adjustVisibleRegion() {
-            if (!mDisplayCutoutManager.isNotchSupport()) {
+            if (mDisplayCutoutManager == null || !mDisplayCutoutManager.isNotchSupport()) {
+                return;
+            }
+
+            if (mIsInMultiWindowMode) {
+                mGalleryViewPager.setPadding(0, 0, 0, 0);
                 return;
             }
 

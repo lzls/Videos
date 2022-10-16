@@ -98,6 +98,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.transition.MaterialSharedAxis;
 import com.liuzhenlin.common.Configs;
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
 import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
@@ -653,7 +654,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     @SuppressLint("ClickableViewAccessibility")
     public TextureVideoView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        setBackgroundColor(Color.BLACK);
+        setBackgroundColor(Configs.VIDEO_VIEW_BACKGROUND_COLOR);
         setScrimColor(ContextCompat.getColor(context, R.color.videoScrimColor));
 
         mStringPlay = mResources.getString(R.string.play);
@@ -1327,7 +1328,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             if (clip) {
                 ViewCompat.setBackground(this, null);
             } else {
-                setBackgroundColor(Color.BLACK);
+                setBackgroundColor(Configs.VIDEO_VIEW_BACKGROUND_COLOR);
             }
         }
     }
@@ -1534,10 +1535,11 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         ViewGroup.LayoutParams lp = mDrawerView.getLayoutParams();
         if (fullscreen) {
+            final float dp = mResources.getDisplayMetrics().density;
             // When in landscape mode, we need to make the drawer view appear to the user appropriately.
             // Its width should not occupy too much display space，so as not to affect the user
             // to preview the video content.
-            if (aspectRatio > 1.0f) {
+            if (aspectRatio > 1.0f && width >= ScreenWidthDpLevel.LARGE.smallestWidthDp * dp) {
                 mDrawerViewMinimumHeight = height;
                 lp.width = Utils.roundFloat(width / 2f); // XXX: to make this more adaptable
             } else {

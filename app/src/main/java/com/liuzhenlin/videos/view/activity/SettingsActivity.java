@@ -23,6 +23,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
 import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.swipeback.SwipeBackPreferenceFragment;
 import com.liuzhenlin.videos.Prefs;
 import com.liuzhenlin.videos.R;
@@ -48,7 +49,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-        insertTopPaddingToActionBarIfNeeded(findViewById(R.id.actionbar));
+        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(findViewById(R.id.actionbar));
         findViewById(R.id.btn_back).setOnClickListener(this);
         mTitleText = findViewById(R.id.text_title);
         if (savedInstanceState == null) {

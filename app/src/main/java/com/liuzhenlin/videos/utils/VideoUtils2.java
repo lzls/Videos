@@ -51,10 +51,18 @@ public class VideoUtils2 {
             @Nullable Fragment fragment, @NonNull ImageView view, @NonNull String path) {
         Context context = view.getContext();
 //        final float aspectRatio = (float) video.getWidth() / (float) video.getHeight();
-        final int thumbWidth = App.getInstance(context).getVideoThumbWidth();
+        final int thumbWidth = getVideoThumbWidth(context);
 //        final int height = Utils.roundFloat((float) thumbWidth / aspectRatio);
         final int thumbHeight /* maxHeight */ = Utils.roundFloat(thumbWidth * 9f / 16f);
 //        final int thumbHeight = height > maxHeight ? maxHeight : height;
+
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp.width != thumbWidth || lp.height != thumbHeight) {
+            lp.width = thumbWidth;
+            lp.height = thumbHeight;
+            view.setLayoutParams(lp);
+        }
+        view.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
         RequestManager requestManager;
         if (fragment != null) {
@@ -70,17 +78,8 @@ public class VideoUtils2 {
                 .into(view);
     }
 
-    public static void adjustVideoThumbView(@NonNull ImageView view) {
-        final int thumbWidth = App.getInstance(view.getContext()).getVideoThumbWidth();
-        final int thumbHeight = Utils.roundFloat(thumbWidth * 9f / 16f);
-
-        ViewGroup.LayoutParams lp = view.getLayoutParams();
-        if (lp.width != thumbWidth || lp.height != thumbHeight) {
-            lp.width = thumbWidth;
-            lp.height = thumbHeight;
-            view.setLayoutParams(lp);
-        }
-        view.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    public static int getVideoThumbWidth(@NonNull Context context) {
+        return context.getResources().getDimensionPixelSize(R.dimen.videoThumbWidth);
     }
 
     @Nullable

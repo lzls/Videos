@@ -9,7 +9,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,7 +28,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -39,6 +40,8 @@ import androidx.transition.TransitionManager;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
+import com.liuzhenlin.common.Configs;
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.observer.RotationObserver;
 import com.liuzhenlin.common.utils.DisplayCutoutManager;
@@ -46,7 +49,7 @@ import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.UiUtils;
-import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.common.view.AspectRatioFrameLayout;
 import com.liuzhenlin.texturevideoview.ExoVideoPlayer;
 import com.liuzhenlin.texturevideoview.IVideoPlayer;
 import com.liuzhenlin.texturevideoview.IjkVideoPlayer;
@@ -68,6 +71,8 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+import static com.liuzhenlin.common.Consts.SDK_VERSION;
+import static com.liuzhenlin.common.Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_FORWARD;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_REWIND;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_PAUSE;
@@ -83,6 +88,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     private static WeakReference<VideoActivity> sActivityInPiP;
 
     private View mStatusBarView;
+    private AspectRatioFrameLayout mVideoViewContainer;
     @Synthetic TextureVideoView mVideoView;
     private ImageView mLockUnlockOrientationButton;
 
@@ -104,8 +110,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
     private static final int PFLAG_STOPPED = 1 << 5;
 
-    private static int sStatusHeight;
-    private static int sStatusHeightInLandscapeOfNotchSupportDevice;
+    private int mStatusHeight;
     private DisplayCutoutManager mDisplayCutoutManager;
 
     private RotationObserver mRotationObserver;
@@ -235,9 +240,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.attachBaseContext(newBase);
         mLockOrientation = getString(R.string.lockScreenOrientation);
         mUnlockOrientation = getString(R.string.unlockScreenOrientation);
-        if (sStatusHeight == 0) {
-            sStatusHeight = App.getInstance(newBase).getStatusHeightInPortrait();
-        }
     }
 
     @Override
@@ -285,17 +287,36 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
+    private void updateStatusBarViewHeight(int height) {
+        ViewGroup.LayoutParams lp = mStatusBarView.getLayoutParams();
+        if (lp.height != height) {
+            lp.height = height;
+            mStatusBarView.setLayoutParams(lp);
+        }
+    }
+
     private void initViews(Bundle savedInstanceState) {
+        mStatusHeight = SystemBarUtils.getStatusHeight(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             mStatusBarView = findViewById(R.id.view_statusBar);
-            ViewGroup.LayoutParams lp = mStatusBarView.getLayoutParams();
-            if (lp.height != sStatusHeight) {
-                lp.height = sStatusHeight;
-                mStatusBarView.setLayoutParams(lp);
+            if (SDK_VERSION >= SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
+                ViewCompat.setOnApplyWindowInsetsListener(mStatusBarView, (v, insets) -> {
+                    Insets sysbarInsets = insets.getInsetsIgnoringVisibility(
+                            WindowInsetsCompat.Type.statusBars());
+                    mStatusHeight = sysbarInsets.top;
+                    boolean fullscreen = mVideoView.isInFullscreenMode();
+                    mVideoView.setFullscreenMode(fullscreen, getVideoTitleInsetTop(fullscreen));
+                    updateStatusBarViewHeight(sysbarInsets.top);
+                    return insets;
+                });
+            } else {
+                updateStatusBarViewHeight(mStatusHeight);
             }
 
             mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
         }
+
+        mVideoViewContainer = findViewById(R.id.container_videoview);
 
         mVideoView = findViewById(R.id.videoview);
         VideoPlayer videoPlayer = canUseExoPlayer() ?
@@ -543,16 +564,14 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         finishOtherInstanceInPiP();
 
         boolean inPictureInPictureMode = isInPictureInPictureMode();
+        boolean inMultiWindowMode = inPictureInPictureMode || isInMultiWindowMode();
 
-        getDisplayCutoutManager().setLayoutInDisplayCutout(true);
-        if (!inPictureInPictureMode) {
+        getDisplayCutoutManager().setLayoutInDisplayCutout(!inMultiWindowMode);
+        if (!inMultiWindowMode) {
             observeNotchSwitch(true);
         }
 
         setFullscreenMode(mVideoView.isInFullscreenMode());
-        if (inPictureInPictureMode) {
-            mStatusBarView.setVisibility(View.GONE);
-        }
 
         mRotationObserver = new RotationObserver(getHandler(), this) {
             @Override
@@ -599,8 +618,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         super.onRestart();
         mPrivateFlags &= ~PFLAG_STOPPED;
 
-        if (!isInPictureInPictureMode()) {
+        if (!isInMultiWindowMode()) {
             observeNotchSwitch(true);
+        }
+        if (!isInPictureInPictureMode()) {
             setAutoRotationEnabled(true);
         }
 
@@ -632,8 +653,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             mPresenter.recordCurrVideoProgress();
         }
 
-        if (!isInPictureInPictureMode()) {
+        if (!isInMultiWindowMode()) {
             observeNotchSwitch(false);
+        }
+        if (!isInPictureInPictureMode()) {
             setAutoRotationEnabled(false);
         }
 
@@ -664,13 +687,14 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @Override
-    public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
-                && sStatusHeightInLandscapeOfNotchSupportDevice == 0) {
-            sStatusHeightInLandscapeOfNotchSupportDevice = SystemBarUtils.getStatusHeight(this);
-            if (mVideoView.isInFullscreenMode()) {
-                mVideoView.setFullscreenMode(true, sStatusHeightInLandscapeOfNotchSupportDevice);
+    protected void onScreenWidthDpLevelChanged(
+            @NonNull ScreenWidthDpLevel oldLevel, @NonNull ScreenWidthDpLevel level) {
+        if (mVideoView != null) {
+            //noinspection rawtypes
+            TextureVideoView.PlayListAdapter adapter = mVideoView.getPlayListAdapter();
+            if (adapter != null) {
+                adapter.notifyItemRangeChanged(0, adapter.getItemCount(),
+                        IVideoPresenter.PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB);
             }
         }
     }
@@ -790,17 +814,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         getSwipeBackLayout().setGestureEnabled(!fullscreen);
 
         final boolean lastFullscreen = mVideoView.isInFullscreenMode();
+        final boolean inMultiWindowMode = isInMultiWindowMode();
 
-        showSystemBars(!fullscreen);
-        //@formatter:off
-        mVideoView.setFullscreenMode(fullscreen,
-                fullscreen && (
-                       !getDisplayCutoutManager().isNotchSupport()
-                    || (mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) == 0
-                              ) ? getDisplayCutoutManager().isNotchSupport() ?
-                                    sStatusHeightInLandscapeOfNotchSupportDevice : sStatusHeight
-                                : 0);
-        //@formatter:on
+        showSystemBars(inMultiWindowMode, fullscreen);
+        mVideoView.setFullscreenMode(fullscreen, getVideoTitleInsetTop(fullscreen));
         if (lastFullscreen != fullscreen || mVideoView.isControlsShowing()) {
             mVideoView.showControls(true, false);
         }
@@ -808,6 +825,20 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
         mPrivateFlags = mPrivateFlags & ~PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN
                 | (fullscreen ? PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN : 0);
+    }
+
+    private int getVideoTitleInsetTop(boolean fullscreen) {
+        if (!fullscreen) {
+            return 0;
+        }
+        if (isInMultiWindowMode()) {
+            return 0;
+        }
+        if (!getDisplayCutoutManager().isNotchSupport()
+                || (mPrivateFlags & PFLAG_SCREEN_ORIENTATION_PORTRAIT_IMMUTABLE) == 0) {
+            return mStatusHeight;
+        }
+        return 0;
     }
 
     @Synthetic void setFullscreenModeManually(boolean fullscreen) {
@@ -834,7 +865,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
     @Synthetic void resizeVideoView() {
         if (isInPictureInPictureMode()) {
-            setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            mVideoViewContainer.setAspectRatio(0);
             return;
         }
 
@@ -850,25 +881,26 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 }
 
                 if (layoutIsFullscreen) {
-                    setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT);
+                    mVideoViewContainer.setAspectRatio(0);
                     if (displayCutoutManager.isNotchSupport()) {
-                        /*
-                         * setPadding () has no effect on DrawerLayout, such as:
-                         *
-                         * mVideoView.setPadding(0, mNotchHeight, 0, 0);
-                         */
-                        for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                            UiUtils.setViewMargins(mVideoView.getChildAt(i),
-                                    0, displayCutoutManager.getNotchHeight(), 0, 0);
+                        if (isInMultiWindowMode()) {
+                            for (int i = mVideoView.getChildCount() - 1; i >= 0; i--) {
+                                UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
+                            }
+                        } else {
+                            for (int i = mVideoView.getChildCount() - 1; i >= 0; i--) {
+                                /*
+                                 * setPadding () has no effect on DrawerLayout, such as:
+                                 *
+                                 * mVideoView.setPadding(0, mNotchHeight, 0, 0);
+                                 */
+                                UiUtils.setViewMargins(mVideoView.getChildAt(i),
+                                        0, displayCutoutManager.getNotchHeight(), 0, 0);
+                            }
                         }
                     }
                 } else {
-                    final int screenWidth = App.getInstance(this).getRealScreenWidthIgnoreOrientation();
-                    // portrait w : h = 16 : 9
-                    final int minLayoutHeight = Utils.roundFloat((float) screenWidth / 16f * 9f);
-
-                    setVideoViewSize(screenWidth, minLayoutHeight);
+                    mVideoViewContainer.setAspectRatio(16f / 9f);
                     if (displayCutoutManager.isNotchSupport()) {
 //                        mVideoView.setPadding(0, 0, 0, 0);
                         for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
@@ -878,56 +910,43 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 }
                 break;
             case SCREEN_ORIENTATION_LANDSCAPE:
-                setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT);
-                if (displayCutoutManager.isNotchSupportOnEMUI()
-                        && displayCutoutManager.isNotchHidden()) {
-//                    mVideoView.setPadding(0, 0, 0, 0);
-                    for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                        UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
-                    }
-                } else if (displayCutoutManager.isNotchSupport()) {
-//                    mVideoView.setPadding(mNotchHeight, 0, 0, 0);
-                    for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                        UiUtils.setViewMargins(mVideoView.getChildAt(i),
-                                displayCutoutManager.getNotchHeight(), 0, 0, 0);
-                    }
-                }
-                break;
             case SCREEN_ORIENTATION_REVERSE_LANDSCAPE:
-                setVideoViewSize(ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT);
-                if (displayCutoutManager.isNotchSupportOnEMUI()
-                        && displayCutoutManager.isNotchHidden()) {
-//                    mVideoView.setPadding(0, 0, 0, 0);
-                    for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                        UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
-                    }
-                } else if (displayCutoutManager.isNotchSupport()) {
-//                    mVideoView.setPadding(0, 0, mNotchHeight, 0);
-                    for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                        UiUtils.setViewMargins(mVideoView.getChildAt(i),
-                                0, 0, displayCutoutManager.getNotchHeight(), 0);
+                mVideoViewContainer.setAspectRatio(0);
+                if (displayCutoutManager.isNotchSupport()) {
+                    if (isInMultiWindowMode()
+                            || displayCutoutManager.isNotchSupportOnEMUI()
+                                    && displayCutoutManager.isNotchHidden()) {
+//                        mVideoView.setPadding(0, 0, 0, 0);
+                        for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
+                            UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
+                        }
+                    } else {
+                        final boolean landscape = mScreenOrientation == SCREEN_ORIENTATION_LANDSCAPE;
+                        for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
+                            if (landscape) {
+//                                mVideoView.setPadding(mNotchHeight, 0, 0, 0);
+                                UiUtils.setViewMargins(mVideoView.getChildAt(i),
+                                        displayCutoutManager.getNotchHeight(), 0, 0, 0);
+                            } else {
+//                                mVideoView.setPadding(0, 0, mNotchHeight, 0);
+                                UiUtils.setViewMargins(mVideoView.getChildAt(i),
+                                        0, 0, displayCutoutManager.getNotchHeight(), 0);
+                            }
+                        }
                     }
                 }
                 break;
         }
     }
 
-    private void setVideoViewSize(int layoutWidth, int layoutHeight) {
-        ViewGroup.LayoutParams lp = mVideoView.getLayoutParams();
-        lp.width = layoutWidth;
-        lp.height = layoutHeight;
-        mVideoView.setLayoutParams(lp);
-    }
-
-    private void showSystemBars(boolean show) {
+    private void showSystemBars(boolean inMultiWindowMode, boolean fullscreen) {
         Window window = getWindow();
-        if (show) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        View decorView = window.getDecorView();
+        if (!fullscreen || inMultiWindowMode) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
+                    && (!inMultiWindowMode || !fullscreen)) {
                 mStatusBarView.setVisibility(View.VISIBLE);
 
-                View decorView = window.getDecorView();
                 decorView.setOnSystemUiVisibilityChangeListener(null);
                 // Status bar is set to transparent
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -946,6 +965,19 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY));
             } else {
+                if (mStatusBarView != null) {
+                    mStatusBarView.setVisibility(View.GONE);
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    decorView.setOnSystemUiVisibilityChangeListener(null);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        SystemBarUtils.setStatusBackgroundColor(
+                                window, Configs.VIDEO_VIEW_BACKGROUND_COLOR);
+                    } else {
+                        SystemBarUtils.setTranslucentStatus(window, false);
+                    }
+                }
                 SystemBarUtils.showSystemBars(window, true);
             }
         } else {
@@ -955,15 +987,24 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             SystemBarUtils.showSystemBars(window, false);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                final View decorView = window.getDecorView();
-                final int visibility = decorView.getSystemUiVisibility();
-                decorView.setOnSystemUiVisibilityChangeListener(newVisibility -> {
-                    if (newVisibility != visibility) {
-                        decorView.setSystemUiVisibility(visibility);
-                    }
-                });
+                decorView.setOnSystemUiVisibilityChangeListener(
+                        newVisibility -> SystemBarUtils.showSystemBars(window, false));
             }
         }
+    }
+
+    @Override
+    public void onMultiWindowModeChanged(boolean isInMultiWindowMode) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode);
+        observeNotchSwitch(!isInMultiWindowMode);
+        if (mDisplayCutoutManager != null
+                && ViewCompat.isAttachedToWindow(getWindow().getDecorView())) {
+            mDisplayCutoutManager.setLayoutInDisplayCutout(!isInMultiWindowMode);
+        }
+        boolean fullscreen = mVideoView.isInFullscreenMode();
+        showSystemBars(isInMultiWindowMode, fullscreen);
+        mVideoView.setFullscreenMode(fullscreen, getVideoTitleInsetTop(fullscreen));
+        resizeVideoView();
     }
 
     @SuppressLint("SwitchIntDef")
@@ -994,10 +1035,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
             sActivityInPiP = new WeakReference<>(this);
 
-            observeNotchSwitch(false);
             setAutoRotationEnabled(false);
 
-            mStatusBarView.setVisibility(View.GONE);
             showLockUnlockOrientationButton(false);
             mVideoProgressInPiP.setVisibility(View.VISIBLE);
             mRefreshVideoProgressInPiPTask = new RefreshVideoProgressInPiPTask();
@@ -1019,10 +1058,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 return;
             }
 
-            observeNotchSwitch(true);
             setAutoRotationEnabled(true);
 
-            mStatusBarView.setVisibility(View.VISIBLE);
             mVideoProgressInPiP.setVisibility(View.GONE);
 
             mVideoView.showControls(true);
@@ -1097,7 +1134,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             videoImage = itemView.findViewById(R.id.image_video);
             videoNameText = itemView.findViewById(R.id.text_videoName);
             videoProgressDurationText = itemView.findViewById(R.id.text_videoProgressAndDuration);
-            VideoUtils2.adjustVideoThumbView(videoImage);
         }
 
         @Override
