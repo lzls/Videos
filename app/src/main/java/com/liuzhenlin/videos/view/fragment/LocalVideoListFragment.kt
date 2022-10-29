@@ -50,7 +50,6 @@ import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.common.windowhost.FocusObservableDialog
-import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
@@ -608,21 +607,13 @@ class LocalVideoListFragment : BaseFragment(),
 
         fun separateToppedItemsFromUntoppedOnes(holder: VideoListViewHolder, position: Int) {
             val context = contextThemedFirst
-            val lp = holder.topButton.layoutParams
-
             if (mVideoListItems[position].isTopped) {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 120f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = CANCEL_TOP
             } else {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.default_selector_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 90f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = TOP
             }
         }
