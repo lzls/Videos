@@ -13,7 +13,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="10dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+            android:paddingRight="@dimen/dialogPreferredContentPaddingHorizontal"
             android:drawableTop="@drawable/ic_launcher"
             android:text="@string/version"
             android:textSize="14.5sp"
@@ -23,8 +26,8 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
+            android:paddingLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+            android:paddingRight="@dimen/dialogPreferredContentPaddingHorizontal"
             android:text="@string/projectLink"
             android:textSize="14.5sp"
             android:textAlignment="center"
@@ -36,8 +39,8 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
+            android:paddingLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+            android:paddingRight="@dimen/dialogPreferredContentPaddingHorizontal"
             android:layout_marginTop="15dp"
             android:text="@string/copyright"
             android:textSize="14.5sp"
@@ -48,7 +51,10 @@
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="10dp">
+            android:paddingLeft="@dimen/dialogPreferredButtonMarginHorizontal"
+            android:paddingTop="@dimen/dialogPreferredButtonMarginVertical"
+            android:paddingRight="@dimen/dialogPreferredButtonMarginHorizontal"
+            android:paddingBottom="@dimen/dialogPreferredButtonMarginVertical">
 
             <TextView
                 android:id="@+id/btn_ok_aboutAppDialog"

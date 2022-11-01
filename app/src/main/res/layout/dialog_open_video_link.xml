@@ -13,9 +13,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="5dp"
-            android:paddingTop="5dp"
-            android:paddingRight="5dp"
+            android:paddingLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+            android:paddingTop="@dimen/dialogPreferredContentPaddingVertical"
+            android:paddingRight="@dimen/dialogPreferredContentPaddingHorizontal"
             android:orientation="vertical">
 
             <com.google.android.material.textfield.TextInputLayout
@@ -58,7 +58,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="0"
         android:paddingTop="2.5dp"
-        android:paddingBottom="10dp">
+        android:paddingBottom="@dimen/dialogPreferredContentPaddingVertical">
 
         <TextView
             android:id="@+id/btn_cancel_openVideoLinkDialog"
@@ -76,7 +76,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
+            android:layout_marginStart="5dp"
+            android:layout_marginRight="@dimen/dialogPreferredButtonMarginHorizontal"
+            android:layout_marginEnd="@dimen/dialogPreferredButtonMarginHorizontal"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
             android:background="@drawable/selector_dialog_button"

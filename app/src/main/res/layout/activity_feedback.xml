@@ -12,7 +12,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+        android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
         android:orientation="horizontal">
 
         <TextView
@@ -67,7 +70,10 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="10dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+                android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
                 android:background="@color/themeColor">
 
                 <EditText
@@ -101,8 +107,11 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:padding="10dp"
+                android:layout_marginTop="22dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+                android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
                 android:background="@color/themeColor">
 
                 <TextView
@@ -134,7 +143,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12.5dp"
-                    android:layout_marginBottom="2.5dp"
+                    android:layout_marginBottom="5dp"
                     android:layout_below="@id/text_pictures"
                     android:scrollbars="none"
                     android:overScrollMode="never"
@@ -149,8 +158,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="50dp"
-                android:layout_marginTop="20dp"
-                android:padding="10dp"
+                android:layout_marginTop="22dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+                android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
                 android:background="@color/themeColor">
 
                 <TextView
@@ -187,9 +199,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                android:layout_marginLeft="10dp"
+                android:layout_marginLeft="@dimen/contentPreferredPaddingHorizontal"
                 android:layout_marginTop="20dp"
-                android:layout_marginRight="10dp"
+                android:layout_marginRight="@dimen/contentPreferredPaddingHorizontal"
                 android:layout_marginBottom="20dp"
                 android:enabled="false"
                 android:text="@string/commit"

@@ -9,8 +9,8 @@
         android:id="@+id/text_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
+        android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+        android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
         android:paddingTop="7dp"
         android:paddingBottom="7dp"
         android:background="@color/videolistOptionsPopupTitleBgColor"
@@ -30,8 +30,8 @@
         android:layout_height="wrap_content"
         android:paddingTop="7dp"
         android:paddingBottom="8dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
+        android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+        android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
         android:background="@color/themeColor"
         android:orientation="horizontal">
 

@@ -193,8 +193,12 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                     final int width = right - left;
                     if (width != oldWidth) {
                         final int videoThumbWidth = VideoUtils2.getVideoThumbWidth(this);
+                        final int thumbMarginHorizontal =
+                                getResources().getDimensionPixelSize(R.dimen.videoThumbMarginEnd)
+                                        + getResources().getDimensionPixelSize(
+                                                R.dimen.contentPreferredPaddingHorizontal);
                         ((SlidingDrawerLayout) v).setStartDrawerWidthPercent(
-                                1f - (videoThumbWidth + DensityUtils.dp2px(app, 20f)) / (float) width);
+                                1f - (videoThumbWidth + thumbMarginHorizontal) / (float) width);
                     }
                 });
         mSlidingDrawerLayout.addOnDrawerScrollListener(new SlidingDrawerLayout.SimpleOnDrawerScrollListener() {
@@ -319,7 +323,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
                     mTitleText.getLayoutParams();
             int ttMarginStart = Math.max(
-                    DensityUtils.dp2px(this, 10f) /* thumb margin start */
+                    getResources().getDimensionPixelSize(R.dimen.contentPreferredPaddingHorizontal) /* thumb margin start */
                             + VideoUtils2.getVideoThumbWidth(this)
                             - hauilp.leftMargin - hauilp.rightMargin
                             - mHomeAsUpIndicator.getWidth() - mTitleText.getWidth(),

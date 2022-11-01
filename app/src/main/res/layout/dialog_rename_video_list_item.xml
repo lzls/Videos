@@ -9,7 +9,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="10dp">
+        android:paddingLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+        android:paddingTop="@dimen/dialogPreferredContentPaddingVertical"
+        android:paddingRight="@dimen/dialogPreferredContentPaddingHorizontal"
+        android:paddingBottom="@dimen/dialogPreferredContentPaddingVertical">
 
         <LinearLayout
             android:layout_width="match_parent"

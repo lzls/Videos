@@ -335,14 +335,16 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             convertView.setTag(vh);
 
             final int screenWidth = App.getInstance(this).getRealScreenWidthIgnoreOrientation();
-            final int dp_20 = DensityUtils.dp2px(this, 20f);
+            final int contentPaddingHorizontal =
+                    2 * getResources().getDimensionPixelSize(R.dimen.contentPreferredPaddingHorizontal);
+            final int imageMargin = DensityUtils.dp2px(this, 8);
 
             ViewGroup.LayoutParams lp = convertView.getLayoutParams();
             lp.height = lp.width = com.liuzhenlin.common.utils.
-                    Utils.roundFloat((screenWidth - dp_20 * 1.5f) / 3f);
+                    Utils.roundFloat((screenWidth - contentPaddingHorizontal - imageMargin * 2) / 3f);
 
             ViewGroup.LayoutParams plp = parent.getLayoutParams();
-            plp.width = screenWidth - dp_20;
+            plp.width = screenWidth - contentPaddingHorizontal;
             plp.height = lp.height;
         } else {
             vh = (PictureGridViewHolder) convertView.getTag();
