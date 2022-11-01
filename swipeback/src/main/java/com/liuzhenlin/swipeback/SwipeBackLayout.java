@@ -506,21 +506,26 @@ public class SwipeBackLayout extends FrameLayout {
      * @see #setEdgeShadow(int, int)
      */
     public void setEdgeShadow(@Nullable Drawable shadow, @Edge int edgeFlags) {
-        if ((edgeFlags & EDGE_LEFT) != 0) {
+        boolean supportsRtl = (mViewFlags & FLAG_SUPPORTS_RTL) != 0;
+        if ((edgeFlags & EDGE_LEFT) != 0
+                || !supportsRtl && (edgeFlags & EDGE_START) != 0) {
             mViewFlags |= FLAG_LEFT_EDGE_SHADOW_SPECIFIED;
             mShadowLeft = shadow;
         }
-        if ((edgeFlags & EDGE_RIGHT) != 0) {
+        if ((edgeFlags & EDGE_RIGHT) != 0
+                || !supportsRtl && (edgeFlags & EDGE_END) != 0) {
             mViewFlags |= FLAG_RIGHT_EDGE_SHADOW_SPECIFIED;
             mShadowRight = shadow;
         }
-        if ((edgeFlags & EDGE_START) != 0) {
-            mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
-            mShadowStart = shadow;
-        }
-        if ((edgeFlags & EDGE_END) != 0) {
-            mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
-            mShadowEnd = shadow;
+        if (supportsRtl) {
+            if ((edgeFlags & EDGE_START) != 0) {
+                mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
+                mShadowStart = shadow;
+            }
+            if ((edgeFlags & EDGE_END) != 0) {
+                mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
+                mShadowEnd = shadow;
+            }
         }
         mViewFlags &= ~FLAG_EDGE_SHADOWS_RESOLVED;
         resolveEdgeShadowsIfDirectionResolved();
