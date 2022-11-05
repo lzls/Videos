@@ -5,5 +5,5 @@
     <color name="colorAccent">#FF4081</color>
 
     <color name="web_player_notification_view_background">#e62920</color>
-    <color name="youtube_watch_page_actionbar_background">#212121</color>
+    <color name="youtube_watch_page_actionbar_background">#0f0f0f</color>
 </resources>
