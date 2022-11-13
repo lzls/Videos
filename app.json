@@ -53,11 +53,11 @@
       "7. 优化更新日志悬挂缩进的效果"
     ],
     "beta": {
-      "versionCode": 57,
-      "versionName": "2.1.3-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.3-beta02.apk",
-      "appLength": 31930591,
-      "appSha1": "6427f544db365316c2f4ff0431f759fd0ed0b503",
+      "versionCode": 58,
+      "versionName": "2.2-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2-beta01.apk",
+      "appLength": 31944649,
+      "appSha1": "855461c0d68cf8ae8fda265c0ee09e11587b3699",
       "updateLogs": [
         "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
         "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
@@ -70,15 +70,17 @@
         "9. 修复刷新YouTube视频播放通知时可能引起播放进程崩溃的问题",
         "10.解决在部分设备上，YouTube视频播放页以全屏模式从后台再次恢复到前台时，页面状态栏和导航栏会重新显现的问题",
         "11.将可显示的反馈文本行数放宽到最多为10行",
-        "12.支持外部网络链接跳转至应用进行播放音视频"
+        "12.支持外部网络链接跳转至应用进行播放音视频",
+        "13.适配分屏和弹出窗口",
+        "14.调整UI内容边距，使UI更加松散美观"
       ]
     },
     "dev": {
-      "versionCode": 57,
-      "versionName": "2.1.3-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.3-beta02.apk",
-      "appLength": 31930591,
-      "appSha1": "6427f544db365316c2f4ff0431f759fd0ed0b503",
+      "versionCode": 58,
+      "versionName": "2.2-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2-beta01.apk",
+      "appLength": 31944649,
+      "appSha1": "855461c0d68cf8ae8fda265c0ee09e11587b3699",
       "updateLogs": [
         "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
         "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
@@ -91,7 +93,9 @@
         "9. 修复刷新YouTube视频播放通知时可能引起播放进程崩溃的问题",
         "10.解决在部分设备上，YouTube视频播放页以全屏模式从后台再次恢复到前台时，页面状态栏和导航栏会重新显现的问题",
         "11.将可显示的反馈文本行数放宽到最多为10行",
-        "12.支持外部网络链接跳转至应用进行播放音视频"
+        "12.支持外部网络链接跳转至应用进行播放音视频",
+        "13.适配分屏和弹出窗口",
+        "14.调整UI内容边距，使UI更加松散美观"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
