@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.FrameLayout;
 
@@ -220,32 +221,42 @@ public class SwipeBackLayout extends FrameLayout {
     /**
      * Attach this layout to the given 'activity'
      */
-    public void attachToActivity(ISwipeBackActivity activity) {
-        Activity host = (Activity) activity;
-        Window window = host.getWindow();
-        ViewGroup decor = (ViewGroup) window.getDecorView();
-
+    /*package*/ void attachActivityContentRoot(ISwipeBackActivity activity, View contentRoot) {
         mActivity = activity;
+        mContentView = contentRoot;
+        removeAllViews();
+        addView(contentRoot);
+
+        Window window = ((Activity) activity).getWindow();
+        window.setBackgroundDrawableResource(android.R.color.transparent);
+        window.setWindowAnimations(R.style.WindowAnimations_SwipeBackActivity);
         if (Utils.isWindowTranslucentOrFloatingTheme(window)) {
             mViewFlags |= FLAG_WINDOW_IS_TRANSLUCENT;
         }
-        mContentView = decor.getChildAt(0);
-        mContentView.setBackgroundResource(
-                Utils.getThemeAttrRes(host, android.R.attr.windowBackground));
 
-        decor.removeViewAt(0);
-        addView(mContentView);
-        decor.addView(this, 0);
+        // Let's wait till the global layout happens since the host Activity may have not been
+        // themed by AppCompat, or applied any Resources configuration changes.
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                contentRoot.setBackgroundResource(
+                        Utils.getThemeAttrRes(window.getContext(), android.R.attr.windowBackground));
+            }
+        });
     }
 
     /**
      * Attach the view created in fragment's
      * {@link Fragment#onCreateView(LayoutInflater, ViewGroup, Bundle)} method to this layout.
      */
-    public void attachFragmentView(ISwipeBackFragment fragment, View view) {
+    /*package*/ void attachFragmentView(ISwipeBackFragment fragment, View view) {
         mFragment = fragment;
-        mContentView = view;
-        addView(view);
+        // Creates a wrap to handle possible child margins
+        mContentView = new FrameLayout(getContext());
+        ((ViewGroup) mContentView).addView(view);
+        removeAllViews();
+        addView(mContentView);
     }
 
     /**
@@ -506,21 +517,26 @@ public class SwipeBackLayout extends FrameLayout {
      * @see #setEdgeShadow(int, int)
      */
     public void setEdgeShadow(@Nullable Drawable shadow, @Edge int edgeFlags) {
-        if ((edgeFlags & EDGE_LEFT) != 0) {
+        boolean supportsRtl = (mViewFlags & FLAG_SUPPORTS_RTL) != 0;
+        if ((edgeFlags & EDGE_LEFT) != 0
+                || !supportsRtl && (edgeFlags & EDGE_START) != 0) {
             mViewFlags |= FLAG_LEFT_EDGE_SHADOW_SPECIFIED;
             mShadowLeft = shadow;
         }
-        if ((edgeFlags & EDGE_RIGHT) != 0) {
+        if ((edgeFlags & EDGE_RIGHT) != 0
+                || !supportsRtl && (edgeFlags & EDGE_END) != 0) {
             mViewFlags |= FLAG_RIGHT_EDGE_SHADOW_SPECIFIED;
             mShadowRight = shadow;
         }
-        if ((edgeFlags & EDGE_START) != 0) {
-            mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
-            mShadowStart = shadow;
-        }
-        if ((edgeFlags & EDGE_END) != 0) {
-            mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
-            mShadowEnd = shadow;
+        if (supportsRtl) {
+            if ((edgeFlags & EDGE_START) != 0) {
+                mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
+                mShadowStart = shadow;
+            }
+            if ((edgeFlags & EDGE_END) != 0) {
+                mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
+                mShadowEnd = shadow;
+            }
         }
         mViewFlags &= ~FLAG_EDGE_SHADOWS_RESOLVED;
         resolveEdgeShadowsIfDirectionResolved();
@@ -620,8 +636,8 @@ public class SwipeBackLayout extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         if (mContentView != null) {
-            mContentView.layout(
-                    mContentLeft, top, mContentLeft + mContentView.getMeasuredWidth(), bottom);
+            mContentView.layout(mContentLeft, 0, mContentLeft + mContentView.getMeasuredWidth(),
+                    mContentView.getMeasuredHeight());
         }
     }
 

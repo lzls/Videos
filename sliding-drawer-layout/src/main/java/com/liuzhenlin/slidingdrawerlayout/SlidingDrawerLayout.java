@@ -693,12 +693,15 @@ public class SlidingDrawerLayout extends ViewGroup {
      *                                  the above mentioned.
      */
     public void setStartDrawerWidthPercent(float percent) {
-        checkDrawerWidthPercent(percent);
-
-        mStartDrawerWidthPercent = percent;
-        mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
-                | FLAG_START_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
-        resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        if ((mFlags & FLAG_SUPPORTS_RTL) == 0) {
+            setLeftDrawerWidthPercent(percent);
+        } else {
+            checkDrawerWidthPercent(percent);
+            mStartDrawerWidthPercent = percent;
+            mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
+                    | FLAG_START_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
+            resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        }
     }
 
     /**
@@ -733,12 +736,15 @@ public class SlidingDrawerLayout extends ViewGroup {
      *                                  the above mentioned.
      */
     public void setEndDrawerWidthPercent(float percent) {
-        checkDrawerWidthPercent(percent);
-
-        mEndDrawerWidthPercent = percent;
-        mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
-                | FLAG_END_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
-        resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        if ((mFlags & FLAG_SUPPORTS_RTL) == 0) {
+            setRightDrawerWidthPercent(percent);
+        } else {
+            checkDrawerWidthPercent(percent);
+            mEndDrawerWidthPercent = percent;
+            mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
+                    | FLAG_END_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
+            resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        }
     }
 
     /**
@@ -747,6 +753,13 @@ public class SlidingDrawerLayout extends ViewGroup {
      * @see #setDrawerEnabledInTouch(View, boolean)
      */
     public void setDrawerEnabledInTouch(@EdgeGravity int gravity, boolean enabled) {
+        if ((mFlags & FLAG_SUPPORTS_RTL) == 0) {
+            if (gravity == Gravity.START) {
+                gravity = Gravity.LEFT;
+            } else if (gravity == Gravity.END) {
+                gravity = Gravity.RIGHT;
+            }
+        }
         switch (gravity) {
             case Gravity.LEFT:
                 if (enabled) {
@@ -756,7 +769,6 @@ public class SlidingDrawerLayout extends ViewGroup {
                 }
                 mFlags |= FLAG_LEFT_DRAWER_TOUCH_ABILITY_DEFINED;
                 break;
-
             case Gravity.RIGHT:
                 if (enabled) {
                     mFlags |= FLAG_RIGHT_DRAWER_ENABLED_IN_TOUCH;
@@ -765,7 +777,6 @@ public class SlidingDrawerLayout extends ViewGroup {
                 }
                 mFlags |= FLAG_RIGHT_DRAWER_TOUCH_ABILITY_DEFINED;
                 break;
-
             case Gravity.START:
                 if (enabled) {
                     mFlags |= FLAG_START_DRAWER_ENABLED_IN_TOUCH;
@@ -779,7 +790,6 @@ public class SlidingDrawerLayout extends ViewGroup {
                 //@formatter:on
                 resolveDrawerTouchAbilitiesIfDirectionResolved();
                 break;
-
             case Gravity.END:
                 if (enabled) {
                     mFlags |= FLAG_END_DRAWER_ENABLED_IN_TOUCH;

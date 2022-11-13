@@ -6,6 +6,7 @@
 package com.liuzhenlin.common.utils;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.View;
@@ -22,15 +23,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.R;
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableView;
 import com.liuzhenlin.common.windowhost.FocusObservableWindowHost;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
+import static androidx.core.view.WindowInsetsCompat.Type.statusBars;
 
 /**
  * @author 刘振林
@@ -397,5 +402,110 @@ public class UiUtils {
      */
     public static boolean isLayoutValid(@NonNull View view) {
         return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+    }
+
+    public static boolean isLandscapeMode(@NonNull Context context) {
+        return context.getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
+    }
+
+    public static int getStableWindowInsetsTop(@NonNull Window window) {
+        return getStableWindowInsetsTop(window.getDecorView());
+    }
+
+    public static int getStableWindowInsetsTop(@NonNull View rootView) {
+        if (!ViewCompat.isAttachedToWindow(rootView)) {
+            throw new IllegalStateException(
+                    "root view [" + rootView + "] is not attached to a window");
+        }
+
+        WindowInsetsCompat windowInsets = ViewCompat.getRootWindowInsets(rootView);
+        if (windowInsets != null) {
+            return windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.statusBars())
+                    .top;
+        }
+        return SystemBarUtils.getStatusHeight(rootView.getContext());
+    }
+
+    public static void insertTopMarginToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
+        if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
+            ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
+                insertTopMarginToActionBarIfLayoutUnderStatus(
+                        v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                return insets;
+            });
+        } else {
+            Utils.postOnLayoutValid(actionbar, () -> {
+                int statusHeight = SystemBarUtils.getStatusHeight(actionbar.getContext());
+                insertTopMarginToActionBarIfLayoutUnderStatus(actionbar, statusHeight);
+            });
+        }
+    }
+
+    private static void insertTopMarginToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+        ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            Integer oldInsetTop = (Integer) actionbar.getTag(R.id.tag_marginInsetTop);
+            if (oldInsetTop == null) {
+                oldInsetTop = 0;
+            }
+            int insetTop = isLayoutUnderStatusBar(actionbar) ? statusHeight : 0;
+            if (insetTop != oldInsetTop) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                mlp.topMargin = mlp.topMargin - oldInsetTop + insetTop;
+                actionbar.setTag(R.id.tag_marginInsetTop, insetTop);
+                actionbar.setLayoutParams(mlp);
+            }
+        }
+    }
+
+    public static void insertTopPaddingToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
+        if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
+            ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
+                insertTopPaddingToActionBarIfLayoutUnderStatus(
+                        v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                return insets;
+            });
+        } else {
+            Utils.postOnLayoutValid(actionbar, () -> {
+                int statusHeight = SystemBarUtils.getStatusHeight(actionbar.getContext());
+                insertTopPaddingToActionBarIfLayoutUnderStatus(actionbar, statusHeight);
+            });
+        }
+    }
+
+    private static void insertTopPaddingToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+        Integer oldInsetTop = (Integer) actionbar.getTag(R.id.tag_paddingInsetTop);
+        if (oldInsetTop == null) {
+            oldInsetTop = 0;
+        }
+        int insetTop = isLayoutUnderStatusBar(actionbar) ? statusHeight : 0;
+        if (insetTop != oldInsetTop) {
+            ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
+            switch (lp.height) {
+                case ViewGroup.LayoutParams.WRAP_CONTENT:
+                case ViewGroup.LayoutParams.MATCH_PARENT:
+                    break;
+                default:
+                    lp.height = lp.height - oldInsetTop + insetTop;
+            }
+            actionbar.setTag(R.id.tag_paddingInsetTop, insetTop);
+            actionbar.setPadding(
+                    actionbar.getPaddingLeft(),
+                    actionbar.getPaddingTop() - oldInsetTop + insetTop,
+                    actionbar.getPaddingRight(),
+                    actionbar.getPaddingBottom());
+        }
+    }
+
+    // XXX: make this generic enough to be public
+    private static boolean isLayoutUnderStatusBar(View actionbar) {
+        int[] location = new int[2];
+        actionbar.getLocationOnScreen(location);
+        Integer marginInsetTop = (Integer) actionbar.getTag(R.id.tag_marginInsetTop);
+        if (marginInsetTop == null) {
+            marginInsetTop = 0;
+        }
+        return location[1] - marginInsetTop < 10;
     }
 }

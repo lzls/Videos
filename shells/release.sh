@@ -162,8 +162,8 @@ echo "$RELEASE_TAG_COMMIT_ID" | grep -E '^[[:xdigit:]]{40}$' >/dev/null &&
 verifyLastOpSuccessed "git tag v$APP_VERSION_NAME does not exist in the commit tree"
 
 
-echoBoldBlueText "\nEnsuring $PROJECTS_ROOT/Videos is up-to-date on its release branch..."
-ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO release "$PROJECTS_ROOT"/Videos &&
+echoBoldBlueText "\nEnsuring $PROJECTS_ROOT/Videos is up-to-date on its beta branch..."
+ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO beta "$PROJECTS_ROOT"/Videos &&
   if [ $AMEND -eq $true ] \
       && git log --pretty=oneline \
           | grep "Merge tag \('\|\"\)v$APP_VERSION_NAME\('\|\"\)" >/dev/null; then
@@ -171,12 +171,30 @@ ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO release "$PROJECTS_ROOT"/Vide
   fi &&
   trace git merge "v$APP_VERSION_NAME" --no-ff --no-edit &&
   if [ $AMEND -eq $true ]; then
-    _last_commit=$(git remote)/release
+    _last_commit=$(git remote)/beta
     trace gitAmendCommit --date="$(gitGetFormattedLog --format='%ad' --head="$_last_commit" -1)" \
                          --commit-date="$(gitGetFormattedLog --format='%cd' --head="$_last_commit" -1)"
   fi &&
-  trace git checkout dev
+  if [ $BETA -eq $true ]; then trace git checkout dev; fi
 verifyLastOpSuccessed
+
+if [ $BETA -ne $true ]; then
+  echoBoldBlueText "\nEnsuring $PROJECTS_ROOT/Videos is up-to-date on its release branch..."
+  ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO release "$PROJECTS_ROOT"/Videos &&
+    if [ $AMEND -eq $true ] \
+        && git log --pretty=oneline \
+            | grep "Merge tag \('\|\"\)v$APP_VERSION_NAME\('\|\"\)" >/dev/null; then
+      trace git reset --hard HEAD~1
+    fi &&
+    trace git merge "v$APP_VERSION_NAME" --no-ff --no-edit &&
+    if [ $AMEND -eq $true ]; then
+      _last_commit=$(git remote)/release
+      trace gitAmendCommit --date="$(gitGetFormattedLog --format='%ad' --head="$_last_commit" -1)" \
+          --commit-date="$(gitGetFormattedLog --format='%cd' --head="$_last_commit" -1)"
+    fi &&
+    trace git checkout dev
+  verifyLastOpSuccessed
+fi
 
 echoBoldBlueText "\nEnsuring $SERVICE_PROJECTS_ROOT/Videos-master is up-to-date on its push branch..."
 ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO master "$SERVICE_PROJECTS_ROOT"/Videos-master
@@ -199,11 +217,19 @@ cd "$SERVICE_PROJECTS_ROOT"/Videos &&
   commitAndPush "$COMMIT_MSG" $SSH_APKS_HOLDER_VIDEOS_REPO master master:release
 verifyLastOpSuccessed --pause-only
 
-echoBoldBlueText '\nPushing the new release tag and the latest code to dev and release branches of' \
+_branches=
+if [ $BETA -eq $true ]; then
+  _branches='dev and beta'
+else
+  _branches='dev, beta and release'
+fi
+echoBoldBlueText "\nPushing the new release tag and the latest code to $_branches branches of" \
   'https://github.com/lzls/Videos.git...'
+# shellcheck disable=SC2046
 cd "$PROJECTS_ROOT"/Videos &&
   trace git push $SSH_LZLS_VIDEOS_REPO tags/"v$APP_VERSION_NAME" \
-    dev:dev release:release $(__force)
+      dev:dev beta:beta $(if [ $BETA -ne $true ]; then echo release:release; else echo ''; fi) \
+      $(__force)
 verifyLastOpSuccessed --pause-only
 
 echoBoldBlueText '\nPushing information of app upgrade to the master branch of' \

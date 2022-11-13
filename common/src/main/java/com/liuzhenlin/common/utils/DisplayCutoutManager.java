@@ -9,7 +9,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import android.view.DisplayCutout;
 import android.view.View;
 import android.view.Window;
 
@@ -95,8 +94,7 @@ public class DisplayCutoutManager {
         View decorView = window.getDecorView();
         Context context = window.getContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            DisplayCutout dc = decorView.getRootWindowInsets().getDisplayCutout();
-            if (dc != null) {
+            if (DisplayCutoutUtils.hasNotchInScreenSinceP(decorView)) {
                 mIsNotchSupport = true;
                 if (OSHelper.isEMUI()) {
                     mIsNotchSupportOnEMUI = true;
@@ -105,7 +103,7 @@ public class DisplayCutoutManager {
                     mIsNotchSupportOnMIUI = true;
                     mIsNotchHidden = DisplayCutoutUtils.isNotchHiddenForMIUI(context);
                 }
-                mNotchHeight = dc.getSafeInsetTop();
+                mNotchHeight = DisplayCutoutUtils.getNotchHeightSinceP(decorView);
             }
         } else if (OSHelper.isEMUI()) {
             if (DisplayCutoutUtils.hasNotchInScreenForEMUI(context)) {

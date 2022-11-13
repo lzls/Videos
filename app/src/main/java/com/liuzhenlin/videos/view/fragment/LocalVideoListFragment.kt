@@ -20,10 +20,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.method.ScrollingMovementMethod
 import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatDialog
@@ -36,6 +38,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
@@ -47,9 +50,7 @@ import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.common.windowhost.FocusObservableDialog
-import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
-import com.liuzhenlin.swipeback.SwipeBackFragment
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -67,7 +68,7 @@ import kotlin.math.min
 /**
  * @author 刘振林
  */
-class LocalVideoListFragment : SwipeBackFragment(),
+class LocalVideoListFragment : BaseFragment(),
         VideoListItemOpCallback<VideoListItem>, SwipeRefreshLayout.OnRefreshListener,
         View.OnClickListener, View.OnLongClickListener, OnBackPressedListener {
 
@@ -214,6 +215,12 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         isSwipeBackEnabled = false
         return attachViewToSwipeBackLayout(contentView)
+    }
+
+    override fun onScreenWidthDpLevelChanged(
+            oldLevel: ScreenWidthDpLevel, level: ScreenWidthDpLevel) {
+        mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
+                PAYLOAD_REFRESH_VIDEO_THUMB or PAYLOAD_REFRESH_VIDEODIR_THUMB)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -515,7 +522,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     (holder as VideoViewHolder).videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(progress, duration)
                 }
-                if (payload and PAYLOAD_REFRESH_VIDEODIR_THUMB != 0) {
+                if (payload and (PAYLOAD_REFRESH_VIDEO_THUMB or PAYLOAD_REFRESH_VIDEODIR_THUMB) != 0) {
                     loadItemImagesIfNotScrolling(holder)
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT != 0) {
@@ -600,21 +607,13 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         fun separateToppedItemsFromUntoppedOnes(holder: VideoListViewHolder, position: Int) {
             val context = contextThemedFirst
-            val lp = holder.topButton.layoutParams
-
             if (mVideoListItems[position].isTopped) {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 120f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = CANCEL_TOP
             } else {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.default_selector_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 90f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = TOP
             }
         }
@@ -640,10 +639,6 @@ class LocalVideoListFragment : SwipeBackFragment(),
             val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
             val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
             val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
-
-            init {
-                VideoUtils2.adjustVideoThumbView(videoImage)
-            }
         }
 
         inner class VideoDirViewHolder(itemView: View) : VideoListViewHolder(itemView) {
@@ -651,10 +646,6 @@ class LocalVideoListFragment : SwipeBackFragment(),
             val videodirNameText: TextView = itemView.findViewById(R.id.text_videodirName)
             val videodirSizeText: TextView = itemView.findViewById(R.id.text_videodirSize)
             val videoCountText: TextView = itemView.findViewById(R.id.text_videoCount)
-
-            init {
-                VideoUtils2.adjustVideoThumbView(videodirImage)
-            }
         }
     }
 
@@ -878,21 +869,12 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
                 mTitleWindowFrame = View.inflate(
                         v.context, R.layout.popup_window_main_title, null) as FrameLayout
-                Utils.postOnLayoutValid(mTitleWindowFrame!!, object : Runnable {
-                    init {
-                        mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
-                                .setOnClickListener(this@LocalVideoListFragment)
+                mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
+                        .setOnClickListener(this)
+                mSelectAllButton = mTitleWindowFrame!!.findViewById(R.id.btn_selectAll)
+                mSelectAllButton!!.setOnClickListener(this)
+                UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mTitleWindowFrame!!)
 
-                        mSelectAllButton = mTitleWindowFrame!!.findViewById(R.id.btn_selectAll)
-                        mSelectAllButton!!.setOnClickListener(this@LocalVideoListFragment)
-                    }
-
-                    override fun run() = mTitleWindowFrame?.run {
-                        val statusHeight = App.getInstance(v.context).statusHeightInPortrait
-                        layoutParams.height = height + statusHeight
-                        setPadding(paddingLeft, paddingTop + statusHeight, paddingRight, paddingBottom)
-                    } ?: Unit
-                })
                 val titleWindow = PopupWindow(mTitleWindowFrame,
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 titleWindow.isClippingEnabled = false
@@ -915,8 +897,9 @@ class LocalVideoListFragment : SwipeBackFragment(),
                 mItemOptionsWindow!!.animationStyle = R.style.WindowAnimations_BottomPopupWindow
                 mItemOptionsWindow!!.showAtLocation(v, Gravity.BOTTOM, 0, 0)
 
-                Utils.postOnLayoutValid(iowcv, object : Runnable {
+                iowcv.addOnLayoutChangeListener(object : OnLayoutChangeListener, Runnable {
                     val selection = v.tag as Int
+                    var firstLayout = true
 
                     init {
                         if (!ThemeUtils.isNightMode(contextThemedFirst)) {
@@ -927,29 +910,50 @@ class LocalVideoListFragment : SwipeBackFragment(),
                         mRecyclerView.isItemDraggable = false
                     }
 
+                    override fun onLayoutChange(
+                            v: View,
+                            left: Int, top: Int, right: Int, bottom: Int,
+                            oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+                        val oldHeight = oldBottom - oldTop
+                        val height = bottom - top
+                        if (height != oldHeight) {
+                            run()
+                        }
+                    }
+
                     override fun run() {
+                        iowcv.removeCallbacks(this)
+                        if (!UiUtils.isLayoutValid(iowcv) || !UiUtils.isLayoutValid(mRecyclerView)) {
+                            iowcv.post(this)
+                            return
+                        }
+
                         val location = IntArray(2)
 
                         iowcv.getLocationOnScreen(location)
                         val iowTop = location[1]
 
-                        val rvParent = mRecyclerView.parent as View
-                        rvParent.getLocationOnScreen(location)
-                        val rvpBottom = location[1] + rvParent.height
+                        val rv = mRecyclerView
+                        rv.getLocationOnScreen(location)
+                        val rvBottom = location[1] + rv.height
 
-                        val rvpLP = rvParent.layoutParams
-                        rvpLP.height = rvParent.height - (rvpBottom - iowTop)
-                        rvParent.layoutParams = rvpLP
+                        if (rvBottom > iowTop) {
+                            rv.setPadding(0, 0, 0, rvBottom - iowTop)
+                        }
 
-                        val itemBottom = (v.parent as View).bottom
-                        if (itemBottom <= rvpLP.height) {
-                            notifyItemsToShowCheckBoxes()
-                        } else {
-                            Utils.postOnLayoutValid(rvParent) {
-                                // 使长按的itemView在RecyclerView高度改变后可见
-                                mRecyclerView.scrollBy(0, itemBottom - rvpLP.height)
-
+                        if (firstLayout) {
+                            firstLayout = false
+                            val itemBottom = (v.parent as View).bottom
+                            val rvHeight = rv.height - rv.paddingBottom
+                            if (itemBottom <= rvHeight) {
                                 notifyItemsToShowCheckBoxes()
+                            } else {
+                                Utils.postOnLayoutValid(rv) {
+                                    // 使长按的itemView在RecyclerView高度改变后可见
+                                    rv.scrollBy(0, itemBottom - rvHeight)
+
+                                    notifyItemsToShowCheckBoxes()
+                                }
                             }
                         }
                     }
@@ -979,10 +983,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     mShareButton_IOW = null
                     mDetailsButton_IOW = null
 
-                    val parent = mRecyclerView.parent as View
-                    val lp = parent.layoutParams
-                    lp.height = ViewGroup.LayoutParams.MATCH_PARENT
-                    parent.layoutParams = lp
+                    mRecyclerView.setPadding(0, 0, 0, 0)
 
                     for (item in mVideoListItems) {
                         item.isChecked = false
@@ -1080,13 +1081,17 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         val view = View.inflate(
                 contextThemedFirst, R.layout.popup_window_delete_video_list_items, null) as ViewGroup
-        view.findViewById<TextView>(R.id.text_message).text = if (items.size == 1) {
-            when (items[0]) {
-                is Video -> getString(R.string.areYouSureToDeleteSth, items[0].name)
-                else /* is VideoDirectory */ -> getString(R.string.areYouSureToDeleteSomeVideoDir, items[0].name)
+        view.findViewById<TextView>(R.id.text_message).apply {
+            movementMethod = ScrollingMovementMethod.getInstance()
+            text = if (items.size == 1) {
+                when (items[0]) {
+                    is Video -> getString(R.string.areYouSureToDeleteSth, items[0].name)
+                    else /* is VideoDirectory */ ->
+                        getString(R.string.areYouSureToDeleteSomeVideoDir, items[0].name)
+                }
+            } else {
+                getString(R.string.areYouSureToDelete)
             }
-        } else {
-            getString(R.string.areYouSureToDelete)
         }
         view.findViewById<View>(R.id.btn_confirm_deleteItemsWindow).setOnClickListener(this)
         view.findViewById<View>(R.id.btn_cancel_deleteItemsWindow).setOnClickListener(this)
@@ -1301,10 +1306,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
     }
 
     private companion object {
-        const val PAYLOAD_REFRESH_VIDEODIR_THUMB =
-                PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION shl 1
-        const val PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT =
-                PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION shl 2
+        const val PAYLOAD_REFRESH_VIDEODIR_THUMB = PAYLOAD_LAST shl 1
+        const val PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT = PAYLOAD_LAST shl 2
 
         const val VIEW_TYPE_VIDEODIR = 1
         const val VIEW_TYPE_VIDEO = 2

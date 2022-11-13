@@ -15,9 +15,13 @@
             android:id="@+id/btn_cancel_vlow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:layout_marginLeft="10dp"
-            android:layout_marginStart="10dp"
+            android:layout_marginLeft="@dimen/contentPreferredPaddingHorizontal"
+            android:layout_marginStart="@dimen/contentPreferredPaddingHorizontal"
+            android:layout_marginRight="10dp"
+            android:layout_marginEnd="10dp"
             android:paddingLeft="10dp"
             android:paddingTop="5dp"
             android:paddingRight="10dp"
@@ -28,12 +32,19 @@
             android:textColor="@color/textColorPrimary" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/text_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
+            android:layout_toRightOf="@id/btn_cancel_vlow"
+            android:layout_toEndOf="@id/btn_cancel_vlow"
+            android:layout_toLeftOf="@id/btn_selectAll"
+            android:layout_toStartOf="@id/btn_selectAll"
+            android:layout_centerVertical="true"
             android:text="@string/appName"
             android:textSize="@dimen/subtitle_text_size"
-            android:textColor="@color/textColorPrimary" />
+            android:textColor="@color/textColorPrimary"
+            android:textAlignment="center"
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/btn_selectAll"
@@ -42,8 +53,10 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:layout_marginRight="10dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginRight="@dimen/contentPreferredPaddingHorizontal"
+            android:layout_marginEnd="@dimen/contentPreferredPaddingHorizontal"
             android:paddingLeft="10dp"
             android:paddingTop="5dp"
             android:paddingRight="10dp"

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="contentPreferredPaddingHorizontal">16dp</dimen>
+    <dimen name="innerContentPreferredPaddingHorizontal">12dp</dimen>
+    <dimen name="dialogPreferredContentPaddingHorizontal">12dp</dimen>
+    <dimen name="dialogPreferredContentPaddingVertical">12dp</dimen>
+    <dimen name="listPreferredItemPaddingVertical">10dp</dimen>
+</resources>

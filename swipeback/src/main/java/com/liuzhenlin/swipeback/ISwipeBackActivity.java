@@ -2,6 +2,7 @@ package com.liuzhenlin.swipeback;
 
 import android.app.Activity;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public interface ISwipeBackActivity {
@@ -37,4 +38,11 @@ public interface ISwipeBackActivity {
      */
     @Nullable
     Activity getPreviousActivity();
+
+    interface PrivateAccess {
+        Object superGetSystemService(@NonNull String name);
+        void superFinish();
+        void superFinishAffinity();
+        void superFinishAndRemoveTask();
+    }
 }

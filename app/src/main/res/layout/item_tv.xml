@@ -6,8 +6,8 @@
     android:paddingBottom="9dp"
     android:paddingLeft="50dp"
     android:paddingStart="50dp"
-    android:paddingRight="15dp"
-    android:paddingEnd="15dp">
+    android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
+    android:paddingEnd="@dimen/contentPreferredPaddingHorizontal">
 
     <TextView
         android:id="@+id/text_tvName"

@@ -21,4 +21,15 @@
     <dimen name="notification_title_text_size">14sp</dimen>
     <dimen name="notification_progress_text_size">12sp</dimen>
     <dimen name="notification_button_text_size">13sp</dimen>
+
+    <dimen name="videoThumbWidth">90dp</dimen>
+    <dimen name="videoThumbMarginEnd">11dp</dimen>
+
+    <dimen name="multi_horizontal_text_margin">8dp</dimen>
+    <dimen name="multi_horizontal_title_text_margin">11dp</dimen>
+
+    <dimen name="dialogPreferredButtonPaddingHorizontal">10dp</dimen>
+    <dimen name="dialogPreferredButtonPaddingVertical">6dp</dimen>
+    <dimen name="dialogPreferredButtonMarginHorizontal">10dp</dimen>
+    <dimen name="dialogPreferredButtonMarginVertical">10dp</dimen>
 </resources>

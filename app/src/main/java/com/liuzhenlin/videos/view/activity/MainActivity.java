@@ -41,6 +41,7 @@ import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.MarginLayoutParamsCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -51,6 +52,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.adapter.BaseAdapter2;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
@@ -73,6 +75,7 @@ import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.AppUpdateChecker;
+import com.liuzhenlin.videos.utils.VideoUtils2;
 import com.liuzhenlin.videos.view.fragment.LocalVideosFragment;
 import com.liuzhenlin.videos.web.youtube.YoutubeFragment;
 import com.taobao.sophix.SophixManager;
@@ -182,11 +185,22 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     private void initViews() {
         final App app = App.getInstance(this);
-        final int screenWidth = app.getScreenWidthIgnoreOrientation();
 
         mSlidingDrawerLayout = findViewById(R.id.slidingDrawerLayout);
-        mSlidingDrawerLayout.setStartDrawerWidthPercent(
-                1f - (app.getVideoThumbWidth() + DensityUtils.dp2px(app, 20f)) / (float) screenWidth);
+        mSlidingDrawerLayout.addOnLayoutChangeListener(
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    final int oldWidth = oldRight - oldLeft;
+                    final int width = right - left;
+                    if (width != oldWidth) {
+                        final int videoThumbWidth = VideoUtils2.getVideoThumbWidth(this);
+                        final int thumbMarginHorizontal =
+                                getResources().getDimensionPixelSize(R.dimen.videoThumbMarginEnd)
+                                        + getResources().getDimensionPixelSize(
+                                                R.dimen.contentPreferredPaddingHorizontal);
+                        ((SlidingDrawerLayout) v).setStartDrawerWidthPercent(
+                                1f - (videoThumbWidth + thumbMarginHorizontal) / (float) width);
+                    }
+                });
         mSlidingDrawerLayout.addOnDrawerScrollListener(new SlidingDrawerLayout.SimpleOnDrawerScrollListener() {
             @Override
             public void onScrollStateChange(
@@ -203,7 +217,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 //                mDrawerList.addFooterView(divider);
                 mDrawerList.setAdapter(mDrawerListAdapter = new DrawerListAdapter());
                 mDrawerList.setOnItemClickListener(MainActivity.this);
-                mDrawerList.setScrollEnabled(false);
+                UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mDrawerList);
 
                 mDrawerImage = drawer.findViewById(R.id.image_drawer);
                 mDrawerImage.setTag("null");
@@ -225,7 +239,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
         mActionBarContainer = findViewById(R.id.container_actionbar);
         mActionBar = findViewById(R.id.actionbar);
-        insertTopPaddingToActionBarIfNeeded(mActionBar);
+        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mActionBar);
 
         mActionButton = mActionBar.findViewById(R.id.img_btn);
         mActionButton.setOnClickListener(this);
@@ -239,19 +253,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         mHomeAsUpIndicator.setOnClickListener(this);
 
         mTitleText = mActionBar.findViewById(R.id.text_title);
-        Utils.postOnLayoutValid(mTitleText, () -> {
-            ViewGroup.MarginLayoutParams hauilp = (ViewGroup.MarginLayoutParams)
-                    mHomeAsUpIndicator.getLayoutParams();
-            ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
-                    mTitleText.getLayoutParams();
-            MarginLayoutParamsCompat.setMarginStart(
-                    ttlp,
-                    DensityUtils.dp2px(app, 10f) /* margin */
-                            + app.getVideoThumbWidth()
-                            - hauilp.leftMargin - hauilp.rightMargin
-                            - mHomeAsUpIndicator.getWidth() - mTitleText.getWidth());
-            mTitleText.setLayoutParams(ttlp);
-        });
+        adjustTitleTextMarginStart();
 
         mFragmentViewPager = findViewById(R.id.viewpager_fragments);
         mFragmentViewPager.setScrollEnabled(false);
@@ -291,7 +293,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                     mActionButton.setId(R.id.btn_search);
                     mActionButton.setImageResource(R.drawable.ic_search);
                     collapseActionBar(false, true);
-                    mSlidingDrawerLayout.setContentSensitiveEdgeSize(screenWidth);
+                    mSlidingDrawerLayout.setContentSensitiveEdgeSize(Integer.MAX_VALUE);
 
                 } else if (fragment instanceof YoutubeFragment) {
                     mActionButton.setId(R.id.btn_link);
@@ -312,6 +314,29 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     private LocalVideosFragment getLocalVideosFragment() {
         return (LocalVideosFragment) mFragments[INDEX_LOCAL_VIDEOS_FRAGMENT];
+    }
+
+    private void adjustTitleTextMarginStart() {
+        Utils.postOnLayoutValid(mTitleText, () -> {
+            ViewGroup.MarginLayoutParams hauilp = (ViewGroup.MarginLayoutParams)
+                    mHomeAsUpIndicator.getLayoutParams();
+            ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
+                    mTitleText.getLayoutParams();
+            int ttMarginStart = Math.max(
+                    getResources().getDimensionPixelSize(R.dimen.contentPreferredPaddingHorizontal) /* thumb margin start */
+                            + VideoUtils2.getVideoThumbWidth(this)
+                            - hauilp.leftMargin - hauilp.rightMargin
+                            - mHomeAsUpIndicator.getWidth() - mTitleText.getWidth(),
+                    0);
+            MarginLayoutParamsCompat.setMarginStart(ttlp, ttMarginStart);
+            mTitleText.setLayoutParams(ttlp);
+        });
+    }
+
+    @Override
+    protected void onScreenWidthDpLevelChanged(
+            @NonNull ScreenWidthDpLevel oldLevel, @NonNull ScreenWidthDpLevel level) {
+        adjustTitleTextMarginStart();
     }
 
     private void setLightDrawerStatus(boolean light) {
@@ -942,10 +967,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                 LayoutInflater.from(this)
                         .inflate(R.layout.actionbar_local_searched_videos_fragment,
                                 mActionBarContainer, false);
-        if (isLayoutUnderStatusBar()) {
-            UiUtils.setViewMargins(
-                    mTmpActionBar, 0, App.getInstance(this).getStatusHeightInPortrait(), 0, 0);
-        }
+        UiUtils.insertTopMarginToActionBarIfLayoutUnderStatus(mTmpActionBar);
         mActionBarContainer.addView(mTmpActionBar);
     }
 
@@ -962,8 +984,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                 LayoutInflater.from(this)
                         .inflate(R.layout.actionbar_local_folded_videos_fragment,
                                 mActionBarContainer, false);
+        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mTmpActionBar);
         mActionBarContainer.addView(mTmpActionBar);
-        insertTopPaddingToActionBarIfNeeded(mTmpActionBar);
     }
 
     @Override
@@ -1003,10 +1025,28 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     @Synthetic void collapseActionBar(boolean collapse, boolean animate) {
+        if (ViewCompat.isAttachedToWindow(mActionBar)) {
+            _collapseActionBar(collapse, animate);
+        } else {
+            mActionBar.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(View v) {
+                    _collapseActionBar(collapse, animate);
+                    v.removeOnAttachStateChangeListener(this);
+                }
+
+                @Override
+                public void onViewDetachedFromWindow(View v) {
+                }
+            });
+        }
+    }
+
+    @Synthetic void _collapseActionBar(boolean collapse, boolean animate) {
         ViewGroup.LayoutParams lp = mActionBarContainer.getLayoutParams();
         int lastHeight = lp.height;
         if (collapse) {
-            lp.height = App.getInstance(this).getStatusHeightInPortrait();
+            lp.height = UiUtils.getStableWindowInsetsTop(getWindow());
         } else {
             lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         }

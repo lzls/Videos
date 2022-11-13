@@ -22,9 +22,7 @@ import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.InternetResourceLoadTask;
 import com.liuzhenlin.common.utils.ListenerSet;
-import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
-import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.floatingmenu.DensityUtils;
 import com.liuzhenlin.videos.crashhandler.CrashMailReporter;
 import com.liuzhenlin.videos.crashhandler.LogOnCrashHandler;
@@ -38,15 +36,8 @@ public class App extends Application {
 
     private static App sApp;
 
-    private int mStatusHeight;
-
-    private volatile int mScreenWidth = -1;
-    private volatile int mScreenHeight = -1;
-
     private volatile int mRealScreenWidth = -1;
     private volatile int mRealScreenHeight = -1;
-
-    private volatile int mVideoThumbWidth = -1;
 
     private static volatile boolean sNightMode;
 
@@ -64,7 +55,6 @@ public class App extends Application {
         Executors.THREAD_POOL_EXECUTOR.execute(new CrashMailReporter(this)::send);
         Thread.setDefaultUncaughtExceptionHandler(LogOnCrashHandler.INSTANCE.get(this));
 
-        mStatusHeight = SystemBarUtils.getStatusHeight(this);
         mSystemUiNightMode = ThemeUtils.isNightMode(this);
 
         registerComponentCallbacks(Glide.get(this));
@@ -112,60 +102,6 @@ public class App extends Application {
     @Nullable
     public static App getInstanceUnsafe() {
         return sApp;
-    }
-
-    public int getStatusHeightInPortrait() {
-        return mStatusHeight;
-    }
-
-    @SuppressWarnings("SuspiciousNameCombination")
-    public int getScreenWidthIgnoreOrientation() {
-        if (mScreenWidth == -1) {
-            synchronized (this) {
-                if (mScreenWidth == -1) {
-                    int screenWidth = DensityUtils.getScreenWidth(this);
-                    if (getResources().getConfiguration().orientation
-                            != Configuration.ORIENTATION_PORTRAIT) {
-                        //@formatter:off
-                        int screenHeight  = DensityUtils.getScreenHeight(this);
-                        if (screenWidth   > screenHeight) {
-                            screenWidth  ^= screenHeight;
-                            screenHeight ^= screenWidth;
-                            screenWidth  ^= screenHeight;
-                        }
-                        //@formatter:on
-                        mScreenHeight = screenHeight;
-                    }
-                    mScreenWidth = screenWidth;
-                }
-            }
-        }
-        return mScreenWidth;
-    }
-
-    @SuppressWarnings("SuspiciousNameCombination")
-    public int getScreenHeightIgnoreOrientation() {
-        if (mScreenHeight == -1) {
-            synchronized (this) {
-                if (mScreenHeight == -1) {
-                    int screenHeight = DensityUtils.getScreenHeight(this);
-                    if (getResources().getConfiguration().orientation
-                            != Configuration.ORIENTATION_PORTRAIT) {
-                        //@formatter:off
-                        int screenWidth   = DensityUtils.getScreenWidth(this);
-                        if (screenWidth   > screenHeight) {
-                            screenWidth  ^= screenHeight;
-                            screenHeight ^= screenWidth;
-                            screenWidth  ^= screenHeight;
-                        }
-                        //@formatter:on
-                        mScreenWidth = screenWidth;
-                    }
-                    mScreenHeight = screenHeight;
-                }
-            }
-        }
-        return mScreenHeight;
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
@@ -216,17 +152,6 @@ public class App extends Application {
             }
         }
         return mRealScreenHeight;
-    }
-
-    public int getVideoThumbWidth() {
-        if (mVideoThumbWidth == -1) {
-            synchronized (this) {
-                if (mVideoThumbWidth == -1) {
-                    mVideoThumbWidth = Utils.roundFloat(getScreenWidthIgnoreOrientation() * 0.2778f);
-                }
-            }
-        }
-        return mVideoThumbWidth;
     }
 
     public static void cacheNightMode(boolean nightMode) {

@@ -12,4 +12,5 @@ android {
 
 dependencies {
     api 'androidx.preference:preference:1.2.0'
+    api project(':common')
 }

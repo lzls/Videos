@@ -4,14 +4,22 @@
         <shape android:shape="rectangle">
             <solid android:color="@color/dialogBtnPressedColor" />
             <corners android:radius="1.5dp" />
-            <padding android:left="10dp" android:top="6dp" android:right="10dp" android:bottom="6dp" />
+            <padding
+                android:left="@dimen/dialogPreferredButtonPaddingHorizontal"
+                android:top="@dimen/dialogPreferredButtonPaddingVertical"
+                android:right="@dimen/dialogPreferredButtonPaddingHorizontal"
+                android:bottom="@dimen/dialogPreferredButtonPaddingVertical" />
         </shape>
     </item>
     <item android:state_pressed="false">
         <shape android:shape="rectangle">
             <solid android:color="@android:color/transparent" />
             <corners android:radius="1.5dp" />
-            <padding android:left="10dp" android:top="6dp" android:right="10dp" android:bottom="6dp" />
+            <padding
+                android:left="@dimen/dialogPreferredButtonPaddingHorizontal"
+                android:top="@dimen/dialogPreferredButtonPaddingVertical"
+                android:right="@dimen/dialogPreferredButtonPaddingHorizontal"
+                android:bottom="@dimen/dialogPreferredButtonPaddingVertical" />
         </shape>
     </item>
 </selector>
