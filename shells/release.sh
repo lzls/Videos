@@ -8,7 +8,11 @@
 readonly SHELLS_DIR=$(cd "$(dirname "$0")"; pwd)
 source "$SHELLS_DIR"/utils.sh &&
   source "$SHELLS_DIR"/git.sh
-verifyLastOpSuccessed
+# bail out if this is not executed on a subprocess
+declare -i exitCode=$?
+if [ $exitCode -ne 0 ]; then
+  return $exitCode
+fi
 
 const_int START_TIME=$(date +%s)
 echo "start time: $(date -r $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')"
@@ -45,7 +49,7 @@ function __parseShellArgs() {
     $amend) AMEND=$true ;;
     $updateDates) UPDATE_DATES=$true ;;
     --help) __echo_release_sh_usage___; exit 0 ;;
-    *) __echo_release_sh_usage___ "$arg"; waitToExit 1 ;;
+    *) __echo_release_sh_usage___ "$arg"; exit 1 ;;
     esac
   done
 
@@ -160,7 +164,7 @@ fi
 echoBoldBlueText "\nVerifying tag v$APP_VERSION_NAME exists in the commit tree for the dev branch of" \
   "$PROJECTS_ROOT/Videos"
 
-cdOrWaitToExit "$PROJECTS_ROOT"/Videos
+cdOrExit "$PROJECTS_ROOT"/Videos
 
 test "$(git branch --show-current)" = 'dev'
 verifyLastOpSuccessed 'Current branch is not dev'
@@ -253,7 +257,7 @@ echoBoldBlueText '\nPushing data of app upgrade to https://gitlab.com/lzls/Video
   'This will be automatically mirrored to https://gitee.com/lzl_s/Videos-Server.git and' \
   'https://gitee.com/lzl_s/Videos-Service.git by the GitLab server.'
 
-cdOrWaitToExit "$SERVICE_PROJECTS_ROOT"/Videos-Server/app/Android
+cdOrExit "$SERVICE_PROJECTS_ROOT"/Videos-Server/app/Android
 
 if [ $BETA -ne $true ]; then
   i=1
