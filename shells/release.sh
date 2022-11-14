@@ -18,13 +18,14 @@ APK_PARTS_COUNT=
 APP_VERSION_NAME=
 bool BETA=$false
 bool AMEND=$false
+bool UPDATE_DATES=$false
 
 function __echo_release_sh_usage___() {
   if [ "$1" ]; then
     echo "illegal option: $1" >&2
   fi
   printf "%s\n\t%s\n\t%s\n" 'usage: ./shells/release.sh --version-name=<app version name>' \
-    '--parts-count=<count of split apk parts> [--beta] [--amend]' \
+    '--parts-count=<count of split apk parts> [--beta] [--amend] [--update-dates]' \
     '[--projects-root=<parent dir of the local Videos repo>]'
 }
 
@@ -34,6 +35,7 @@ function __parseShellArgs() {
   local partsCountPrefix='--parts-count='
   local beta='--beta'
   local amend='--amend'
+  local updateDates='--update-dates'
   for arg in "$@"; do
     case $arg in
     ${projectsRootPrefix}*) PROJECTS_ROOT=$(parsePath "${arg:${#projectsRootPrefix}}") ;;
@@ -41,6 +43,7 @@ function __parseShellArgs() {
     ${partsCountPrefix}*) APK_PARTS_COUNT=${arg:${#partsCountPrefix}} ;;
     $beta) BETA=$true ;;
     $amend) AMEND=$true ;;
+    $updateDates) UPDATE_DATES=$true ;;
     --help) __echo_release_sh_usage___; exit 0 ;;
     *) __echo_release_sh_usage___ "$arg"; waitToExit 1 ;;
     esac
@@ -118,7 +121,13 @@ function commitAndPush() {
   local branches=${*:-master}
 
   if [ $AMEND -eq $true ]; then
-    trace gitAmendCommit --m="$commitMsg"
+    # shellcheck disable=SC2046
+    trace gitAmendCommit --m="$commitMsg" $(
+        if [ $UPDATE_DATES -eq $true ]; then
+          # shellcheck disable=SC2155
+          local _date=$(date +%s%z)
+          echo "--date=$_date --commit-date=$_date"
+        fi)
   else
     trace gitCommit "$commitMsg"
   fi
@@ -170,7 +179,7 @@ ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO beta "$PROJECTS_ROOT"/Videos 
     trace git reset --hard HEAD~1
   fi &&
   trace git merge "v$APP_VERSION_NAME" --no-ff --no-edit &&
-  if [ $AMEND -eq $true ]; then
+  if [ $AMEND -eq $true ] && [ $UPDATE_DATES -ne $true ]; then
     _last_commit=$(git remote)/beta
     trace gitAmendCommit --date="$(gitGetFormattedLog --format='%ad' --head="$_last_commit" -1)" \
                          --commit-date="$(gitGetFormattedLog --format='%cd' --head="$_last_commit" -1)"
@@ -187,7 +196,7 @@ if [ $BETA -ne $true ]; then
       trace git reset --hard HEAD~1
     fi &&
     trace git merge "v$APP_VERSION_NAME" --no-ff --no-edit &&
-    if [ $AMEND -eq $true ]; then
+    if [ $AMEND -eq $true ] && [ $UPDATE_DATES -ne $true ]; then
       _last_commit=$(git remote)/release
       trace gitAmendCommit --date="$(gitGetFormattedLog --format='%ad' --head="$_last_commit" -1)" \
           --commit-date="$(gitGetFormattedLog --format='%cd' --head="$_last_commit" -1)"
