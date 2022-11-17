@@ -19,9 +19,9 @@ import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
+import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.swipeback.SwipeBackActivity;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
-import com.liuzhenlin.videos.R;
 
 public class BaseActivity extends SwipeBackActivity {
 
@@ -35,8 +35,8 @@ public class BaseActivity extends SwipeBackActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        mThemeWindowAnimations = getWindow().getWindowStyle().getResourceId(
-                R.styleable.AppCompatTheme_android_windowAnimationStyle, 0);
+        mThemeWindowAnimations =
+                ThemeUtils.getThemeAttrRes(this, android.R.attr.windowAnimationStyle);
         super.onCreate(savedInstanceState);
         mScreenWidthDp = getResources().getConfiguration().screenWidthDp;
     }
