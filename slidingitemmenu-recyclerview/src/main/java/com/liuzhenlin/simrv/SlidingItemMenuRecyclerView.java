@@ -208,15 +208,27 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
 
         final int itemChildCount = itemView.getChildCount();
         final View itemLastChild = itemView.getChildAt(itemChildCount >= 2 ? itemChildCount - 1 : 1);
-        if (!(itemLastChild instanceof FrameLayout)) return false;
+        if (!(itemLastChild instanceof FrameLayout)
+                || itemLastChild.getVisibility() != View.VISIBLE)
+            return false;
 
         final FrameLayout itemMenu = (FrameLayout) itemLastChild;
         final int menuItemCount = itemMenu.getChildCount();
         final int[] menuItemWidths = new int[menuItemCount];
         int itemMenuWidth = 0;
         for (int i = 0; i < menuItemCount; i++) {
-            menuItemWidths[i] = ((FrameLayout) itemMenu.getChildAt(i)).getChildAt(0).getWidth();
-            itemMenuWidth += menuItemWidths[i];
+            final FrameLayout menuItemBg = (FrameLayout) itemMenu.getChildAt(i);
+            // We can not just add up the item menu width with the width of the menu item without
+            // checking the visibilities of it and its parents, as the visibility of a view
+            // changing from visible to gone will just exclude it from the subsequent layout passes
+            // and therefore will usually not have its width and height properties updated.
+            if (menuItemBg.getVisibility() == View.VISIBLE) {
+                final View menuItem = menuItemBg.getChildAt(0);
+                if (menuItem.getVisibility() == View.VISIBLE) {
+                    menuItemWidths[i] = menuItem.getWidth();
+                    itemMenuWidth += menuItemWidths[i];
+                }
+            }
         }
         if (itemMenuWidth > 0) {
             itemView.setTag(TAG_ITEM_MENU_WIDTH, itemMenuWidth);

@@ -501,9 +501,9 @@ class LocalVideoListFragment : BaseFragment(),
                 }
                 if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
                     if (mItemOptionsWindow == null) {
-                        holder.checkBox.visibility = View.GONE
+                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
                     } else {
-                        holder.checkBox.visibility = View.VISIBLE
+                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
                     }
                 }
                 if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
@@ -545,9 +545,9 @@ class LocalVideoListFragment : BaseFragment(),
 
             val item = mVideoListItems[position]
             if (mItemOptionsWindow == null) {
-                holder.checkBox.visibility = View.GONE
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
             } else {
-                holder.checkBox.visibility = View.VISIBLE
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
                 holder.checkBox.isChecked = item.isChecked
             }
             when (holder.itemViewType) {
@@ -559,8 +559,8 @@ class LocalVideoListFragment : BaseFragment(),
                     vh.videoSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
-                    (holder.deleteButton.parent as View).visibility =
-                            if (video.isWritable) View.VISIBLE else View.GONE
+                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                            if (video.isWritable) View.VISIBLE else View.GONE)
                 }
                 VIEW_TYPE_VIDEODIR -> {
                     val vh = holder as VideoDirViewHolder
@@ -578,8 +578,8 @@ class LocalVideoListFragment : BaseFragment(),
                     vh.videodirNameText.text = item.name
                     vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
-                    (holder.deleteButton.parent as View).visibility =
-                            if (!hasUnwritableVideo) View.VISIBLE else View.GONE
+                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                            if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
                 }
             }
         }

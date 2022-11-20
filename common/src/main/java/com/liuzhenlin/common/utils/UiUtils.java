@@ -81,6 +81,27 @@ public class UiUtils {
         }
     }
 
+    public static void setViewVisibilityAndVerify(View view, int visibility) {
+        view.setVisibility(visibility);
+        switch (visibility) {
+            case View.VISIBLE:
+                Utils.postOnLayoutValid(view, () -> {
+                    ViewGroup.LayoutParams lp = view.getLayoutParams();
+                    if (view.getVisibility() == View.VISIBLE
+                            && (lp.width != 0 || lp.height != 0)
+                            && view.getWidth() == 0 && view.getHeight() == 0) {
+                        view.requestLayout();
+                    }
+                });
+                break;
+            case View.GONE:
+                // TODO: verify the view will be invisible and not take any layout space from its
+                //   parent, we can not just check the view size here since changing the visibility
+                //   of a view to gone will not change its width and height properties.
+                break;
+        }
+    }
+
     public static void fixZeroSizedViewCannotKeepFocusedInLayout(@NonNull View view) {
         final boolean zeroWidth = view.getWidth() == 0;
         final boolean zeroHeight = view.getHeight() == 0;
