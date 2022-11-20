@@ -440,18 +440,23 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
 
     private fun onVideoCheckedChange() {
         var checkedVideosCount = 0
+        var hasUnwritableCheckedVideo = false
         for (video in mVideos) {
-            if (video.isChecked) checkedVideosCount++
+            if (video.isChecked) {
+                checkedVideosCount++
+                if (!hasUnwritableCheckedVideo && !video.isWritable) {
+                    hasUnwritableCheckedVideo = true
+                }
+            }
         }
         when (checkedVideosCount) {
             mVideos.size -> mSelectAllButton.text = SELECT_NONE
             else -> mSelectAllButton.text = SELECT_ALL
         }
-        mDeleteButton.isEnabled = checkedVideosCount > 0
-        val enabled = checkedVideosCount == 1
-        mRenameButton.isEnabled = enabled
-        mShareButton.isEnabled = enabled
-        mDetailsButton.isEnabled = enabled
+        mDeleteButton.isEnabled = checkedVideosCount > 0 && !hasUnwritableCheckedVideo
+        mRenameButton.isEnabled = checkedVideosCount == 1 && !hasUnwritableCheckedVideo
+        mShareButton.isEnabled = checkedVideosCount == 1
+        mDetailsButton.isEnabled = checkedVideosCount == 1
     }
 
     private val checkedVideos: List<Video>?
@@ -613,6 +618,8 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
             holder.videoSizeText.text = FileUtils.formatFileSize(video.size.toDouble())
             holder.videoProgressAndDurationText.text =
                     VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+            (holder.deleteButton.parent as View).visibility =
+                    if (video.isWritable) View.VISIBLE else View.GONE
         }
 
         override fun loadItemImages(holder: ViewHolder) {

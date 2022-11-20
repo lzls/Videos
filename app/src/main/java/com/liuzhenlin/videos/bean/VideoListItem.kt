@@ -97,6 +97,7 @@ data class Video(var id: Long = 0L,
                  override var path: String = "",
                  override var size: Long = 0L,
                  override var isTopped: Boolean = false,
+                 var isWritable: Boolean = false,
                  var progress: Int = 0,
                  var duration: Int = 0,
                  var width: Int = 0,
@@ -127,6 +128,7 @@ data class Video(var id: Long = 0L,
                 && path == other.path
                 && size == other.size
                 && isTopped == other.isTopped
+                && isWritable == other.isWritable
                 && progress == other.progress
                 && duration == other.duration
                 && width == other.width
@@ -142,6 +144,7 @@ data class Video(var id: Long = 0L,
             source.readString()!!,
             source.readLong(),
             1.toByte() == source.readByte(),
+            1.toByte() == source.readByte(),
             source.readInt(),
             source.readInt(),
             source.readInt(),
@@ -156,6 +159,7 @@ data class Video(var id: Long = 0L,
         writeString(path)
         writeLong(size)
         writeByte((if (isTopped) 1.toByte() else 0.toByte()))
+        writeByte((if (isWritable) 1.toByte() else 0.toByte()))
         writeInt(progress)
         writeInt(duration)
         writeInt(width)

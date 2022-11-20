@@ -7,13 +7,16 @@ package com.liuzhenlin.videos.dao;
 
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -165,9 +168,22 @@ public final class VideoListItemDao implements IVideoListItemDao {
             values.put(VIDEO_DURATION, video.getDuration());
             values.put(VIDEO_RESOLUTION,
                     video.getWidth() + DEFAULT_RESOLUTION_SEPARATOR + video.getHeight());
-            if (mContentResolver.update(VIDEO_URI, values, VIDEO_ID + "=" + id, null) == 1) {
-                mDB.setTransactionSuccessful();
-                return true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Storage usages for this app may be restricted to several scopes. We need update
+                // the remote MediaProvider through an exact Uri for the given video or
+                // IllegalArgumentException might be raised.
+                Uri videoUri = ContentUris.withAppendedId(
+                        MediaStore.Video.Media.getContentUri(MediaStore.getVolumeName(VIDEO_URI)),
+                        id);
+                if (mContentResolver.update(videoUri, values, null, null) == 1) {
+                    mDB.setTransactionSuccessful();
+                    return true;
+                }
+            } else {
+                if (mContentResolver.update(VIDEO_URI, values, VIDEO_ID + "=" + id, null) == 1) {
+                    mDB.setTransactionSuccessful();
+                    return true;
+                }
             }
         } finally {
             mDB.endTransaction();
@@ -360,6 +376,18 @@ public final class VideoListItemDao implements IVideoListItemDao {
                     }
                     break;
             }
+
+        File videoFile = new File(video.getPath());
+        video.setWritable(FileUtils.ensureFileWritable(videoFile));
+        // Filter out those video files that don't exist, and delete them from the DBs.
+        // When we create a short video into /sdcard/Movies/videos_lzls/ShortClips/ directory, a
+        // related DB record with path /sdcard/Movies/*.mp4 for that video will also be generated
+        // when this app is restricted due to the sys scoped storage feature.
+        if (!video.isWritable() && !videoFile.exists()) {
+            deleteVideo(video.getId());
+            return null;
+        }
+
         if (video.getDuration() <= 0 || video.getWidth() <= 0 || video.getHeight() <= 0) {
             if (invalidateVideoDurationAndResolution(video)) {
                 updateVideo(video);

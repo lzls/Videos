@@ -430,7 +430,7 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
                     updateItemName(holder, mSearchedVideos[position].name)
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, progress, duration) = mSearchedVideos[position]
+                    val (_, _, _, _, _, _, progress, duration) = mSearchedVideos[position]
                     holder.videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(progress, duration)
                 }

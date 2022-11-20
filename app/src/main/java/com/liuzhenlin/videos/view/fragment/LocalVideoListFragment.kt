@@ -518,7 +518,7 @@ class LocalVideoListFragment : BaseFragment(),
                     }
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, progress, duration) = item as Video
+                    val (_, _, _, _, _, _, progress, duration) = item as Video
                     (holder as VideoViewHolder).videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(progress, duration)
                 }
@@ -559,16 +559,27 @@ class LocalVideoListFragment : BaseFragment(),
                     vh.videoSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+                    (holder.deleteButton.parent as View).visibility =
+                            if (video.isWritable) View.VISIBLE else View.GONE
                 }
                 VIEW_TYPE_VIDEODIR -> {
                     val vh = holder as VideoDirViewHolder
                     val videos = (item as VideoDirectory).videos
+                    var hasUnwritableVideo = false
+                    for (v in videos) {
+                        if (!v.isWritable) {
+                            hasUnwritableVideo = true
+                            break
+                        }
+                    }
 
                     VideoUtils2.loadVideoThumbIntoFragmentImageView(
                             this@LocalVideoListFragment, vh.videodirImage, videos[0])
                     vh.videodirNameText.text = item.name
                     vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
+                    (holder.deleteButton.parent as View).visibility =
+                            if (!hasUnwritableVideo) View.VISIBLE else View.GONE
                 }
             }
         }
@@ -1007,11 +1018,26 @@ class LocalVideoListFragment : BaseFragment(),
 
         var firstCheckedItem: VideoListItem? = null
         var checkedItemCount = 0
+        var hasUnwritableCheckedItem = false
         for (item in mVideoListItems) {
             if (item.isChecked) {
                 checkedItemCount++
                 if (checkedItemCount == 1) {
                     firstCheckedItem = item
+                }
+                if (item is VideoDirectory) {
+                    var index = item.videos.size - 1
+                    while (!hasUnwritableCheckedItem && index >= 0) {
+                        if (!item.videos[index].isWritable) {
+                            hasUnwritableCheckedItem = true
+                            break
+                        }
+                        index--
+                    }
+                } else /* if (item is Video) */ {
+                    if (!hasUnwritableCheckedItem && !(item as Video).isWritable) {
+                        hasUnwritableCheckedItem = true
+                    }
                 }
             }
         }
@@ -1034,11 +1060,12 @@ class LocalVideoListFragment : BaseFragment(),
             else -> getString(R.string.severalItemsHaveBeenSelected, checkedItemCount)
         }
 
-        mDeleteButton_IOW!!.isEnabled = checkedItemCount >= 1
-        val enabled = checkedItemCount == 1
-        mRenameButton_IOW!!.isEnabled = enabled
+        mDeleteButton_IOW!!.isEnabled = checkedItemCount > 0 && !hasUnwritableCheckedItem
+        mRenameButton_IOW!!.isEnabled =
+                checkedItemCount == 1
+                        && (!hasUnwritableCheckedItem || firstCheckedItem is VideoDirectory)
         mShareButton_IOW!!.isEnabled = aVideoCheckedOnly
-        mDetailsButton_IOW!!.isEnabled = enabled
+        mDetailsButton_IOW!!.isEnabled = checkedItemCount == 1
     }
 
     override fun showDeleteItemDialog(item: VideoListItem, onDeleteAction: (() -> Unit)?) {
