@@ -1125,7 +1125,13 @@ class LocalVideoListFragment : BaseFragment(),
         view.tag = items
         view[0].tag = onDeleteAction
 
-        val fadedContentView = requireView().rootView as FrameLayout // DecorView
+        var fadedContentView =
+                requireView().rootView // DecorView
+                        .findViewById<FrameLayout>(android.R.id.content) // ContentFrameLayout
+        fadedContentView =
+                fadedContentView.parent // FitWindowsLinearLayout
+                        .parent as? FrameLayout ?: fadedContentView
+        var fadedContentViewFgGravity = 0
 
         mDeleteItemsWindow = PopupWindow(
                 view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -1141,10 +1147,14 @@ class LocalVideoListFragment : BaseFragment(),
 
             mTitleWindowFrame?.foreground = null
             fadedContentView.foreground = null
+            fadedContentView.foregroundGravity = fadedContentViewFgGravity
         }
 
         mTitleWindowFrame?.foreground = ColorDrawable(0x7F000000)
         fadedContentView.foreground = ColorDrawable(0x7F000000)
+        // 在设置了foreground之后获取，以免因 mForegroundInfo 还未初始化，获取不到实际的值
+        fadedContentViewFgGravity = fadedContentView.foregroundGravity
+        fadedContentView.foregroundGravity = Gravity.FILL
     }
 
     override fun showRenameItemDialog(item: VideoListItem, onRenameAction: (() -> Unit)?) {
