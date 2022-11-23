@@ -423,7 +423,19 @@ public class UiUtils {
      * @return {@code true} if the view is laid-out and not about to do another layout.
      */
     public static boolean isLayoutValid(@NonNull View view) {
-        return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+        return isLaidOut(view) && !view.isLayoutRequested();
+    }
+
+    /**
+     * @return {@code true} if the view has been through at least one layout since it
+     * was last attached to or detached from a window.
+     */
+    public static boolean isLaidOut(@NonNull View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            return view.isLaidOut();
+        }
+        return ViewCompat.isAttachedToWindow(view)
+                && (view.getWidth() != 0 || view.getHeight() != 0);
     }
 
     public static boolean isLandscapeMode(@NonNull Context context) {

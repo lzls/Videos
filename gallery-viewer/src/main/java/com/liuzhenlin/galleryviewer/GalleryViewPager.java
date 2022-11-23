@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.RectF;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -102,7 +103,15 @@ public class GalleryViewPager extends ViewPager {
         }
 
         boolean isLayoutValid(GestureImageView view) {
-            return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+            return isLaidOut(view) && !view.isLayoutRequested();
+        }
+
+        boolean isLaidOut(GestureImageView view) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                return view.isLaidOut();
+            }
+            return ViewCompat.isAttachedToWindow(view)
+                    && (view.getWidth() != 0 || view.getHeight() != 0);
         }
     };
 
