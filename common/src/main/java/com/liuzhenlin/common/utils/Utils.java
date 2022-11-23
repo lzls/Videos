@@ -182,7 +182,7 @@ public class Utils {
      * Causes the Runnable to execute once the {@code view} is laid out.
      * The runnable will be run on the user interface thread.
      */
-    public static void postOnLayoutValid(@NonNull View view, @NonNull Runnable action) {
+    public static void runOnLayoutValid(@NonNull View view, @NonNull Runnable action) {
         Handler uiHandler = view.getHandler();
         if (uiHandler != null && Thread.currentThread() == uiHandler.getLooper().getThread()) {
             if (UiUtils.isLayoutValid(view)) {
@@ -199,7 +199,7 @@ public class Utils {
                 });
             }
         } else {
-            view.post(() -> postOnLayoutValid(view, action));
+            view.post(() -> runOnLayoutValid(view, action));
         }
     }
 
@@ -207,7 +207,7 @@ public class Utils {
      * Runs the given action on the {@code handler}'s thread once the specified {@code condition}
      * meets.
      */
-    public static void postTillConditionMeets(
+    public static void runOnConditionMet(
             @NonNull Handler handler, @NonNull Runnable action, @NonNull Condition condition) {
         if (Thread.currentThread() == handler.getLooper().getThread()) {
             if (condition.meets()) {
@@ -215,7 +215,7 @@ public class Utils {
                 return;
             }
         }
-        handler.post(() -> postTillConditionMeets(handler, action, condition));
+        handler.post(() -> runOnConditionMet(handler, action, condition));
     }
 
     /**

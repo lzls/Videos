@@ -317,7 +317,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     private void adjustTitleTextMarginStart() {
-        Utils.postOnLayoutValid(mTitleText, () -> {
+        Utils.runOnLayoutValid(mTitleText, () -> {
             ViewGroup.MarginLayoutParams hauilp = (ViewGroup.MarginLayoutParams)
                     mHomeAsUpIndicator.getLayoutParams();
             ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
@@ -788,7 +788,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
             tv.setText(ss);
 
-            Utils.postOnLayoutValid(
+            Utils.runOnLayoutValid(
                     tv, () -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
         }//);
 

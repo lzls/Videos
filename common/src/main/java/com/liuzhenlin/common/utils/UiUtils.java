@@ -86,7 +86,7 @@ public class UiUtils {
         view.setVisibility(visibility);
         switch (visibility) {
             case View.VISIBLE:
-                Utils.postOnLayoutValid(view, () -> {
+                Utils.runOnLayoutValid(view, () -> {
                     ViewGroup.LayoutParams lp = view.getLayoutParams();
                     if (view.getVisibility() == View.VISIBLE
                             && (lp.width != 0 || lp.height != 0)
@@ -479,7 +479,7 @@ public class UiUtils {
                 return insets;
             });
         } else {
-            Utils.postOnLayoutValid(actionbar, () -> {
+            Utils.runOnLayoutValid(actionbar, () -> {
                 int statusHeight = SystemBarUtils.getStatusHeight(actionbar.getContext());
                 insertTopMarginToActionBarIfLayoutUnderStatus(actionbar, statusHeight);
             });
@@ -532,7 +532,7 @@ public class UiUtils {
                 return insets;
             });
         } else {
-            Utils.postOnLayoutValid(actionbar, () -> {
+            Utils.runOnLayoutValid(actionbar, () -> {
                 int statusHeight = SystemBarUtils.getStatusHeight(actionbar.getContext());
                 insertTopPaddingToActionBarIfLayoutUnderStatus(actionbar, statusHeight);
             });

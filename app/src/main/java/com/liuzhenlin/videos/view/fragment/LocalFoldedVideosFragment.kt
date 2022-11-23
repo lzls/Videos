@@ -411,7 +411,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
                 mOptionsFrameTopDivider.visibility = View.VISIBLE
                 mVideoOptionsFrame.visibility = View.VISIBLE
 
-                Utils.postOnLayoutValid(mRecyclerView.parent as View) {
+                Utils.runOnLayoutValid(mRecyclerView.parent as View) {
                     val itemBottom = (v.parent as View).bottom
                     val listHeight = mRecyclerView.height
                     if (itemBottom > listHeight) {

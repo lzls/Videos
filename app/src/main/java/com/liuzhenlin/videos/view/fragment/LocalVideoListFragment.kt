@@ -959,7 +959,7 @@ class LocalVideoListFragment : BaseFragment(),
                             if (itemBottom <= rvHeight) {
                                 notifyItemsToShowCheckBoxes()
                             } else {
-                                Utils.postOnLayoutValid(rv) {
+                                Utils.runOnLayoutValid(rv) {
                                     // 使长按的itemView在RecyclerView高度改变后可见
                                     rv.scrollBy(0, itemBottom - rvHeight)
 

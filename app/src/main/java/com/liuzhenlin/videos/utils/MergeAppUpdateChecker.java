@@ -85,7 +85,7 @@ import kotlin.collections.ArraysKt;
 
 import static com.liuzhenlin.common.Consts.PENDING_INTENT_FLAG_IMMUTABLE;
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
-import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
+import static com.liuzhenlin.common.utils.Utils.runOnConditionMet;
 
 /**
  * @author 刘振林
@@ -907,7 +907,7 @@ public final class MergeAppUpdateChecker {
                     if (Configs.DEBUG_APP_UPDATE) {
                         Log.d(TAG, "Start checking if any notifications use id " + ID_NOTIFICATION);
                     }
-                    postTillConditionMeets(handler, action,
+                    runOnConditionMet(handler, action,
                             () -> !hasNotification(mNotificationManager, ID_NOTIFICATION, null));
                 } else {
                     if (Configs.DEBUG_APP_UPDATE) {

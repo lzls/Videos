@@ -2190,7 +2190,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                                     //    not as expected in a layout whose direction is right-to-left.
                                     // 2. Under some circumstances, it will not work correctly, like
                                     //    large font size mode.
-                                    Utils.postOnLayoutValid(shareButton, () -> {
+                                    Utils.runOnLayoutValid(shareButton, () -> {
                                         lp.width = shareButton.getWidth();
                                         lp.height = Utils.roundFloat(lp.width / aspectRatio);
                                         photoImage.setLayoutParams(lp);
@@ -2206,7 +2206,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                                     }
                                     shareButton.setText(sb);
 
-                                    Utils.postOnLayoutValid(shareButton, () -> {
+                                    Utils.runOnLayoutValid(shareButton, () -> {
                                         lp.height = shareButton.getHeight();
                                         lp.width = Utils.roundFloat(lp.height * aspectRatio);
                                         photoImage.setLayoutParams(lp);
@@ -2534,7 +2534,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         }
         vcv.setSelectionInterval(intervalStart, intervalEnd);
         vcv.setSelection(initialSelection);
-        Utils.postOnLayoutValid(vcv, () -> {
+        Utils.runOnLayoutValid(vcv, () -> {
             final int thumbHeight = vcv.getThumbDisplayHeight();
             final float thumbWidth = thumbHeight * videoAspectRatio;
             final int thumbGalleryWidth = vcv.getThumbGalleryWidth();
@@ -3469,28 +3469,28 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             ViewGroup hsvc = (ViewGroup) anHourText.getParent();
             HorizontalScrollView hsv = (HorizontalScrollView) hsvc.getParent();
             if (_30MinutesText.isSelected()) {
-                Utils.postOnLayoutValid(_30MinutesText, () -> {
+                Utils.runOnLayoutValid(_30MinutesText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.scrollTo(
                             rtl ? anHourText.getRight() : anHourText.getLeft() - hsv.getWidth(),
                             0);
                 });
             } else if (anHourText.isSelected()) {
-                Utils.postOnLayoutValid(anHourText, () -> {
+                Utils.runOnLayoutValid(anHourText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.scrollTo(
                             rtl ? _90MinutesText.getRight() : _90MinutesText.getLeft() - hsv.getWidth(),
                             0);
                 });
             } else if (_90MinutesText.isSelected()) {
-                Utils.postOnLayoutValid(_90MinutesText, () -> {
+                Utils.runOnLayoutValid(_90MinutesText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.scrollTo(
                             rtl ? _2HoursText.getRight() : _2HoursText.getLeft() - hsv.getWidth(),
                             0);
                 });
             } else if (_2HoursText.isSelected()) {
-                Utils.postOnLayoutValid(_2HoursText, () -> {
+                Utils.runOnLayoutValid(_2HoursText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.fullScroll(rtl ? FOCUS_LEFT : FOCUS_RIGHT);
                 });
