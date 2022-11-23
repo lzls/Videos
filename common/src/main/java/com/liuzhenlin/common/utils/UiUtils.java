@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -451,8 +452,30 @@ public class UiUtils {
     public static void insertTopMarginToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
         if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
             ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
-                insertTopMarginToActionBarIfLayoutUnderStatus(
-                        v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                InsetsApplier applier = (InsetsApplier)
+                        v.getTag(R.id.tag_marginInsetsApplier);
+                if (applier == null) {
+                    applier = new InsetsApplier(v, insets) {
+                        @Override
+                        void onApplyInsets(WindowInsetsCompat insets) {
+                            insertTopMarginToActionBarIfLayoutUnderStatus(
+                                    v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                        }
+                    };
+                    v.setTag(R.id.tag_marginInsetsApplier, applier);
+                }
+                // Insets are usually dispatched before View.AttachInfo#mWindowTop is assigned by
+                // the top of the current Window in ViewRootImpl#performTraversals(), at which time
+                // we may calculate out wrong coordinates of the view on screen, so check to see
+                // if this is the case where a new layout is approaching and we therefore need
+                // postpone applying them.
+                if (isLayoutValid(actionbar)) {
+                    applier.onApplyInsets(insets);
+                    applier.remove();
+                } else {
+                    applier.insets = insets;
+                    applier.post();
+                }
                 return insets;
             });
         } else {
@@ -463,7 +486,7 @@ public class UiUtils {
         }
     }
 
-    private static void insertTopMarginToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+    @Synthetic static void insertTopMarginToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
         ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
         if (lp instanceof ViewGroup.MarginLayoutParams) {
             Integer oldInsetTop = (Integer) actionbar.getTag(R.id.tag_marginInsetTop);
@@ -483,8 +506,29 @@ public class UiUtils {
     public static void insertTopPaddingToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
         if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
             ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
-                insertTopPaddingToActionBarIfLayoutUnderStatus(
-                        v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                InsetsApplier applier = (InsetsApplier) v.getTag(R.id.tag_paddingInsetsApplier);
+                if (applier == null) {
+                    applier = new InsetsApplier(v, insets) {
+                        @Override
+                        void onApplyInsets(WindowInsetsCompat insets) {
+                            insertTopPaddingToActionBarIfLayoutUnderStatus(
+                                    v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                        }
+                    };
+                    v.setTag(R.id.tag_paddingInsetsApplier, applier);
+                }
+                // Insets are usually dispatched before View.AttachInfo#mWindowTop is assigned by
+                // the top of the current Window in ViewRootImpl#performTraversals(), at which time
+                // we may calculate out wrong coordinates of the view on screen, so check to see
+                // if this is the case where a new layout is approaching and we therefore need
+                // postpone applying them.
+                if (isLayoutValid(actionbar)) {
+                    applier.onApplyInsets(insets);
+                    applier.remove();
+                } else {
+                    applier.insets = insets;
+                    applier.post();
+                }
                 return insets;
             });
         } else {
@@ -495,7 +539,7 @@ public class UiUtils {
         }
     }
 
-    private static void insertTopPaddingToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+    @Synthetic static void insertTopPaddingToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
         Integer oldInsetTop = (Integer) actionbar.getTag(R.id.tag_paddingInsetTop);
         if (oldInsetTop == null) {
             oldInsetTop = 0;
@@ -528,5 +572,38 @@ public class UiUtils {
             marginInsetTop = 0;
         }
         return location[1] - marginInsetTop < 10;
+    }
+
+    private static abstract class InsetsApplier implements ViewTreeObserver.OnGlobalLayoutListener {
+        WindowInsetsCompat insets;
+        final View view;
+        boolean scheduled;
+
+        InsetsApplier(View view, WindowInsetsCompat insets) {
+            this.view = view;
+            this.insets = insets;
+        }
+
+        @Override
+        public final void onGlobalLayout() {
+            remove();
+            onApplyInsets(insets);
+        }
+
+        abstract void onApplyInsets(WindowInsetsCompat insets);
+
+        final void post() {
+            if (!scheduled) {
+                scheduled = true;
+                view.getViewTreeObserver().addOnGlobalLayoutListener(this);
+            }
+        }
+
+        final void remove() {
+            if (scheduled) {
+                scheduled = false;
+                view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            }
+        }
     }
 }
