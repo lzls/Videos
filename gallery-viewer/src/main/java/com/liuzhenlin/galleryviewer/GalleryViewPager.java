@@ -4,18 +4,15 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.RectF;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.view.ViewParent;
-import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
@@ -85,33 +82,8 @@ public class GalleryViewPager extends ViewPager {
 
         void startImageOverScrollAndSpringBack(
                 GestureImageView image, float dx, float dy, int duration) {
-            if (isLayoutValid(image)) {
-                image.startImageOverScrollAndSpringBack(dx, dy, duration);
-            } else {
-                image.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (isLayoutValid(image)) {
-                            if (mImageOverScrollEnabled) {
-                                image.startImageOverScrollAndSpringBack(dx, dy, duration);
-                            }
-                            image.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        }
-                    }
-                });
-            }
-        }
-
-        boolean isLayoutValid(GestureImageView view) {
-            return isLaidOut(view) && !view.isLayoutRequested();
-        }
-
-        boolean isLaidOut(GestureImageView view) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                return view.isLaidOut();
-            }
-            return ViewCompat.isAttachedToWindow(view)
-                    && (view.getWidth() != 0 || view.getHeight() != 0);
+            Utils.runOnLayoutValid(
+                    image, () -> image.startImageOverScrollAndSpringBack(dx, dy, duration));
         }
     };
 

@@ -320,6 +320,12 @@ public class SlidingDrawerLayout extends ViewGroup {
     private DrawerRunnable mPostedDrawerRunnable;
 
     /**
+     * OnGlobalLayoutListener used to open the drawer with the specified edge gravity when
+     * this view is laidout.
+     */
+    /*synthetic*/ OpenDrawerOnGlobalLayoutListener mOpenDrawerOnGlobalLayoutListener;
+
+    /**
      * The fade color used for the content view {@link #mContentView}, default is 50% black.
      *
      * @see #getContentFadeColor()
@@ -450,6 +456,19 @@ public class SlidingDrawerLayout extends ViewGroup {
         void removeFromMsgQueue() {
             mOpenStubDrawerRunnable = null;
             removeCallbacks(this);
+        }
+    }
+
+    private abstract class OpenDrawerOnGlobalLayoutListener
+            implements ViewTreeObserver.OnGlobalLayoutListener {
+        int drawerGravity;
+
+        OpenDrawerOnGlobalLayoutListener() {
+        }
+
+        void removeFromViewTreeObserver() {
+            getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            mOpenDrawerOnGlobalLayoutListener = null;
         }
     }
 
@@ -1678,6 +1697,9 @@ public class SlidingDrawerLayout extends ViewGroup {
         super.onDetachedFromWindow();
         cancelRunningAnimatorAndPendingActions();
         closeDrawer(false);
+        if (mOpenDrawerOnGlobalLayoutListener != null) {
+            mOpenDrawerOnGlobalLayoutListener.removeFromViewTreeObserver();
+        }
     }
 
     private void cancelRunningAnimatorAndPendingActions() {
@@ -2658,15 +2680,19 @@ public class SlidingDrawerLayout extends ViewGroup {
         if (ss.openDrawerGravity != Gravity.NO_GRAVITY) {
             // Wait for the drawer on the specified side to be correctly resolved by this view
             // as it may depends on the current layout direction.
-            getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    if (Utils.isLayoutValid(SlidingDrawerLayout.this)) {
-                        getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        openDrawer(ss.openDrawerGravity, false);
+            if (mOpenDrawerOnGlobalLayoutListener == null) {
+                mOpenDrawerOnGlobalLayoutListener = new OpenDrawerOnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        if (Utils.isLayoutValid(SlidingDrawerLayout.this)) {
+                            removeFromViewTreeObserver();
+                            openDrawer(drawerGravity, false);
+                        }
                     }
-                }
-            });
+                };
+                getViewTreeObserver().addOnGlobalLayoutListener(mOpenDrawerOnGlobalLayoutListener);
+            }
+            mOpenDrawerOnGlobalLayoutListener.drawerGravity = ss.openDrawerGravity;
         }
     }
 

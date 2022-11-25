@@ -37,11 +37,15 @@ import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 
+import com.liuzhenlin.common.R;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -188,15 +192,41 @@ public class Utils {
             if (UiUtils.isLayoutValid(view)) {
                 action.run();
             } else {
-                view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (UiUtils.isLayoutValid(view)) {
-                            view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                            action.run();
-                        }
-                    }
-                });
+                //noinspection unchecked
+                List<Runnable> actions = (List<Runnable>)
+                        view.getTag(R.id.tag_actionsRunOnLayoutValid);
+                if (actions == null) {
+                    actions = new ArrayList<>(1);
+                    view.setTag(R.id.tag_actionsRunOnLayoutValid, actions);
+                }
+
+                boolean actionsWasEmpty = actions.isEmpty();
+                // Tie any actions to the view weakly referenced below and later poll each from
+                // the view in the following ViewTreeObserver listener, so that we will not cause
+                // any memory leaks if the caller refers the view directly in some pending actions.
+                actions.add(0, action);
+
+                if (actionsWasEmpty) {
+                    WeakReference<View> viewRef = new WeakReference<>(view);
+                    view.getViewTreeObserver().addOnGlobalLayoutListener(
+                            new ViewTreeObserver.OnGlobalLayoutListener() {
+                                @Override
+                                public void onGlobalLayout() {
+                                    View v = viewRef.get();
+                                    if (v != null && UiUtils.isLayoutValid(v)) {
+                                        v.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                                        //noinspection unchecked
+                                        List<Runnable> as = (List<Runnable>)
+                                                v.getTag(R.id.tag_actionsRunOnLayoutValid);
+                                        if (as != null) {
+                                            for (int ai = as.size() - 1; ai >= 0; ai--) {
+                                                as.remove(ai).run();
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                }
             }
         } else {
             view.post(() -> runOnLayoutValid(view, action));
