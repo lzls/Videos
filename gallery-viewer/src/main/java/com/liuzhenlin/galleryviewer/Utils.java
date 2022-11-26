@@ -13,6 +13,8 @@ import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,12 +33,11 @@ public class Utils {
             if (isLayoutValid(view)) {
                 action.run();
             } else {
-                //noinspection unchecked
-                List<Runnable> actions = (List<Runnable>)
-                        view.getTag(R.id.tag_actionsRunOnLayoutValid);
+                List<Runnable> actions =
+                        ViewCompatibility.getTag(view, R.id.tag_actionsRunOnLayoutValid);
                 if (actions == null) {
                     actions = new ArrayList<>(1);
-                    view.setTag(R.id.tag_actionsRunOnLayoutValid, actions);
+                    ViewCompatibility.setTag(view, R.id.tag_actionsRunOnLayoutValid, actions);
                 }
 
                 boolean actionsWasEmpty = actions.isEmpty();
@@ -54,9 +55,8 @@ public class Utils {
                                     View v = viewRef.get();
                                     if (v != null && isLayoutValid(v)) {
                                         v.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                                        //noinspection unchecked
-                                        List<Runnable> as = (List<Runnable>)
-                                                v.getTag(R.id.tag_actionsRunOnLayoutValid);
+                                        List<Runnable> as = ViewCompatibility.getTag(
+                                                v, R.id.tag_actionsRunOnLayoutValid);
                                         if (as != null) {
                                             for (int ai = as.size() - 1; ai >= 0; ai--) {
                                                 as.remove(ai).run();
@@ -68,7 +68,7 @@ public class Utils {
                 }
             }
         } else {
-            view.post(() -> runOnLayoutValid(view, action));
+            ViewCompatibility.post(view, () -> runOnLayoutValid(view, action));
         }
     }
 

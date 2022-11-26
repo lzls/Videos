@@ -30,6 +30,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.R;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableView;
 import com.liuzhenlin.common.windowhost.FocusObservableWindowHost;
 
@@ -187,7 +188,7 @@ public class UiUtils {
                     }
                 } else {
                     showSoftInputJob.cancel();
-                    v.post(() -> {
+                    ViewCompatibility.post(v, () -> {
                         if (!hasFocusedView[0]) {
                             hideSoftInput(v, false);
                         }
@@ -221,7 +222,7 @@ public class UiUtils {
             if (retryTimes++ <= MAX_SHOW_SOFT_INPUT_RETRY_TIMES
                     && host.hasWindowFocus() && view.hasFocus()
                     && !showSoftInput(view, false)) {
-                view.post(this);
+                ViewCompatibility.post(view, this);
             }
             pending = false;
         }
@@ -230,13 +231,13 @@ public class UiUtils {
             retryTimes = 0;
             if (!pending) {
                 pending = true;
-                view.post(this);
+                ViewCompatibility.post(view, this);
             }
         }
 
         void cancel() {
             if (pending) {
-                view.removeCallbacks(this);
+                ViewCompatibility.removeCallbacks(view, this);
                 pending = false;
             }
         }
@@ -464,8 +465,7 @@ public class UiUtils {
     public static void insertTopMarginToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
         if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
             ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
-                InsetsApplier applier = (InsetsApplier)
-                        v.getTag(R.id.tag_marginInsetsApplier);
+                InsetsApplier applier = ViewCompatibility.getTag(v, R.id.tag_marginInsetsApplier);
                 if (applier == null) {
                     applier = new InsetsApplier(v, insets) {
                         @Override
@@ -474,7 +474,7 @@ public class UiUtils {
                                     v, insets.getInsetsIgnoringVisibility(statusBars()).top);
                         }
                     };
-                    v.setTag(R.id.tag_marginInsetsApplier, applier);
+                    ViewCompatibility.setTag(v, R.id.tag_marginInsetsApplier, applier);
                 }
                 // Insets are usually dispatched before View.AttachInfo#mWindowTop is assigned by
                 // the top of the current Window in ViewRootImpl#performTraversals(), at which time
@@ -501,7 +501,7 @@ public class UiUtils {
     @Synthetic static void insertTopMarginToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
         ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
         if (lp instanceof ViewGroup.MarginLayoutParams) {
-            Integer oldInsetTop = (Integer) actionbar.getTag(R.id.tag_marginInsetTop);
+            Integer oldInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_marginInsetTop);
             if (oldInsetTop == null) {
                 oldInsetTop = 0;
             }
@@ -509,7 +509,7 @@ public class UiUtils {
             if (insetTop != oldInsetTop) {
                 ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
                 mlp.topMargin = mlp.topMargin - oldInsetTop + insetTop;
-                actionbar.setTag(R.id.tag_marginInsetTop, insetTop);
+                ViewCompatibility.setTag(actionbar, R.id.tag_marginInsetTop, insetTop);
                 actionbar.setLayoutParams(mlp);
             }
         }
@@ -518,7 +518,7 @@ public class UiUtils {
     public static void insertTopPaddingToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
         if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
             ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
-                InsetsApplier applier = (InsetsApplier) v.getTag(R.id.tag_paddingInsetsApplier);
+                InsetsApplier applier = ViewCompatibility.getTag(v, R.id.tag_paddingInsetsApplier);
                 if (applier == null) {
                     applier = new InsetsApplier(v, insets) {
                         @Override
@@ -527,7 +527,7 @@ public class UiUtils {
                                     v, insets.getInsetsIgnoringVisibility(statusBars()).top);
                         }
                     };
-                    v.setTag(R.id.tag_paddingInsetsApplier, applier);
+                    ViewCompatibility.setTag(v, R.id.tag_paddingInsetsApplier, applier);
                 }
                 // Insets are usually dispatched before View.AttachInfo#mWindowTop is assigned by
                 // the top of the current Window in ViewRootImpl#performTraversals(), at which time
@@ -552,7 +552,7 @@ public class UiUtils {
     }
 
     @Synthetic static void insertTopPaddingToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
-        Integer oldInsetTop = (Integer) actionbar.getTag(R.id.tag_paddingInsetTop);
+        Integer oldInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_paddingInsetTop);
         if (oldInsetTop == null) {
             oldInsetTop = 0;
         }
@@ -566,7 +566,7 @@ public class UiUtils {
                 default:
                     lp.height = lp.height - oldInsetTop + insetTop;
             }
-            actionbar.setTag(R.id.tag_paddingInsetTop, insetTop);
+            ViewCompatibility.setTag(actionbar, R.id.tag_paddingInsetTop, insetTop);
             actionbar.setPadding(
                     actionbar.getPaddingLeft(),
                     actionbar.getPaddingTop() - oldInsetTop + insetTop,
@@ -579,7 +579,7 @@ public class UiUtils {
     private static boolean isLayoutUnderStatusBar(View actionbar) {
         int[] location = new int[2];
         actionbar.getLocationOnScreen(location);
-        Integer marginInsetTop = (Integer) actionbar.getTag(R.id.tag_marginInsetTop);
+        Integer marginInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_marginInsetTop);
         if (marginInsetTop == null) {
             marginInsetTop = 0;
         }

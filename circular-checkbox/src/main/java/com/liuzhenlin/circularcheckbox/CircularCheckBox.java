@@ -30,6 +30,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+
 /**
  * A circular CheckBox with animation for Android
  *
@@ -356,14 +358,14 @@ public class CircularCheckBox extends View implements Checkable {
                                 mPostedSetCheckedRunnable = null;
                                 startCheckedAnimation();
                             } else {
-                                post(mPostedSetCheckedRunnable);
+                                ViewCompatibility.post(this, mPostedSetCheckedRunnable);
                             }
                         };
-                        post(mPostedSetCheckedRunnable);
+                        ViewCompatibility.post(this, mPostedSetCheckedRunnable);
                     }
                 } else {
                     if (mPostedSetCheckedRunnable != null) {
-                        removeCallbacks(mPostedSetCheckedRunnable);
+                        ViewCompatibility.removeCallbacks(this, mPostedSetCheckedRunnable);
                         mPostedSetCheckedRunnable = null;
                     }
                     startUncheckedAnimation();
@@ -537,7 +539,7 @@ public class CircularCheckBox extends View implements Checkable {
 
         // Continue drawing the tick
         if (mTickLength < mTickLeftPartLength + mTickRightPartLength) {
-            postDelayed(mRedrawRunnable, 10);
+            ViewCompatibility.postDelayed(this, mRedrawRunnable, 10);
         }
     }
 
@@ -548,7 +550,7 @@ public class CircularCheckBox extends View implements Checkable {
         mAnimator.start();
 
         // Delays to draw the tick
-        postDelayed(mDrawTickRunnable, mDuration);
+        ViewCompatibility.postDelayed(this, mDrawTickRunnable, mDuration);
     }
 
     private void startUncheckedAnimation() {
@@ -614,8 +616,8 @@ public class CircularCheckBox extends View implements Checkable {
         if (mAnimator != null && mAnimator.isRunning()) {
             mAnimator.cancel();
         }
-        removeCallbacks(mRedrawRunnable);
-        removeCallbacks(mDrawTickRunnable);
+        ViewCompatibility.removeCallbacks(this, mRedrawRunnable);
+        ViewCompatibility.removeCallbacks(this, mDrawTickRunnable);
     }
 
 //    @Override

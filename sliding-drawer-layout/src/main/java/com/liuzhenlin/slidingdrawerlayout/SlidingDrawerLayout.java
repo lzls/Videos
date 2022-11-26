@@ -51,6 +51,8 @@ import androidx.customview.view.AbsSavedState;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -411,12 +413,12 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         void initAndPostToQueue(View drawer, boolean open) {
             initForPost(drawer, open);
-            post(this);
+            ViewCompatibility.post(SlidingDrawerLayout.this, this);
         }
 
         void resetAndRemoveFromQueue() {
             if (isInMsgQueue) {
-                removeCallbacks(this);
+                ViewCompatibility.removeCallbacks(SlidingDrawerLayout.this, this);
                 isInMsgQueue = false;
                 drawer = null;
                 open = false;
@@ -455,7 +457,7 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         void removeFromMsgQueue() {
             mOpenStubDrawerRunnable = null;
-            removeCallbacks(this);
+            ViewCompatibility.removeCallbacks(SlidingDrawerLayout.this, this);
         }
     }
 
@@ -2201,7 +2203,7 @@ public class SlidingDrawerLayout extends ViewGroup {
                         mOpenStubDrawerRunnable.removeFromMsgQueue();
                     }
                     mOpenStubDrawerRunnable = new OpenStubDrawerRunnable(drawer, animate);
-                    post(mOpenStubDrawerRunnable);
+                    ViewCompatibility.post(this, mOpenStubDrawerRunnable);
 
                 } else {
                     if (mOpenStubDrawerRunnable != null) {

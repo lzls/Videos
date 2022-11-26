@@ -42,6 +42,7 @@ import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
+import com.liuzhenlin.common.compat.ViewCompatibility
 import com.liuzhenlin.common.listener.OnBackPressedListener
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.ThemeUtils
@@ -933,9 +934,9 @@ class LocalVideoListFragment : BaseFragment(),
                     }
 
                     override fun run() {
-                        iowcv.removeCallbacks(this)
+                        ViewCompatibility.removeCallbacks(iowcv, this)
                         if (!UiUtils.isLayoutValid(iowcv) || !UiUtils.isLayoutValid(mRecyclerView)) {
-                            iowcv.post(this)
+                            ViewCompatibility.post(iowcv, this)
                             return
                         }
 

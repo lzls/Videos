@@ -7,4 +7,6 @@
     <item name="tag_paddingInsetsApplier" type="id" />
 
     <item name="tag_actionsRunOnLayoutValid" type="id" />
+
+    <item name="tag_viewRunQueueHolder" type="id" />
 </resources>

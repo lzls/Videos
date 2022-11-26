@@ -54,6 +54,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.adapter.BaseAdapter2;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.ColorUtils;
@@ -475,7 +476,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
         if (!mIsBackPressed) {
             mIsBackPressed = true;
-            mSlidingDrawerLayout.postDelayed(() -> mIsBackPressed = false, 1500);
+            ViewCompatibility.postDelayed(mSlidingDrawerLayout, () -> mIsBackPressed = false, 1500);
             UiUtils.showUserCancelableSnackbar(
                     mSlidingDrawerLayout, R.string.pressAgainToExitApp, Snackbar.LENGTH_SHORT);
         } else {

@@ -10,3 +10,7 @@ android {
         versionName "1.0"
     }
 }
+
+dependencies {
+    api project(':common')
+}
