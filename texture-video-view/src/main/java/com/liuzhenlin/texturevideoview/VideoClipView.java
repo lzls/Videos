@@ -38,8 +38,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.exoplayer2.util.Util;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.utils.BitmapUtils;
-import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
 
 import java.util.ArrayList;
@@ -396,7 +396,7 @@ public class VideoClipView extends FrameLayout {
         resolveFrameOffsets();
         resetProgressPercent(false);
 
-        final boolean laidout = UiUtils.isLaidOut(this);
+        final boolean laidout = ViewCompatibility.isLaidOut(this);
         if (!laidout && !mFirstLayout || laidout && !mInLayout) {
             requestLayout();
             invalidate();

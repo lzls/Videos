@@ -25,6 +25,8 @@ import com.liuzhenlin.common.utils.ReflectionUtils;
 import com.liuzhenlin.common.utils.SynchronizedPlatformSparseArray;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class ViewCompatibility {
@@ -296,5 +298,64 @@ public class ViewCompatibility {
             }
             return mRunQueue;
         }
+    }
+
+    private static Method sViewIsLayoutDirectionResolvedMethod;
+    private static boolean sViewIsLayoutDirectionResolvedMethodFetched;
+
+    /**
+     * @return true if the view's layout direction has been resolved.
+     */
+    public static boolean isLayoutDirectionResolved(@NonNull View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            return view.isLayoutDirectionResolved();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            ensureViewIsLayoutDirectionResolvedMethodFetched();
+            if (sViewIsLayoutDirectionResolvedMethod != null) {
+                try {
+                    Boolean ret = (Boolean) sViewIsLayoutDirectionResolvedMethod.invoke(view);
+                    return ret != null && ret;
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+            return false;
+        }
+        // No support for RTL in SDKs below 17
+        return true;
+    }
+
+    private static void ensureViewIsLayoutDirectionResolvedMethodFetched() {
+        if (!sViewIsLayoutDirectionResolvedMethodFetched) {
+            try {
+                sViewIsLayoutDirectionResolvedMethod =
+                        View.class.getDeclaredMethod("isLayoutDirectionResolved");
+                sViewIsLayoutDirectionResolvedMethod.setAccessible(true);
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+            sViewIsLayoutDirectionResolvedMethodFetched = true;
+        }
+    }
+
+    /**
+     * @return {@code true} if the view is laid-out and not about to do another layout.
+     */
+    public static boolean isLayoutValid(@NonNull View view) {
+        return isLaidOut(view) && !view.isLayoutRequested();
+    }
+
+    /**
+     * @return {@code true} if the view has been through at least one layout since it
+     * was last attached to or detached from a window.
+     */
+    public static boolean isLaidOut(@NonNull View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            return view.isLaidOut();
+        }
+        return ViewCompat.isAttachedToWindow(view)
+                && (view.getWidth() != 0 || view.getHeight() != 0);
     }
 }

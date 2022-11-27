@@ -52,6 +52,8 @@ import androidx.customview.widget.ViewDragHelper;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.Utils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -59,7 +61,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.liuzhenlin.slidingdrawerlayout.Utils.roundFloat;
+import static com.liuzhenlin.common.utils.Utils.roundFloat;
 
 /**
  * A layout shows better than {@link androidx.drawerlayout.widget.DrawerLayout}, which can also
@@ -692,7 +694,8 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                    || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mStartDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?
@@ -735,7 +738,7 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mEndDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?
@@ -887,7 +890,8 @@ public class SlidingDrawerLayout extends ViewGroup {
                 final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
                 if ((mFlags & FLAG_DRAWER_TOUCH_ABILITIES_RESOLVED) == 0) {
-                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                            || ViewCompatibility.isLayoutDirectionResolved(this)) {
                         resolveDrawerTouchAbilities(layoutDirection);
                     } else {
                         return (mFlags & FLAG_START_DRAWER_TOUCH_ABILITY_DEFINED) == 0
@@ -903,7 +907,8 @@ public class SlidingDrawerLayout extends ViewGroup {
                 final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
                 if ((mFlags & FLAG_DRAWER_TOUCH_ABILITIES_RESOLVED) == 0) {
-                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                            || ViewCompatibility.isLayoutDirectionResolved(this)) {
                         resolveDrawerTouchAbilities(layoutDirection);
                     } else {
                         return (mFlags & FLAG_END_DRAWER_TOUCH_ABILITY_DEFINED) == 0
@@ -1098,7 +1103,7 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     private boolean resolveDrawerWidthPercentagesIfDirectionResolved(boolean preventLayout) {
-        final boolean directionResolved = Utils.isLayoutDirectionResolved(this);
+        final boolean directionResolved = ViewCompatibility.isLayoutDirectionResolved(this);
         if (directionResolved) {
             resolveDrawerWidthPercentages(ViewCompat.getLayoutDirection(this), preventLayout);
         }
@@ -1183,7 +1188,7 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     private boolean resolveDrawerTouchAbilitiesIfDirectionResolved() {
-        final boolean directionResolved = Utils.isLayoutDirectionResolved(this);
+        final boolean directionResolved = ViewCompatibility.isLayoutDirectionResolved(this);
         if (directionResolved) {
             resolveDrawerTouchAbilities(ViewCompat.getLayoutDirection(this));
         }
@@ -1678,7 +1683,7 @@ public class SlidingDrawerLayout extends ViewGroup {
             issued = super.drawChild(canvas, child, drawingTime);
             // Draw the content view's fading
             if (mScrollPercent > 0) {
-                final int color = Utils.dimColor(mContentFadeColor, 1 - mScrollPercent);
+                final int color = ColorUtils.dimColor(mContentFadeColor, 1 - mScrollPercent);
                 if (mShownDrawer == mLeftDrawer) {
                     canvas.clipRect(mContentView.getLeft(), child.getTop(),
                             getRight() - getPaddingRight(), child.getBottom());
@@ -2686,7 +2691,7 @@ public class SlidingDrawerLayout extends ViewGroup {
                 mOpenDrawerOnGlobalLayoutListener = new OpenDrawerOnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
-                        if (Utils.isLayoutValid(SlidingDrawerLayout.this)) {
+                        if (ViewCompatibility.isLayoutValid(SlidingDrawerLayout.this)) {
                             removeFromViewTreeObserver();
                             openDrawer(drawerGravity, false);
                         }

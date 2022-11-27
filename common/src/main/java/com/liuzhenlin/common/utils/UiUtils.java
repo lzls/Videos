@@ -5,8 +5,11 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.View;
@@ -44,6 +47,48 @@ import static androidx.core.view.WindowInsetsCompat.Type.statusBars;
  */
 public class UiUtils {
     private UiUtils() {
+    }
+
+    /**
+     * Determines whether the current Window is translucent or floating by default, according to
+     * the {@link android.R.attr#windowIsFloating} and {@link android.R.attr#windowIsTranslucent}
+     * attributes set in its theme.
+     */
+    public static boolean isWindowTranslucentOrFloatingTheme(Window window) {
+        try {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                //noinspection JavaReflectionMemberAccess
+                Method isTranslucentOrFloatingMethod =
+                        ActivityInfo.class
+                                .getMethod("isTranslucentOrFloating", TypedArray.class);
+                Boolean ret = (Boolean)
+                        isTranslucentOrFloatingMethod.invoke(
+                                ActivityInfo.class, window.getWindowStyle());
+                return ret != null && ret;
+            } else {
+                @SuppressLint("PrivateApi")
+                Class<?> styleableClass =
+                        window.getContext().getClassLoader()
+                                .loadClass("com.android.internal.R$styleable");
+                return getWindowStyleBoolean(
+                                window, styleableClass, "Window_windowIsTranslucent", false)
+                        || getWindowStyleBoolean(
+                                window, styleableClass, "Window_windowIsFloating", false);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return window.isFloating() /*|| window.isTranslucent()*/;
+    }
+
+    private static boolean getWindowStyleBoolean(
+            Window window,
+            Class<?> styleableClass,
+            String attrIndexName,
+            @SuppressWarnings("SameParameterValue") boolean defValue) throws Exception {
+        return window
+                .getWindowStyle()
+                .getBoolean(styleableClass.getField(attrIndexName).getInt(styleableClass), defValue);
     }
 
     public static void setWindowAlpha(
@@ -420,25 +465,6 @@ public class UiUtils {
         return null;
     }
 
-    /**
-     * @return {@code true} if the view is laid-out and not about to do another layout.
-     */
-    public static boolean isLayoutValid(@NonNull View view) {
-        return isLaidOut(view) && !view.isLayoutRequested();
-    }
-
-    /**
-     * @return {@code true} if the view has been through at least one layout since it
-     * was last attached to or detached from a window.
-     */
-    public static boolean isLaidOut(@NonNull View view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return view.isLaidOut();
-        }
-        return ViewCompat.isAttachedToWindow(view)
-                && (view.getWidth() != 0 || view.getHeight() != 0);
-    }
-
     public static boolean isLandscapeMode(@NonNull Context context) {
         return context.getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
@@ -481,7 +507,7 @@ public class UiUtils {
                 // we may calculate out wrong coordinates of the view on screen, so check to see
                 // if this is the case where a new layout is approaching and we therefore need
                 // postpone applying them.
-                if (isLayoutValid(actionbar)) {
+                if (ViewCompatibility.isLayoutValid(actionbar)) {
                     applier.onApplyInsets(insets);
                     applier.remove();
                 } else {
@@ -534,7 +560,7 @@ public class UiUtils {
                 // we may calculate out wrong coordinates of the view on screen, so check to see
                 // if this is the case where a new layout is approaching and we therefore need
                 // postpone applying them.
-                if (isLayoutValid(actionbar)) {
+                if (ViewCompatibility.isLayoutValid(actionbar)) {
                     applier.onApplyInsets(insets);
                     applier.remove();
                 } else {

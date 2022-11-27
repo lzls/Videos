@@ -26,6 +26,8 @@ import androidx.appcompat.widget.ThemeUtils;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
+import com.liuzhenlin.common.utils.DensityUtils;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 

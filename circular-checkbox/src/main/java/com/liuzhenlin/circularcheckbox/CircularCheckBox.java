@@ -31,6 +31,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.DensityUtils;
 
 /**
  * A circular CheckBox with animation for Android
@@ -239,10 +241,10 @@ public class CircularCheckBox extends View implements Checkable {
         mTickPaint.setColor(ta.getColor(R.styleable.CircularCheckBox_color_tick, COLOR_TICK));
         mStrokeWidth =
                 ta.getDimensionPixelSize(
-                        R.styleable.CircularCheckBox_strokeWidth, Utils.dp2px(context, 1));
+                        R.styleable.CircularCheckBox_strokeWidth, DensityUtils.dp2px(context, 1));
         mTickStrokeWidth =
                 ta.getDimensionPixelSize(
-                        R.styleable.CircularCheckBox_tickStrokeWidth, Utils.dp2px(context, 2));
+                        R.styleable.CircularCheckBox_tickStrokeWidth, DensityUtils.dp2px(context, 2));
         mDuration = ta.getInt(R.styleable.CircularCheckBox_duration, DEF_DURATION);
         ta.recycle();
 
@@ -255,7 +257,7 @@ public class CircularCheckBox extends View implements Checkable {
         mTickPaint.setStyle(Paint.Style.STROKE);
         mTickPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        mDefaultDrawingSize = Utils.dp2px(context, DEF_DRAWING_SIZE);
+        mDefaultDrawingSize = DensityUtils.dp2px(context, DEF_DRAWING_SIZE);
 
         setFocusable(true);
         setClickable(true);
@@ -602,10 +604,10 @@ public class CircularCheckBox extends View implements Checkable {
             mDrawingRingInnerCircleScale = (float) animation.getAnimatedValue(
                     PROPERTY_DRAWING_RING_INNER_CIRCLE_SCALE);
             if (mIsChecked) {
-                mRingColor = Utils.getGradientColor(mStrokeColor, mCheckedRingColor,
+                mRingColor = ColorUtils.getGradientColor(mStrokeColor, mCheckedRingColor,
                         1.0f - mDrawingRingInnerCircleScale / defValues[0]);
             } else {
-                mRingColor = Utils.getGradientColor(mCheckedRingColor, mStrokeColor,
+                mRingColor = ColorUtils.getGradientColor(mCheckedRingColor, mStrokeColor,
                         mDrawingRingInnerCircleScale / defValues[0]);
             }
             invalidate();

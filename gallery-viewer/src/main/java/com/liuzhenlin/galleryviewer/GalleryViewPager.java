@@ -17,6 +17,8 @@ import androidx.customview.widget.ViewDragHelper;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import com.liuzhenlin.common.utils.Utils;
+
 /**
  * @author 刘振林
  */

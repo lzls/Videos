@@ -190,7 +190,7 @@ public class Utils {
     public static void runOnLayoutValid(@NonNull View view, @NonNull Runnable action) {
         Handler uiHandler = view.getHandler();
         if (uiHandler != null && Thread.currentThread() == uiHandler.getLooper().getThread()) {
-            if (UiUtils.isLayoutValid(view)) {
+            if (ViewCompatibility.isLayoutValid(view)) {
                 action.run();
             } else {
                 List<Runnable> actions =
@@ -213,7 +213,7 @@ public class Utils {
                                 @Override
                                 public void onGlobalLayout() {
                                     View v = viewRef.get();
-                                    if (v != null && UiUtils.isLayoutValid(v)) {
+                                    if (v != null && ViewCompatibility.isLayoutValid(v)) {
                                         v.getViewTreeObserver().removeGlobalOnLayoutListener(this);
                                         List<Runnable> as = ViewCompatibility.getTag(
                                                 v, R.id.tag_actionsRunOnLayoutValid);

@@ -935,7 +935,8 @@ class LocalVideoListFragment : BaseFragment(),
 
                     override fun run() {
                         ViewCompatibility.removeCallbacks(iowcv, this)
-                        if (!UiUtils.isLayoutValid(iowcv) || !UiUtils.isLayoutValid(mRecyclerView)) {
+                        if (!ViewCompatibility.isLayoutValid(iowcv)
+                                || !ViewCompatibility.isLayoutValid(mRecyclerView)) {
                             ViewCompatibility.post(iowcv, this)
                             return
                         }
