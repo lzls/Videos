@@ -585,10 +585,10 @@ public class CircularCheckBox extends View implements Checkable {
                     if (!firstStart) {
                         holder.setFloatValues(defValues);
                     }
-                    firstStart = false;
                 } else {
                     holder.setFloatValues(defValues[defValues.length - 1], defValues[0]);
                 }
+                firstStart = false;
             }
         };
         mAnimator.addListener(listener);
@@ -597,6 +597,9 @@ public class CircularCheckBox extends View implements Checkable {
                 defValues[0] = mStrokeInnerCircleScale;
                 // Update values holder
                 listener.onAnimationStart(animation);
+                // Recalculate animated values now...
+                animation.setCurrentPlayTime(animation.getCurrentPlayTime());
+                return;
             }
 
             mDrawingRingOuterCircleScale = (float) animation.getAnimatedValue(
