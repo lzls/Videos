@@ -3817,7 +3817,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             public Void doInBackground(Void... voids) {
                 while (!isCancelled()) {
                     int now = current;
-                    if (now == last) continue;
+                    if (now == last) {
+                        Thread.yield(); // Take a break
+                        continue;
+                    }
                     last = now;
 
                     View tv = mTextureView;
