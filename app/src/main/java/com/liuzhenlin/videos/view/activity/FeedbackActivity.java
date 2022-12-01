@@ -343,6 +343,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             lp.height = lp.width = com.liuzhenlin.common.utils.
                     Utils.roundFloat((screenWidth - contentPaddingHorizontal - imageMargin * 2) / 3f);
 
+            ((GridView) parent).setColumnWidth(lp.width);
+
             ViewGroup.LayoutParams plp = parent.getLayoutParams();
             plp.width = screenWidth - contentPaddingHorizontal;
             plp.height = lp.height;
