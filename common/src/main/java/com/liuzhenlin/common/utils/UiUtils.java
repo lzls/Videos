@@ -436,8 +436,10 @@ public class UiUtils {
             mAlert.setAccessible(true);
 
             Object alertController = mAlert.get(dialog);
-            //noinspection ConstantConditions
-            Field mTitleView = alertController.getClass().getDeclaredField("mTitleView");
+            //noinspection SoonBlockedPrivateApi,PrivateApi
+            Field mTitleView =
+                    Class.forName("com.android.internal.app.AlertController")
+                            .getDeclaredField("mTitleView");
             mTitleView.setAccessible(true);
 
             return (TextView) mTitleView.get(alertController);
@@ -454,8 +456,9 @@ public class UiUtils {
             mAlert.setAccessible(true);
 
             Object alertController = mAlert.get(dialog);
-            //noinspection ConstantConditions
-            Field mTitleView = alertController.getClass().getDeclaredField("mTitleView");
+            Field mTitleView =
+                    Class.forName("androidx.appcompat.app.AlertController")
+                            .getDeclaredField("mTitleView");
             mTitleView.setAccessible(true);
 
             return (TextView) mTitleView.get(alertController);
