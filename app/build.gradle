@@ -35,7 +35,7 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.core:core-splashscreen:1.0.0'
 
     implementation project(':common')
@@ -53,7 +53,7 @@ dependencies {
     implementation 'com.sun.mail:android-mail:1.6.7'
     implementation 'com.sun.mail:android-activation:1.6.7'
 
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.9.1'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 
     implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.5'
 }
