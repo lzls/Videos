@@ -772,6 +772,14 @@ public final class MergeAppUpdateChecker {
                                 + ".apk");
                 mApkLength = intent.getIntExtra(EXTRA_APP_LENGTH, 0);
                 if (mApk.exists()) {
+                    // 在Android R，应用卸载重装之前下载的新apk无法被访问
+                    do {
+                        if (FileUtils.ensureFileWritable(mApk)) {
+                            break;
+                        }
+                        mApk = new File(mApk.getParent(), "_" + mApk.getName());
+                    } while (mApk.exists());
+
                     final String sha1 = intent.getStringExtra(EXTRA_APP_SHA1);
                     // 如果应用已经下载过了，则直接弹出安装提示通知
                     if (mApk.length() == mApkLength
