@@ -81,7 +81,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.liuzhenlin.common.Consts.PENDING_INTENT_FLAG_IMMUTABLE;
 import static com.liuzhenlin.common.utils.Utils.hasNotification;
-import static com.liuzhenlin.common.utils.Utils.postTillConditionMeets;
+import static com.liuzhenlin.common.utils.Utils.runOnConditionMet;
 
 /**
  * @author 刘振林
@@ -843,6 +843,14 @@ public final class AppUpdateChecker {
                                         + strings[INDEX_VERSION_NAME].replace(".", "_")
                                         + ".apk");
                         if (mApk.exists()) {
+                            // 在Android R，应用卸载重装之前下载的新apk无法被访问
+                            do {
+                                if (FileUtils.ensureFileWritable(mApk)) {
+                                    break;
+                                }
+                                mApk = new File(mApk.getParent(), "_" + mApk.getName());
+                            } while (mApk.exists());
+
                             final String sha1 = strings[INDEX_APP_SHA1];
                             // 如果应用已经下载过了，则直接弹出安装提示通知
                             if (mApk.length() == mApkLength
@@ -964,7 +972,7 @@ public final class AppUpdateChecker {
                         if (Configs.DEBUG_APP_UPDATE) {
                             Log.d(TAG, "Start checking if any notifications use id " + ID_NOTIFICATION);
                         }
-                        postTillConditionMeets(handler, action,
+                        runOnConditionMet(handler, action,
                                 () -> !hasNotification(mNotificationManager, ID_NOTIFICATION, null));
                     } else {
                         if (Configs.DEBUG_APP_UPDATE) {

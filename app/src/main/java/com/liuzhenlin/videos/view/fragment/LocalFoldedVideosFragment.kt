@@ -411,7 +411,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
                 mOptionsFrameTopDivider.visibility = View.VISIBLE
                 mVideoOptionsFrame.visibility = View.VISIBLE
 
-                Utils.postOnLayoutValid(mRecyclerView.parent as View) {
+                Utils.runOnLayoutValid(mRecyclerView.parent as View) {
                     val itemBottom = (v.parent as View).bottom
                     val listHeight = mRecyclerView.height
                     if (itemBottom > listHeight) {
@@ -440,18 +440,23 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
 
     private fun onVideoCheckedChange() {
         var checkedVideosCount = 0
+        var hasUnwritableCheckedVideo = false
         for (video in mVideos) {
-            if (video.isChecked) checkedVideosCount++
+            if (video.isChecked) {
+                checkedVideosCount++
+                if (!hasUnwritableCheckedVideo && !video.isWritable) {
+                    hasUnwritableCheckedVideo = true
+                }
+            }
         }
         when (checkedVideosCount) {
             mVideos.size -> mSelectAllButton.text = SELECT_NONE
             else -> mSelectAllButton.text = SELECT_ALL
         }
-        mDeleteButton.isEnabled = checkedVideosCount > 0
-        val enabled = checkedVideosCount == 1
-        mRenameButton.isEnabled = enabled
-        mShareButton.isEnabled = enabled
-        mDetailsButton.isEnabled = enabled
+        mDeleteButton.isEnabled = checkedVideosCount > 0 && !hasUnwritableCheckedVideo
+        mRenameButton.isEnabled = checkedVideosCount == 1 && !hasUnwritableCheckedVideo
+        mShareButton.isEnabled = checkedVideosCount == 1
+        mDetailsButton.isEnabled = checkedVideosCount == 1
     }
 
     private val checkedVideos: List<Video>?
@@ -574,7 +579,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
                     separateToppedItemsFromUntoppedOnes(holder, position)
                 }
                 if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
-                    holder.checkBox.visibility = mVideoOptionsFrame.visibility
+                    UiUtils.setViewVisibilityAndVerify(holder.checkBox, mVideoOptionsFrame.visibility)
                 }
                 if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
                     holder.checkBox.isChecked = video.isChecked
@@ -606,13 +611,15 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
 
             val video = mVideos[position]
             holder.checkBox.run {
-                visibility = mVideoOptionsFrame.visibility
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, mVideoOptionsFrame.visibility)
                 isChecked = video.isChecked
             }
             holder.videoNameText.text = video.name
             holder.videoSizeText.text = FileUtils.formatFileSize(video.size.toDouble())
             holder.videoProgressAndDurationText.text =
                     VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+            UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                    if (video.isWritable) View.VISIBLE else View.GONE)
         }
 
         override fun loadItemImages(holder: ViewHolder) {

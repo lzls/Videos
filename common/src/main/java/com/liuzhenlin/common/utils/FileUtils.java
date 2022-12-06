@@ -363,6 +363,22 @@ public class FileUtils {
         return dir;
     }
 
+    public static boolean ensureFileWritable(@NonNull String path) {
+        if (path.isEmpty()) {
+            return false;
+        }
+        return ensureFileWritable(new File(path));
+    }
+
+    public static boolean ensureFileWritable(@NonNull File file) {
+        if (!file.canWrite()) {
+            // This will return false if the file is located out of the scoped storage for this app
+            // and was not created or owned by the app.
+            return file.setWritable(true);
+        }
+        return true;
+    }
+
     public static class UriResolver {
 
         private UriResolver() {

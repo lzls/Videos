@@ -100,6 +100,7 @@ import com.google.android.material.transition.MaterialSharedAxis;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.FileUtils;
@@ -1638,7 +1639,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         mBrightnessOrVolumeFrame.setVisibility(GONE);
 
         if (mTimedOffRunnable != null) {
-            removeCallbacks(mTimedOffRunnable);
+            ViewCompatibility.removeCallbacks(this, mTimedOffRunnable);
             mTimedOffRunnable = null;
         }
 
@@ -2190,7 +2191,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                                     //    not as expected in a layout whose direction is right-to-left.
                                     // 2. Under some circumstances, it will not work correctly, like
                                     //    large font size mode.
-                                    Utils.postOnLayoutValid(shareButton, () -> {
+                                    Utils.runOnLayoutValid(shareButton, () -> {
                                         lp.width = shareButton.getWidth();
                                         lp.height = Utils.roundFloat(lp.width / aspectRatio);
                                         photoImage.setLayoutParams(lp);
@@ -2206,7 +2207,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                                     }
                                     shareButton.setText(sb);
 
-                                    Utils.postOnLayoutValid(shareButton, () -> {
+                                    Utils.runOnLayoutValid(shareButton, () -> {
                                         lp.height = shareButton.getHeight();
                                         lp.width = Utils.roundFloat(lp.height * aspectRatio);
                                         photoImage.setLayoutParams(lp);
@@ -2447,7 +2448,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     if (/*position < interval[0] ||*/ position > interval[1]) {
                         player.seekTo(interval[0]);
                     }
-                    vcv.post(this);
+                    ViewCompatibility.post(vcv, this);
                 }
             }
         };
@@ -2461,7 +2462,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 if (player.isPlaying()) {
                     holder.setKeepScreenOn(false);
                     player.pause();
-                    vcv.removeCallbacks(trackProgressRunnable);
+                    ViewCompatibility.removeCallbacks(vcv, trackProgressRunnable);
                 }
                 selectionBeingDragged[0] = true;
             }
@@ -2499,7 +2500,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         mVideoPlayer.closeVideoInternal(true /* no or little use */);
                     }
                     player.play();
-                    vcv.post(trackProgressRunnable);
+                    ViewCompatibility.post(vcv, trackProgressRunnable);
                 }
                 selectionBeingDragged[0] = false;
             }
@@ -2534,7 +2535,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         }
         vcv.setSelectionInterval(intervalStart, intervalEnd);
         vcv.setSelection(initialSelection);
-        Utils.postOnLayoutValid(vcv, () -> {
+        Utils.runOnLayoutValid(vcv, () -> {
             final int thumbHeight = vcv.getThumbDisplayHeight();
             final float thumbWidth = thumbHeight * videoAspectRatio;
             final int thumbGalleryWidth = vcv.getThumbGalleryWidth();
@@ -2608,7 +2609,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         mVideoPlayer.closeVideoInternal(true /* no or little use */);
                     }
                     player.play();
-                    vcv.post(trackProgressRunnable);
+                    ViewCompatibility.post(vcv, trackProgressRunnable);
                 }
             }
 
@@ -2621,7 +2622,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 holder.setKeepScreenOn(false);
                 player.pause();
                 player.release();
-                vcv.removeCallbacks(trackProgressRunnable);
+                ViewCompatibility.removeCallbacks(vcv, trackProgressRunnable);
 
                 // According to our code, a null mClipView indicates that the clipping view
                 // is being removed from the content, so that we must remove this callback now,
@@ -2907,7 +2908,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     popupDownX = event.getX();
                     popupDownY = event.getY();
                     touchFlags |= TFLAG_STILL_DOWN_ON_POPUP;
-                    mSpeedSpinner.removeCallbacks(postPopupOnClickedRunnable);
+                    ViewCompatibility.removeCallbacks(mSpeedSpinner, postPopupOnClickedRunnable);
                     break;
                 case MotionEvent.ACTION_MOVE:
                     if ((touchFlags & TFLAG_STILL_DOWN_ON_POPUP) != 0) {
@@ -2915,7 +2916,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         final float absDy = Math.abs(event.getY() - popupDownY);
                         if (absDx * absDx + absDy * absDy > mTouchSlop * mTouchSlop) {
                             touchFlags &= ~TFLAG_STILL_DOWN_ON_POPUP;
-                            mSpeedSpinner.removeCallbacks(postPopupOnClickedRunnable);
+                            ViewCompatibility.removeCallbacks(mSpeedSpinner, postPopupOnClickedRunnable);
                         }
                     }
                     break;
@@ -2928,13 +2929,13 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         // This is a bit similar to the GestureDetector's onSingleTapConfirmed() method,
                         // but not so rigorous as our logic processing is lightweight and effective
                         // enough in this use case.
-                        mSpeedSpinner.postDelayed(postPopupOnClickedRunnable, 100);
+                        ViewCompatibility.postDelayed(mSpeedSpinner, postPopupOnClickedRunnable, 100);
                     }
                     break;
                 case MotionEvent.ACTION_POINTER_DOWN:
                 case MotionEvent.ACTION_CANCEL:
                     touchFlags &= ~TFLAG_STILL_DOWN_ON_POPUP;
-                    mSpeedSpinner.removeCallbacks(postPopupOnClickedRunnable);
+                    ViewCompatibility.removeCallbacks(mSpeedSpinner, postPopupOnClickedRunnable);
                     break;
             }
             return false; // we just need an OnClickListener, so not consume events
@@ -3397,7 +3398,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     mPrivateFlags = mPrivateFlags & ~PFLAG_TURN_OFF_WHEN_THIS_EPISODE_ENDS
                             | (selected ? PFLAG_TURN_OFF_WHEN_THIS_EPISODE_ENDS : 0);
                     if (mTimedOffRunnable != null) {
-                        removeCallbacks(mTimedOffRunnable);
+                        ViewCompatibility.removeCallbacks(TextureVideoView.this, mTimedOffRunnable);
                         mTimedOffRunnable = null;
                     }
                     break;
@@ -3410,13 +3411,13 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         if (mTimedOffRunnable == null) {
                             mTimedOffRunnable = new TimedOffRunnable();
                         } else {
-                            removeCallbacks(mTimedOffRunnable);
+                            ViewCompatibility.removeCallbacks(TextureVideoView.this, mTimedOffRunnable);
                         }
                         mTimedOffRunnable.offTime = offTime;
-                        postDelayed(mTimedOffRunnable, offTime);
+                        ViewCompatibility.postDelayed(TextureVideoView.this, mTimedOffRunnable, offTime);
                     } else {
                         if (mTimedOffRunnable != null) {
-                            removeCallbacks(mTimedOffRunnable);
+                            ViewCompatibility.removeCallbacks(TextureVideoView.this, mTimedOffRunnable);
                             mTimedOffRunnable = null;
                         }
                     }
@@ -3469,28 +3470,28 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             ViewGroup hsvc = (ViewGroup) anHourText.getParent();
             HorizontalScrollView hsv = (HorizontalScrollView) hsvc.getParent();
             if (_30MinutesText.isSelected()) {
-                Utils.postOnLayoutValid(_30MinutesText, () -> {
+                Utils.runOnLayoutValid(_30MinutesText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.scrollTo(
                             rtl ? anHourText.getRight() : anHourText.getLeft() - hsv.getWidth(),
                             0);
                 });
             } else if (anHourText.isSelected()) {
-                Utils.postOnLayoutValid(anHourText, () -> {
+                Utils.runOnLayoutValid(anHourText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.scrollTo(
                             rtl ? _90MinutesText.getRight() : _90MinutesText.getLeft() - hsv.getWidth(),
                             0);
                 });
             } else if (_90MinutesText.isSelected()) {
-                Utils.postOnLayoutValid(_90MinutesText, () -> {
+                Utils.runOnLayoutValid(_90MinutesText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.scrollTo(
                             rtl ? _2HoursText.getRight() : _2HoursText.getLeft() - hsv.getWidth(),
                             0);
                 });
             } else if (_2HoursText.isSelected()) {
-                Utils.postOnLayoutValid(_2HoursText, () -> {
+                Utils.runOnLayoutValid(_2HoursText, () -> {
                     final boolean rtl = Utils.isLayoutRtl(hsvc);
                     hsv.fullScroll(rtl ? FOCUS_LEFT : FOCUS_RIGHT);
                 });
@@ -3816,7 +3817,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             public Void doInBackground(Void... voids) {
                 while (!isCancelled()) {
                     int now = current;
-                    if (now == last) continue;
+                    if (now == last) {
+                        Thread.yield(); // Take a break
+                        continue;
+                    }
                     last = now;
 
                     View tv = mTextureView;

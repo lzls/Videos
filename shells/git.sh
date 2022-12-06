@@ -10,7 +10,11 @@ if [ "$SHELLS_DIR" ]; then
 else
   source ./utils.sh
 fi
-verifyLastOpSuccessed
+declare -i exitCode=$?
+if [ $exitCode -ne 0 ]; then
+  # bail out when this is not executed on a subprocess
+  return $exitCode
+fi
 
 function __amend() {
   local amend=$1

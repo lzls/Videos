@@ -54,9 +54,11 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.adapter.BaseAdapter2;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.DensityUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.IOUtils;
@@ -68,7 +70,6 @@ import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.common.view.ScrollDisableListView;
 import com.liuzhenlin.common.view.ScrollDisableViewPager;
 import com.liuzhenlin.common.view.SwipeRefreshLayout;
-import com.liuzhenlin.floatingmenu.DensityUtils;
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
@@ -317,7 +318,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     private void adjustTitleTextMarginStart() {
-        Utils.postOnLayoutValid(mTitleText, () -> {
+        Utils.runOnLayoutValid(mTitleText, () -> {
             ViewGroup.MarginLayoutParams hauilp = (ViewGroup.MarginLayoutParams)
                     mHomeAsUpIndicator.getLayoutParams();
             ViewGroup.MarginLayoutParams ttlp = (ViewGroup.MarginLayoutParams)
@@ -475,7 +476,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
         if (!mIsBackPressed) {
             mIsBackPressed = true;
-            mSlidingDrawerLayout.postDelayed(() -> mIsBackPressed = false, 1500);
+            ViewCompatibility.postDelayed(mSlidingDrawerLayout, () -> mIsBackPressed = false, 1500);
             UiUtils.showUserCancelableSnackbar(
                     mSlidingDrawerLayout, R.string.pressAgainToExitApp, Snackbar.LENGTH_SHORT);
         } else {
@@ -788,7 +789,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
             tv.setText(ss);
 
-            Utils.postOnLayoutValid(
+            Utils.runOnLayoutValid(
                     tv, () -> scrollView.smoothScrollTo(0, tv.getHeight() - scrollView.getHeight()));
         }//);
 

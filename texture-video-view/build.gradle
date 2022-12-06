@@ -37,6 +37,6 @@ dependencies {
 
 //    api 'com.danikula:videocache:2.7.1'
 
-//    api 'org.mp4parser:muxer:1.9.41'
+//    api 'org.mp4parser:muxer:1.9.41' // 1.9.41 fails on some videos while 1.9.56 does not work at all
     api 'com.googlecode.mp4parser:isoparser:1.1.22'
 }

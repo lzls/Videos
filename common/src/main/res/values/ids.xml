@@ -2,4 +2,11 @@
 <resources>
     <item name="tag_marginInsetTop" type="id" />
     <item name="tag_paddingInsetTop" type="id" />
+
+    <item name="tag_marginInsetsApplier" type="id" />
+    <item name="tag_paddingInsetsApplier" type="id" />
+
+    <item name="tag_actionsRunOnLayoutValid" type="id" />
+
+    <item name="tag_viewRunQueueHolder" type="id" />
 </resources>

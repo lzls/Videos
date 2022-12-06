@@ -31,6 +31,13 @@ import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.fragment.app.Fragment;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ActivityUtils;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.UiUtils;
+import com.liuzhenlin.common.utils.Utils;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
@@ -230,7 +237,7 @@ public class SwipeBackLayout extends FrameLayout {
         Window window = ((Activity) activity).getWindow();
         window.setBackgroundDrawableResource(android.R.color.transparent);
         window.setWindowAnimations(R.style.WindowAnimations_SwipeBackActivity);
-        if (Utils.isWindowTranslucentOrFloatingTheme(window)) {
+        if (UiUtils.isWindowTranslucentOrFloatingTheme(window)) {
             mViewFlags |= FLAG_WINDOW_IS_TRANSLUCENT;
         }
 
@@ -241,7 +248,8 @@ public class SwipeBackLayout extends FrameLayout {
             public void onGlobalLayout() {
                 getViewTreeObserver().removeGlobalOnLayoutListener(this);
                 contentRoot.setBackgroundResource(
-                        Utils.getThemeAttrRes(window.getContext(), android.R.attr.windowBackground));
+                        ThemeUtils.getThemeAttrRes(
+                                window.getContext(), android.R.attr.windowBackground));
             }
         });
     }
@@ -312,7 +320,7 @@ public class SwipeBackLayout extends FrameLayout {
     }
 
     private boolean resolveTrackingEdgesIfDirectionResolved() {
-        if (Utils.isLayoutDirectionResolved(this)) {
+        if (ViewCompatibility.isLayoutDirectionResolved(this)) {
             resolveTrackingEdges(ViewCompat.getLayoutDirection(this));
             return true;
         }
@@ -544,7 +552,7 @@ public class SwipeBackLayout extends FrameLayout {
 
     @SuppressWarnings("UnusedReturnValue")
     private boolean resolveEdgeShadowsIfDirectionResolved() {
-        if (Utils.isLayoutDirectionResolved(this)) {
+        if (ViewCompatibility.isLayoutDirectionResolved(this)) {
             resolveEdgeShadows(ViewCompat.getLayoutDirection(this));
             return true;
         }
@@ -688,7 +696,7 @@ public class SwipeBackLayout extends FrameLayout {
                 canvas.clipRect(child.getRight(), 0, getRight(), getHeight());
                 break;
         }
-        canvas.drawColor(Utils.dimColor(mScrimColor, 1 - mScrimOpacity));
+        canvas.drawColor(ColorUtils.dimColor(mScrimColor, 1 - mScrimOpacity));
         canvas.restore();
     }
 
@@ -872,7 +880,7 @@ public class SwipeBackLayout extends FrameLayout {
                     if (mActivity != null) {
                         Activity activity = (Activity) mActivity;
                         if ((mViewFlags & FLAG_WINDOW_IS_TRANSLUCENT) == 0) {
-                            Utils.convertActivityToOpaque(activity);
+                            ActivityUtils.convertActivityToOpaque(activity);
                         }
                     }
                 }
@@ -892,7 +900,7 @@ public class SwipeBackLayout extends FrameLayout {
             // to transparency, then the previous activity will be visible.
         } else {
             if ((mViewFlags & FLAG_WINDOW_IS_TRANSLUCENT) == 0) {
-                Utils.convertActivityToTranslucent((Activity) mActivity);
+                ActivityUtils.convertActivityToTranslucent((Activity) mActivity);
             }
         }
     }

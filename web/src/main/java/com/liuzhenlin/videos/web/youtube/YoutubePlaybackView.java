@@ -322,7 +322,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
             if (mCustomView != null) {
                 removeView(mCustomView);
                 if (mScrollX != 0 || mScrollY != 0) {
-                    Utils.postOnLayoutValid(
+                    Utils.runOnLayoutValid(
                             YoutubePlaybackView.this, () -> scrollTo(mScrollX, mScrollY));
                 }
                 mCustomView = null;

@@ -42,13 +42,13 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.observer.RotationObserver;
+import com.liuzhenlin.common.utils.DensityUtils;
 import com.liuzhenlin.common.utils.DisplayCutoutManager;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
-import com.liuzhenlin.floatingmenu.DensityUtils;
 import com.liuzhenlin.galleryviewer.GalleryViewPager;
 import com.liuzhenlin.swipeback.SwipeBackLayout;
 import com.liuzhenlin.videos.App;
@@ -342,6 +342,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             ViewGroup.LayoutParams lp = convertView.getLayoutParams();
             lp.height = lp.width = com.liuzhenlin.common.utils.
                     Utils.roundFloat((screenWidth - contentPaddingHorizontal - imageMargin * 2) / 3f);
+
+            ((GridView) parent).setColumnWidth(lp.width);
 
             ViewGroup.LayoutParams plp = parent.getLayoutParams();
             plp.width = screenWidth - contentPaddingHorizontal;

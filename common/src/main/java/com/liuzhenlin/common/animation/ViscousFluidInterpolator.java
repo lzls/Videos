@@ -1,4 +1,4 @@
-package com.liuzhenlin.simrv;
+package com.liuzhenlin.common.animation;
 
 import android.view.animation.Interpolator;
 

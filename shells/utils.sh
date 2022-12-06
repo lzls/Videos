@@ -102,8 +102,8 @@ function waitToExit() {
   exit $1
 }
 
-function cdOrWaitToExit() {
-  cd "$1" || waitToExit $?
+function cdOrExit() {
+  cd "$1" || exit $?
 }
 
 function verifyLastOpSuccessed() {

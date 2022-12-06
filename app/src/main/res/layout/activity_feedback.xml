@@ -138,20 +138,27 @@
                     android:textSize="@dimen/secondary_text_size"
                     tools:ignore="HardcodedText" />
 
-                <GridView
-                    android:id="@+id/grid_pictures"
+                <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12.5dp"
                     android:layout_marginBottom="5dp"
                     android:layout_below="@id/text_pictures"
                     android:scrollbars="none"
-                    android:overScrollMode="never"
-                    android:numColumns="3"
-                    android:horizontalSpacing="5dp"
-                    android:verticalSpacing="5dp"
-                    android:stretchMode="columnWidth"
-                    tools:ignore="NestedScrolling" />
+                    android:overScrollMode="never">
+
+                    <com.liuzhenlin.common.view.ScrollNestedGridView
+                        android:id="@+id/grid_pictures"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none"
+                        android:overScrollMode="never"
+                        android:numColumns="3"
+                        android:horizontalSpacing="5dp"
+                        android:verticalSpacing="5dp"
+                        android:stretchMode="spacingWidth"
+                        tools:ignore="NestedScrolling" />
+                </HorizontalScrollView>
             </RelativeLayout>
 
             <LinearLayout

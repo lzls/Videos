@@ -5,7 +5,11 @@
 
 SHELLS_DIR=$(cd "$(dirname "$0")"; pwd)
 source "$SHELLS_DIR"/utils.sh
-verifyLastOpSuccessed
+# bail out if this is not executed on a subprocess
+declare -i exitCode=$?
+if [ $exitCode -ne 0 ]; then
+  return $exitCode
+fi
 
 int START_TIME="$(date +%s)"
 echo_e "start time: $(date -r $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')\n"
@@ -29,12 +33,12 @@ function __parseShellArgs() {
     ${ndkPathPrefix}*) NDK_PATH=$(parsePath "${arg:${#ndkPathPrefix}}") ;;
     ${hostPlatformPrefix}*) HOST_PLATFORM=${arg:${#hostPlatformPrefix}} ;;
     --help) __echo_release_sh_usage___; exit 0 ;;
-    *) __echo_release_sh_usage___ "$arg"; waitToExit 1 ;;
+    *) __echo_release_sh_usage___ "$arg"; exit 1 ;;
     esac
   done
 
   if [ ! "$EXO_PLAYER_ROOT" ] || [ ! "$NDK_PATH" ] || [ ! "$HOST_PLATFORM" ]; then
-    __echo_release_sh_usage___; waitToExit 1
+    __echo_release_sh_usage___; exit 1
   fi
 }
 __parseShellArgs "$@"

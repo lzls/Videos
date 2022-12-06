@@ -51,13 +51,17 @@ import androidx.customview.view.AbsSavedState;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.Utils;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.liuzhenlin.slidingdrawerlayout.Utils.roundFloat;
+import static com.liuzhenlin.common.utils.Utils.roundFloat;
 
 /**
  * A layout shows better than {@link androidx.drawerlayout.widget.DrawerLayout}, which can also
@@ -320,6 +324,12 @@ public class SlidingDrawerLayout extends ViewGroup {
     private DrawerRunnable mPostedDrawerRunnable;
 
     /**
+     * OnGlobalLayoutListener used to open the drawer with the specified edge gravity when
+     * this view is laidout.
+     */
+    /*synthetic*/ OpenDrawerOnGlobalLayoutListener mOpenDrawerOnGlobalLayoutListener;
+
+    /**
      * The fade color used for the content view {@link #mContentView}, default is 50% black.
      *
      * @see #getContentFadeColor()
@@ -405,12 +415,12 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         void initAndPostToQueue(View drawer, boolean open) {
             initForPost(drawer, open);
-            post(this);
+            ViewCompatibility.post(SlidingDrawerLayout.this, this);
         }
 
         void resetAndRemoveFromQueue() {
             if (isInMsgQueue) {
-                removeCallbacks(this);
+                ViewCompatibility.removeCallbacks(SlidingDrawerLayout.this, this);
                 isInMsgQueue = false;
                 drawer = null;
                 open = false;
@@ -449,7 +459,20 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         void removeFromMsgQueue() {
             mOpenStubDrawerRunnable = null;
-            removeCallbacks(this);
+            ViewCompatibility.removeCallbacks(SlidingDrawerLayout.this, this);
+        }
+    }
+
+    private abstract class OpenDrawerOnGlobalLayoutListener
+            implements ViewTreeObserver.OnGlobalLayoutListener {
+        int drawerGravity;
+
+        OpenDrawerOnGlobalLayoutListener() {
+        }
+
+        void removeFromViewTreeObserver() {
+            getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            mOpenDrawerOnGlobalLayoutListener = null;
         }
     }
 
@@ -671,7 +694,8 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                    || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mStartDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?
@@ -714,7 +738,7 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mEndDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?
@@ -866,7 +890,8 @@ public class SlidingDrawerLayout extends ViewGroup {
                 final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
                 if ((mFlags & FLAG_DRAWER_TOUCH_ABILITIES_RESOLVED) == 0) {
-                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                            || ViewCompatibility.isLayoutDirectionResolved(this)) {
                         resolveDrawerTouchAbilities(layoutDirection);
                     } else {
                         return (mFlags & FLAG_START_DRAWER_TOUCH_ABILITY_DEFINED) == 0
@@ -882,7 +907,8 @@ public class SlidingDrawerLayout extends ViewGroup {
                 final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
                 if ((mFlags & FLAG_DRAWER_TOUCH_ABILITIES_RESOLVED) == 0) {
-                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                            || ViewCompatibility.isLayoutDirectionResolved(this)) {
                         resolveDrawerTouchAbilities(layoutDirection);
                     } else {
                         return (mFlags & FLAG_END_DRAWER_TOUCH_ABILITY_DEFINED) == 0
@@ -1077,7 +1103,7 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     private boolean resolveDrawerWidthPercentagesIfDirectionResolved(boolean preventLayout) {
-        final boolean directionResolved = Utils.isLayoutDirectionResolved(this);
+        final boolean directionResolved = ViewCompatibility.isLayoutDirectionResolved(this);
         if (directionResolved) {
             resolveDrawerWidthPercentages(ViewCompat.getLayoutDirection(this), preventLayout);
         }
@@ -1162,7 +1188,7 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     private boolean resolveDrawerTouchAbilitiesIfDirectionResolved() {
-        final boolean directionResolved = Utils.isLayoutDirectionResolved(this);
+        final boolean directionResolved = ViewCompatibility.isLayoutDirectionResolved(this);
         if (directionResolved) {
             resolveDrawerTouchAbilities(ViewCompat.getLayoutDirection(this));
         }
@@ -1657,7 +1683,7 @@ public class SlidingDrawerLayout extends ViewGroup {
             issued = super.drawChild(canvas, child, drawingTime);
             // Draw the content view's fading
             if (mScrollPercent > 0) {
-                final int color = Utils.dimColor(mContentFadeColor, 1 - mScrollPercent);
+                final int color = ColorUtils.dimColor(mContentFadeColor, 1 - mScrollPercent);
                 if (mShownDrawer == mLeftDrawer) {
                     canvas.clipRect(mContentView.getLeft(), child.getTop(),
                             getRight() - getPaddingRight(), child.getBottom());
@@ -1678,6 +1704,9 @@ public class SlidingDrawerLayout extends ViewGroup {
         super.onDetachedFromWindow();
         cancelRunningAnimatorAndPendingActions();
         closeDrawer(false);
+        if (mOpenDrawerOnGlobalLayoutListener != null) {
+            mOpenDrawerOnGlobalLayoutListener.removeFromViewTreeObserver();
+        }
     }
 
     private void cancelRunningAnimatorAndPendingActions() {
@@ -2179,7 +2208,7 @@ public class SlidingDrawerLayout extends ViewGroup {
                         mOpenStubDrawerRunnable.removeFromMsgQueue();
                     }
                     mOpenStubDrawerRunnable = new OpenStubDrawerRunnable(drawer, animate);
-                    post(mOpenStubDrawerRunnable);
+                    ViewCompatibility.post(this, mOpenStubDrawerRunnable);
 
                 } else {
                     if (mOpenStubDrawerRunnable != null) {
@@ -2658,15 +2687,19 @@ public class SlidingDrawerLayout extends ViewGroup {
         if (ss.openDrawerGravity != Gravity.NO_GRAVITY) {
             // Wait for the drawer on the specified side to be correctly resolved by this view
             // as it may depends on the current layout direction.
-            getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    if (Utils.isLayoutValid(SlidingDrawerLayout.this)) {
-                        getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        openDrawer(ss.openDrawerGravity, false);
+            if (mOpenDrawerOnGlobalLayoutListener == null) {
+                mOpenDrawerOnGlobalLayoutListener = new OpenDrawerOnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        if (ViewCompatibility.isLayoutValid(SlidingDrawerLayout.this)) {
+                            removeFromViewTreeObserver();
+                            openDrawer(drawerGravity, false);
+                        }
                     }
-                }
-            });
+                };
+                getViewTreeObserver().addOnGlobalLayoutListener(mOpenDrawerOnGlobalLayoutListener);
+            }
+            mOpenDrawerOnGlobalLayoutListener.drawerGravity = ss.openDrawerGravity;
         }
     }
 

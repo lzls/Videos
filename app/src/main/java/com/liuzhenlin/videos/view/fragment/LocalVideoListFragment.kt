@@ -42,6 +42,7 @@ import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
+import com.liuzhenlin.common.compat.ViewCompatibility
 import com.liuzhenlin.common.listener.OnBackPressedListener
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.ThemeUtils
@@ -501,9 +502,9 @@ class LocalVideoListFragment : BaseFragment(),
                 }
                 if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
                     if (mItemOptionsWindow == null) {
-                        holder.checkBox.visibility = View.GONE
+                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
                     } else {
-                        holder.checkBox.visibility = View.VISIBLE
+                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
                     }
                 }
                 if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
@@ -518,7 +519,7 @@ class LocalVideoListFragment : BaseFragment(),
                     }
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, progress, duration) = item as Video
+                    val (_, _, _, _, _, _, progress, duration) = item as Video
                     (holder as VideoViewHolder).videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(progress, duration)
                 }
@@ -545,9 +546,9 @@ class LocalVideoListFragment : BaseFragment(),
 
             val item = mVideoListItems[position]
             if (mItemOptionsWindow == null) {
-                holder.checkBox.visibility = View.GONE
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
             } else {
-                holder.checkBox.visibility = View.VISIBLE
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
                 holder.checkBox.isChecked = item.isChecked
             }
             when (holder.itemViewType) {
@@ -559,16 +560,27 @@ class LocalVideoListFragment : BaseFragment(),
                     vh.videoSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                            if (video.isWritable) View.VISIBLE else View.GONE)
                 }
                 VIEW_TYPE_VIDEODIR -> {
                     val vh = holder as VideoDirViewHolder
                     val videos = (item as VideoDirectory).videos
+                    var hasUnwritableVideo = false
+                    for (v in videos) {
+                        if (!v.isWritable) {
+                            hasUnwritableVideo = true
+                            break
+                        }
+                    }
 
                     VideoUtils2.loadVideoThumbIntoFragmentImageView(
                             this@LocalVideoListFragment, vh.videodirImage, videos[0])
                     vh.videodirNameText.text = item.name
                     vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
+                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                            if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
                 }
             }
         }
@@ -922,9 +934,10 @@ class LocalVideoListFragment : BaseFragment(),
                     }
 
                     override fun run() {
-                        iowcv.removeCallbacks(this)
-                        if (!UiUtils.isLayoutValid(iowcv) || !UiUtils.isLayoutValid(mRecyclerView)) {
-                            iowcv.post(this)
+                        ViewCompatibility.removeCallbacks(iowcv, this)
+                        if (!ViewCompatibility.isLayoutValid(iowcv)
+                                || !ViewCompatibility.isLayoutValid(mRecyclerView)) {
+                            ViewCompatibility.post(iowcv, this)
                             return
                         }
 
@@ -948,7 +961,7 @@ class LocalVideoListFragment : BaseFragment(),
                             if (itemBottom <= rvHeight) {
                                 notifyItemsToShowCheckBoxes()
                             } else {
-                                Utils.postOnLayoutValid(rv) {
+                                Utils.runOnLayoutValid(rv) {
                                     // 使长按的itemView在RecyclerView高度改变后可见
                                     rv.scrollBy(0, itemBottom - rvHeight)
 
@@ -1007,11 +1020,26 @@ class LocalVideoListFragment : BaseFragment(),
 
         var firstCheckedItem: VideoListItem? = null
         var checkedItemCount = 0
+        var hasUnwritableCheckedItem = false
         for (item in mVideoListItems) {
             if (item.isChecked) {
                 checkedItemCount++
                 if (checkedItemCount == 1) {
                     firstCheckedItem = item
+                }
+                if (item is VideoDirectory) {
+                    var index = item.videos.size - 1
+                    while (!hasUnwritableCheckedItem && index >= 0) {
+                        if (!item.videos[index].isWritable) {
+                            hasUnwritableCheckedItem = true
+                            break
+                        }
+                        index--
+                    }
+                } else /* if (item is Video) */ {
+                    if (!hasUnwritableCheckedItem && !(item as Video).isWritable) {
+                        hasUnwritableCheckedItem = true
+                    }
                 }
             }
         }
@@ -1034,11 +1062,12 @@ class LocalVideoListFragment : BaseFragment(),
             else -> getString(R.string.severalItemsHaveBeenSelected, checkedItemCount)
         }
 
-        mDeleteButton_IOW!!.isEnabled = checkedItemCount >= 1
-        val enabled = checkedItemCount == 1
-        mRenameButton_IOW!!.isEnabled = enabled
+        mDeleteButton_IOW!!.isEnabled = checkedItemCount > 0 && !hasUnwritableCheckedItem
+        mRenameButton_IOW!!.isEnabled =
+                checkedItemCount == 1
+                        && (!hasUnwritableCheckedItem || firstCheckedItem is VideoDirectory)
         mShareButton_IOW!!.isEnabled = aVideoCheckedOnly
-        mDetailsButton_IOW!!.isEnabled = enabled
+        mDetailsButton_IOW!!.isEnabled = checkedItemCount == 1
     }
 
     override fun showDeleteItemDialog(item: VideoListItem, onDeleteAction: (() -> Unit)?) {
@@ -1098,7 +1127,13 @@ class LocalVideoListFragment : BaseFragment(),
         view.tag = items
         view[0].tag = onDeleteAction
 
-        val fadedContentView = requireView().rootView as FrameLayout // DecorView
+        var fadedContentView =
+                requireView().rootView // DecorView
+                        .findViewById<FrameLayout>(android.R.id.content) // ContentFrameLayout
+        fadedContentView =
+                fadedContentView.parent // FitWindowsLinearLayout
+                        .parent as? FrameLayout ?: fadedContentView
+        var fadedContentViewFgGravity = 0
 
         mDeleteItemsWindow = PopupWindow(
                 view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -1114,10 +1149,14 @@ class LocalVideoListFragment : BaseFragment(),
 
             mTitleWindowFrame?.foreground = null
             fadedContentView.foreground = null
+            fadedContentView.foregroundGravity = fadedContentViewFgGravity
         }
 
         mTitleWindowFrame?.foreground = ColorDrawable(0x7F000000)
         fadedContentView.foreground = ColorDrawable(0x7F000000)
+        // 在设置了foreground之后获取，以免因 mForegroundInfo 还未初始化，获取不到实际的值
+        fadedContentViewFgGravity = fadedContentView.foregroundGravity
+        fadedContentView.foregroundGravity = Gravity.FILL
     }
 
     override fun showRenameItemDialog(item: VideoListItem, onRenameAction: (() -> Unit)?) {
