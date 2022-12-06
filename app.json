@@ -53,11 +53,11 @@
       "7. 优化更新日志悬挂缩进的效果"
     ],
     "beta": {
-      "versionCode": 58,
-      "versionName": "2.2-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2-beta01.apk",
-      "appLength": 31944649,
-      "appSha1": "855461c0d68cf8ae8fda265c0ee09e11587b3699",
+      "versionCode": 59,
+      "versionName": "2.2-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2-beta02.apk",
+      "appLength": 31879760,
+      "appSha1": "8934dec27ab388929f113415ddb6fd42bdb2eb54",
       "updateLogs": [
         "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
         "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
@@ -72,15 +72,18 @@
         "11.将可显示的反馈文本行数放宽到最多为10行",
         "12.支持外部网络链接跳转至应用进行播放音视频",
         "13.适配分屏和弹出窗口",
-        "14.调整UI内容边距，使UI更加松散美观"
+        "14.调整UI内容边距，使UI更加松散美观",
+        "15.受沙盒存储机制的影响，应用运行于安卓11及以上版本的系统中，很可能将无法删除或重命名非本应用创建的媒体内容",
+        "16.确认删除视频的底部弹窗出现时不再暗淡虚拟按键区域",
+        "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子"
       ]
     },
     "dev": {
-      "versionCode": 58,
-      "versionName": "2.2-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2-beta01.apk",
-      "appLength": 31944649,
-      "appSha1": "855461c0d68cf8ae8fda265c0ee09e11587b3699",
+      "versionCode": 59,
+      "versionName": "2.2-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2-beta02.apk",
+      "appLength": 31879760,
+      "appSha1": "8934dec27ab388929f113415ddb6fd42bdb2eb54",
       "updateLogs": [
         "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
         "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
@@ -95,7 +98,10 @@
         "11.将可显示的反馈文本行数放宽到最多为10行",
         "12.支持外部网络链接跳转至应用进行播放音视频",
         "13.适配分屏和弹出窗口",
-        "14.调整UI内容边距，使UI更加松散美观"
+        "14.调整UI内容边距，使UI更加松散美观",
+        "15.受沙盒存储机制的影响，应用运行于安卓11及以上版本的系统中，很可能将无法删除或重命名非本应用创建的媒体内容",
+        "16.确认删除视频的底部弹窗出现时不再暗淡虚拟按键区域",
+        "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
