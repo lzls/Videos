@@ -78,6 +78,11 @@ public class SwipeBackActivity extends AppCompatActivity implements ISwipeBackAc
     }
 
     @Override
+    public final void setWillNotDrawWindowBackgroundInContentViewArea(boolean willNotDraw) {
+        mDelegate.setWillNotDrawWindowBackgroundInContentViewArea(willNotDraw);
+    }
+
+    @Override
     public void finish() {
         mDelegate.finish();
     }

@@ -146,6 +146,10 @@ public class SwipeBackLayout extends FrameLayout {
     private static final int FLAG_START_EDGE_SHADOW_SPECIFIED = EDGE_END << 13;
     private static final int FLAG_END_EDGE_SHADOW_SPECIFIED = EDGE_END << 14;
 
+    /** @see #setWillNotDrawWindowBackgroundInContentViewArea(boolean) */
+    private static final int FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA =
+            EDGE_END << 15;
+
     /**
      * The set of listeners to be sent events through
      *
@@ -313,9 +317,12 @@ public class SwipeBackLayout extends FrameLayout {
                     ViewCompat.setBackground(swipeBackLayout.mContentView, null);
                     mWindowBackground = null;
                 } else {
-                    ViewCompat.setBackground(swipeBackLayout.mContentView,
-                            DrawableCompat.getConstantState(windowBackground)
-                                    .newDrawable(activity.getResources(), activity.getTheme()));
+                    if ((swipeBackLayout.mViewFlags
+                            & FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA) == 0) {
+                        ViewCompat.setBackground(swipeBackLayout.mContentView,
+                                DrawableCompat.getConstantState(windowBackground)
+                                        .newDrawable(activity.getResources(), activity.getTheme()));
+                    }
                     // Release the window background from decor before wrapping, in case our wrapper
                     // not internally get called through DrawableWrapper (Drawable.Callback) that
                     // will be set for the wrapped Drawable and can be dropped by
@@ -353,6 +360,32 @@ public class SwipeBackLayout extends FrameLayout {
 
         void releaseRefs() {
             mWindowBackground = INVALID_DRAWABLE;
+        }
+    }
+
+    /**
+     * Sets whether to skip the Window background drawing on the content root. This can be safely
+     * set to true to reduce overdraw areas if your Activity content View will, instead, fully
+     * draw an opaque background.
+     */
+    /*package*/ void setWillNotDrawWindowBackgroundInContentViewArea(boolean willNotDraw) {
+        //noinspection DoubleNegation
+        if (((mViewFlags & FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA) != 0)
+                != willNotDraw) {
+            mViewFlags ^= FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA;
+            if (mContentView != null) {
+                if (willNotDraw) {
+                    ViewCompat.setBackground(mContentView, null);
+                } else if (mActivity != null) {
+                    Activity activity = (Activity) mActivity;
+                    Drawable windowBackground = activity.getWindow().getDecorView().getBackground();
+                    if (windowBackground != null) {
+                        ViewCompat.setBackground(mContentView,
+                                DrawableCompat.getConstantState(windowBackground)
+                                        .newDrawable(activity.getResources(), activity.getTheme()));
+                    }
+                }
+            }
         }
     }
 

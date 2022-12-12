@@ -87,6 +87,11 @@ public class SwipeBackActivityDelegate<A extends Activity & ISwipeBackActivity>
         return null;
     }
 
+    @Override
+    public void setWillNotDrawWindowBackgroundInContentViewArea(boolean willNotDraw) {
+        requireSwipeBackLayout().setWillNotDrawWindowBackgroundInContentViewArea(willNotDraw);
+    }
+
     public void finish() {
         abortUserSwipeBack();
         mPrivateAccess.superFinish();

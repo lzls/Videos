@@ -94,6 +94,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feedback);
+        setWillNotDrawWindowBackgroundInContentViewArea(true);
 
         boolean lightStatus = !ThemeUtils.isNightMode(this);
         Window window = getWindow();
