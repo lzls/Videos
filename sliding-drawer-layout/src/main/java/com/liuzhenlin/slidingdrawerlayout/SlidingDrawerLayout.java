@@ -1452,19 +1452,10 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         int maxWidth = 0;
         int maxHeight = 0;
-        int childrenState = 0;
+        int contentMeasuredState = 0;
+        int drawersMeasuredStates = 0;
 
-        for (int i = 0; i < childCount; i++) {
-            View child = getChildAt(i);
-            if (isChildInLayout(child)) {
-                measureChild(child, widthMeasureSpec, heightMeasureSpec);
-                maxWidth = Math.max(maxWidth, child.getMeasuredWidth());
-                maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
-                childrenState = combineMeasuredStates(childrenState, child.getMeasuredState());
-            }
-        }
-
-        // Account for padding too
+        // Account for paddings first
         maxWidth += getPaddingLeft() + getPaddingRight();
         maxHeight += getPaddingTop() + getPaddingBottom();
 
@@ -1481,10 +1472,59 @@ public class SlidingDrawerLayout extends ViewGroup {
             }
         }
 
+        final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        // If width measure spec mode is UNSPECIFIED, we can freely choose the greater value
+        // of maxWidth and widthSize to measure the child views.
+        widthSize = widthMode == MeasureSpec.UNSPECIFIED ? Math.max(maxWidth, widthSize) : widthSize;
+        // If height measure spec mode is UNSPECIFIED, we can freely choose the greater value
+        // of maxHeight and heightSize to measure the child views as well.
+        heightSize =
+                heightMode == MeasureSpec.UNSPECIFIED ? Math.max(maxHeight, heightSize) : heightSize;
+        // Measure spec requirements applied to getChildMeasureSpec() for any children in this layout
+        int childWidthMeasureSpecReferent = MeasureSpec.makeMeasureSpec(widthSize, widthMode);
+        int childHeightMeasureSpecReferent = MeasureSpec.makeMeasureSpec(heightSize, heightMode);
+
+        for (int i = 0; i < childCount; i++) {
+            View child = getChildAt(i);
+            if (isChildInLayout(child)) {
+                measureChild(child, childWidthMeasureSpecReferent, childHeightMeasureSpecReferent);
+                maxWidth = Math.max(maxWidth, child.getMeasuredWidth());
+                maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
+                if (child == mContentView) {
+                    contentMeasuredState = child.getMeasuredState();
+                } else {
+                    drawersMeasuredStates =
+                            combineMeasuredStates(drawersMeasuredStates, child.getMeasuredState());
+                }
+            }
+        }
+
+        final int measuredWidth = resolveSize(maxWidth, widthMeasureSpec);
+        if (measuredWidth > widthSize) {
+            drawersMeasuredStates = 0;
+            childWidthMeasureSpecReferent = MeasureSpec.makeMeasureSpec(measuredWidth, widthMode);
+            for (int i = 0; i < childCount; i++) {
+                View child = getChildAt(i);
+                if (isChildInLayout(child)) {
+                    measureChild(child, childWidthMeasureSpecReferent, childHeightMeasureSpecReferent);
+                    // Check against the drawer view's measured height only, since the width of
+                    // this view should remain unchanged now.
+                    maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
+                    drawersMeasuredStates =
+                            combineMeasuredStates(drawersMeasuredStates, child.getMeasuredState());
+                }
+            }
+        }
+
+        final int childrenMeasuredStates =
+                combineMeasuredStates(contentMeasuredState, drawersMeasuredStates);
         setMeasuredDimension(
-                resolveSizeAndState(maxWidth, widthMeasureSpec, childrenState),
+                resolveSizeAndState(maxWidth, widthMeasureSpec, childrenMeasuredStates),
                 resolveSizeAndState(maxHeight, heightMeasureSpec,
-                        childrenState << MEASURED_HEIGHT_STATE_SHIFT));
+                        childrenMeasuredStates << MEASURED_HEIGHT_STATE_SHIFT));
     }
 
     @Override
@@ -1523,15 +1563,16 @@ public class SlidingDrawerLayout extends ViewGroup {
 
                 childWidthMeasureSpec = getChildMeasureSpec(
                         parentWidthMeasureSpec, horizontalPaddings, child.getLayoutParams().width);
+                child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
 
-                final int childMeasuredWidth = MeasureSpec.getSize(childWidthMeasureSpec);
+                final int childMeasuredWidth = child.getMeasuredWidth();
                 final int newChildMeasuredWidth = Math.min(
                         Math.max(childMeasuredWidth, minChildWidth), maxChildWidth);
+                if (newChildMeasuredWidth == childMeasuredWidth)
+                    return;
 
-                if (newChildMeasuredWidth != childMeasuredWidth) {
-                    childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
-                            newChildMeasuredWidth, MeasureSpec.EXACTLY);
-                }
+                childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+                        newChildMeasuredWidth, MeasureSpec.EXACTLY);
             } else {
                 childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
                         roundFloat(availableWidth * drawerWidthPercent), MeasureSpec.EXACTLY);

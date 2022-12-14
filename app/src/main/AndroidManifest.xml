@@ -91,7 +91,6 @@
 
         <activity
             android:name=".view.activity.FeedbackActivity"
-            android:theme="@style/AppTheme.NoWindowBackground"
             android:screenOrientation="portrait"
             android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
             android:launchMode="singleTop"

@@ -39,6 +39,13 @@ public interface ISwipeBackActivity {
     @Nullable
     Activity getPreviousActivity();
 
+    /**
+     * Sets whether to skip the Window background drawing on the content root. This can be safely
+     * set to true to reduce overdraw areas if your Activity content View will, instead, fully
+     * draw an opaque background.
+     */
+    void setWillNotDrawWindowBackgroundInContentViewArea(boolean willNotDraw);
+
     interface PrivateAccess {
         Object superGetSystemService(@NonNull String name);
         void superFinish();
