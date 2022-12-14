@@ -2,11 +2,11 @@
   "appInfos": {
     "appName": "视频",
     "applicationId": "com.liuzhenlin.videos",
-    "minSdkVersion": 14,
-    "targetSdkVersion": 29,
-    "versionCode": 44,
-    "versionName": "2.1.2",
-    "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.2.apk",
+    "minSdkVersion": 16,
+    "targetSdkVersion": 31,
+    "versionCode": 45,
+    "versionName": "2.2",
+    "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2.apk",
     "appPartLinks": [
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release1.apk",
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release2.apk",
@@ -41,23 +41,34 @@
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release31.apk",
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release32.apk"
     ],
-    "appLength": 31494256,
-    "appSha1": "7733a6bc66702a02f0a7f053c448412c0c0a1d88",
+    "appLength": 31883262,
+    "appSha1": "f2f7991855d06b6fed0bd921aef0b9cb38ff5ad6",
     "updateLogs": [
-      "1. 修复黑白主题切换时设置页面标题与内容不一致的问题",
-      "2. 修复后台播放控制通知的操作按钮颜色无法随着系统深浅色主题切换而发生变更的问题",
-      "3. 修复本地视频播放页面在由系统销毁后自动重建时用于视频显示的黑色背景区域会被拉伸至全屏的问题",
-      "4. 修复用户反馈页面在由系统销毁并自动重建后，触碰页面左侧边缘无法隐藏弹出的软键盘，且在右滑退出页面时填写的内容不会自动保存的问题",
-      "5. 暂时去掉YouTube视频后台播放的功能，以免导致设备持续卡顿和发热",
-      "6. YouTube视频被点击打开时可以自动恢复至上次播放的位置",
-      "7. 优化更新日志悬挂缩进的效果"
+      "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
+      "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
+      "3. 解决在Android 12上新应用下载通知会延迟10s显示的问题",
+      "4. 在YouTube页上下滑动时自动显示或隐藏首页标题栏，且在进入短视频页面时也会自动收起标题栏",
+      "5. 回退销毁YouTube视频播放页或从最近任务划掉该页面时自动停止播放服务及其通知栏显示",
+      "6. 添加是否在回退栈中保留先前打开的YouTube视频播放页的设置开关",
+      "7. YouTube视频播放页增加对下拉刷新的支持",
+      "8. 解决下拉刷新与YouTube网页之间的滑动冲突",
+      "9. 修复刷新YouTube视频播放通知时可能引起播放进程崩溃的问题",
+      "10.解决在部分设备上，YouTube视频播放页以全屏模式从后台再次恢复到前台时，页面状态栏和导航栏会重新显现的问题",
+      "11.将可显示的反馈文本行数放宽到最多为10行",
+      "12.支持外部网络链接跳转至应用进行播放音视频",
+      "13.适配分屏和弹出窗口",
+      "14.调整UI内容边距，使UI更加松散美观",
+      "15.受沙盒存储机制的影响，应用运行于安卓11及以上版本的系统中，很可能将无法删除或重命名非本应用创建的媒体内容",
+      "16.确认删除视频的底部弹窗出现时不再暗淡虚拟按键区域",
+      "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子",
+      "18.修复用户反馈页面在部分机型上显示的虚拟按键顶部分割线颜色异常的问题"
     ],
     "beta": {
-      "versionCode": 57,
-      "versionName": "2.1.3-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.3-beta02.apk",
-      "appLength": 31930591,
-      "appSha1": "6427f544db365316c2f4ff0431f759fd0ed0b503",
+      "versionCode": 60,
+      "versionName": "2.2",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2.apk",
+      "appLength": 31883262,
+      "appSha1": "f2f7991855d06b6fed0bd921aef0b9cb38ff5ad6",
       "updateLogs": [
         "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
         "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
@@ -70,15 +81,21 @@
         "9. 修复刷新YouTube视频播放通知时可能引起播放进程崩溃的问题",
         "10.解决在部分设备上，YouTube视频播放页以全屏模式从后台再次恢复到前台时，页面状态栏和导航栏会重新显现的问题",
         "11.将可显示的反馈文本行数放宽到最多为10行",
-        "12.支持外部网络链接跳转至应用进行播放音视频"
+        "12.支持外部网络链接跳转至应用进行播放音视频",
+        "13.适配分屏和弹出窗口",
+        "14.调整UI内容边距，使UI更加松散美观",
+        "15.受沙盒存储机制的影响，应用运行于安卓11及以上版本的系统中，很可能将无法删除或重命名非本应用创建的媒体内容",
+        "16.确认删除视频的底部弹窗出现时不再暗淡虚拟按键区域",
+        "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子",
+        "18.修复用户反馈页面在部分机型上显示的虚拟按键顶部分割线颜色异常的问题"
       ]
     },
     "dev": {
-      "versionCode": 57,
-      "versionName": "2.1.3-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.1.3-beta02.apk",
-      "appLength": 31930591,
-      "appSha1": "6427f544db365316c2f4ff0431f759fd0ed0b503",
+      "versionCode": 60,
+      "versionName": "2.2",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.2.apk",
+      "appLength": 31883262,
+      "appSha1": "f2f7991855d06b6fed0bd921aef0b9cb38ff5ad6",
       "updateLogs": [
         "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
         "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
@@ -91,7 +108,13 @@
         "9. 修复刷新YouTube视频播放通知时可能引起播放进程崩溃的问题",
         "10.解决在部分设备上，YouTube视频播放页以全屏模式从后台再次恢复到前台时，页面状态栏和导航栏会重新显现的问题",
         "11.将可显示的反馈文本行数放宽到最多为10行",
-        "12.支持外部网络链接跳转至应用进行播放音视频"
+        "12.支持外部网络链接跳转至应用进行播放音视频",
+        "13.适配分屏和弹出窗口",
+        "14.调整UI内容边距，使UI更加松散美观",
+        "15.受沙盒存储机制的影响，应用运行于安卓11及以上版本的系统中，很可能将无法删除或重命名非本应用创建的媒体内容",
+        "16.确认删除视频的底部弹窗出现时不再暗淡虚拟按键区域",
+        "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子",
+        "18.修复用户反馈页面在部分机型上显示的虚拟按键顶部分割线颜色异常的问题"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"

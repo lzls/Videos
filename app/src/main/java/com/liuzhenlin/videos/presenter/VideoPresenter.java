@@ -315,6 +315,9 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
                     }
                     boolean selected = position == mVideoIndex;
                     int payloadInt = (Integer) payload;
+                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB) != 0) {
+                        loadItemImagesIfNotScrolling(holder);
+                    }
                     if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED) != 0) {
                         Video video = mVideos[position];
                         if (selected) {

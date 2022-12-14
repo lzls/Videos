@@ -5,11 +5,16 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -22,21 +27,68 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.R;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableView;
 import com.liuzhenlin.common.windowhost.FocusObservableWindowHost;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import static androidx.core.view.WindowInsetsCompat.Type.statusBars;
+
 /**
  * @author 刘振林
  */
 public class UiUtils {
     private UiUtils() {
+    }
+
+    /**
+     * Determines whether the current Window is translucent or floating by default, according to
+     * the {@link android.R.attr#windowIsFloating} and {@link android.R.attr#windowIsTranslucent}
+     * attributes set in its theme.
+     */
+    public static boolean isWindowTranslucentOrFloatingTheme(Window window) {
+        try {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                //noinspection JavaReflectionMemberAccess
+                Method isTranslucentOrFloatingMethod =
+                        ActivityInfo.class
+                                .getMethod("isTranslucentOrFloating", TypedArray.class);
+                Boolean ret = (Boolean)
+                        isTranslucentOrFloatingMethod.invoke(
+                                ActivityInfo.class, window.getWindowStyle());
+                return ret != null && ret;
+            } else {
+                @SuppressLint("PrivateApi")
+                Class<?> styleableClass =
+                        window.getContext().getClassLoader()
+                                .loadClass("com.android.internal.R$styleable");
+                return getWindowStyleBoolean(
+                                window, styleableClass, "Window_windowIsTranslucent", false)
+                        || getWindowStyleBoolean(
+                                window, styleableClass, "Window_windowIsFloating", false);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return window.isFloating() /*|| window.isTranslucent()*/;
+    }
+
+    private static boolean getWindowStyleBoolean(
+            Window window,
+            Class<?> styleableClass,
+            String attrIndexName,
+            @SuppressWarnings("SameParameterValue") boolean defValue) throws Exception {
+        return window
+                .getWindowStyle()
+                .getBoolean(styleableClass.getField(attrIndexName).getInt(styleableClass), defValue);
     }
 
     public static void setWindowAlpha(
@@ -73,6 +125,27 @@ public class UiUtils {
         if (view.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
             RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) view.getLayoutParams();
             lp.addRule(verb, subject);
+        }
+    }
+
+    public static void setViewVisibilityAndVerify(View view, int visibility) {
+        view.setVisibility(visibility);
+        switch (visibility) {
+            case View.VISIBLE:
+                Utils.runOnLayoutValid(view, () -> {
+                    ViewGroup.LayoutParams lp = view.getLayoutParams();
+                    if (view.getVisibility() == View.VISIBLE
+                            && (lp.width != 0 || lp.height != 0)
+                            && view.getWidth() == 0 && view.getHeight() == 0) {
+                        view.requestLayout();
+                    }
+                });
+                break;
+            case View.GONE:
+                // TODO: verify the view will be invisible and not take any layout space from its
+                //   parent, we can not just check the view size here since changing the visibility
+                //   of a view to gone will not change its width and height properties.
+                break;
         }
     }
 
@@ -160,7 +233,7 @@ public class UiUtils {
                     }
                 } else {
                     showSoftInputJob.cancel();
-                    v.post(() -> {
+                    ViewCompatibility.post(v, () -> {
                         if (!hasFocusedView[0]) {
                             hideSoftInput(v, false);
                         }
@@ -194,7 +267,7 @@ public class UiUtils {
             if (retryTimes++ <= MAX_SHOW_SOFT_INPUT_RETRY_TIMES
                     && host.hasWindowFocus() && view.hasFocus()
                     && !showSoftInput(view, false)) {
-                view.post(this);
+                ViewCompatibility.post(view, this);
             }
             pending = false;
         }
@@ -203,13 +276,13 @@ public class UiUtils {
             retryTimes = 0;
             if (!pending) {
                 pending = true;
-                view.post(this);
+                ViewCompatibility.post(view, this);
             }
         }
 
         void cancel() {
             if (pending) {
-                view.removeCallbacks(this);
+                ViewCompatibility.removeCallbacks(view, this);
                 pending = false;
             }
         }
@@ -363,8 +436,10 @@ public class UiUtils {
             mAlert.setAccessible(true);
 
             Object alertController = mAlert.get(dialog);
-            //noinspection ConstantConditions
-            Field mTitleView = alertController.getClass().getDeclaredField("mTitleView");
+            //noinspection SoonBlockedPrivateApi,PrivateApi
+            Field mTitleView =
+                    Class.forName("com.android.internal.app.AlertController")
+                            .getDeclaredField("mTitleView");
             mTitleView.setAccessible(true);
 
             return (TextView) mTitleView.get(alertController);
@@ -381,8 +456,9 @@ public class UiUtils {
             mAlert.setAccessible(true);
 
             Object alertController = mAlert.get(dialog);
-            //noinspection ConstantConditions
-            Field mTitleView = alertController.getClass().getDeclaredField("mTitleView");
+            Field mTitleView =
+                    Class.forName("androidx.appcompat.app.AlertController")
+                            .getDeclaredField("mTitleView");
             mTitleView.setAccessible(true);
 
             return (TextView) mTitleView.get(alertController);
@@ -392,10 +468,183 @@ public class UiUtils {
         return null;
     }
 
-    /**
-     * @return {@code true} if the view is laid-out and not about to do another layout.
-     */
-    public static boolean isLayoutValid(@NonNull View view) {
-        return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+    public static boolean isLandscapeMode(@NonNull Context context) {
+        return context.getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
+    }
+
+    public static int getStableWindowInsetsTop(@NonNull Window window) {
+        return getStableWindowInsetsTop(window.getDecorView());
+    }
+
+    public static int getStableWindowInsetsTop(@NonNull View rootView) {
+        if (!ViewCompat.isAttachedToWindow(rootView)) {
+            throw new IllegalStateException(
+                    "root view [" + rootView + "] is not attached to a window");
+        }
+
+        WindowInsetsCompat windowInsets = ViewCompat.getRootWindowInsets(rootView);
+        if (windowInsets != null) {
+            return windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.statusBars())
+                    .top;
+        }
+        return SystemBarUtils.getStatusHeight(rootView.getContext());
+    }
+
+    public static void insertTopMarginToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
+        if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
+            ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
+                InsetsApplier applier = ViewCompatibility.getTag(v, R.id.tag_marginInsetsApplier);
+                if (applier == null) {
+                    applier = new InsetsApplier(v, insets) {
+                        @Override
+                        void onApplyInsets(WindowInsetsCompat insets) {
+                            insertTopMarginToActionBarIfLayoutUnderStatus(
+                                    v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                        }
+                    };
+                    ViewCompatibility.setTag(v, R.id.tag_marginInsetsApplier, applier);
+                }
+                // Insets are usually dispatched before View.AttachInfo#mWindowTop is assigned by
+                // the top of the current Window in ViewRootImpl#performTraversals(), at which time
+                // we may calculate out wrong coordinates of the view on screen, so check to see
+                // if this is the case where a new layout is approaching and we therefore need
+                // postpone applying them.
+                if (ViewCompatibility.isLayoutValid(actionbar)) {
+                    applier.onApplyInsets(insets);
+                    applier.remove();
+                } else {
+                    applier.insets = insets;
+                    applier.post();
+                }
+                return insets;
+            });
+        } else {
+            Utils.runOnLayoutValid(actionbar, () -> {
+                int statusHeight = SystemBarUtils.getStatusHeight(actionbar.getContext());
+                insertTopMarginToActionBarIfLayoutUnderStatus(actionbar, statusHeight);
+            });
+        }
+    }
+
+    @Synthetic static void insertTopMarginToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+        ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            Integer oldInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_marginInsetTop);
+            if (oldInsetTop == null) {
+                oldInsetTop = 0;
+            }
+            int insetTop = isLayoutUnderStatusBar(actionbar) ? statusHeight : 0;
+            if (insetTop != oldInsetTop) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                mlp.topMargin = mlp.topMargin - oldInsetTop + insetTop;
+                ViewCompatibility.setTag(actionbar, R.id.tag_marginInsetTop, insetTop);
+                actionbar.setLayoutParams(mlp);
+            }
+        }
+    }
+
+    public static void insertTopPaddingToActionBarIfLayoutUnderStatus(@NonNull View actionbar) {
+        if (Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS) {
+            ViewCompat.setOnApplyWindowInsetsListener(actionbar, (v, insets) -> {
+                InsetsApplier applier = ViewCompatibility.getTag(v, R.id.tag_paddingInsetsApplier);
+                if (applier == null) {
+                    applier = new InsetsApplier(v, insets) {
+                        @Override
+                        void onApplyInsets(WindowInsetsCompat insets) {
+                            insertTopPaddingToActionBarIfLayoutUnderStatus(
+                                    v, insets.getInsetsIgnoringVisibility(statusBars()).top);
+                        }
+                    };
+                    ViewCompatibility.setTag(v, R.id.tag_paddingInsetsApplier, applier);
+                }
+                // Insets are usually dispatched before View.AttachInfo#mWindowTop is assigned by
+                // the top of the current Window in ViewRootImpl#performTraversals(), at which time
+                // we may calculate out wrong coordinates of the view on screen, so check to see
+                // if this is the case where a new layout is approaching and we therefore need
+                // postpone applying them.
+                if (ViewCompatibility.isLayoutValid(actionbar)) {
+                    applier.onApplyInsets(insets);
+                    applier.remove();
+                } else {
+                    applier.insets = insets;
+                    applier.post();
+                }
+                return insets;
+            });
+        } else {
+            Utils.runOnLayoutValid(actionbar, () -> {
+                int statusHeight = SystemBarUtils.getStatusHeight(actionbar.getContext());
+                insertTopPaddingToActionBarIfLayoutUnderStatus(actionbar, statusHeight);
+            });
+        }
+    }
+
+    @Synthetic static void insertTopPaddingToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+        Integer oldInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_paddingInsetTop);
+        if (oldInsetTop == null) {
+            oldInsetTop = 0;
+        }
+        int insetTop = isLayoutUnderStatusBar(actionbar) ? statusHeight : 0;
+        if (insetTop != oldInsetTop) {
+            ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
+            switch (lp.height) {
+                case ViewGroup.LayoutParams.WRAP_CONTENT:
+                case ViewGroup.LayoutParams.MATCH_PARENT:
+                    break;
+                default:
+                    lp.height = lp.height - oldInsetTop + insetTop;
+            }
+            ViewCompatibility.setTag(actionbar, R.id.tag_paddingInsetTop, insetTop);
+            actionbar.setPadding(
+                    actionbar.getPaddingLeft(),
+                    actionbar.getPaddingTop() - oldInsetTop + insetTop,
+                    actionbar.getPaddingRight(),
+                    actionbar.getPaddingBottom());
+        }
+    }
+
+    // XXX: make this generic enough to be public
+    private static boolean isLayoutUnderStatusBar(View actionbar) {
+        int[] location = new int[2];
+        actionbar.getLocationOnScreen(location);
+        Integer marginInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_marginInsetTop);
+        if (marginInsetTop == null) {
+            marginInsetTop = 0;
+        }
+        return location[1] - marginInsetTop < 10;
+    }
+
+    private static abstract class InsetsApplier implements ViewTreeObserver.OnGlobalLayoutListener {
+        WindowInsetsCompat insets;
+        final View view;
+        boolean scheduled;
+
+        InsetsApplier(View view, WindowInsetsCompat insets) {
+            this.view = view;
+            this.insets = insets;
+        }
+
+        @Override
+        public final void onGlobalLayout() {
+            remove();
+            onApplyInsets(insets);
+        }
+
+        abstract void onApplyInsets(WindowInsetsCompat insets);
+
+        final void post() {
+            if (!scheduled) {
+                scheduled = true;
+                view.getViewTreeObserver().addOnGlobalLayoutListener(this);
+            }
+        }
+
+        final void remove() {
+            if (scheduled) {
+                scheduled = false;
+                view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            }
+        }
     }
 }

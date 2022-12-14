@@ -35,7 +35,7 @@ public class SwipeBackFragmentDelegate<F extends Fragment & ISwipeBackFragment>
 
     public void onCreate(@Nullable Bundle savedInstanceState) {
         mSwipeBackLayout = (SwipeBackLayout)
-                View.inflate(mFragment.getContext(), R.layout.swipeback, null);
+                View.inflate(mFragment.getContext(), R.layout.fragment_swipeback, null);
     }
 
     public void onDestroy() {

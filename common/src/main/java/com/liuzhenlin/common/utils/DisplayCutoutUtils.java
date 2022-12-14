@@ -10,8 +10,10 @@ import android.content.Context;
 import android.os.Build;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.view.DisplayCutout;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
@@ -227,5 +229,38 @@ public class DisplayCutoutUtils {
                 in ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                    : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
         window.setAttributes(lp);
+    }
+
+    /**
+     * 判断搭载 Android P 以上版本系统的手机是否有刘海
+     * @throws IllegalStateException 如果decorView尚未被附加到窗口
+     */
+    @RequiresApi(Build.VERSION_CODES.P)
+    public static boolean hasNotchInScreenSinceP(@NonNull View decorView) {
+        WindowInsets insets = decorView.getRootWindowInsets();
+        if (insets == null) {
+            throw new IllegalStateException("View [" + decorView + "] is not attached to a Window");
+        }
+        return insets.getDisplayCutout() != null;
+    }
+
+    /**
+     * 获取搭载 Android P 以上版本系统手机的刘海高度
+     * @throws IllegalStateException 如果decorView尚未被附加到窗口
+     */
+    @RequiresApi(Build.VERSION_CODES.P)
+    public static int getNotchHeightSinceP(@NonNull View decorView) {
+        WindowInsets insets = decorView.getRootWindowInsets();
+        if (insets == null) {
+            throw new IllegalStateException("View [" + decorView + "] is not attached to a Window");
+        }
+
+        DisplayCutout dc = insets.getDisplayCutout();
+        if (dc != null) {
+            return UiUtils.isLandscapeMode(decorView.getContext())
+                    ? Math.max(dc.getSafeInsetLeft(), dc.getSafeInsetRight())
+                    : dc.getSafeInsetTop();
+        }
+        return 0;
     }
 }

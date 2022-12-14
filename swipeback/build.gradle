@@ -11,5 +11,7 @@ android {
 }
 
 dependencies {
-    api 'androidx.preference:preference:1.2.0'
+    //noinspection GradleDependency (1.2.0 will introduce inconsistent kotlin dependencies)
+    api 'androidx.preference:preference:1.1.1'
+    api project(':common')
 }

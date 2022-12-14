@@ -37,11 +37,16 @@ import androidx.core.util.ObjectsCompat;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 
+import com.liuzhenlin.common.R;
+import com.liuzhenlin.common.compat.ViewCompatibility;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -182,24 +187,48 @@ public class Utils {
      * Causes the Runnable to execute once the {@code view} is laid out.
      * The runnable will be run on the user interface thread.
      */
-    public static void postOnLayoutValid(@NonNull View view, @NonNull Runnable action) {
+    public static void runOnLayoutValid(@NonNull View view, @NonNull Runnable action) {
         Handler uiHandler = view.getHandler();
         if (uiHandler != null && Thread.currentThread() == uiHandler.getLooper().getThread()) {
-            if (UiUtils.isLayoutValid(view)) {
+            if (ViewCompatibility.isLayoutValid(view)) {
                 action.run();
             } else {
-                view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (UiUtils.isLayoutValid(view)) {
-                            view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                            action.run();
-                        }
-                    }
-                });
+                List<Runnable> actions =
+                        ViewCompatibility.getTag(view, R.id.tag_actionsRunOnLayoutValid);
+                if (actions == null) {
+                    actions = new ArrayList<>(1);
+                    ViewCompatibility.setTag(view, R.id.tag_actionsRunOnLayoutValid, actions);
+                }
+
+                boolean actionsWasEmpty = actions.isEmpty();
+                // Tie any actions to the view weakly referenced below and later poll each from
+                // the view in the following ViewTreeObserver listener, so that we will not cause
+                // any memory leaks if the caller refers the view directly in some pending actions.
+                actions.add(0, action);
+
+                if (actionsWasEmpty) {
+                    WeakReference<View> viewRef = new WeakReference<>(view);
+                    view.getViewTreeObserver().addOnGlobalLayoutListener(
+                            new ViewTreeObserver.OnGlobalLayoutListener() {
+                                @Override
+                                public void onGlobalLayout() {
+                                    View v = viewRef.get();
+                                    if (v != null && ViewCompatibility.isLayoutValid(v)) {
+                                        v.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                                        List<Runnable> as = ViewCompatibility.getTag(
+                                                v, R.id.tag_actionsRunOnLayoutValid);
+                                        if (as != null) {
+                                            for (int ai = as.size() - 1; ai >= 0; ai--) {
+                                                as.remove(ai).run();
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                }
             }
         } else {
-            view.post(() -> postOnLayoutValid(view, action));
+            ViewCompatibility.post(view, () -> runOnLayoutValid(view, action));
         }
     }
 
@@ -207,7 +236,7 @@ public class Utils {
      * Runs the given action on the {@code handler}'s thread once the specified {@code condition}
      * meets.
      */
-    public static void postTillConditionMeets(
+    public static void runOnConditionMet(
             @NonNull Handler handler, @NonNull Runnable action, @NonNull Condition condition) {
         if (Thread.currentThread() == handler.getLooper().getThread()) {
             if (condition.meets()) {
@@ -215,7 +244,7 @@ public class Utils {
                 return;
             }
         }
-        handler.post(() -> postTillConditionMeets(handler, action, condition));
+        handler.post(() -> runOnConditionMet(handler, action, condition));
     }
 
     /**

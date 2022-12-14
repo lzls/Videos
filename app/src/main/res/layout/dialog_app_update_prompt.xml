@@ -1,80 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp"
-    android:orientation="vertical">
+    android:scrollbars="vertical">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:text="@string/findNewVersion_title"
-        android:textSize="@dimen/title_text_size"
-        android:textColor="@color/textColorPrimary"
-        android:textAlignment="viewStart"
-        android:gravity="start" />
-
-    <TextView
-        android:id="@+id/text_updateLogTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/updateLog"
-        android:textSize="@dimen/primary_text_size"
-        android:textColor="@color/textColorPrimary"
-        android:textIsSelectable="true"
-        android:textAlignment="viewStart"
-        android:gravity="start" />
-
-    <TextView
-        android:id="@+id/text_updateLog"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginTop="5dp"
-        android:lineSpacingExtra="1dp"
-        android:textSize="@dimen/secondary_text_size"
-        android:textIsSelectable="true"
-        android:scrollbars="vertical"
-        tools:ignore="InefficientWeight" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/doYouNeedToUpdateItSoon"
-        android:textSize="@dimen/primary_text_size"
-        android:textColor="@color/textColorPrimary"
-        android:textAlignment="viewStart"
-        android:gravity="start" />
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp">
+        android:paddingLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+        android:paddingTop="@dimen/dialogPreferredContentPaddingVertical"
+        android:paddingRight="@dimen/dialogPreferredContentPaddingHorizontal"
+        android:paddingBottom="@dimen/dialogPreferredContentPaddingVertical"
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/btn_cancel"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toLeftOf="@+id/btn_confirm"
-            android:layout_toStartOf="@+id/btn_confirm"
-            android:background="@drawable/selector_dialog_button"
-            android:text="@string/cancel"
-            android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/cancelBtnTextColor" />
+            android:layout_marginTop="5dp"
+            android:text="@string/findNewVersion_title"
+            android:textSize="@dimen/title_text_size"
+            android:textColor="@color/textColorPrimary"
+            android:textAlignment="viewStart"
+            android:gravity="start" />
 
         <TextView
-            android:id="@id/btn_confirm"
-            android:layout_width="wrap_content"
+            android:id="@+id/text_updateLogTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:background="@drawable/selector_dialog_button"
-            android:text="@string/confirm"
-            android:textSize="@dimen/dialog_button_text_size"
-            android:textColor="@color/okBtnTextColor" />
-    </RelativeLayout>
-</LinearLayout>
+            android:layout_marginTop="8dp"
+            android:text="@string/updateLog"
+            android:textSize="@dimen/primary_text_size"
+            android:textColor="@color/textColorPrimary"
+            android:textIsSelectable="true"
+            android:textAlignment="viewStart"
+            android:gravity="start" />
+
+        <TextView
+            android:id="@+id/text_updateLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:lineSpacingExtra="1dp"
+            android:textSize="@dimen/secondary_text_size"
+            android:textIsSelectable="true" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/doYouNeedToUpdateItSoon"
+            android:textSize="@dimen/primary_text_size"
+            android:textColor="@color/textColorPrimary"
+            android:textAlignment="viewStart"
+            android:gravity="start" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/dialogPreferredButtonMarginVertical">
+
+            <TextView
+                android:id="@+id/btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@+id/btn_confirm"
+                android:layout_toStartOf="@+id/btn_confirm"
+                android:background="@drawable/selector_dialog_button"
+                android:text="@string/cancel"
+                android:textSize="@dimen/dialog_button_text_size"
+                android:textColor="@color/cancelBtnTextColor" />
+
+            <TextView
+                android:id="@id/btn_confirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:background="@drawable/selector_dialog_button"
+                android:text="@string/confirm"
+                android:textSize="@dimen/dialog_button_text_size"
+                android:textColor="@color/okBtnTextColor" />
+        </RelativeLayout>
+    </LinearLayout>
+</ScrollView>

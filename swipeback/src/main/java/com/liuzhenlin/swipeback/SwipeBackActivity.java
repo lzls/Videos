@@ -1,49 +1,69 @@
 package com.liuzhenlin.swipeback;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.view.View;
-import android.view.Window;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SwipeBackActivity extends AppCompatActivity implements ISwipeBackActivity {
 
-    private SwipeBackLayout mSwipeBackLayout;
+    private final SwipeBackActivityDelegate<SwipeBackActivity> mDelegate =
+            new SwipeBackActivityDelegate<>(this, new PrivateAccess() {
+                @Override
+                public Object superGetSystemService(@NonNull String name) {
+                    return SwipeBackActivity.super.getSystemService(name);
+                }
+
+                @Override
+                public void superFinish() {
+                    SwipeBackActivity.super.finish();
+                }
+
+                @SuppressLint("NewApi")
+                @Override
+                public void superFinishAffinity() {
+                    SwipeBackActivity.super.finishAffinity();
+                }
+
+                @SuppressLint("NewApi")
+                @Override
+                public void superFinishAndRemoveTask() {
+                    SwipeBackActivity.super.finishAndRemoveTask();
+                }
+            });
+
+    @Override
+    public Object getSystemService(@NonNull String name) {
+        return mDelegate.getSystemService(name);
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Window window = getWindow();
-        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        window.setWindowAnimations(R.style.WindowAnimations_SwipeBackActivity);
-
-        mSwipeBackLayout = (SwipeBackLayout) View.inflate(this, R.layout.swipeback, null);
-        mSwipeBackLayout.attachToActivity(this);
+        mDelegate.onCreate(savedInstanceState);
     }
 
     @Override
     public final SwipeBackLayout getSwipeBackLayout() {
-        return mSwipeBackLayout;
+        return mDelegate.getSwipeBackLayout();
     }
 
     @Override
     public final boolean isSwipeBackEnabled() {
-        return mSwipeBackLayout.isGestureEnabled();
+        return mDelegate.isSwipeBackEnabled();
     }
 
     @Override
     public final void setSwipeBackEnabled(boolean enabled) {
-        mSwipeBackLayout.setGestureEnabled(enabled);
+        mDelegate.setSwipeBackEnabled(enabled);
     }
 
     @Override
     public boolean canSwipeBackToFinish() {
-        return getSupportFragmentManager().getFragments().size() <= 1;
+        return mDelegate.canSwipeBackToFinish();
     }
 
     /*
@@ -54,37 +74,26 @@ public class SwipeBackActivity extends AppCompatActivity implements ISwipeBackAc
     @Nullable
     @Override
     public Activity getPreviousActivity() {
-        return null;
+        return mDelegate.getPreviousActivity();
+    }
+
+    @Override
+    public final void setWillNotDrawWindowBackgroundInContentViewArea(boolean willNotDraw) {
+        mDelegate.setWillNotDrawWindowBackgroundInContentViewArea(willNotDraw);
     }
 
     @Override
     public void finish() {
-        abortUserSwipeBack();
-        super.finish();
+        mDelegate.finish();
     }
 
     @Override
     public void finishAffinity() {
-        abortUserSwipeBack();
-        super.finishAffinity();
+        mDelegate.finishAffinity();
     }
 
     @Override
     public void finishAndRemoveTask() {
-        abortUserSwipeBack();
-        super.finishAndRemoveTask();
-    }
-
-    /**
-     * Aborts all motion in progress and snaps to the end of any animation, in case
-     * the previous content view will not be laid back to its original position
-     * when one of the flavors of {@link #finish} is called to close the activity.
-     * If aborted, the window may be converted back to opaque again so that the window animations
-     * will work normally on the current outgoing activity and the next incoming one.
-     */
-    private void abortUserSwipeBack() {
-        if (mSwipeBackLayout != null) {
-            mSwipeBackLayout.mDragHelper.abort();
-        }
+        mDelegate.finishAndRemoveTask();
     }
 }

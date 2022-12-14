@@ -30,6 +30,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.DensityUtils;
+
 /**
  * A circular CheckBox with animation for Android
  *
@@ -237,10 +241,10 @@ public class CircularCheckBox extends View implements Checkable {
         mTickPaint.setColor(ta.getColor(R.styleable.CircularCheckBox_color_tick, COLOR_TICK));
         mStrokeWidth =
                 ta.getDimensionPixelSize(
-                        R.styleable.CircularCheckBox_strokeWidth, Utils.dp2px(context, 1));
+                        R.styleable.CircularCheckBox_strokeWidth, DensityUtils.dp2px(context, 1));
         mTickStrokeWidth =
                 ta.getDimensionPixelSize(
-                        R.styleable.CircularCheckBox_tickStrokeWidth, Utils.dp2px(context, 2));
+                        R.styleable.CircularCheckBox_tickStrokeWidth, DensityUtils.dp2px(context, 2));
         mDuration = ta.getInt(R.styleable.CircularCheckBox_duration, DEF_DURATION);
         ta.recycle();
 
@@ -253,7 +257,7 @@ public class CircularCheckBox extends View implements Checkable {
         mTickPaint.setStyle(Paint.Style.STROKE);
         mTickPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        mDefaultDrawingSize = Utils.dp2px(context, DEF_DRAWING_SIZE);
+        mDefaultDrawingSize = DensityUtils.dp2px(context, DEF_DRAWING_SIZE);
 
         setFocusable(true);
         setClickable(true);
@@ -356,14 +360,14 @@ public class CircularCheckBox extends View implements Checkable {
                                 mPostedSetCheckedRunnable = null;
                                 startCheckedAnimation();
                             } else {
-                                post(mPostedSetCheckedRunnable);
+                                ViewCompatibility.post(this, mPostedSetCheckedRunnable);
                             }
                         };
-                        post(mPostedSetCheckedRunnable);
+                        ViewCompatibility.post(this, mPostedSetCheckedRunnable);
                     }
                 } else {
                     if (mPostedSetCheckedRunnable != null) {
-                        removeCallbacks(mPostedSetCheckedRunnable);
+                        ViewCompatibility.removeCallbacks(this, mPostedSetCheckedRunnable);
                         mPostedSetCheckedRunnable = null;
                     }
                     startUncheckedAnimation();
@@ -537,7 +541,7 @@ public class CircularCheckBox extends View implements Checkable {
 
         // Continue drawing the tick
         if (mTickLength < mTickLeftPartLength + mTickRightPartLength) {
-            postDelayed(mRedrawRunnable, 10);
+            ViewCompatibility.postDelayed(this, mRedrawRunnable, 10);
         }
     }
 
@@ -548,7 +552,7 @@ public class CircularCheckBox extends View implements Checkable {
         mAnimator.start();
 
         // Delays to draw the tick
-        postDelayed(mDrawTickRunnable, mDuration);
+        ViewCompatibility.postDelayed(this, mDrawTickRunnable, mDuration);
     }
 
     private void startUncheckedAnimation() {
@@ -581,10 +585,10 @@ public class CircularCheckBox extends View implements Checkable {
                     if (!firstStart) {
                         holder.setFloatValues(defValues);
                     }
-                    firstStart = false;
                 } else {
                     holder.setFloatValues(defValues[defValues.length - 1], defValues[0]);
                 }
+                firstStart = false;
             }
         };
         mAnimator.addListener(listener);
@@ -593,6 +597,9 @@ public class CircularCheckBox extends View implements Checkable {
                 defValues[0] = mStrokeInnerCircleScale;
                 // Update values holder
                 listener.onAnimationStart(animation);
+                // Recalculate animated values now...
+                animation.setCurrentPlayTime(animation.getCurrentPlayTime());
+                return;
             }
 
             mDrawingRingOuterCircleScale = (float) animation.getAnimatedValue(
@@ -600,10 +607,10 @@ public class CircularCheckBox extends View implements Checkable {
             mDrawingRingInnerCircleScale = (float) animation.getAnimatedValue(
                     PROPERTY_DRAWING_RING_INNER_CIRCLE_SCALE);
             if (mIsChecked) {
-                mRingColor = Utils.getGradientColor(mStrokeColor, mCheckedRingColor,
+                mRingColor = ColorUtils.getGradientColor(mStrokeColor, mCheckedRingColor,
                         1.0f - mDrawingRingInnerCircleScale / defValues[0]);
             } else {
-                mRingColor = Utils.getGradientColor(mCheckedRingColor, mStrokeColor,
+                mRingColor = ColorUtils.getGradientColor(mCheckedRingColor, mStrokeColor,
                         mDrawingRingInnerCircleScale / defValues[0]);
             }
             invalidate();
@@ -614,8 +621,8 @@ public class CircularCheckBox extends View implements Checkable {
         if (mAnimator != null && mAnimator.isRunning()) {
             mAnimator.cancel();
         }
-        removeCallbacks(mRedrawRunnable);
-        removeCallbacks(mDrawTickRunnable);
+        ViewCompatibility.removeCallbacks(this, mRedrawRunnable);
+        ViewCompatibility.removeCallbacks(this, mDrawTickRunnable);
     }
 
 //    @Override

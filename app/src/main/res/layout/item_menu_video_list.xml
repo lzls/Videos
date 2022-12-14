@@ -12,8 +12,11 @@
 
         <TextView
             android:id="@+id/btn_top"
-            android:layout_width="90dp"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:minWidth="90dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
             android:text="@string/top"
             android:textSize="@dimen/primary_text_size"
             android:textColor="@android:color/white"
@@ -28,8 +31,11 @@
 
         <TextView
             android:id="@+id/btn_delete"
-            android:layout_width="90dp"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:minWidth="90dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
             android:text="@string/delete"
             android:textSize="@dimen/primary_text_size"
             android:textColor="@android:color/white"

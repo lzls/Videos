@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.listener.OnBackPressedListener
@@ -27,9 +28,7 @@ import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
-import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
-import com.liuzhenlin.swipeback.SwipeBackFragment
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -48,7 +47,7 @@ import kotlin.math.min
 /**
  * @author 刘振林
  */
-class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, View.OnLongClickListener,
+class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListener,
         OnReloadVideosListener, SwipeRefreshLayout.OnRefreshListener, OnBackPressedListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
@@ -225,6 +224,11 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
         mRenameButton.setOnClickListener(this)
         mShareButton.setOnClickListener(this)
         mDetailsButton.setOnClickListener(this)
+    }
+
+    override fun onScreenWidthDpLevelChanged(
+            oldLevel: ScreenWidthDpLevel, level: ScreenWidthDpLevel) {
+        mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount, PAYLOAD_REFRESH_VIDEO_THUMB)
     }
 
     override fun onBackPressed() =
@@ -407,7 +411,7 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                 mOptionsFrameTopDivider.visibility = View.VISIBLE
                 mVideoOptionsFrame.visibility = View.VISIBLE
 
-                Utils.postOnLayoutValid(mRecyclerView.parent as View) {
+                Utils.runOnLayoutValid(mRecyclerView.parent as View) {
                     val itemBottom = (v.parent as View).bottom
                     val listHeight = mRecyclerView.height
                     if (itemBottom > listHeight) {
@@ -436,18 +440,23 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
 
     private fun onVideoCheckedChange() {
         var checkedVideosCount = 0
+        var hasUnwritableCheckedVideo = false
         for (video in mVideos) {
-            if (video.isChecked) checkedVideosCount++
+            if (video.isChecked) {
+                checkedVideosCount++
+                if (!hasUnwritableCheckedVideo && !video.isWritable) {
+                    hasUnwritableCheckedVideo = true
+                }
+            }
         }
         when (checkedVideosCount) {
             mVideos.size -> mSelectAllButton.text = SELECT_NONE
             else -> mSelectAllButton.text = SELECT_ALL
         }
-        mDeleteButton.isEnabled = checkedVideosCount > 0
-        val enabled = checkedVideosCount == 1
-        mRenameButton.isEnabled = enabled
-        mShareButton.isEnabled = enabled
-        mDetailsButton.isEnabled = enabled
+        mDeleteButton.isEnabled = checkedVideosCount > 0 && !hasUnwritableCheckedVideo
+        mRenameButton.isEnabled = checkedVideosCount == 1 && !hasUnwritableCheckedVideo
+        mShareButton.isEnabled = checkedVideosCount == 1
+        mDetailsButton.isEnabled = checkedVideosCount == 1
     }
 
     private val checkedVideos: List<Video>?
@@ -570,13 +579,16 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                     separateToppedItemsFromUntoppedOnes(holder, position)
                 }
                 if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
-                    holder.checkBox.visibility = mVideoOptionsFrame.visibility
+                    UiUtils.setViewVisibilityAndVerify(holder.checkBox, mVideoOptionsFrame.visibility)
                 }
                 if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
                     holder.checkBox.isChecked = video.isChecked
 
                 } else if (payload and PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR != 0) {
                     holder.checkBox.setChecked(video.isChecked, true)
+                }
+                if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
+                    loadItemImagesIfNotScrolling(holder)
                 }
                 if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
                     holder.videoNameText.text = video.name
@@ -599,13 +611,15 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
 
             val video = mVideos[position]
             holder.checkBox.run {
-                visibility = mVideoOptionsFrame.visibility
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, mVideoOptionsFrame.visibility)
                 isChecked = video.isChecked
             }
             holder.videoNameText.text = video.name
             holder.videoSizeText.text = FileUtils.formatFileSize(video.size.toDouble())
             holder.videoProgressAndDurationText.text =
                     VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+            UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                    if (video.isWritable) View.VISIBLE else View.GONE)
         }
 
         override fun loadItemImages(holder: ViewHolder) {
@@ -620,21 +634,13 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
 
         fun separateToppedItemsFromUntoppedOnes(holder: ViewHolder, position: Int) {
             val context = contextThemedFirst
-            val lp = holder.topButton.layoutParams
-
             if (mVideos[position].isTopped) {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 120f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = CANCEL_TOP
             } else {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.default_selector_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 90f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = TOP
             }
         }
@@ -656,8 +662,6 @@ class LocalFoldedVideosFragment : SwipeBackFragment(), View.OnClickListener, Vie
                 deleteButton.setOnClickListener(this@LocalFoldedVideosFragment)
 
                 itemVisibleFrame.setOnLongClickListener(this@LocalFoldedVideosFragment)
-
-                VideoUtils2.adjustVideoThumbView(videoImage)
             }
         }
     }

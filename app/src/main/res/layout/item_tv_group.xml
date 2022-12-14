@@ -6,8 +6,8 @@
     android:paddingBottom="12dp"
     android:paddingLeft="?android:attr/expandableListPreferredItemPaddingLeft"
     android:paddingStart="?android:attr/expandableListPreferredItemPaddingLeft"
-    android:paddingRight="15dp"
-    android:paddingEnd="15dp"
+    android:paddingRight="@dimen/contentPreferredPaddingHorizontal"
+    android:paddingEnd="@dimen/contentPreferredPaddingHorizontal"
     android:orientation="horizontal"
     android:gravity="center_vertical">
 

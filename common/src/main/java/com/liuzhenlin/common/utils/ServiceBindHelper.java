@@ -141,7 +141,7 @@ public class ServiceBindHelper {
                 // Maybe the context is being bound to the target service.
                 // Just waits till the binding completes.
                 long start = SystemClock.uptimeMillis();
-                Utils.postTillConditionMeets(mainExecutor.getHandler(), conn::disconnect,
+                Utils.runOnConditionMet(mainExecutor.getHandler(), conn::disconnect,
                         () -> {
                             Context ctx = ctxRef.get();
                             return ctx == null

@@ -27,13 +27,12 @@ import android.widget.TextView
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import com.bumptech.glide.Glide
-import com.liuzhenlin.common.Consts.EMPTY_STRING
-import com.liuzhenlin.common.Consts.NO_ID
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
+import com.liuzhenlin.common.Consts.*
 import com.liuzhenlin.common.adapter.HeaderAndFooterWrapper
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.utils.AlgorithmUtil
@@ -47,8 +46,7 @@ import com.liuzhenlin.videos.model.LocalSearchedVideoListModel
 import com.liuzhenlin.videos.model.OnLoadListener
 import com.liuzhenlin.videos.model.OnReloadVideosListener
 import com.liuzhenlin.videos.utils.VideoUtils2
-import com.liuzhenlin.videos.view.fragment.PackageConsts.PAYLOAD_REFRESH_ITEM_NAME
-import com.liuzhenlin.videos.view.fragment.PackageConsts.PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION
+import com.liuzhenlin.videos.view.fragment.PackageConsts.*
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
@@ -56,7 +54,7 @@ import kotlin.math.min
 /**
  * @author 刘振林
  */
-class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLongClickListener,
+class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListener,
         View.OnTouchListener, OnReloadVideosListener, SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
@@ -124,6 +122,13 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
         })
     }
 
+    override fun onScreenWidthDpLevelChanged(
+            oldLevel: ScreenWidthDpLevel, level: ScreenWidthDpLevel) {
+        val headersCount = mAdapterWrapper.headersCount
+        mAdapterWrapper.notifyItemRangeChanged(headersCount, mAdapterWrapper.itemCount - headersCount,
+                PAYLOAD_REFRESH_VIDEO_THUMB)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_local_searched_videos, container, false)
         initViews(view)
@@ -188,8 +193,15 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
         }
         v.parent === mRecyclerView -> {
             if (event.action == MotionEvent.ACTION_DOWN) {
-                mDownX = Utils.roundFloat(event.rawX)
-                mDownY = Utils.roundFloat(event.rawY)
+                if (SDK_VERSION >= SDK_VERSION_SUPPORTS_MULTI_WINDOW) {
+                    val itemLocationInWindow = IntArray(2)
+                    v.getLocationInWindow(itemLocationInWindow)
+                    mDownX = Utils.roundFloat(event.x + itemLocationInWindow[0])
+                    mDownY = Utils.roundFloat(event.y + itemLocationInWindow[1])
+                } else {
+                    mDownX = Utils.roundFloat(event.rawX)
+                    mDownY = Utils.roundFloat(event.rawY)
+                }
 
                 UiUtils.hideSoftInput(mSearchSrcEditText, true)
                 mRecyclerView.requestFocus()
@@ -411,11 +423,14 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                 if (payload and PAYLOAD_HIGHLIGHT_SELECTED_ITEM_IF_EXISTS != 0) {
                     highlightSelectedItemIfExists(holder, position)
                 }
+                if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
+                    loadItemImagesIfNotScrolling(holder)
+                }
                 if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
                     updateItemName(holder, mSearchedVideos[position].name)
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, progress, duration) = mSearchedVideos[position]
+                    val (_, _, _, _, _, _, progress, duration) = mSearchedVideos[position]
                     holder.videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(progress, duration)
                 }
@@ -481,7 +496,6 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
                 itemView.setOnTouchListener(this@LocalSearchedVideosFragment)
                 itemView.setOnClickListener(this@LocalSearchedVideosFragment)
                 itemView.setOnLongClickListener(this@LocalSearchedVideosFragment)
-                VideoUtils2.adjustVideoThumbView(videoImage)
             }
         }
     }
@@ -549,8 +563,7 @@ class LocalSearchedVideosFragment : Fragment(), View.OnClickListener, View.OnLon
     }
 
     private companion object {
-        const val PAYLOAD_HIGHLIGHT_SELECTED_ITEM_IF_EXISTS =
-                PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION shl 1
+        const val PAYLOAD_HIGHLIGHT_SELECTED_ITEM_IF_EXISTS = PAYLOAD_LAST shl 1
 
         // Constants of LocalSearchedVideosFragment$DividerItemDecoration
         const val HEADER_COUNT = 1

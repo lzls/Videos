@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.Region;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.FrameLayout;
 
@@ -25,13 +27,24 @@ import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.graphics.drawable.DrawableWrapper;
 import androidx.core.content.ContextCompat;
+import androidx.core.util.ObjectsCompat;
 import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.fragment.app.Fragment;
 
+import com.liuzhenlin.common.compat.ActivityCompat;
+import com.liuzhenlin.common.compat.DrawableCompat;
+import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ActivityUtils;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.UiUtils;
+import com.liuzhenlin.common.utils.Utils;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,6 +146,10 @@ public class SwipeBackLayout extends FrameLayout {
     private static final int FLAG_START_EDGE_SHADOW_SPECIFIED = EDGE_END << 13;
     private static final int FLAG_END_EDGE_SHADOW_SPECIFIED = EDGE_END << 14;
 
+    /** @see #setWillNotDrawWindowBackgroundInContentViewArea(boolean) */
+    private static final int FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA =
+            EDGE_END << 15;
+
     /**
      * The set of listeners to be sent events through
      *
@@ -220,32 +237,169 @@ public class SwipeBackLayout extends FrameLayout {
     /**
      * Attach this layout to the given 'activity'
      */
-    public void attachToActivity(ISwipeBackActivity activity) {
-        Activity host = (Activity) activity;
-        Window window = host.getWindow();
-        ViewGroup decor = (ViewGroup) window.getDecorView();
-
+    /*package*/ void attachActivityContentRoot(ISwipeBackActivity activity, View contentRoot) {
         mActivity = activity;
-        if (Utils.isWindowTranslucentOrFloatingTheme(window)) {
+        mContentView = contentRoot;
+        removeAllViews();
+        addView(contentRoot);
+
+        Window window = ((Activity) activity).getWindow();
+        window.setWindowAnimations(R.style.WindowAnimations_SwipeBackActivity);
+        if (UiUtils.isWindowTranslucentOrFloatingTheme(window)) {
             mViewFlags |= FLAG_WINDOW_IS_TRANSLUCENT;
         }
-        mContentView = decor.getChildAt(0);
-        mContentView.setBackgroundResource(
-                Utils.getThemeAttrRes(host, android.R.attr.windowBackground));
 
-        decor.removeViewAt(0);
-        addView(mContentView);
-        decor.addView(this, 0);
+        getViewTreeObserver().addOnPreDrawListener(new WindowBackgroundGrafter(this));
+    }
+
+    @SuppressLint("RestrictedApi")
+    // A grafter to make window background originally drawn in the area covered by this view
+    // onto mContentView, leaving Window, DecorView and this View transparent.
+    private static final class WindowBackgroundGrafter implements ViewTreeObserver.OnPreDrawListener {
+
+        final WeakReference<SwipeBackLayout> mSwipeBackLayoutRef;
+
+        DrawableWrapper mWindowBackground = INVALID_DRAWABLE;
+        static final DrawableWrapper INVALID_DRAWABLE = new DrawableWrapper(null) {
+            @Override
+            public void setWrappedDrawable(Drawable drawable) {
+            }
+        };
+
+        static final ThreadLocal<Rect> sThreadRect = new ThreadLocal<Rect>() {
+            @Override
+            protected Rect initialValue() {
+                return new Rect();
+            }
+
+            @Override
+            public Rect get() {
+                Rect rect = super.get();
+                if (rect != null) {
+                    rect.setEmpty();
+                }
+                return rect;
+            }
+        };
+
+        WindowBackgroundGrafter(SwipeBackLayout swipeBackLayout) {
+            mSwipeBackLayoutRef = new WeakReference<>(swipeBackLayout);
+        }
+
+        @Override
+        public boolean onPreDraw() {
+            SwipeBackLayout swipeBackLayout = mSwipeBackLayoutRef.get();
+            if (swipeBackLayout == null) {
+                releaseRefs();
+                return true;
+            }
+
+            Activity activity = (Activity) swipeBackLayout.mActivity;
+            if (activity == null || ActivityCompat.isDestroyed(activity)) {
+                if (activity != null) {
+                    // The host Activity may be in a recreation state, during which time
+                    // its Window instance was preserved to construct a new PhoneWindow
+                    // for the same ViewRootImpl. Once another DecorView is installed,
+                    // two WindowBackgroundGrafter are in the ViewTreeObserver, which can
+                    // cause this.windowBackground != windowBackground below always true
+                    // for each other and an endless loop on calling decorView.setBackground().
+                    activity.getWindow().getDecorView().getViewTreeObserver()
+                            .removeOnPreDrawListener(this);
+                }
+                return true;
+            }
+
+            Window window = activity.getWindow();
+            View decorView = window.getDecorView();
+            Drawable windowBackground = decorView.getBackground();
+            if (mWindowBackground != windowBackground) {
+                if (windowBackground == null) {
+                    ViewCompat.setBackground(swipeBackLayout.mContentView, null);
+                    mWindowBackground = null;
+                } else {
+                    if ((swipeBackLayout.mViewFlags
+                            & FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA) == 0) {
+                        ViewCompat.setBackground(swipeBackLayout.mContentView,
+                                DrawableCompat.getConstantState(windowBackground)
+                                        .newDrawable(activity.getResources(), activity.getTheme()));
+                    }
+                    // Release the window background from decor before wrapping, in case our wrapper
+                    // not internally get called through DrawableWrapper (Drawable.Callback) that
+                    // will be set for the wrapped Drawable and can be dropped by
+                    // decorView.setBackground() so long as it is the old drawable background.
+                    window.setBackgroundDrawableResource(android.R.color.transparent);
+                    if (mWindowBackground == null || mWindowBackground == INVALID_DRAWABLE) {
+                        mWindowBackground = new DrawableWrapper(windowBackground) {
+                            @Override
+                            public void draw(Canvas canvas) {
+                                SwipeBackLayout swipeBackLayout = mSwipeBackLayoutRef.get();
+                                if (swipeBackLayout == null) {
+                                    releaseRefs();
+                                    return;
+                                }
+
+                                int count = canvas.save();
+                                Rect visibleRect = ObjectsCompat.requireNonNull(sThreadRect.get());
+                                if (swipeBackLayout.getGlobalVisibleRect(visibleRect)) {
+                                    canvas.clipRect(visibleRect.left, visibleRect.top,
+                                            visibleRect.right, visibleRect.bottom,
+                                            Region.Op.DIFFERENCE);
+                                }
+                                super.draw(canvas);
+                                canvas.restoreToCount(count);
+                            }
+                        };
+                    } else {
+                        mWindowBackground.setWrappedDrawable(windowBackground);
+                    }
+                }
+                window.setBackgroundDrawable(mWindowBackground);
+            }
+            return true;
+        }
+
+        void releaseRefs() {
+            mWindowBackground = INVALID_DRAWABLE;
+        }
+    }
+
+    /**
+     * Sets whether to skip the Window background drawing on the content root. This can be safely
+     * set to true to reduce overdraw areas if your Activity content View will, instead, fully
+     * draw an opaque background.
+     */
+    /*package*/ void setWillNotDrawWindowBackgroundInContentViewArea(boolean willNotDraw) {
+        //noinspection DoubleNegation
+        if (((mViewFlags & FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA) != 0)
+                != willNotDraw) {
+            mViewFlags ^= FLAG_WILL_NOT_DRAW_WINDOW_BACKGROUND_IN_CONTENT_VIEW_AREA;
+            if (mContentView != null) {
+                if (willNotDraw) {
+                    ViewCompat.setBackground(mContentView, null);
+                } else if (mActivity != null) {
+                    Activity activity = (Activity) mActivity;
+                    Drawable windowBackground = activity.getWindow().getDecorView().getBackground();
+                    if (windowBackground != null) {
+                        ViewCompat.setBackground(mContentView,
+                                DrawableCompat.getConstantState(windowBackground)
+                                        .newDrawable(activity.getResources(), activity.getTheme()));
+                    }
+                }
+            }
+        }
     }
 
     /**
      * Attach the view created in fragment's
      * {@link Fragment#onCreateView(LayoutInflater, ViewGroup, Bundle)} method to this layout.
      */
-    public void attachFragmentView(ISwipeBackFragment fragment, View view) {
+    /*package*/ void attachFragmentView(ISwipeBackFragment fragment, View view) {
         mFragment = fragment;
-        mContentView = view;
-        addView(view);
+        // Creates a wrap to handle possible child margins
+        mContentView = new FrameLayout(getContext());
+        ((ViewGroup) mContentView).addView(view);
+        removeAllViews();
+        addView(mContentView);
     }
 
     /**
@@ -301,7 +455,7 @@ public class SwipeBackLayout extends FrameLayout {
     }
 
     private boolean resolveTrackingEdgesIfDirectionResolved() {
-        if (Utils.isLayoutDirectionResolved(this)) {
+        if (ViewCompatibility.isLayoutDirectionResolved(this)) {
             resolveTrackingEdges(ViewCompat.getLayoutDirection(this));
             return true;
         }
@@ -506,21 +660,26 @@ public class SwipeBackLayout extends FrameLayout {
      * @see #setEdgeShadow(int, int)
      */
     public void setEdgeShadow(@Nullable Drawable shadow, @Edge int edgeFlags) {
-        if ((edgeFlags & EDGE_LEFT) != 0) {
+        boolean supportsRtl = (mViewFlags & FLAG_SUPPORTS_RTL) != 0;
+        if ((edgeFlags & EDGE_LEFT) != 0
+                || !supportsRtl && (edgeFlags & EDGE_START) != 0) {
             mViewFlags |= FLAG_LEFT_EDGE_SHADOW_SPECIFIED;
             mShadowLeft = shadow;
         }
-        if ((edgeFlags & EDGE_RIGHT) != 0) {
+        if ((edgeFlags & EDGE_RIGHT) != 0
+                || !supportsRtl && (edgeFlags & EDGE_END) != 0) {
             mViewFlags |= FLAG_RIGHT_EDGE_SHADOW_SPECIFIED;
             mShadowRight = shadow;
         }
-        if ((edgeFlags & EDGE_START) != 0) {
-            mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
-            mShadowStart = shadow;
-        }
-        if ((edgeFlags & EDGE_END) != 0) {
-            mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
-            mShadowEnd = shadow;
+        if (supportsRtl) {
+            if ((edgeFlags & EDGE_START) != 0) {
+                mViewFlags |= FLAG_START_EDGE_SHADOW_SPECIFIED;
+                mShadowStart = shadow;
+            }
+            if ((edgeFlags & EDGE_END) != 0) {
+                mViewFlags |= FLAG_END_EDGE_SHADOW_SPECIFIED;
+                mShadowEnd = shadow;
+            }
         }
         mViewFlags &= ~FLAG_EDGE_SHADOWS_RESOLVED;
         resolveEdgeShadowsIfDirectionResolved();
@@ -528,7 +687,7 @@ public class SwipeBackLayout extends FrameLayout {
 
     @SuppressWarnings("UnusedReturnValue")
     private boolean resolveEdgeShadowsIfDirectionResolved() {
-        if (Utils.isLayoutDirectionResolved(this)) {
+        if (ViewCompatibility.isLayoutDirectionResolved(this)) {
             resolveEdgeShadows(ViewCompat.getLayoutDirection(this));
             return true;
         }
@@ -620,8 +779,8 @@ public class SwipeBackLayout extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         if (mContentView != null) {
-            mContentView.layout(
-                    mContentLeft, top, mContentLeft + mContentView.getMeasuredWidth(), bottom);
+            mContentView.layout(mContentLeft, 0, mContentLeft + mContentView.getMeasuredWidth(),
+                    mContentView.getMeasuredHeight());
         }
     }
 
@@ -672,7 +831,7 @@ public class SwipeBackLayout extends FrameLayout {
                 canvas.clipRect(child.getRight(), 0, getRight(), getHeight());
                 break;
         }
-        canvas.drawColor(Utils.dimColor(mScrimColor, 1 - mScrimOpacity));
+        canvas.drawColor(ColorUtils.dimColor(mScrimColor, 1 - mScrimOpacity));
         canvas.restore();
     }
 
@@ -856,7 +1015,7 @@ public class SwipeBackLayout extends FrameLayout {
                     if (mActivity != null) {
                         Activity activity = (Activity) mActivity;
                         if ((mViewFlags & FLAG_WINDOW_IS_TRANSLUCENT) == 0) {
-                            Utils.convertActivityToOpaque(activity);
+                            ActivityUtils.convertActivityToOpaque(activity);
                         }
                     }
                 }
@@ -876,7 +1035,7 @@ public class SwipeBackLayout extends FrameLayout {
             // to transparency, then the previous activity will be visible.
         } else {
             if ((mViewFlags & FLAG_WINDOW_IS_TRANSLUCENT) == 0) {
-                Utils.convertActivityToTranslucent((Activity) mActivity);
+                ActivityUtils.convertActivityToTranslucent((Activity) mActivity);
             }
         }
     }

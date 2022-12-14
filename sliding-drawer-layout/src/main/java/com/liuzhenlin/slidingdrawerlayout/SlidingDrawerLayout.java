@@ -51,13 +51,17 @@ import androidx.customview.view.AbsSavedState;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.Utils;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.liuzhenlin.slidingdrawerlayout.Utils.roundFloat;
+import static com.liuzhenlin.common.utils.Utils.roundFloat;
 
 /**
  * A layout shows better than {@link androidx.drawerlayout.widget.DrawerLayout}, which can also
@@ -320,6 +324,12 @@ public class SlidingDrawerLayout extends ViewGroup {
     private DrawerRunnable mPostedDrawerRunnable;
 
     /**
+     * OnGlobalLayoutListener used to open the drawer with the specified edge gravity when
+     * this view is laidout.
+     */
+    /*synthetic*/ OpenDrawerOnGlobalLayoutListener mOpenDrawerOnGlobalLayoutListener;
+
+    /**
      * The fade color used for the content view {@link #mContentView}, default is 50% black.
      *
      * @see #getContentFadeColor()
@@ -405,12 +415,12 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         void initAndPostToQueue(View drawer, boolean open) {
             initForPost(drawer, open);
-            post(this);
+            ViewCompatibility.post(SlidingDrawerLayout.this, this);
         }
 
         void resetAndRemoveFromQueue() {
             if (isInMsgQueue) {
-                removeCallbacks(this);
+                ViewCompatibility.removeCallbacks(SlidingDrawerLayout.this, this);
                 isInMsgQueue = false;
                 drawer = null;
                 open = false;
@@ -449,7 +459,20 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         void removeFromMsgQueue() {
             mOpenStubDrawerRunnable = null;
-            removeCallbacks(this);
+            ViewCompatibility.removeCallbacks(SlidingDrawerLayout.this, this);
+        }
+    }
+
+    private abstract class OpenDrawerOnGlobalLayoutListener
+            implements ViewTreeObserver.OnGlobalLayoutListener {
+        int drawerGravity;
+
+        OpenDrawerOnGlobalLayoutListener() {
+        }
+
+        void removeFromViewTreeObserver() {
+            getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            mOpenDrawerOnGlobalLayoutListener = null;
         }
     }
 
@@ -671,7 +694,8 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                    || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mStartDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?
@@ -693,12 +717,15 @@ public class SlidingDrawerLayout extends ViewGroup {
      *                                  the above mentioned.
      */
     public void setStartDrawerWidthPercent(float percent) {
-        checkDrawerWidthPercent(percent);
-
-        mStartDrawerWidthPercent = percent;
-        mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
-                | FLAG_START_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
-        resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        if ((mFlags & FLAG_SUPPORTS_RTL) == 0) {
+            setLeftDrawerWidthPercent(percent);
+        } else {
+            checkDrawerWidthPercent(percent);
+            mStartDrawerWidthPercent = percent;
+            mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
+                    | FLAG_START_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
+            resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        }
     }
 
     /**
@@ -711,7 +738,7 @@ public class SlidingDrawerLayout extends ViewGroup {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mEndDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?
@@ -733,12 +760,15 @@ public class SlidingDrawerLayout extends ViewGroup {
      *                                  the above mentioned.
      */
     public void setEndDrawerWidthPercent(float percent) {
-        checkDrawerWidthPercent(percent);
-
-        mEndDrawerWidthPercent = percent;
-        mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
-                | FLAG_END_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
-        resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        if ((mFlags & FLAG_SUPPORTS_RTL) == 0) {
+            setRightDrawerWidthPercent(percent);
+        } else {
+            checkDrawerWidthPercent(percent);
+            mEndDrawerWidthPercent = percent;
+            mFlags &= ~(FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED
+                    | FLAG_END_DRAWER_WIDTH_PERCENTAGE_RESOLVED);
+            resolveDrawerWidthPercentagesIfDirectionResolved(false);
+        }
     }
 
     /**
@@ -747,6 +777,13 @@ public class SlidingDrawerLayout extends ViewGroup {
      * @see #setDrawerEnabledInTouch(View, boolean)
      */
     public void setDrawerEnabledInTouch(@EdgeGravity int gravity, boolean enabled) {
+        if ((mFlags & FLAG_SUPPORTS_RTL) == 0) {
+            if (gravity == Gravity.START) {
+                gravity = Gravity.LEFT;
+            } else if (gravity == Gravity.END) {
+                gravity = Gravity.RIGHT;
+            }
+        }
         switch (gravity) {
             case Gravity.LEFT:
                 if (enabled) {
@@ -756,7 +793,6 @@ public class SlidingDrawerLayout extends ViewGroup {
                 }
                 mFlags |= FLAG_LEFT_DRAWER_TOUCH_ABILITY_DEFINED;
                 break;
-
             case Gravity.RIGHT:
                 if (enabled) {
                     mFlags |= FLAG_RIGHT_DRAWER_ENABLED_IN_TOUCH;
@@ -765,7 +801,6 @@ public class SlidingDrawerLayout extends ViewGroup {
                 }
                 mFlags |= FLAG_RIGHT_DRAWER_TOUCH_ABILITY_DEFINED;
                 break;
-
             case Gravity.START:
                 if (enabled) {
                     mFlags |= FLAG_START_DRAWER_ENABLED_IN_TOUCH;
@@ -779,7 +814,6 @@ public class SlidingDrawerLayout extends ViewGroup {
                 //@formatter:on
                 resolveDrawerTouchAbilitiesIfDirectionResolved();
                 break;
-
             case Gravity.END:
                 if (enabled) {
                     mFlags |= FLAG_END_DRAWER_ENABLED_IN_TOUCH;
@@ -856,7 +890,8 @@ public class SlidingDrawerLayout extends ViewGroup {
                 final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
                 if ((mFlags & FLAG_DRAWER_TOUCH_ABILITIES_RESOLVED) == 0) {
-                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                            || ViewCompatibility.isLayoutDirectionResolved(this)) {
                         resolveDrawerTouchAbilities(layoutDirection);
                     } else {
                         return (mFlags & FLAG_START_DRAWER_TOUCH_ABILITY_DEFINED) == 0
@@ -872,7 +907,8 @@ public class SlidingDrawerLayout extends ViewGroup {
                 final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
                 if ((mFlags & FLAG_DRAWER_TOUCH_ABILITIES_RESOLVED) == 0) {
-                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || Utils.isLayoutDirectionResolved(this)) {
+                    if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                            || ViewCompatibility.isLayoutDirectionResolved(this)) {
                         resolveDrawerTouchAbilities(layoutDirection);
                     } else {
                         return (mFlags & FLAG_END_DRAWER_TOUCH_ABILITY_DEFINED) == 0
@@ -1067,7 +1103,7 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     private boolean resolveDrawerWidthPercentagesIfDirectionResolved(boolean preventLayout) {
-        final boolean directionResolved = Utils.isLayoutDirectionResolved(this);
+        final boolean directionResolved = ViewCompatibility.isLayoutDirectionResolved(this);
         if (directionResolved) {
             resolveDrawerWidthPercentages(ViewCompat.getLayoutDirection(this), preventLayout);
         }
@@ -1152,7 +1188,7 @@ public class SlidingDrawerLayout extends ViewGroup {
     }
 
     private boolean resolveDrawerTouchAbilitiesIfDirectionResolved() {
-        final boolean directionResolved = Utils.isLayoutDirectionResolved(this);
+        final boolean directionResolved = ViewCompatibility.isLayoutDirectionResolved(this);
         if (directionResolved) {
             resolveDrawerTouchAbilities(ViewCompat.getLayoutDirection(this));
         }
@@ -1416,19 +1452,10 @@ public class SlidingDrawerLayout extends ViewGroup {
 
         int maxWidth = 0;
         int maxHeight = 0;
-        int childrenState = 0;
+        int contentMeasuredState = 0;
+        int drawersMeasuredStates = 0;
 
-        for (int i = 0; i < childCount; i++) {
-            View child = getChildAt(i);
-            if (isChildInLayout(child)) {
-                measureChild(child, widthMeasureSpec, heightMeasureSpec);
-                maxWidth = Math.max(maxWidth, child.getMeasuredWidth());
-                maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
-                childrenState = combineMeasuredStates(childrenState, child.getMeasuredState());
-            }
-        }
-
-        // Account for padding too
+        // Account for paddings first
         maxWidth += getPaddingLeft() + getPaddingRight();
         maxHeight += getPaddingTop() + getPaddingBottom();
 
@@ -1445,10 +1472,59 @@ public class SlidingDrawerLayout extends ViewGroup {
             }
         }
 
+        final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        // If width measure spec mode is UNSPECIFIED, we can freely choose the greater value
+        // of maxWidth and widthSize to measure the child views.
+        widthSize = widthMode == MeasureSpec.UNSPECIFIED ? Math.max(maxWidth, widthSize) : widthSize;
+        // If height measure spec mode is UNSPECIFIED, we can freely choose the greater value
+        // of maxHeight and heightSize to measure the child views as well.
+        heightSize =
+                heightMode == MeasureSpec.UNSPECIFIED ? Math.max(maxHeight, heightSize) : heightSize;
+        // Measure spec requirements applied to getChildMeasureSpec() for any children in this layout
+        int childWidthMeasureSpecReferent = MeasureSpec.makeMeasureSpec(widthSize, widthMode);
+        int childHeightMeasureSpecReferent = MeasureSpec.makeMeasureSpec(heightSize, heightMode);
+
+        for (int i = 0; i < childCount; i++) {
+            View child = getChildAt(i);
+            if (isChildInLayout(child)) {
+                measureChild(child, childWidthMeasureSpecReferent, childHeightMeasureSpecReferent);
+                maxWidth = Math.max(maxWidth, child.getMeasuredWidth());
+                maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
+                if (child == mContentView) {
+                    contentMeasuredState = child.getMeasuredState();
+                } else {
+                    drawersMeasuredStates =
+                            combineMeasuredStates(drawersMeasuredStates, child.getMeasuredState());
+                }
+            }
+        }
+
+        final int measuredWidth = resolveSize(maxWidth, widthMeasureSpec);
+        if (measuredWidth > widthSize) {
+            drawersMeasuredStates = 0;
+            childWidthMeasureSpecReferent = MeasureSpec.makeMeasureSpec(measuredWidth, widthMode);
+            for (int i = 0; i < childCount; i++) {
+                View child = getChildAt(i);
+                if (isChildInLayout(child)) {
+                    measureChild(child, childWidthMeasureSpecReferent, childHeightMeasureSpecReferent);
+                    // Check against the drawer view's measured height only, since the width of
+                    // this view should remain unchanged now.
+                    maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
+                    drawersMeasuredStates =
+                            combineMeasuredStates(drawersMeasuredStates, child.getMeasuredState());
+                }
+            }
+        }
+
+        final int childrenMeasuredStates =
+                combineMeasuredStates(contentMeasuredState, drawersMeasuredStates);
         setMeasuredDimension(
-                resolveSizeAndState(maxWidth, widthMeasureSpec, childrenState),
+                resolveSizeAndState(maxWidth, widthMeasureSpec, childrenMeasuredStates),
                 resolveSizeAndState(maxHeight, heightMeasureSpec,
-                        childrenState << MEASURED_HEIGHT_STATE_SHIFT));
+                        childrenMeasuredStates << MEASURED_HEIGHT_STATE_SHIFT));
     }
 
     @Override
@@ -1487,15 +1563,16 @@ public class SlidingDrawerLayout extends ViewGroup {
 
                 childWidthMeasureSpec = getChildMeasureSpec(
                         parentWidthMeasureSpec, horizontalPaddings, child.getLayoutParams().width);
+                child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
 
-                final int childMeasuredWidth = MeasureSpec.getSize(childWidthMeasureSpec);
+                final int childMeasuredWidth = child.getMeasuredWidth();
                 final int newChildMeasuredWidth = Math.min(
                         Math.max(childMeasuredWidth, minChildWidth), maxChildWidth);
+                if (newChildMeasuredWidth == childMeasuredWidth)
+                    return;
 
-                if (newChildMeasuredWidth != childMeasuredWidth) {
-                    childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
-                            newChildMeasuredWidth, MeasureSpec.EXACTLY);
-                }
+                childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+                        newChildMeasuredWidth, MeasureSpec.EXACTLY);
             } else {
                 childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
                         roundFloat(availableWidth * drawerWidthPercent), MeasureSpec.EXACTLY);
@@ -1647,7 +1724,7 @@ public class SlidingDrawerLayout extends ViewGroup {
             issued = super.drawChild(canvas, child, drawingTime);
             // Draw the content view's fading
             if (mScrollPercent > 0) {
-                final int color = Utils.dimColor(mContentFadeColor, 1 - mScrollPercent);
+                final int color = ColorUtils.dimColor(mContentFadeColor, 1 - mScrollPercent);
                 if (mShownDrawer == mLeftDrawer) {
                     canvas.clipRect(mContentView.getLeft(), child.getTop(),
                             getRight() - getPaddingRight(), child.getBottom());
@@ -1668,6 +1745,9 @@ public class SlidingDrawerLayout extends ViewGroup {
         super.onDetachedFromWindow();
         cancelRunningAnimatorAndPendingActions();
         closeDrawer(false);
+        if (mOpenDrawerOnGlobalLayoutListener != null) {
+            mOpenDrawerOnGlobalLayoutListener.removeFromViewTreeObserver();
+        }
     }
 
     private void cancelRunningAnimatorAndPendingActions() {
@@ -2169,7 +2249,7 @@ public class SlidingDrawerLayout extends ViewGroup {
                         mOpenStubDrawerRunnable.removeFromMsgQueue();
                     }
                     mOpenStubDrawerRunnable = new OpenStubDrawerRunnable(drawer, animate);
-                    post(mOpenStubDrawerRunnable);
+                    ViewCompatibility.post(this, mOpenStubDrawerRunnable);
 
                 } else {
                     if (mOpenStubDrawerRunnable != null) {
@@ -2648,15 +2728,19 @@ public class SlidingDrawerLayout extends ViewGroup {
         if (ss.openDrawerGravity != Gravity.NO_GRAVITY) {
             // Wait for the drawer on the specified side to be correctly resolved by this view
             // as it may depends on the current layout direction.
-            getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    if (Utils.isLayoutValid(SlidingDrawerLayout.this)) {
-                        getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        openDrawer(ss.openDrawerGravity, false);
+            if (mOpenDrawerOnGlobalLayoutListener == null) {
+                mOpenDrawerOnGlobalLayoutListener = new OpenDrawerOnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        if (ViewCompatibility.isLayoutValid(SlidingDrawerLayout.this)) {
+                            removeFromViewTreeObserver();
+                            openDrawer(drawerGravity, false);
+                        }
                     }
-                }
-            });
+                };
+                getViewTreeObserver().addOnGlobalLayoutListener(mOpenDrawerOnGlobalLayoutListener);
+            }
+            mOpenDrawerOnGlobalLayoutListener.drawerGravity = ss.openDrawerGravity;
         }
     }
 

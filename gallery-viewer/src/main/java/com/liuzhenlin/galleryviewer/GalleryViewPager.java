@@ -10,14 +10,14 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.view.ViewParent;
-import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
+
+import com.liuzhenlin.common.utils.Utils;
 
 /**
  * @author 刘振林
@@ -84,25 +84,8 @@ public class GalleryViewPager extends ViewPager {
 
         void startImageOverScrollAndSpringBack(
                 GestureImageView image, float dx, float dy, int duration) {
-            if (isLayoutValid(image)) {
-                image.startImageOverScrollAndSpringBack(dx, dy, duration);
-            } else {
-                image.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (isLayoutValid(image)) {
-                            if (mImageOverScrollEnabled) {
-                                image.startImageOverScrollAndSpringBack(dx, dy, duration);
-                            }
-                            image.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        }
-                    }
-                });
-            }
-        }
-
-        boolean isLayoutValid(GestureImageView view) {
-            return ViewCompat.isLaidOut(view) && !view.isLayoutRequested();
+            Utils.runOnLayoutValid(
+                    image, () -> image.startImageOverScrollAndSpringBack(dx, dy, duration));
         }
     };
 

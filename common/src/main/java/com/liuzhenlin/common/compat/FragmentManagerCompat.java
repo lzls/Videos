@@ -5,18 +5,25 @@
 
 package com.liuzhenlin.common.compat;
 
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class FragmentManagerCompat {
     private FragmentManagerCompat() {}
 
     private static Field sDestroyedField;
     private static boolean sDestroyedFieldFetched;
+
+    private static Field sAddedField;
+    private static boolean sAddedFieldFetched;
 
     private static void ensureDestroyedFieldFetched(Class<?> fmClass) {
         if (!sDestroyedFieldFetched) {
@@ -27,6 +34,18 @@ public class FragmentManagerCompat {
                 e.printStackTrace();
             }
             sDestroyedFieldFetched = true;
+        }
+    }
+
+    private static void ensureAddedFieldFetched(Class<?> fmClass) {
+        if (!sAddedFieldFetched) {
+            try {
+                sAddedField = fmClass.getDeclaredField("mAdded");
+                sAddedField.setAccessible(true);
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+            sAddedFieldFetched = true;
         }
     }
 
@@ -43,5 +62,27 @@ public class FragmentManagerCompat {
             }
         }
         return false;
+    }
+
+    @NonNull
+    public static List<Fragment> getFragments(@NonNull FragmentManager fm) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //noinspection deprecation
+            return fm.getFragments();
+        } else {
+            ensureAddedFieldFetched(fm.getClass());
+            if (sAddedField != null) {
+                try {
+                    //noinspection unchecked,deprecation
+                    List<Fragment> fragments = (List<Fragment>) sAddedField.get(fm);
+                    if (fragments != null && !fragments.isEmpty()) {
+                        return new ArrayList<>(fragments);
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return Collections.emptyList();
     }
 }

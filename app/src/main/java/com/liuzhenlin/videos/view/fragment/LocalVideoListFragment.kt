@@ -20,10 +20,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.method.ScrollingMovementMethod
 import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatDialog
@@ -36,9 +38,11 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
+import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
+import com.liuzhenlin.common.compat.ViewCompatibility
 import com.liuzhenlin.common.listener.OnBackPressedListener
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.ThemeUtils
@@ -47,9 +51,7 @@ import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.common.windowhost.FocusObservableDialog
-import com.liuzhenlin.floatingmenu.DensityUtils
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
-import com.liuzhenlin.swipeback.SwipeBackFragment
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -67,7 +69,7 @@ import kotlin.math.min
 /**
  * @author 刘振林
  */
-class LocalVideoListFragment : SwipeBackFragment(),
+class LocalVideoListFragment : BaseFragment(),
         VideoListItemOpCallback<VideoListItem>, SwipeRefreshLayout.OnRefreshListener,
         View.OnClickListener, View.OnLongClickListener, OnBackPressedListener {
 
@@ -214,6 +216,12 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         isSwipeBackEnabled = false
         return attachViewToSwipeBackLayout(contentView)
+    }
+
+    override fun onScreenWidthDpLevelChanged(
+            oldLevel: ScreenWidthDpLevel, level: ScreenWidthDpLevel) {
+        mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
+                PAYLOAD_REFRESH_VIDEO_THUMB or PAYLOAD_REFRESH_VIDEODIR_THUMB)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -494,9 +502,9 @@ class LocalVideoListFragment : SwipeBackFragment(),
                 }
                 if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
                     if (mItemOptionsWindow == null) {
-                        holder.checkBox.visibility = View.GONE
+                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
                     } else {
-                        holder.checkBox.visibility = View.VISIBLE
+                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
                     }
                 }
                 if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
@@ -511,11 +519,11 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     }
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, progress, duration) = item as Video
+                    val (_, _, _, _, _, _, progress, duration) = item as Video
                     (holder as VideoViewHolder).videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(progress, duration)
                 }
-                if (payload and PAYLOAD_REFRESH_VIDEODIR_THUMB != 0) {
+                if (payload and (PAYLOAD_REFRESH_VIDEO_THUMB or PAYLOAD_REFRESH_VIDEODIR_THUMB) != 0) {
                     loadItemImagesIfNotScrolling(holder)
                 }
                 if (payload and PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT != 0) {
@@ -538,9 +546,9 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
             val item = mVideoListItems[position]
             if (mItemOptionsWindow == null) {
-                holder.checkBox.visibility = View.GONE
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
             } else {
-                holder.checkBox.visibility = View.VISIBLE
+                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
                 holder.checkBox.isChecked = item.isChecked
             }
             when (holder.itemViewType) {
@@ -552,16 +560,27 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     vh.videoSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoProgressAndDurationText.text =
                             VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                            if (video.isWritable) View.VISIBLE else View.GONE)
                 }
                 VIEW_TYPE_VIDEODIR -> {
                     val vh = holder as VideoDirViewHolder
                     val videos = (item as VideoDirectory).videos
+                    var hasUnwritableVideo = false
+                    for (v in videos) {
+                        if (!v.isWritable) {
+                            hasUnwritableVideo = true
+                            break
+                        }
+                    }
 
                     VideoUtils2.loadVideoThumbIntoFragmentImageView(
                             this@LocalVideoListFragment, vh.videodirImage, videos[0])
                     vh.videodirNameText.text = item.name
                     vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                     vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
+                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
+                            if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
                 }
             }
         }
@@ -600,21 +619,13 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         fun separateToppedItemsFromUntoppedOnes(holder: VideoListViewHolder, position: Int) {
             val context = contextThemedFirst
-            val lp = holder.topButton.layoutParams
-
             if (mVideoListItems[position].isTopped) {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 120f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = CANCEL_TOP
             } else {
                 ViewCompat.setBackground(holder.itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.default_selector_recycler_item))
-
-                lp.width = DensityUtils.dp2px(context, 90f)
-                holder.topButton.layoutParams = lp
                 holder.topButton.text = TOP
             }
         }
@@ -640,10 +651,6 @@ class LocalVideoListFragment : SwipeBackFragment(),
             val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
             val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
             val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
-
-            init {
-                VideoUtils2.adjustVideoThumbView(videoImage)
-            }
         }
 
         inner class VideoDirViewHolder(itemView: View) : VideoListViewHolder(itemView) {
@@ -651,10 +658,6 @@ class LocalVideoListFragment : SwipeBackFragment(),
             val videodirNameText: TextView = itemView.findViewById(R.id.text_videodirName)
             val videodirSizeText: TextView = itemView.findViewById(R.id.text_videodirSize)
             val videoCountText: TextView = itemView.findViewById(R.id.text_videoCount)
-
-            init {
-                VideoUtils2.adjustVideoThumbView(videodirImage)
-            }
         }
     }
 
@@ -878,21 +881,12 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
                 mTitleWindowFrame = View.inflate(
                         v.context, R.layout.popup_window_main_title, null) as FrameLayout
-                Utils.postOnLayoutValid(mTitleWindowFrame!!, object : Runnable {
-                    init {
-                        mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
-                                .setOnClickListener(this@LocalVideoListFragment)
+                mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
+                        .setOnClickListener(this)
+                mSelectAllButton = mTitleWindowFrame!!.findViewById(R.id.btn_selectAll)
+                mSelectAllButton!!.setOnClickListener(this)
+                UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mTitleWindowFrame!!)
 
-                        mSelectAllButton = mTitleWindowFrame!!.findViewById(R.id.btn_selectAll)
-                        mSelectAllButton!!.setOnClickListener(this@LocalVideoListFragment)
-                    }
-
-                    override fun run() = mTitleWindowFrame?.run {
-                        val statusHeight = App.getInstance(v.context).statusHeightInPortrait
-                        layoutParams.height = height + statusHeight
-                        setPadding(paddingLeft, paddingTop + statusHeight, paddingRight, paddingBottom)
-                    } ?: Unit
-                })
                 val titleWindow = PopupWindow(mTitleWindowFrame,
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 titleWindow.isClippingEnabled = false
@@ -915,8 +909,9 @@ class LocalVideoListFragment : SwipeBackFragment(),
                 mItemOptionsWindow!!.animationStyle = R.style.WindowAnimations_BottomPopupWindow
                 mItemOptionsWindow!!.showAtLocation(v, Gravity.BOTTOM, 0, 0)
 
-                Utils.postOnLayoutValid(iowcv, object : Runnable {
+                iowcv.addOnLayoutChangeListener(object : OnLayoutChangeListener, Runnable {
                     val selection = v.tag as Int
+                    var firstLayout = true
 
                     init {
                         if (!ThemeUtils.isNightMode(contextThemedFirst)) {
@@ -927,29 +922,51 @@ class LocalVideoListFragment : SwipeBackFragment(),
                         mRecyclerView.isItemDraggable = false
                     }
 
+                    override fun onLayoutChange(
+                            v: View,
+                            left: Int, top: Int, right: Int, bottom: Int,
+                            oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+                        val oldHeight = oldBottom - oldTop
+                        val height = bottom - top
+                        if (height != oldHeight) {
+                            run()
+                        }
+                    }
+
                     override fun run() {
+                        ViewCompatibility.removeCallbacks(iowcv, this)
+                        if (!ViewCompatibility.isLayoutValid(iowcv)
+                                || !ViewCompatibility.isLayoutValid(mRecyclerView)) {
+                            ViewCompatibility.post(iowcv, this)
+                            return
+                        }
+
                         val location = IntArray(2)
 
                         iowcv.getLocationOnScreen(location)
                         val iowTop = location[1]
 
-                        val rvParent = mRecyclerView.parent as View
-                        rvParent.getLocationOnScreen(location)
-                        val rvpBottom = location[1] + rvParent.height
+                        val rv = mRecyclerView
+                        rv.getLocationOnScreen(location)
+                        val rvBottom = location[1] + rv.height
 
-                        val rvpLP = rvParent.layoutParams
-                        rvpLP.height = rvParent.height - (rvpBottom - iowTop)
-                        rvParent.layoutParams = rvpLP
+                        if (rvBottom > iowTop) {
+                            rv.setPadding(0, 0, 0, rvBottom - iowTop)
+                        }
 
-                        val itemBottom = (v.parent as View).bottom
-                        if (itemBottom <= rvpLP.height) {
-                            notifyItemsToShowCheckBoxes()
-                        } else {
-                            Utils.postOnLayoutValid(rvParent) {
-                                // 使长按的itemView在RecyclerView高度改变后可见
-                                mRecyclerView.scrollBy(0, itemBottom - rvpLP.height)
-
+                        if (firstLayout) {
+                            firstLayout = false
+                            val itemBottom = (v.parent as View).bottom
+                            val rvHeight = rv.height - rv.paddingBottom
+                            if (itemBottom <= rvHeight) {
                                 notifyItemsToShowCheckBoxes()
+                            } else {
+                                Utils.runOnLayoutValid(rv) {
+                                    // 使长按的itemView在RecyclerView高度改变后可见
+                                    rv.scrollBy(0, itemBottom - rvHeight)
+
+                                    notifyItemsToShowCheckBoxes()
+                                }
                             }
                         }
                     }
@@ -979,10 +996,7 @@ class LocalVideoListFragment : SwipeBackFragment(),
                     mShareButton_IOW = null
                     mDetailsButton_IOW = null
 
-                    val parent = mRecyclerView.parent as View
-                    val lp = parent.layoutParams
-                    lp.height = ViewGroup.LayoutParams.MATCH_PARENT
-                    parent.layoutParams = lp
+                    mRecyclerView.setPadding(0, 0, 0, 0)
 
                     for (item in mVideoListItems) {
                         item.isChecked = false
@@ -1006,11 +1020,26 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         var firstCheckedItem: VideoListItem? = null
         var checkedItemCount = 0
+        var hasUnwritableCheckedItem = false
         for (item in mVideoListItems) {
             if (item.isChecked) {
                 checkedItemCount++
                 if (checkedItemCount == 1) {
                     firstCheckedItem = item
+                }
+                if (item is VideoDirectory) {
+                    var index = item.videos.size - 1
+                    while (!hasUnwritableCheckedItem && index >= 0) {
+                        if (!item.videos[index].isWritable) {
+                            hasUnwritableCheckedItem = true
+                            break
+                        }
+                        index--
+                    }
+                } else /* if (item is Video) */ {
+                    if (!hasUnwritableCheckedItem && !(item as Video).isWritable) {
+                        hasUnwritableCheckedItem = true
+                    }
                 }
             }
         }
@@ -1033,11 +1062,12 @@ class LocalVideoListFragment : SwipeBackFragment(),
             else -> getString(R.string.severalItemsHaveBeenSelected, checkedItemCount)
         }
 
-        mDeleteButton_IOW!!.isEnabled = checkedItemCount >= 1
-        val enabled = checkedItemCount == 1
-        mRenameButton_IOW!!.isEnabled = enabled
+        mDeleteButton_IOW!!.isEnabled = checkedItemCount > 0 && !hasUnwritableCheckedItem
+        mRenameButton_IOW!!.isEnabled =
+                checkedItemCount == 1
+                        && (!hasUnwritableCheckedItem || firstCheckedItem is VideoDirectory)
         mShareButton_IOW!!.isEnabled = aVideoCheckedOnly
-        mDetailsButton_IOW!!.isEnabled = enabled
+        mDetailsButton_IOW!!.isEnabled = checkedItemCount == 1
     }
 
     override fun showDeleteItemDialog(item: VideoListItem, onDeleteAction: (() -> Unit)?) {
@@ -1080,20 +1110,30 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
         val view = View.inflate(
                 contextThemedFirst, R.layout.popup_window_delete_video_list_items, null) as ViewGroup
-        view.findViewById<TextView>(R.id.text_message).text = if (items.size == 1) {
-            when (items[0]) {
-                is Video -> getString(R.string.areYouSureToDeleteSth, items[0].name)
-                else /* is VideoDirectory */ -> getString(R.string.areYouSureToDeleteSomeVideoDir, items[0].name)
+        view.findViewById<TextView>(R.id.text_message).apply {
+            movementMethod = ScrollingMovementMethod.getInstance()
+            text = if (items.size == 1) {
+                when (items[0]) {
+                    is Video -> getString(R.string.areYouSureToDeleteSth, items[0].name)
+                    else /* is VideoDirectory */ ->
+                        getString(R.string.areYouSureToDeleteSomeVideoDir, items[0].name)
+                }
+            } else {
+                getString(R.string.areYouSureToDelete)
             }
-        } else {
-            getString(R.string.areYouSureToDelete)
         }
         view.findViewById<View>(R.id.btn_confirm_deleteItemsWindow).setOnClickListener(this)
         view.findViewById<View>(R.id.btn_cancel_deleteItemsWindow).setOnClickListener(this)
         view.tag = items
         view[0].tag = onDeleteAction
 
-        val fadedContentView = requireView().rootView as FrameLayout // DecorView
+        var fadedContentView =
+                requireView().rootView // DecorView
+                        .findViewById<FrameLayout>(android.R.id.content) // ContentFrameLayout
+        fadedContentView =
+                fadedContentView.parent // FitWindowsLinearLayout
+                        .parent as? FrameLayout ?: fadedContentView
+        var fadedContentViewFgGravity = 0
 
         mDeleteItemsWindow = PopupWindow(
                 view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -1109,10 +1149,14 @@ class LocalVideoListFragment : SwipeBackFragment(),
 
             mTitleWindowFrame?.foreground = null
             fadedContentView.foreground = null
+            fadedContentView.foregroundGravity = fadedContentViewFgGravity
         }
 
         mTitleWindowFrame?.foreground = ColorDrawable(0x7F000000)
         fadedContentView.foreground = ColorDrawable(0x7F000000)
+        // 在设置了foreground之后获取，以免因 mForegroundInfo 还未初始化，获取不到实际的值
+        fadedContentViewFgGravity = fadedContentView.foregroundGravity
+        fadedContentView.foregroundGravity = Gravity.FILL
     }
 
     override fun showRenameItemDialog(item: VideoListItem, onRenameAction: (() -> Unit)?) {
@@ -1301,10 +1345,8 @@ class LocalVideoListFragment : SwipeBackFragment(),
     }
 
     private companion object {
-        const val PAYLOAD_REFRESH_VIDEODIR_THUMB =
-                PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION shl 1
-        const val PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT =
-                PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION shl 2
+        const val PAYLOAD_REFRESH_VIDEODIR_THUMB = PAYLOAD_LAST shl 1
+        const val PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT = PAYLOAD_LAST shl 2
 
         const val VIEW_TYPE_VIDEODIR = 1
         const val VIEW_TYPE_VIDEO = 2

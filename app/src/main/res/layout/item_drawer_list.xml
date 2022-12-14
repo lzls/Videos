@@ -2,7 +2,12 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="10dp">
+    android:paddingTop="@dimen/listPreferredItemPaddingVertical"
+    android:paddingBottom="@dimen/listPreferredItemPaddingVertical"
+    android:paddingLeft="@dimen/contentPreferredPaddingHorizontal"
+    android:paddingStart="@dimen/contentPreferredPaddingHorizontal"
+    android:paddingRight="@dimen/innerContentPreferredPaddingHorizontal"
+    android:paddingEnd="@dimen/innerContentPreferredPaddingHorizontal">
 
     <TextView
         android:id="@+id/text_list"
@@ -19,6 +24,8 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:layout_marginLeft="@dimen/multi_horizontal_text_margin"
+        android:layout_marginStart="@dimen/multi_horizontal_text_margin"
         android:textSize="@dimen/secondary_text_size"
         android:textAlignment="viewEnd"
         android:gravity="end|center_vertical" />

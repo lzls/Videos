@@ -14,8 +14,11 @@ public class PackageConsts {
     static final int PAYLOAD_CHANGE_CHECKBOX_VISIBILITY = 1 << 1;
     static final int PAYLOAD_REFRESH_CHECKBOX = 1 << 2;
     static final int PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR = 1 << 3;
-    static final int PAYLOAD_REFRESH_ITEM_NAME = 1 << 4;
-    static final int PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION = 1 << 5;
+    static final int PAYLOAD_REFRESH_VIDEO_THUMB = 1 << 4;
+    static final int PAYLOAD_REFRESH_ITEM_NAME = 1 << 5;
+    static final int PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION = 1 << 6;
+
+    static final int PAYLOAD_LAST = PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION;
 
     private PackageConsts() {
     }

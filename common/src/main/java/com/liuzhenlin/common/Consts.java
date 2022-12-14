@@ -22,6 +22,10 @@ public class Consts {
 
     public static final String APPLICATION_ID = "com.liuzhenlin.videos";
 
+    public static final int SDK_VERSION = Build.VERSION.SDK_INT;
+    public static final int SDK_VERSION_SUPPORTS_WINDOW_INSETS = Build.VERSION_CODES.LOLLIPOP;
+    public static final int SDK_VERSION_SUPPORTS_MULTI_WINDOW = Build.VERSION_CODES.N;
+
     @SuppressLint("InlinedApi")
     public static final int PENDING_INTENT_FLAG_MUTABLE = PendingIntent.FLAG_MUTABLE;
     @SuppressLint("InlinedApi")

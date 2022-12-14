@@ -28,8 +28,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.util.Predicate;
-import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
+
+import com.liuzhenlin.common.compat.ViewCompatibility;
 
 /**
  * @author <a href="mailto:2233788867@qq.com">刘振林</a>
@@ -1027,7 +1028,7 @@ public class GestureImageView extends AppCompatImageView {
 
         private void postOnAnimation() {
             mRunning = true;
-            ViewCompat.postOnAnimation(mView, this::run);
+            ViewCompatibility.postOnAnimation(mView, this::run);
         }
 
         void cancel() {
@@ -1036,7 +1037,7 @@ public class GestureImageView extends AppCompatImageView {
                 mSpringBackJob = null;
                 mTranslator.forceFinished(true);
                 mScaler.forceFinished(true);
-                removeCallbacks(this::run);
+                ViewCompatibility.removeCallbacks(mView, this::run);
             }
         }
 
@@ -1050,7 +1051,7 @@ public class GestureImageView extends AppCompatImageView {
                 mTranslator.abortAnimation();
                 mScaler.abortAnimation();
                 run();
-                removeCallbacks(this::run);
+                ViewCompatibility.removeCallbacks(mView, this::run);
             }
         }
     }

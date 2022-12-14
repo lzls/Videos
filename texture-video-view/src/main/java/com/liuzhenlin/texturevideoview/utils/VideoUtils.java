@@ -9,12 +9,6 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 
-//import org.mp4parser.muxer.Movie;
-//import org.mp4parser.muxer.Track;
-//import org.mp4parser.muxer.builder.DefaultMp4Builder;
-//import org.mp4parser.muxer.container.mp4.MovieCreator;
-//import org.mp4parser.muxer.tracks.ClippedTrack;
-
 import com.google.android.exoplayer2.util.Util;
 import com.googlecode.mp4parser.authoring.Movie;
 import com.googlecode.mp4parser.authoring.Track;
@@ -29,6 +23,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+
+//import org.mp4parser.muxer.Movie;
+//import org.mp4parser.muxer.Track;
+//import org.mp4parser.muxer.builder.DefaultMp4Builder;
+//import org.mp4parser.muxer.container.mp4.MovieCreator;
+//import org.mp4parser.muxer.tracks.ClippedTrack;
 
 /**
  * @author 刘振林

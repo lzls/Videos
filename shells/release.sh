@@ -8,7 +8,11 @@
 readonly SHELLS_DIR=$(cd "$(dirname "$0")"; pwd)
 source "$SHELLS_DIR"/utils.sh &&
   source "$SHELLS_DIR"/git.sh
-verifyLastOpSuccessed
+# bail out if this is not executed on a subprocess
+declare -i exitCode=$?
+if [ $exitCode -ne 0 ]; then
+  return $exitCode
+fi
 
 const_int START_TIME=$(date +%s)
 echo "start time: $(date -r $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')"
@@ -18,13 +22,14 @@ APK_PARTS_COUNT=
 APP_VERSION_NAME=
 bool BETA=$false
 bool AMEND=$false
+bool UPDATE_DATES=$false
 
 function __echo_release_sh_usage___() {
   if [ "$1" ]; then
     echo "illegal option: $1" >&2
   fi
   printf "%s\n\t%s\n\t%s\n" 'usage: ./shells/release.sh --version-name=<app version name>' \
-    '--parts-count=<count of split apk parts> [--beta] [--amend]' \
+    '--parts-count=<count of split apk parts> [--beta] [--amend] [--update-dates]' \
     '[--projects-root=<parent dir of the local Videos repo>]'
 }
 
@@ -34,6 +39,7 @@ function __parseShellArgs() {
   local partsCountPrefix='--parts-count='
   local beta='--beta'
   local amend='--amend'
+  local updateDates='--update-dates'
   for arg in "$@"; do
     case $arg in
     ${projectsRootPrefix}*) PROJECTS_ROOT=$(parsePath "${arg:${#projectsRootPrefix}}") ;;
@@ -41,8 +47,9 @@ function __parseShellArgs() {
     ${partsCountPrefix}*) APK_PARTS_COUNT=${arg:${#partsCountPrefix}} ;;
     $beta) BETA=$true ;;
     $amend) AMEND=$true ;;
+    $updateDates) UPDATE_DATES=$true ;;
     --help) __echo_release_sh_usage___; exit 0 ;;
-    *) __echo_release_sh_usage___ "$arg"; waitToExit 1 ;;
+    *) __echo_release_sh_usage___ "$arg"; exit 1 ;;
     esac
   done
 
@@ -118,7 +125,13 @@ function commitAndPush() {
   local branches=${*:-master}
 
   if [ $AMEND -eq $true ]; then
-    trace gitAmendCommit --m="$commitMsg"
+    # shellcheck disable=SC2046
+    trace gitAmendCommit --m="$commitMsg" $(
+        if [ $UPDATE_DATES -eq $true ]; then
+          # shellcheck disable=SC2155
+          local _date=$(date +%s%z)
+          echo "--date=$_date --commit-date=$_date"
+        fi)
   else
     trace gitCommit "$commitMsg"
   fi
@@ -151,7 +164,7 @@ fi
 echoBoldBlueText "\nVerifying tag v$APP_VERSION_NAME exists in the commit tree for the dev branch of" \
   "$PROJECTS_ROOT/Videos"
 
-cdOrWaitToExit "$PROJECTS_ROOT"/Videos
+cdOrExit "$PROJECTS_ROOT"/Videos
 
 test "$(git branch --show-current)" = 'dev'
 verifyLastOpSuccessed 'Current branch is not dev'
@@ -162,21 +175,39 @@ echo "$RELEASE_TAG_COMMIT_ID" | grep -E '^[[:xdigit:]]{40}$' >/dev/null &&
 verifyLastOpSuccessed "git tag v$APP_VERSION_NAME does not exist in the commit tree"
 
 
-echoBoldBlueText "\nEnsuring $PROJECTS_ROOT/Videos is up-to-date on its release branch..."
-ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO release "$PROJECTS_ROOT"/Videos &&
+echoBoldBlueText "\nEnsuring $PROJECTS_ROOT/Videos is up-to-date on its beta branch..."
+ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO beta "$PROJECTS_ROOT"/Videos &&
   if [ $AMEND -eq $true ] \
       && git log --pretty=oneline \
           | grep "Merge tag \('\|\"\)v$APP_VERSION_NAME\('\|\"\)" >/dev/null; then
     trace git reset --hard HEAD~1
   fi &&
   trace git merge "v$APP_VERSION_NAME" --no-ff --no-edit &&
-  if [ $AMEND -eq $true ]; then
-    _last_commit=$(git remote)/release
+  if [ $AMEND -eq $true ] && [ $UPDATE_DATES -ne $true ]; then
+    _last_commit=$(git remote)/beta
     trace gitAmendCommit --date="$(gitGetFormattedLog --format='%ad' --head="$_last_commit" -1)" \
                          --commit-date="$(gitGetFormattedLog --format='%cd' --head="$_last_commit" -1)"
   fi &&
-  trace git checkout dev
+  if [ $BETA -eq $true ]; then trace git checkout dev; fi
 verifyLastOpSuccessed
+
+if [ $BETA -ne $true ]; then
+  echoBoldBlueText "\nEnsuring $PROJECTS_ROOT/Videos is up-to-date on its release branch..."
+  ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO release "$PROJECTS_ROOT"/Videos &&
+    if [ $AMEND -eq $true ] \
+        && git log --pretty=oneline \
+            | grep "Merge tag \('\|\"\)v$APP_VERSION_NAME\('\|\"\)" >/dev/null; then
+      trace git reset --hard HEAD~1
+    fi &&
+    trace git merge "v$APP_VERSION_NAME" --no-ff --no-edit &&
+    if [ $AMEND -eq $true ] && [ $UPDATE_DATES -ne $true ]; then
+      _last_commit=$(git remote)/release
+      trace gitAmendCommit --date="$(gitGetFormattedLog --format='%ad' --head="$_last_commit" -1)" \
+          --commit-date="$(gitGetFormattedLog --format='%cd' --head="$_last_commit" -1)"
+    fi &&
+    trace git checkout dev
+  verifyLastOpSuccessed
+fi
 
 echoBoldBlueText "\nEnsuring $SERVICE_PROJECTS_ROOT/Videos-master is up-to-date on its push branch..."
 ensureRepoPushBranchUpToDate $SSH_LZLS_VIDEOS_REPO master "$SERVICE_PROJECTS_ROOT"/Videos-master
@@ -199,11 +230,19 @@ cd "$SERVICE_PROJECTS_ROOT"/Videos &&
   commitAndPush "$COMMIT_MSG" $SSH_APKS_HOLDER_VIDEOS_REPO master master:release
 verifyLastOpSuccessed --pause-only
 
-echoBoldBlueText '\nPushing the new release tag and the latest code to dev and release branches of' \
+_branches=
+if [ $BETA -eq $true ]; then
+  _branches='dev and beta'
+else
+  _branches='dev, beta and release'
+fi
+echoBoldBlueText "\nPushing the new release tag and the latest code to $_branches branches of" \
   'https://github.com/lzls/Videos.git...'
+# shellcheck disable=SC2046
 cd "$PROJECTS_ROOT"/Videos &&
   trace git push $SSH_LZLS_VIDEOS_REPO tags/"v$APP_VERSION_NAME" \
-    dev:dev release:release $(__force)
+      dev:dev beta:beta $(if [ $BETA -ne $true ]; then echo release:release; else echo ''; fi) \
+      $(__force)
 verifyLastOpSuccessed --pause-only
 
 echoBoldBlueText '\nPushing information of app upgrade to the master branch of' \
@@ -218,7 +257,7 @@ echoBoldBlueText '\nPushing data of app upgrade to https://gitlab.com/lzls/Video
   'This will be automatically mirrored to https://gitee.com/lzl_s/Videos-Server.git and' \
   'https://gitee.com/lzl_s/Videos-Service.git by the GitLab server.'
 
-cdOrWaitToExit "$SERVICE_PROJECTS_ROOT"/Videos-Server/app/Android
+cdOrExit "$SERVICE_PROJECTS_ROOT"/Videos-Server/app/Android
 
 if [ $BETA -ne $true ]; then
   i=1

@@ -26,6 +26,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 
 import com.liuzhenlin.common.R;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.Utils;
 
@@ -232,7 +233,7 @@ public final class AspectRatioFrameLayout extends FrameLayout {
 
       if (!isScheduled) {
         isScheduled = true;
-        post(this);
+        ViewCompatibility.post(AspectRatioFrameLayout.this, this);
       }
     }
 

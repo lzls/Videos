@@ -184,12 +184,13 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
                 ScreenUtils.setKeepWindowBright(getWindow(), true);
             }
 
+            boolean fullscreen = mService.mView.isInFullscreen();
             boolean usingYoutubeIFramePlayer = usingYoutubeIFramePlayer();
 
             setRequestedOrientation(
                     usingYoutubeIFramePlayer ?
                             SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_PORTRAIT);
-            initStatusBar();
+            initStatusBar(fullscreen);
             setContentView(R.layout.activity_youtube_playback);
 
             mVideoProgressInPiP = findViewById(R.id.pbInPiP_videoProgress);
@@ -254,7 +255,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
                     exitFullscreen();
                 }
             });
-            if (mPlaybackView.isInFullscreen()) {
+            if (fullscreen) {
                 enterFullscreen();
             }
         }
@@ -273,17 +274,27 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
         }
     }
 
-    private void initStatusBar() {
-        boolean showSystemBars = !usingYoutubeIFramePlayer();
+    private void initStatusBar(boolean inFullscreen) {
+        boolean showSystemBars = !inFullscreen || isInMultiWindowMode();
         Window window = getWindow();
         SystemBarUtils.showSystemBars(window, showSystemBars);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && showSystemBars) {
-            SystemBarUtils.setStatusBackgroundColorRes(
-                    window, R.color.youtube_watch_page_actionbar_background);
-        }
+        adjustStatusBarColor(inFullscreen);
         mShowSystemBars = showSystemBars;
         window.getDecorView().setOnSystemUiVisibilityChangeListener(
                 visibility -> SystemBarUtils.showSystemBars(window, mShowSystemBars));
+    }
+
+    private void adjustStatusBarColor(boolean inFullscreen) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // As for YoutubeIFramePlayer, inFullscreen is always true
+            if (inFullscreen) {
+                SystemBarUtils.setStatusBackgroundColor(
+                        getWindow(), Configs.VIDEO_VIEW_BACKGROUND_COLOR);
+            } else {
+                SystemBarUtils.setStatusBackgroundColorRes(
+                        getWindow(), R.color.youtube_watch_page_actionbar_background);
+            }
+        }
     }
 
     @Synthetic boolean usingYoutubePlayer() {
@@ -296,7 +307,8 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
 
     @Synthetic void enterFullscreen() {
         if (usingYoutubePlayer()) {
-            SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = false);
+            SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = isInMultiWindowMode());
+            adjustStatusBarColor(true);
             setRequestedOrientation(SCREEN_ORIENTATION_SENSOR);
             setOnOrientationChangeListenerEnabled(true);
         }
@@ -305,6 +317,7 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     @Synthetic void exitFullscreen() {
         if (usingYoutubePlayer()) {
             SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars = true);
+            adjustStatusBarColor(false);
             setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
             setOnOrientationChangeListenerEnabled(false);
             showLockUnlockOrientationButton(false);
@@ -419,6 +432,19 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
     @Override
     public void finish() {
         getDelegate().finish();
+    }
+
+    @Override
+    public void onMultiWindowModeChanged(boolean isInMultiWindowMode) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode);
+        mShowSystemBars = isInMultiWindowMode || !mPlaybackView.isInFullscreen();
+        SystemBarUtils.showSystemBars(getWindow(), mShowSystemBars);
+    }
+
+    @Override
+    public boolean isInMultiWindowMode() {
+        return Consts.SDK_VERSION >= Consts.SDK_VERSION_SUPPORTS_MULTI_WINDOW
+                && super.isInMultiWindowMode();
     }
 
     @Override

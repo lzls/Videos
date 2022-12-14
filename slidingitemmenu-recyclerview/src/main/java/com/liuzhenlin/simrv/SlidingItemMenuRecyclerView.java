@@ -29,6 +29,10 @@ import androidx.collection.SimpleArrayMap;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.liuzhenlin.common.animation.ViscousFluidInterpolator;
+import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.Utils;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -208,26 +212,38 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
 
         final int itemChildCount = itemView.getChildCount();
         final View itemLastChild = itemView.getChildAt(itemChildCount >= 2 ? itemChildCount - 1 : 1);
-        if (!(itemLastChild instanceof FrameLayout)) return false;
+        if (!(itemLastChild instanceof FrameLayout)
+                || itemLastChild.getVisibility() != View.VISIBLE)
+            return false;
 
         final FrameLayout itemMenu = (FrameLayout) itemLastChild;
         final int menuItemCount = itemMenu.getChildCount();
         final int[] menuItemWidths = new int[menuItemCount];
         int itemMenuWidth = 0;
         for (int i = 0; i < menuItemCount; i++) {
-            menuItemWidths[i] = ((FrameLayout) itemMenu.getChildAt(i)).getChildAt(0).getWidth();
-            itemMenuWidth += menuItemWidths[i];
+            final FrameLayout menuItemBg = (FrameLayout) itemMenu.getChildAt(i);
+            // We can not just add up the item menu width with the width of the menu item without
+            // checking the visibilities of it and its parents, as the visibility of a view
+            // changing from visible to gone will just exclude it from the subsequent layout passes
+            // and therefore will usually not have its width and height properties updated.
+            if (menuItemBg.getVisibility() == View.VISIBLE) {
+                final View menuItem = menuItemBg.getChildAt(0);
+                if (menuItem.getVisibility() == View.VISIBLE) {
+                    menuItemWidths[i] = menuItem.getWidth();
+                    itemMenuWidth += menuItemWidths[i];
+                }
+            }
         }
         if (itemMenuWidth > 0) {
-            itemView.setTag(TAG_ITEM_MENU_WIDTH, itemMenuWidth);
-            itemView.setTag(TAG_MENU_ITEM_WIDTHS, menuItemWidths);
+            ViewCompatibility.setTag(itemView, TAG_ITEM_MENU_WIDTH, itemMenuWidth);
+            ViewCompatibility.setTag(itemView, TAG_MENU_ITEM_WIDTHS, menuItemWidths);
             return true;
         }
         return false;
     }
 
     private void resolveActiveItemMenuBounds() {
-        final int itemMenuWidth = (int) mActiveItem.getTag(TAG_ITEM_MENU_WIDTH);
+        final int itemMenuWidth = ViewCompatibility.getTag(mActiveItem, TAG_ITEM_MENU_WIDTH);
         final int left = Utils.isLayoutRtl(mActiveItem) ? 0 : mActiveItem.getRight() - itemMenuWidth;
         final int right = left + itemMenuWidth;
         mActiveItemMenuBounds.set(left, mActiveItemBounds.top,
@@ -356,8 +372,8 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
                     final float translationX = mActiveItem.getChildAt(0).getTranslationX();
                     final boolean rtl = Utils.isLayoutRtl(mActiveItem);
                     final int finalXFromEndToStart =
-                            rtl ? (int) mActiveItem.getTag(TAG_ITEM_MENU_WIDTH)
-                                : -(int) (mActiveItem.getTag(TAG_ITEM_MENU_WIDTH));
+                            rtl ? ViewCompatibility.getTag(mActiveItem, TAG_ITEM_MENU_WIDTH)
+                                : -(int) ViewCompatibility.getTag(mActiveItem, TAG_ITEM_MENU_WIDTH);
                     // Swipe the itemView towards the horizontal start over the width of
                     // the itemView's menu.
                     if (!rtl && dx + translationX < finalXFromEndToStart
@@ -390,7 +406,8 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
                 if (mIsItemDraggable && mIsItemBeingDragged) {
                     final boolean rtl = Utils.isLayoutRtl(mActiveItem);
                     final float translationX = mActiveItem.getChildAt(0).getTranslationX();
-                    final int itemMenuWidth = (int) mActiveItem.getTag(TAG_ITEM_MENU_WIDTH);
+                    final int itemMenuWidth =
+                            ViewCompatibility.getTag(mActiveItem, TAG_ITEM_MENU_WIDTH);
                     //noinspection StatementWithEmptyBody
                     if (translationX == 0) { // itemView's menu is closed
 
@@ -618,8 +635,8 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
             smoothTranslateItemViewXTo(
                     itemView,
                     Utils.isLayoutRtl(itemView)
-                            ? (int) itemView.getTag(TAG_ITEM_MENU_WIDTH)
-                            : -(int) (itemView.getTag(TAG_ITEM_MENU_WIDTH)),
+                            ? ViewCompatibility.getTag(itemView, TAG_ITEM_MENU_WIDTH)
+                            : -(int) (ViewCompatibility.getTag(itemView, TAG_ITEM_MENU_WIDTH)),
                     animate ? mItemScrollDuration : 0);
             mFullyOpenedItem = itemView;
             return true;
@@ -632,14 +649,13 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
     }
 
     private void smoothTranslateItemViewXBy(ViewGroup itemView, float dx, int duration) {
-        TranslateItemViewXAnimator animator =
-                (TranslateItemViewXAnimator) itemView.getTag(TAG_ITEM_ANIMATOR);
+        TranslateItemViewXAnimator animator = ViewCompatibility.getTag(itemView, TAG_ITEM_ANIMATOR);
 
         if (dx != 0 && duration > 0) {
             boolean canceled = false;
             if (animator == null) {
                 animator = new TranslateItemViewXAnimator(this, itemView);
-                itemView.setTag(TAG_ITEM_ANIMATOR, animator);
+                ViewCompatibility.setTag(itemView, TAG_ITEM_ANIMATOR, animator);
 
             } else if (animator.isRunning()) {
                 animator.removeListener(animator.listener);
@@ -676,7 +692,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
 
     private void translateItemViewXBy(ViewGroup itemView, float dx) {
         final TranslateItemViewXAnimator animator =
-                (TranslateItemViewXAnimator) itemView.getTag(TAG_ITEM_ANIMATOR);
+                ViewCompatibility.getTag(itemView, TAG_ITEM_ANIMATOR);
         if (animator != null && animator.isRunning()) {
             // Cancels the running animator associated to the 'itemView' as we horizontally
             // scroll it to a position immediately to avoid inconsistencies in its translation X.
@@ -694,7 +710,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         if (dx == 0) return;
 
         final float translationX = itemView.getChildAt(0).getTranslationX() + dx;
-        final int itemMenuWidth = (int) itemView.getTag(TAG_ITEM_MENU_WIDTH);
+        final int itemMenuWidth = ViewCompatibility.getTag(itemView, TAG_ITEM_MENU_WIDTH);
 
         final boolean rtl = Utils.isLayoutRtl(itemView);
         if (!rtl && translationX > -itemMenuWidth * 0.05f
@@ -711,7 +727,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         }
 
         final FrameLayout itemMenu = (FrameLayout) itemView.getChildAt(itemChildCount - 1);
-        final int[] menuItemWidths = (int[]) itemView.getTag(TAG_MENU_ITEM_WIDTHS);
+        final int[] menuItemWidths = ViewCompatibility.getTag(itemView, TAG_MENU_ITEM_WIDTHS);
         float menuItemFrameDx = 0;
         for (int i = 1, menuItemCount = itemMenu.getChildCount(); i < menuItemCount; i++) {
             final FrameLayout menuItemFrame = (FrameLayout) itemMenu.getChildAt(i);
@@ -799,7 +815,7 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         if (mOpenedItems.size() > 0) {
             final ViewGroup[] openedItems = mOpenedItems.toArray(new ViewGroup[0]);
             for (ViewGroup openedItem : openedItems) {
-                final Animator animator = (Animator) openedItem.getTag(TAG_ITEM_ANIMATOR);
+                final Animator animator = ViewCompatibility.getTag(openedItem, TAG_ITEM_ANIMATOR);
                 if (animator != null && animator.isRunning()) {
                     animator.end();
                 }
