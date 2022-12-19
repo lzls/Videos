@@ -25,7 +25,7 @@ help me collect crash usages of this app from your device._
 - Play an online audio/video stream by entering a direct URL or choosing a publicly shared
   YouTube video/playlist from the Online Videos page.
 - A set of useful, typical, and even awesome ops for the audio/video playbacks.
-- Simple and smooth UI with day/night mode support.
+- Simple and smooth UI with split screen, popup window and day/night mode support.
 - Crashes are auto reported and users can send their suggestion or problems they encountered, all of
   which help make this app much better.
 - Hot and cold updates support to continuously let user get the latest product for bug fixes,
@@ -51,6 +51,7 @@ help me collect crash usages of this app from your device._
 
 #### Project branches
 - Development work happens on the `dev` branch. Pull requests should normally be made to this branch.
+- The `beta` branch contains all the versions published, including tests.
 - The `release` branch holds the most recent release.
 
 #### Using Android Studio
