@@ -32,6 +32,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.provider.MediaStore;
@@ -3869,6 +3870,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         final WeakReference<TextureVideoView> videoViewRef;
 
         MsgHandler(TextureVideoView videoView) {
+            super(Looper.getMainLooper());
             videoViewRef = new WeakReference<>(videoView);
         }
 

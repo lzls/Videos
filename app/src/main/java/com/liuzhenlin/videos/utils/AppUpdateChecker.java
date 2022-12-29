@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
@@ -139,7 +140,7 @@ public final class AppUpdateChecker {
 
     private AppUpdateChecker(Context context) {
         mContext = context.getApplicationContext();
-        mH = new H();
+        mH = new H(Looper.getMainLooper());
     }
 
     @Synthetic boolean hasOnResultListener() {
@@ -328,7 +329,8 @@ public final class AppUpdateChecker {
         static final int MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD = 2;
         static final int MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD = 3;
 
-        H() {
+        H(Looper looper) {
+            super(looper);
         }
 
         @Override

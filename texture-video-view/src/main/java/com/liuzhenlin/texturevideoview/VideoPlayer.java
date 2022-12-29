@@ -11,6 +11,7 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.view.Surface;
@@ -776,6 +777,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
         protected final WeakReference<VideoPlayer> videoPlayerRef;
 
         public MsgHandler(VideoPlayer videoPlayer) {
+            super(Looper.getMainLooper());
             videoPlayerRef = new WeakReference<>(videoPlayer);
         }
 

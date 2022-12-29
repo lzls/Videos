@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.SystemClock;
@@ -766,6 +767,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
 
     private static final class MsgHandler extends Handler {
         MsgHandler() {
+            super(Looper.getMainLooper());
         }
 
         @Override
