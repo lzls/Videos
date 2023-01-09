@@ -1074,7 +1074,9 @@ class LocalVideoListFragment : BaseFragment(),
         val context = contextThemedFirst
         val view = View.inflate(context, R.layout.dialog_message, null)
 
-        view.findViewById<TextView>(R.id.text_message).text = when (item) {
+        val message = view.findViewById<TextView>(R.id.text_message)
+        message.movementMethod = ScrollingMovementMethod.getInstance()
+        message.text = when (item) {
             is Video -> getString(R.string.areYouSureToDeleteSth, item.name)
             else /* is VideoDirectory */ -> getString(R.string.areYouSureToDeleteSomeVideoDir, item.name)
         }

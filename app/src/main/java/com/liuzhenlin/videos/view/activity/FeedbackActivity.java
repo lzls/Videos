@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -228,6 +229,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         final String contactWay = mEnterContactWayEditor.getText().toString().trim();
         if (mPresenter.hasDataChanged(text, contactWay)) {
             View view = View.inflate(this, R.layout.dialog_confirm_save, null);
+            view.<TextView>findViewById(R.id.text_message)
+                    .setMovementMethod(ScrollingMovementMethod.getInstance());
             view.findViewById(R.id.btn_notSave).setOnClickListener(this);
             view.findViewById(R.id.btn_save).setOnClickListener(this);
 
@@ -526,8 +529,9 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                 case R.id.frame_btn_delete:
                 case R.id.btn_delete:
                     View view = View.inflate(mContext, R.layout.dialog_message, null);
-                    view.<TextView>findViewById(R.id.text_message)
-                            .setText(R.string.areYouSureToDeleteThisPicture);
+                    TextView messageText = view.findViewById(R.id.text_message);
+                    messageText.setText(R.string.areYouSureToDeleteThisPicture);
+                    messageText.setMovementMethod(ScrollingMovementMethod.getInstance());
                     view.findViewById(R.id.btn_cancel).setOnClickListener(this);
                     view.findViewById(R.id.btn_ok).setOnClickListener(this);
                     mConfirmDeletePictureDialog = new AppCompatDialog(
