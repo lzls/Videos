@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.MessageQueue;
 import android.provider.Settings;
 import android.view.LayoutInflater;
@@ -27,9 +28,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.liuzhenlin.common.Configs;
-import com.liuzhenlin.common.compat.LooperCompat;
+import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
-import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.NetworkUtil;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.view.SwipeRefreshLayout;
@@ -146,13 +146,13 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
                     super.onPageStarted(view, url, favicon);
-                    Executors.MAIN_EXECUTOR.execute(() -> swipeRefreshLayout.setRefreshing(true));
+                    swipeRefreshLayout.setRefreshing(true);
                 }
 
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
-                    Executors.MAIN_EXECUTOR.execute(() -> swipeRefreshLayout.setRefreshing(false));
+                    swipeRefreshLayout.setRefreshing(false);
                 }
             });
             mYoutubeView.loadUrl(Youtube.URLs.HOME);
@@ -185,10 +185,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
         super.onResume();
         if (mYoutubeView != null && !mIdleHandlerAdded) {
             mIdleHandlerAdded = true;
-            MessageQueue msgQueue = LooperCompat.getQueue(Executors.MAIN_EXECUTOR.getLooper());
-            if (msgQueue != null) {
-                msgQueue.addIdleHandler(mCheckCurrentUrlIdleHandler);
-            }
+            Looper.myQueue().addIdleHandler(mCheckCurrentUrlIdleHandler);
         }
     }
 
@@ -197,10 +194,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
         super.onStop();
         if (mIdleHandlerAdded) {
             mIdleHandlerAdded = false;
-            MessageQueue msgQueue = LooperCompat.getQueue(Executors.MAIN_EXECUTOR.getLooper());
-            if (msgQueue != null) {
-                msgQueue.removeIdleHandler(mCheckCurrentUrlIdleHandler);
-            }
+            Looper.myQueue().removeIdleHandler(mCheckCurrentUrlIdleHandler);
         }
     }
 
@@ -262,7 +256,7 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
             }
             mBackPressed = true;
             Toast.makeText(mContext, R.string.pressAgainToExit, Toast.LENGTH_SHORT).show();
-            Executors.MAIN_EXECUTOR.getHandler().postDelayed(() -> mBackPressed = false, 2000);
+            ViewCompatibility.postDelayed(mYoutubeView, () -> mBackPressed = false, 2000);
         }
         return true;
     }
