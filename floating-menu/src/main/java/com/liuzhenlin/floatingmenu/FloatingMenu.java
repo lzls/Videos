@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
 import com.liuzhenlin.common.utils.DensityUtils;
+import com.liuzhenlin.common.utils.Utils;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -213,7 +214,8 @@ public class FloatingMenu extends PopupWindow {
             textView.setLayoutParams(new LinearLayout.LayoutParams(
                     itemWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
             ViewCompat.setPaddingRelative(textView, padding, padding, padding * 2, padding);
-            textView.setBackgroundDrawable(ContextCompat.getDrawable(mContext, R.drawable.selector_item));
+            textView.setBackgroundDrawable(
+                    ContextCompat.getDrawable(mContext, R.drawable.selector_item));
             textView.setFocusable(true);
             textView.setClickable(true);
             textView.setText(menuItem.getText());
@@ -229,12 +231,12 @@ public class FloatingMenu extends PopupWindow {
                 Drawable icon = AppCompatResources.getDrawable(mContext, menuItem.getIconResId());
                 if (icon != null) {
                     textView.setCompoundDrawablePadding(padding);
-                    if (ViewCompat.getLayoutDirection(mAnchorView) == ViewCompat.LAYOUT_DIRECTION_LTR) {
-                        textView.setCompoundDrawablesWithIntrinsicBounds(
-                                icon, null, null, null);
-                    } else {
+                    if (Utils.isLayoutRtl(mAnchorView)) {
                         textView.setCompoundDrawablesWithIntrinsicBounds(
                                 null, null, icon, null);
+                    } else {
+                        textView.setCompoundDrawablesWithIntrinsicBounds(
+                                icon, null, null, null);
                     }
                 }
             }

@@ -60,7 +60,8 @@ public class ThemeUtils {
     }
 
     @SuppressLint("PrivateApi")
-    private static void ensureTextAppearanceStyleableTextColorIndexFetched(Context context, ClassLoader loader) {
+    private static void ensureTextAppearanceStyleableTextColorIndexFetched(
+            Context context, ClassLoader loader) {
         if (!sTextAppearanceStyleableTextColorIndexFetched) {
             synchronized (ThemeUtils.class) {
                 if (!sTextAppearanceStyleableTextColorIndexFetched) {
@@ -82,7 +83,8 @@ public class ThemeUtils {
     }
 
     /** Returns the default text color of a given text appearance. */
-    public static int getTextAppearanceDefaultTextColor(@NonNull Context context, @StyleRes int appearance) {
+    public static int getTextAppearanceDefaultTextColor(
+            @NonNull Context context, @StyleRes int appearance) {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
                 || context.getApplicationInfo().targetSdkVersion <= Build.VERSION_CODES.Q) {
             ClassLoader loader = context.getClassLoader();
@@ -163,7 +165,8 @@ public class ThemeUtils {
         final boolean nightMode = isNightMode(context);
         if (light) {
             if (!nightMode) {
-                context = new ContextThemeWrapper(context, R.style.ThemeOverlay_MaterialComponents_Dark);
+                context = new ContextThemeWrapper(
+                        context, R.style.ThemeOverlay_MaterialComponents_Dark);
             }
         } else if (nightMode) {
             context = new ContextThemeWrapper(context, R.style.ThemeOverlay_MaterialComponents_Light);

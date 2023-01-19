@@ -54,7 +54,8 @@ function __parseShellArgs() {
   done
 
   test "$APP_VERSION_NAME"
-  verifyLastOpSuccessed "Release version name is not initialized. Use $versionNamePrefix to specify it."
+  verifyLastOpSuccessed "Release version name is not initialized. Use $versionNamePrefix" \
+    'to specify it.'
   test "$APK_PARTS_COUNT"
   verifyLastOpSuccessed "The count of apk parts to upload is not initialized. Use $partsCountPrefix" \
     'to specify it.'

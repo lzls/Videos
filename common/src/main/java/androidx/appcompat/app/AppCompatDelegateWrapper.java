@@ -385,7 +385,8 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
     }
 
     @Override
-    public View createView(@Nullable View parent, String name, @NonNull Context context, @NonNull AttributeSet attrs) {
+    public View createView(
+            @Nullable View parent, String name, @NonNull Context context, @NonNull AttributeSet attrs) {
         return mDelegate.createView(parent, name, context, attrs);
     }
 

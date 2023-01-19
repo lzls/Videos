@@ -166,9 +166,11 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
         }
 
         @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                                 @Nullable Bundle savedInstanceState) {
             //noinspection ConstantConditions
-            return attachViewToSwipeBackLayout(super.onCreateView(inflater, container, savedInstanceState));
+            return attachViewToSwipeBackLayout(
+                    super.onCreateView(inflater, container, savedInstanceState));
         }
     }
 
@@ -192,7 +194,8 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
 
     public static abstract class OpaquePreferenceFragment extends PreferenceFragment {
         @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                                 @Nullable Bundle savedInstanceState) {
             View view = super.onCreateView(inflater, container, savedInstanceState);
             //noinspection ConstantConditions
             view.setBackgroundResource(

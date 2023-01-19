@@ -100,8 +100,10 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
             return true;
         }
 
-        Parcelable[] videoUriParcels = (Parcelable[]) intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
-        Serializable[] videoTitleSerials = (Serializable[]) intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
+        Parcelable[] videoUriParcels = (Parcelable[])
+                intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
+        Serializable[] videoTitleSerials = (Serializable[])
+                intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
         if (videoUriParcels != null) {
             final int length = videoUriParcels.length;
             if (length > 0) {
@@ -321,7 +323,8 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
                     if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED) != 0) {
                         Video video = mVideos[position];
                         if (selected) {
-                            holder.setVideoProgressAndDurationText(mContext.getString(R.string.watching));
+                            holder.setVideoProgressAndDurationText(
+                                    mContext.getString(R.string.watching));
                         } else {
                             if (video.getId() != NO_ID) {
                                 holder.setVideoProgressAndDurationText(

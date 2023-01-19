@@ -22,7 +22,8 @@ public class TranslucentOnPressedImageView extends AppCompatImageView {
         super(context, attrs);
     }
 
-    public TranslucentOnPressedImageView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public TranslucentOnPressedImageView(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

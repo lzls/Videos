@@ -9,8 +9,8 @@ import android.app.Activity;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.ObjectsCompat;
 
-import com.liuzhenlin.videos.ExtentionsKt;
 import com.liuzhenlin.videos.view.IView;
 
 /**
@@ -33,11 +33,11 @@ public class Presenter<V extends IView> implements IPresenter<V> {
         if (view instanceof Activity) {
             mThemedContext = (Activity) view;
         } else if (view instanceof androidx.fragment.app.Fragment) {
-            mThemedContext = ExtentionsKt.getContextThemedFirst((androidx.fragment.app.Fragment) view);
+            mThemedContext = ((androidx.fragment.app.Fragment) view).getActivity();
         } else if (view instanceof android.app.Fragment) {
             mThemedContext = ((android.app.Fragment) view).getActivity();
         }
-        mContext = mThemedContext.getApplicationContext();
+        mContext = ObjectsCompat.requireNonNull(mThemedContext).getApplicationContext();
     }
 
     @Override

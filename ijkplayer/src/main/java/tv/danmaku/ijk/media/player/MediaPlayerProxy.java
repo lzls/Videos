@@ -73,7 +73,8 @@ public class MediaPlayerProxy implements IMediaPlayer {
     }
 
     @Override
-    public void setDataSource(String path) throws IOException, IllegalArgumentException, SecurityException, IllegalStateException {
+    public void setDataSource(String path) throws IOException, IllegalArgumentException,
+            SecurityException, IllegalStateException {
         mBackEndMediaPlayer.setDataSource(path);
     }
 
@@ -243,8 +244,10 @@ public class MediaPlayerProxy implements IMediaPlayer {
             final OnVideoSizeChangedListener finalListener = listener;
             mBackEndMediaPlayer.setOnVideoSizeChangedListener(new OnVideoSizeChangedListener() {
                 @Override
-                public void onVideoSizeChanged(IMediaPlayer mp, int width, int height, int sar_num, int sar_den) {
-                    finalListener.onVideoSizeChanged(MediaPlayerProxy.this, width, height, sar_num, sar_den);
+                public void onVideoSizeChanged(
+                        IMediaPlayer mp, int width, int height, int sar_num, int sar_den) {
+                    finalListener.onVideoSizeChanged(
+                            MediaPlayerProxy.this, width, height, sar_num, sar_den);
                 }
             });
         } else {

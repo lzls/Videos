@@ -205,7 +205,8 @@ class LocalVideoListFragment : BaseFragment(),
         })
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val contentView = inflater.inflate(R.layout.fragment_local_video_list, container, false)
         mRecyclerView = contentView.findViewById(R.id.simrv_videoList)
         mRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
@@ -382,7 +383,8 @@ class LocalVideoListFragment : BaseFragment(),
                                             payloads = payloads or PAYLOAD_REFRESH_VIDEODIR_THUMB
                                         }
                                         if (oldSize != item.size || oldVideoCount != videos.size) {
-                                            payloads = payloads or PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT
+                                            val p = PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT
+                                            payloads = payloads or p
                                         }
                                         if (payloads != 0) {
                                             mAdapter.notifyItemChanged(i, payloads)
@@ -468,7 +470,8 @@ class LocalVideoListFragment : BaseFragment(),
         }
     }
 
-    private inner class VideoListAdapter : ImageLoadingListAdapter<VideoListAdapter.VideoListViewHolder>() {
+    private inner class VideoListAdapter
+        : ImageLoadingListAdapter<VideoListAdapter.VideoListViewHolder>() {
 
         override fun getItemCount() = mVideoListItems.size
 
@@ -650,7 +653,8 @@ class LocalVideoListFragment : BaseFragment(),
             val videoImage: ImageView = itemView.findViewById(R.id.image_video)
             val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
             val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
-            val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
+            val videoProgressAndDurationText: TextView =
+                    itemView.findViewById(R.id.text_videoProgressAndDuration)
         }
 
         inner class VideoDirViewHolder(itemView: View) : VideoListViewHolder(itemView) {
@@ -1078,7 +1082,8 @@ class LocalVideoListFragment : BaseFragment(),
         message.movementMethod = ScrollingMovementMethod.getInstance()
         message.text = when (item) {
             is Video -> getString(R.string.areYouSureToDeleteSth, item.name)
-            else /* is VideoDirectory */ -> getString(R.string.areYouSureToDeleteSomeVideoDir, item.name)
+            else /* is VideoDirectory */ ->
+                getString(R.string.areYouSureToDeleteSomeVideoDir, item.name)
         }
 
         val cancel = view.findViewById<TextView>(R.id.btn_cancel)

@@ -288,9 +288,11 @@ public class VideoClipView extends FrameLayout {
         mDrawableWidth = mClipBackwards.getIntrinsicWidth();
         mThumbDisplayHeight = mClipBackwards.getIntrinsicHeight();
 
-        mFrameBarColor = BitmapUtils.getDominantColorOrThrow(BitmapUtils.drawableToBitmap(mClipBackwards));
+        mFrameBarColor =
+                BitmapUtils.getDominantColorOrThrow(BitmapUtils.drawableToBitmap(mClipBackwards));
         //noinspection ConstantConditions
-        mFrameBarDarkColor = BitmapUtils.getDominantColorOrThrow(BitmapUtils.drawableToBitmap(mClipBackwardsDark));
+        mFrameBarDarkColor =
+                BitmapUtils.getDominantColorOrThrow(BitmapUtils.drawableToBitmap(mClipBackwardsDark));
 
         mFrameBarPaint = new Paint();
         mFrameBarPaint.setStyle(Paint.Style.FILL);
@@ -317,13 +319,13 @@ public class VideoClipView extends FrameLayout {
 
                 @Override
                 public void onSelectionIntervalChange(int start, int end, boolean fromUser) {
-                    Log.d(TAG, "onSelectionIntervalChange: " + start + "    " + end + "    " + fromUser);
+                    Log.d(TAG, "onSelectionIntervalChange: " + start + "  " + end + "  " + fromUser);
                 }
 
                 @Override
                 public void onSelectionChange(int start, int end, int selection, boolean fromUser) {
                     Log.d(TAG, "onSelectionChange: "
-                            + start + "    " + end + "    " + selection + "    " + fromUser);
+                            + start + "  " + end + "  " + selection + "  " + fromUser);
                 }
 
                 @Override
@@ -572,8 +574,10 @@ public class VideoClipView extends FrameLayout {
         final float footerCenterY = height - halfOfProgressHeaderFooterStrokeWidth;
         // Draw header & footer of the progress
         mProgressPaint.setStrokeWidth(mProgressHeaderFooterStrokeWidth);
-        canvas.drawLine(headerFooterStart, headerCenterY, headerFooterEnd, headerCenterY, mProgressPaint);
-        canvas.drawLine(headerFooterStart, footerCenterY, headerFooterEnd, footerCenterY, mProgressPaint);
+        canvas.drawLine(headerFooterStart, headerCenterY, headerFooterEnd, headerCenterY,
+                mProgressPaint);
+        canvas.drawLine(headerFooterStart, footerCenterY, headerFooterEnd, footerCenterY,
+                mProgressPaint);
     }
 
     private float progressCenterXToProgressPercent(float progressCenterX) {
@@ -651,7 +655,8 @@ public class VideoClipView extends FrameLayout {
      */
     public void setSelection(int selection) {
         final float old = mProgressPercent;
-        final float percent = (float) selection / (mMaximumClipDuration + mMinimumUnselectedClipDuration);
+        final float percent =
+                (float) selection / (mMaximumClipDuration + mMinimumUnselectedClipDuration);
         setProgressPercent(percent, false);
         if (!Utils.areEqualIgnorePrecisionError(mProgressPercent, old)) {
             invalidate(); // Redraw progress cursor
@@ -669,7 +674,8 @@ public class VideoClipView extends FrameLayout {
         // The frame offset properties may have not been determined yet
         if (Float.isNaN(mFrameLeftOffset)) {
             outInterval[0] = 0;
-            outInterval[1] = Math.max(Utils.roundFloat(mMaximumClipDuration / 2f), mMinimumClipDuration);
+            outInterval[1] = Math.max(
+                    Utils.roundFloat(mMaximumClipDuration / 2f), mMinimumClipDuration);
         } else {
             final boolean rtl = Utils.isLayoutRtl(this);
             final float duration = mMaximumClipDuration + mMinimumUnselectedClipDuration;
@@ -692,7 +698,8 @@ public class VideoClipView extends FrameLayout {
 
         // Checks the desired selection interval and its start and end values
         if (end < start) {
-            throw new IllegalArgumentException("Interval end value is less than the interval start value");
+            throw new IllegalArgumentException(
+                    "Interval end value is less than the interval start value");
         }
         if (start < 0) {
             throw new IllegalArgumentException("Start millisecond of the desired selection interval " +
@@ -798,7 +805,8 @@ public class VideoClipView extends FrameLayout {
 //                        final float frameLeftOffsetPixels = mThumbGalleryWidth * frameLeftOffset;
 //                        final float frameRightOffsetPixels = mThumbGalleryWidth * frameRightOffset;
 //                        final float framebarLeft = mDrawableWidth + frameLeftOffsetPixels;
-//                        final float framebarRight = getWidth() - mDrawableWidth - frameRightOffsetPixels;
+//                        final float framebarRight =
+//                                getWidth() - mDrawableWidth - frameRightOffsetPixels;
 //                        final float framebarWidth = framebarRight - framebarLeft;
 //                        final boolean framebarShortest =
 //                                Utils.areEqualIgnorePrecisionError(
@@ -848,10 +856,12 @@ public class VideoClipView extends FrameLayout {
                         }
 
                         if (!Utils.areEqualIgnorePrecisionError(mFrameLeftOffset, frameLeftOffset)
-                                || !Utils.areEqualIgnorePrecisionError(mFrameRightOffset, frameRightOffset)) {
+                                || !Utils.areEqualIgnorePrecisionError(
+                                        mFrameRightOffset, frameRightOffset)) {
                             invalidateNeeded = true;
                             notifyListenersOfSelectionIntervalChange(true);
-                            // Resets the position of the progress cursor, in case it is out of our range.
+                            // Resets the position of the progress cursor, in case it is out of
+                            // our range.
                             resetProgressPercent(true);
                         }
                     }

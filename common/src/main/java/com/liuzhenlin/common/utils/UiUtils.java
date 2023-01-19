@@ -98,7 +98,8 @@ public class UiUtils {
         window.setAttributes(wmlp);
     }
 
-    public static void requestViewMargins(@NonNull View view, int left, int top, int right, int bottom) {
+    public static void requestViewMargins(
+            @NonNull View view, int left, int top, int right, int bottom) {
         if (view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
             ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
             mlp.setMargins(left, top, right, bottom);
@@ -367,7 +368,8 @@ public class UiUtils {
             @StringRes int resId,
             boolean shownTextSelectable,
             @Snackbar.Duration int duration) {
-        showUserCancelableSnackbar(view, view.getResources().getText(resId), shownTextSelectable, duration);
+        showUserCancelableSnackbar(
+                view, view.getResources().getText(resId), shownTextSelectable, duration);
     }
 
     public static void showUserCancelableSnackbar(
@@ -527,7 +529,8 @@ public class UiUtils {
         }
     }
 
-    @Synthetic static void insertTopMarginToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+    @Synthetic static void insertTopMarginToActionBarIfLayoutUnderStatus(
+            View actionbar, int statusHeight) {
         ViewGroup.LayoutParams lp = actionbar.getLayoutParams();
         if (lp instanceof ViewGroup.MarginLayoutParams) {
             Integer oldInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_marginInsetTop);
@@ -580,7 +583,8 @@ public class UiUtils {
         }
     }
 
-    @Synthetic static void insertTopPaddingToActionBarIfLayoutUnderStatus(View actionbar, int statusHeight) {
+    @Synthetic static void insertTopPaddingToActionBarIfLayoutUnderStatus(
+            View actionbar, int statusHeight) {
         Integer oldInsetTop = ViewCompatibility.getTag(actionbar, R.id.tag_paddingInsetTop);
         if (oldInsetTop == null) {
             oldInsetTop = 0;

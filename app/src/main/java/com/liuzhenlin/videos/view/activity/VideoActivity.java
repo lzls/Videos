@@ -1074,7 +1074,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @Override
-    public void notifyPlaylistSelectionChanged(int oldPosition, int position, boolean checkNewItemVisibility) {
+    public void notifyPlaylistSelectionChanged(
+            int oldPosition, int position, boolean checkNewItemVisibility) {
         RecyclerView playlist = mVideoView.findViewById(R.id.rv_playlist);
         //noinspection rawtypes
         RecyclerView.Adapter adapter = playlist.getAdapter();

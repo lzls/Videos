@@ -138,7 +138,8 @@ public class NotificationChannelManager {
         NotificationChannel channel = null;
         if (sPlaybackControlNotificationChannelId == null) {
             sPlaybackControlNotificationChannelId =
-                    context.getString(R.string.playbackControlNotificationChannelId, context.getPackageName());
+                    context.getString(
+                            R.string.playbackControlNotificationChannelId, context.getPackageName());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 channel = new NotificationChannel(
                         sPlaybackControlNotificationChannelId,

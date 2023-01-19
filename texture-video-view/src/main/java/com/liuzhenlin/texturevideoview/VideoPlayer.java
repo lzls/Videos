@@ -187,7 +187,8 @@ public abstract class VideoPlayer implements IVideoPlayer {
         mContext = context.getApplicationContext();
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         if (sMediaButtonEventReceiverComponent == null) {
-            sMediaButtonEventReceiverComponent = new ComponentName(context, MediaButtonEventReceiver.class);
+            sMediaButtonEventReceiverComponent =
+                    new ComponentName(context, MediaButtonEventReceiver.class);
         }
         if (InternalConfigs.DEBUG_LISTENER) {
             final String videoPlayerTextualRepresentation =
@@ -389,9 +390,9 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
     /**
      * Initialize the player object and prepare for the video playback.
-     * Normally, you should invoke this method to resume video playback instead of {@link #play(boolean)}
-     * whenever the Activity's restart() or resume() method is called unless the player won't
-     * be released as the Activity's lifecycle changes.
+     * Normally, you should invoke this method to resume video playback instead of
+     * {@link #play(boolean)} whenever the Activity's restart() or resume() method is called
+     * unless the player won't be released as the Activity's lifecycle changes.
      * <p>
      * <strong>NOTE:</strong> When the window the view is attached to leaves the foreground,
      * if the video has already been paused by the user, the player will not be instantiated
@@ -680,8 +681,9 @@ public abstract class VideoPlayer implements IVideoPlayer {
                 // First, checks the completed playback state here to see if it was changed in
                 // the above calls to the onVideoStopped() methods of the VideoListeners.
                 && currentState == PLAYBACK_STATE_COMPLETED && currentState == mPlaybackState
-                // Then, checks whether or not the inner player object is released (whether the closeVideo()
-                // method was called unexpectedly by the client within the same calls as above).
+                // Then, checks whether or not the inner player object is released (whether
+                // the closeVideo() method was called unexpectedly by the client within
+                // the same calls as above).
                 && isInnerPlayerCreated()) {
             // If all of the conditions above hold, skips to the next if possible.
             skipToNextIfPossible();

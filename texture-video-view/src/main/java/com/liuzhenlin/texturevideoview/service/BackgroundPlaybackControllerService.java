@@ -103,7 +103,8 @@ public class BackgroundPlaybackControllerService extends Service {
 
     private final Target<Bitmap> mGlideTarget = new CustomTarget<Bitmap>() {
         @Override
-        public void onResourceReady(@NonNull Bitmap icon, @Nullable Transition<? super Bitmap> transition) {
+        public void onResourceReady(
+                @NonNull Bitmap icon, @Nullable Transition<? super Bitmap> transition) {
             mVideoThumb = icon;
             postNotificationIfForeground();
         }

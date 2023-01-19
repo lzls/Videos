@@ -397,8 +397,9 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         }
     }
 
-    private final class PicturePreviewDialog extends Dialog implements DialogInterface.OnDismissListener,
-            View.OnClickListener, View.OnLongClickListener, DisplayCutoutManager.OnNotchSwitchListener {
+    private final class PicturePreviewDialog extends Dialog implements
+            DialogInterface.OnDismissListener, View.OnClickListener, View.OnLongClickListener,
+            DisplayCutoutManager.OnNotchSwitchListener {
         final Context mContext = FeedbackActivity.this;
         final Window mParentWindow;
         final Window mWindow;

@@ -202,38 +202,39 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                                 1f - (videoThumbWidth + thumbMarginHorizontal) / (float) width);
                     }
                 });
-        mSlidingDrawerLayout.addOnDrawerScrollListener(new SlidingDrawerLayout.SimpleOnDrawerScrollListener() {
-            @Override
-            public void onScrollStateChange(
-                    @NonNull SlidingDrawerLayout parent, @NonNull View drawer, int state) {
-                parent.removeOnDrawerScrollListener(this);
+        mSlidingDrawerLayout.addOnDrawerScrollListener(
+                new SlidingDrawerLayout.SimpleOnDrawerScrollListener() {
+                    @Override
+                    public void onScrollStateChange(
+                            @NonNull SlidingDrawerLayout parent, @NonNull View drawer, int state) {
+                        parent.removeOnDrawerScrollListener(this);
 
-                mSettingsBtn = drawer.findViewById(R.id.btn_settings_drawer);
-                mSettingsBtn.setOnClickListener(MainActivity.this);
+                        mSettingsBtn = drawer.findViewById(R.id.btn_settings_drawer);
+                        mSettingsBtn.setOnClickListener(MainActivity.this);
 
-                mDrawerList = drawer.findViewById(R.id.list_drawer);
-                mDrawerList.setDivider(null);
-//                View divider = new ViewStub(app);
-//                mDrawerList.addHeaderView(divider);
-//                mDrawerList.addFooterView(divider);
-                mDrawerList.setAdapter(mDrawerListAdapter = new DrawerListAdapter());
-                mDrawerList.setOnItemClickListener(MainActivity.this);
-                UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mDrawerList);
+                        mDrawerList = drawer.findViewById(R.id.list_drawer);
+                        mDrawerList.setDivider(null);
+//                        View divider = new ViewStub(app);
+//                        mDrawerList.addHeaderView(divider);
+//                        mDrawerList.addFooterView(divider);
+                        mDrawerList.setAdapter(mDrawerListAdapter = new DrawerListAdapter());
+                        mDrawerList.setOnItemClickListener(MainActivity.this);
+                        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mDrawerList);
 
-                mDrawerImage = drawer.findViewById(R.id.image_drawer);
-                mDrawerImage.setTag("null");
-                final AppPrefs asp = AppPrefs.getSingleton(app);
-                final String path = asp.getDrawerBackgroundPath();
-                // 未设置背景图片
-                if (path == null
-                        // 用户从存储卡中删除了该路径下的图片或其路径已改变
-                        || !new File(path).exists()) {
-                    setDrawerBackground(null);
-                } else {
-                    setDrawerBackground(path);
-                }
-            }
-        });
+                        mDrawerImage = drawer.findViewById(R.id.image_drawer);
+                        mDrawerImage.setTag("null");
+                        final AppPrefs asp = AppPrefs.getSingleton(app);
+                        final String path = asp.getDrawerBackgroundPath();
+                        // 未设置背景图片
+                        if (path == null
+                                // 用户从存储卡中删除了该路径下的图片或其路径已改变
+                                || !new File(path).exists()) {
+                            setDrawerBackground(null);
+                        } else {
+                            setDrawerBackground(path);
+                        }
+                    }
+                });
         mSlidingDrawerLayout.addOnDrawerScrollListener(this);
         mSlidingDrawerLayout.addOnDrawerScrollListener(getLocalVideosFragment());
 //        mSlidingDrawerLayout.addOnDrawerScrollListener(mOnlineVideosFragment);
@@ -927,7 +928,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     @Override
-    public void setOnRefreshLayoutChildScrollUpCallback(@Nullable SwipeRefreshLayout.OnChildScrollUpCallback callback) {
+    public void setOnRefreshLayoutChildScrollUpCallback(
+            @Nullable SwipeRefreshLayout.OnChildScrollUpCallback callback) {
         getLocalVideosFragment().setOnRefreshLayoutChildScrollUpCallback(callback);
     }
 

@@ -188,7 +188,8 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
                                 KEY_VIDEOS, mVideos as? ArrayList<Video> ?: ArrayList(mVideos)))
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_local_folded_videos, container, false)
         initViews(view)
         return attachViewToSwipeBackLayout(view)
@@ -651,7 +652,8 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
             val videoImage: ImageView = itemView.findViewById(R.id.image_video)
             val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
             val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
-            val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
+            val videoProgressAndDurationText: TextView =
+                    itemView.findViewById(R.id.text_videoProgressAndDuration)
             val topButton: TextView = itemView.findViewById(R.id.btn_top)
             val deleteButton: TextView = itemView.findViewById(R.id.btn_delete)
 

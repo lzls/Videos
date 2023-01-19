@@ -85,7 +85,8 @@ public class VideoUtils2 {
     @Nullable
     public static Bitmap generateMiniThumbnail(@NonNull Resources res, @NonNull String path) {
         //noinspection deprecation
-        Bitmap thumb = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MINI_KIND);
+        Bitmap thumb =
+                ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MINI_KIND);
         if (thumb != null) {
             final float ratio = res.getDisplayMetrics().widthPixels / 1080f;
             if (ratio != 1) {

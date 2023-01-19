@@ -129,7 +129,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
                 PAYLOAD_REFRESH_VIDEO_THUMB)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_local_searched_videos, container, false)
         initViews(view)
         return view
@@ -142,7 +143,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
         actionbar.findViewById<SearchView>(R.id.searchview).run {
             UiUtils.setViewMargins(findViewById(R.id.search_edit_frame), 0, 0, 0, 0)
 
-            findViewById<View>(R.id.search_plate).setBackgroundResource(R.drawable.bg_search_view_plate)
+            findViewById<View>(R.id.search_plate)
+                    .setBackgroundResource(R.drawable.bg_search_view_plate)
 
             mSearchSrcEditText = findViewById<SearchView.SearchAutoComplete>(R.id.search_src_text)
             mSearchSrcEditText.setTextSize(
@@ -373,7 +375,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
                         mSearchedVideos[index] = searchedVideos[index]
                         mAdapterWrapper.notifyItemChanged(headersCount + index) // without payload
                     } else {
-                        mAdapterWrapper.notifyItemChanged(headersCount + index, PAYLOAD_REFRESH_ITEM_NAME)
+                        mAdapterWrapper.notifyItemChanged(
+                                headersCount + index, PAYLOAD_REFRESH_ITEM_NAME)
                     }
                 }
             } else if (changedIndices != null) {
@@ -395,7 +398,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
             mRecyclerView.visibility = View.GONE
         } else {
             mRecyclerView.visibility = View.VISIBLE
-            mSearchResultTextView.text = resources.getQuantityString(R.plurals.findSomeVideos, size, size)
+            mSearchResultTextView.text =
+                    resources.getQuantityString(R.plurals.findSomeVideos, size, size)
         }
     }
 
@@ -407,7 +411,9 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
         mModel.startLoader()
     }
 
-    private inner class SearchedVideoListAdapter : ImageLoadingListAdapter<SearchedVideoListAdapter.ViewHolder>() {
+    private inner class SearchedVideoListAdapter
+        : ImageLoadingListAdapter<SearchedVideoListAdapter.ViewHolder>() {
+
         override fun getItemCount() = mSearchedVideos.size
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
@@ -490,7 +496,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
             val selectorView: View = (itemView as ViewGroup)[0]
             val videoImage: ImageView = itemView.findViewById(R.id.image_video)
             val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
-            val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
+            val videoProgressAndDurationText: TextView =
+                    itemView.findViewById(R.id.text_videoProgressAndDuration)
 
             init {
                 itemView.setOnTouchListener(this@LocalSearchedVideosFragment)

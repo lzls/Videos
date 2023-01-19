@@ -110,7 +110,7 @@ public class SystemBarUtils {
             if (show) {
                 // This snippet shows the system bars.
                 // It does this by removing all the flags.
-                // Make the content appear below status bar and above navigation bar(if the device has).
+                // Make the content appear below status bar and above nav bar (if the device has).
                 flags = (decorView.getSystemUiVisibility() & ~flags);
             } else {
                 // This snippet hides the system bars.
@@ -235,7 +235,8 @@ public class SystemBarUtils {
     /**
      * 改变状态栏字体颜色（黑/白）
      *
-     * @see <a href="https://developer.android.com/reference/android/R.attr.html#windowLightStatusBar"></a>
+     * @see <a href="https://developer.android.com/reference/android/R.attr.html#windowLightStatusBar">
+     *      android.R.attr.windowLightStatusBar</a>
      */
     @RequiresApi(Build.VERSION_CODES.M)
     public static void setLightStatus(@NonNull Window window, boolean light) {
