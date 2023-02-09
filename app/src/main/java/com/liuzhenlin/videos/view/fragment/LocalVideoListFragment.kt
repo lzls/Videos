@@ -39,6 +39,7 @@ import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
+import com.liuzhenlin.common.Consts
 import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
@@ -241,14 +242,18 @@ class LocalVideoListFragment : BaseFragment(),
         }
     }
 
+    // This method can be called when a stopped activity is being recreated,
+    // in which case onStop() is being called unexpectedly.
     override fun onStop() {
         super.onStop()
         val activity = contextThemedFirst as? Activity
         if (activity?.isFinishing == false && !isRemoving && !isDetached) {
-            // This can be called when a stopped activity is being recreated,
-            // in which case onStop() is being called unexpectedly.
-            (mVideoObserver ?: VideoObserver(requireView().rootView.handler ?: return))
-                    .startWatching()
+            var observer = mVideoObserver
+            if (observer == null) {
+                observer = VideoObserver(
+                        requireView().rootView.handler ?: Consts.getMainThreadHandler())
+            }
+            observer.startWatching()
         }
     }
 
@@ -401,6 +406,8 @@ class LocalVideoListFragment : BaseFragment(),
 
     @SuppressLint("NotifyDataSetChanged")
     private fun onReloadVideoListItems(items: List<VideoListItem>?) {
+        mNeedReloadVideos = false
+
         if (items == null || items.isEmpty()) {
             if (mVideoListItems.isNotEmpty()) {
                 mVideoListItems.clear()
