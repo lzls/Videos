@@ -42,6 +42,7 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
+import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
 import com.liuzhenlin.common.observer.OnOrientationChangeListener;
 import com.liuzhenlin.common.observer.RotationObserver;
 import com.liuzhenlin.common.utils.DisplayCutoutManager;
@@ -66,11 +67,13 @@ import com.liuzhenlin.videos.web.youtube.WebService;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+import static com.liuzhenlin.common.Consts.NO_ID;
 import static com.liuzhenlin.common.Consts.SDK_VERSION;
 import static com.liuzhenlin.common.Consts.SDK_VERSION_SUPPORTS_WINDOW_INSETS;
 import static com.liuzhenlin.common.utils.PictureInPictureHelper.PIP_ACTION_FAST_FORWARD;
@@ -109,6 +112,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     private static final int PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN = 1 << 4;
 
     private static final int PFLAG_STOPPED = 1 << 5;
+
+    private static final int PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB = 1;
+    private static final int PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED = 1 << 1;
+    private static final int PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED = 1 << 2;
 
     private int mStatusHeight;
     private DisplayCutoutManager mDisplayCutoutManager;
@@ -415,11 +422,13 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         videoPlayer.setOnSkipPrevNextListener(new VideoPlayer.OnSkipPrevNextListener() {
             @Override
             public void onSkipToPrevious() {
+                mPresenter.recordCurrVideoProgress();
                 mPresenter.skipToPreviousVideo();
             }
 
             @Override
             public void onSkipToNext() {
+                mPresenter.recordCurrVideoProgress();
                 mPresenter.skipToNextVideo();
             }
         });
@@ -694,7 +703,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             TextureVideoView.PlayListAdapter adapter = mVideoView.getPlayListAdapter();
             if (adapter != null) {
                 adapter.notifyItemRangeChanged(0, adapter.getItemCount(),
-                        IVideoPresenter.PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB);
+                        PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB);
             }
         }
     }
@@ -1081,11 +1090,11 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         RecyclerView.Adapter adapter = playlist.getAdapter();
         //noinspection ConstantConditions
         adapter.notifyItemChanged(oldPosition,
-                IVideoPresenter.PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED
-                        | IVideoPresenter.PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED);
+                PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED
+                        | PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED);
         adapter.notifyItemChanged(position,
-                IVideoPresenter.PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED
-                        | IVideoPresenter.PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED);
+                PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED
+                        | PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED);
         if (checkNewItemVisibility) {
             RecyclerView.LayoutManager lm = playlist.getLayoutManager();
             if (lm instanceof LinearLayoutManager) {
@@ -1125,7 +1134,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                         .inflate(R.layout.item_video_play_list, parent, false));
     }
 
-    private static final class PlaylistViewHolder extends IVideoView.PlaylistViewHolder {
+    private final class PlaylistViewHolder extends IVideoView.PlaylistViewHolder {
         final ImageView videoImage;
         final TextView videoNameText;
         final TextView videoProgressDurationText;
@@ -1148,21 +1157,63 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
 
         @Override
-        public void setVideoTitle(@Nullable String text) {
-            videoNameText.setText(text);
+        public void bindData(@NonNull Video video, int position, @NonNull List<Object> payloads) {
+            boolean selected = position == mPresenter.getCurrentVideoPositionInList();
+            if (payloads.isEmpty()) {
+                highlightItemIfSelected(selected);
+                videoNameText.setText(video.getName());
+                updateVideoProgressAndDurationText(video, selected);
+            } else {
+                for (Object payload : payloads) {
+                    if (!(payload instanceof Integer)) {
+                        continue;
+                    }
+                    int payloadInt = (Integer) payload;
+                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB) != 0) {
+                        //noinspection unchecked,ConstantConditions
+                        ((ImageLoadingListAdapter<PlaylistViewHolder>) getBindingAdapter())
+                                .loadItemImagesIfNotScrolling(this);
+                    }
+                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED) != 0) {
+                        updateVideoProgressAndDurationText(video, selected);
+                    }
+                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED) != 0) {
+                        highlightItemIfSelected(selected);
+                    }
+                }
+            }
         }
 
-        @Override
-        public void setVideoProgressAndDurationText(@Nullable String text) {
-            videoProgressDurationText.setText(text);
-        }
-
-        @Override
-        public void highlightItemIfSelected(boolean selected) {
+        void highlightItemIfSelected(boolean selected) {
             itemView.setSelected(selected);
             videoNameText.setTextColor(
                     selected ? Consts.COLOR_ACCENT : Consts.TEXT_COLOR_PRIMARY_LIGHT);
             videoProgressDurationText.setTextColor(selected ? Consts.COLOR_ACCENT : 0x80FFFFFF);
+        }
+
+        void updateVideoProgressAndDurationText(Video video, boolean selected) {
+            if (selected) {
+                videoProgressDurationText.setText(getString(R.string.watching));
+            } else {
+                if (video.getId() != NO_ID) {
+                    videoProgressDurationText.setText(
+                            VideoUtils2.concatVideoProgressAndDuration(
+                                    video.getProgress(), video.getDuration()));
+                } else {
+                    videoProgressDurationText.setText(null);
+                }
+            }
+        }
+
+        @Override
+        public void onItemViewClick(int position) {
+            int videoIndex = mPresenter.getCurrentVideoPositionInList();
+            if (videoIndex == position) {
+                showUserCancelableSnackbar(R.string.theVideoIsPlaying, Snackbar.LENGTH_SHORT);
+            } else {
+                mPresenter.recordCurrVideoProgress();
+                mPresenter.playVideoAt(position);
+            }
         }
     }
 

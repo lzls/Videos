@@ -262,14 +262,17 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         final OnClickListener onClickListener = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                onItemClick(v, playlist.getChildAdapterPosition(v));
+                //noinspection unchecked
+                onItemClick((VH) playlist.getChildViewHolder(v), playlist.getChildAdapterPosition(v));
                 videoView.closeDrawer(drawerView);
             }
         };
         final OnLongClickListener onLongClickListener = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                return onItemLongClick(v, playlist.getChildAdapterPosition(v));
+                //noinspection unchecked
+                return onItemLongClick(
+                        (VH) playlist.getChildViewHolder(v), playlist.getChildAdapterPosition(v));
             }
         };
 
@@ -301,20 +304,20 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         /**
          * Callback method to be invoked when an item in the RecyclerView has been clicked.
          *
-         * @param view     The itemView that was clicked.
+         * @param holder   The ViewHolder for the clicked itemView.
          * @param position The position of the view in the adapter.
          */
-        public void onItemClick(@NonNull View view, int position) {
+        public void onItemClick(@NonNull VH holder, int position) {
         }
 
         /**
          * Callback method to be invoked when an item in the RecyclerView has been clicked and held.
          *
-         * @param view     The itemView that was clicked and held.
+         * @param holder   The ViewHolder for the itemView that was clicked and held.
          * @param position The position of the view in the list.
          * @return true if the callback consumed the long click, false otherwise.
          */
-        public boolean onItemLongClick(@NonNull View view, int position) {
+        public boolean onItemLongClick(@NonNull VH holder, int position) {
             return false;
         }
     }
