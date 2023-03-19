@@ -68,6 +68,11 @@
     <string name="pleaseInputVideoLinkFirst">Please input video link first!</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">Please insert SD card on your device first.</string>
     <string name="pressAgainToExitApp">Press again to exit app</string>
+    <string name="rationale_askAllFilesAccessPermission">
+        This app needs All Files Access on the primary shared/external storage media to delete
+        or rename video files. Please go to the All Files Access permission management screen to
+        grant it.
+    </string>
     <string name="rationale_askExternalStoragePermission">
         This app needs access to your memory card to scan and load videos.</string>
     <string name="rationale_askExternalStoragePermissionAgain">
@@ -92,6 +97,7 @@
     <string name="renameSuccessful">Rename successful</string>
     <string name="renameVideo">Rename Video</string>
     <string name="resolution">Resolution: %s</string>
+    <string name="runAppInRestrictedMode">Run App in Restricted Mode</string>
     <string name="save">Save</string>
     <string name="saveSuccessful">Save successful</string>
     <string name="screenshot">screenshot</string>

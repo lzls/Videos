@@ -58,6 +58,8 @@ public final class AppPrefs {
 
     private static final String GUID = "GUID";
 
+    private static final String DOES_USER_PREFER_RUNNING_APP_IN_RESTRICTED_MODE =
+            "doesUserPreferRunningAppInRestrictedMode";
     private static final String IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED =
             "isLegacyExternalStorageDataMigrated";
 
@@ -191,6 +193,10 @@ public final class AppPrefs {
         }
     }
 
+    public boolean doesUserPreferRunningAppInRestrictedMode() {
+        return mSP.getBoolean(DOES_USER_PREFER_RUNNING_APP_IN_RESTRICTED_MODE, false);
+    }
+
     public boolean isLegacyExternalStorageDataMigrated() {
         return mSP.getBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, false);
     }
@@ -255,6 +261,11 @@ public final class AppPrefs {
 
         public AppPrefs.Editor setDefaultNightMode(int mode) {
             mEditor.putInt(DEFAULT_NIGHT_MODE, mode);
+            return this;
+        }
+
+        public AppPrefs.Editor setUserPreferRunningAppInRestrictedMode(boolean bool) {
+            mEditor.putBoolean(DOES_USER_PREFER_RUNNING_APP_IN_RESTRICTED_MODE, bool);
             return this;
         }
 

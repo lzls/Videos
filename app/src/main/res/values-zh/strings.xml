@@ -66,10 +66,12 @@
     <string name="pleaseInputVideoLinkFirst">请先输入视频链接！</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">请先插入SD卡</string>
     <string name="pressAgainToExitApp">再按一次退出视频</string>
+    <string name="rationale_askAllFilesAccessPermission">
+        此应用需要在主共享或外部存储媒体上的所有文件访问权，以删除或重命名视频文件。请前往所有文件访问权限管理界面以授予该权限。
+    </string>
     <string name="rationale_askExternalStoragePermission">此应用需要访问您的存储卡，以便扫描并加载视频。</string>
     <string name="rationale_askExternalStoragePermissionAgain">
-        没有读写存储卡的权限，此应用将无法正常工作。
-        请先前往应用程序设置界面以允许该权限。
+        没有读写存储卡的权限，此应用将无法正常工作。请先前往应用程序设置界面以允许该权限。
     </string>
     <string name="rationale_askFloatingWindowPermission">此应用还没有被授予悬浮窗权限，请开启后再试！</string>
     <string name="readTimeout">读取超时</string>
@@ -84,6 +86,7 @@
     <string name="renameSuccessful">重命名成功</string>
     <string name="renameVideo">重命名视频</string>
     <string name="resolution">分辨率：%s</string>
+    <string name="runAppInRestrictedMode">在限制模式下运行</string>
     <string name="save">保存</string>
     <string name="saveSuccessful">保存成功</string>
     <string name="screenshot">截屏</string>

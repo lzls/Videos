@@ -5,10 +5,13 @@
 
 package com.liuzhenlin.videos;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -28,6 +31,8 @@ import com.liuzhenlin.videos.crashhandler.CrashMailReporter;
 import com.liuzhenlin.videos.crashhandler.LogOnCrashHandler;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.web.youtube.YoutubePlaybackService;
+
+import pub.devrel.easypermissions.EasyPermissions;
 
 /**
  * @author 刘振林
@@ -102,6 +107,19 @@ public class App extends Application {
     @Nullable
     public static App getInstanceUnsafe() {
         return sApp;
+    }
+
+    @SuppressLint("NewApi")
+    public boolean hasAllFilesAccess() {
+        boolean sdkBeforeR = Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q;
+        boolean hasStoragePermission = hasStoragePermission();
+        return sdkBeforeR && hasStoragePermission
+                || !sdkBeforeR && hasStoragePermission && Environment.isExternalStorageLegacy()
+                || !sdkBeforeR && Environment.isExternalStorageManager();
+    }
+
+    public boolean hasStoragePermission() {
+        return EasyPermissions.hasPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
