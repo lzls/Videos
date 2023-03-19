@@ -40,10 +40,6 @@
     <string name="darkTheme">Dark Theme</string>
     <string name="findNewVersion">Find new version</string>
     <string name="findNewVersion_title">Find New Version</string>
-    <plurals name="findSomeVideos">
-        <item quantity="one">Find a video</item>
-        <item quantity="other">Find %d videos</item>
-    </plurals>
     <string name="goNow">Go Now</string>
     <string name="hasBeenPlacedInTheBackground">Has been placed in the background</string>
     <string name="illegalInputLink">Illegal input link!</string>
@@ -172,4 +168,13 @@
     <string name="youtube_retain_history_video_pages_summary">
         Keep historical video playback pages in the backstack for later resumption</string>
     <string name="youtube_video_quality_title">Video Quality (useless to the brief playback UI)</string>
+
+    <plurals name="deletingVideosPleaseWait">
+        <item quantity="one">Deleting video, please wait…</item>
+        <item quantity="other">Deleting videos, please wait…</item>
+    </plurals>
+    <plurals name="findSomeVideos">
+        <item quantity="one">Find a video</item>
+        <item quantity="other">Find %d videos</item>
+    </plurals>
 </resources>

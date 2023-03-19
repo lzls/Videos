@@ -113,6 +113,7 @@ import com.liuzhenlin.common.utils.TransitionUtils;
 import com.liuzhenlin.common.utils.URLUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.common.windowhost.WaitingOverlayDialog;
 import com.liuzhenlin.texturevideoview.drawable.CircularProgressDrawable;
 import com.liuzhenlin.texturevideoview.service.BackgroundPlaybackControllerService;
 import com.liuzhenlin.texturevideoview.utils.VideoUtils;
@@ -2354,16 +2355,17 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     ViewGroup overlay = (ViewGroup)
                             LayoutInflater.from(mContext)
-                                    .inflate(R.layout.layout_clipping_overlay, view, false);
+                                    .inflate(R.layout.layout_waiting_overlay, view, false);
+                    overlay.setBackgroundResource(R.color.black_translucent);
+                    overlay.<TextView>findViewById(R.id.text_progress)
+                            .setText(R.string.clippingPleaseWait);
                     overlay.measure(MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
                             MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
                     overlay.layout(0, 0, view.getWidth(), view.getHeight());
                     view.getOverlay().add(overlay);
                 } else {
-                    ProgressDialog dialog = new ProgressDialog(mContext);
+                    WaitingOverlayDialog dialog = new WaitingOverlayDialog(mContext);
                     dialog.setMessage(mResources.getText(R.string.clippingPleaseWait));
-                    dialog.setCancelable(false);
-                    dialog.setCanceledOnTouchOutside(false);
                     dialog.show();
                     view.setTag(dialog);
                 }

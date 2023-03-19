@@ -403,13 +403,7 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
         }
     }
 
-    override fun onRefresh() {
-        if (mVideoOpCallback?.isAsyncDeletingItems == true) {
-            mInteractionCallback.isRefreshLayoutRefreshing = false
-            return
-        }
-        mModel.startLoader()
-    }
+    override fun onRefresh() = mModel.startLoader()
 
     private inner class SearchedVideoListAdapter
         : ImageLoadingListAdapter<SearchedVideoListAdapter.ViewHolder>() {

@@ -27,40 +27,28 @@ import java.io.File
  * @author 刘振林
  */
 
-private val sDeleteItemExecutor = SerialExecutor()
-
 private fun deleteItemsInternal(items: Array<out VideoListItem>) {
     if (items.isEmpty()) return
 
     val dao = VideoListItemDao.getSingleton(App.getInstanceUnsafe()!!)
-    sDeleteItemExecutor.execute(object : Runnable {
-        override fun run() {
-            for (item in items)
-                when (item) {
-                    is Video -> deleteVideo(item)
-                    is VideoDirectory -> {
-                        for (video in item.videos) {
-                            deleteVideo(video)
-                        }
-                        dao.deleteVideoDir(item.path)
-                    }
+    for (item in items)
+        when (item) {
+            is Video -> deleteVideo(item, dao)
+            is VideoDirectory -> {
+                for (video in item.videos) {
+                    deleteVideo(video, dao)
                 }
-        }
-
-        fun deleteVideo(video: Video) {
-            // video的路径可能已在主线程中被修改（重命名视频）
-            val video2 = dao.queryVideoById(video.id)
-            if (video2 != null) {
-                File(video2.path).delete()
+                dao.deleteVideoDir(item.path)
             }
-
-            dao.deleteVideo(video.id)
         }
-    })
+}
+
+private fun deleteVideo(video: Video, dao: VideoListItemDao) {
+    File(video.path).delete()
+    dao.deleteVideo(video.id)
 }
 
 interface VideoListItemOpCallback<in T : VideoListItem> {
-    public val isAsyncDeletingItems get() = !sDeleteItemExecutor.isIdle
 
     fun showDeleteItemDialog(item: T, onDeleteAction: (() -> Unit)? = null)
     fun showDeleteItemsPopupWindow(vararg items: T, onDeleteAction: (() -> Unit)? = null)

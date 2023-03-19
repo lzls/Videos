@@ -45,13 +45,11 @@ import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.compat.ViewCompatibility
 import com.liuzhenlin.common.listener.OnBackPressedListener
-import com.liuzhenlin.common.utils.FileUtils
-import com.liuzhenlin.common.utils.ThemeUtils
-import com.liuzhenlin.common.utils.UiUtils
-import com.liuzhenlin.common.utils.Utils
+import com.liuzhenlin.common.utils.*
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.common.windowhost.FocusObservableDialog
+import com.liuzhenlin.common.windowhost.WaitingOverlayDialog
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
@@ -441,11 +439,6 @@ class LocalVideoListFragment : BaseFragment(),
     override fun onRefresh() = queryAllVideos()
 
     private fun queryAllVideos() {
-        if (isAsyncDeletingItems) { // 页面自动刷新或用户手动刷新时，还有视频在被异步删除...
-            mInteractionCallback.isRefreshLayoutRefreshing = false
-            return
-        }
-
         /*
          * 1）自动刷新时隐藏弹出的多选窗口
          * 2）用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
@@ -1355,6 +1348,22 @@ class LocalVideoListFragment : BaseFragment(),
         mItemDetailsDialog!!.setOnDismissListener {
             mItemDetailsDialog = null
             glideRequestManager.clear(thumbTextViewTarget)
+        }
+    }
+
+    override fun deleteItems(vararg items: VideoListItem) {
+        val dialog = WaitingOverlayDialog(contextThemedFirst)
+        dialog.message = resources.getQuantityText(R.plurals.deletingVideosPleaseWait,
+                if (items.size == 1
+                        && (items[0] is Video || (items[0] as VideoDirectory).videos.size == 1))
+                    1
+                else 1.inv())
+        dialog.show()
+        Executors.THREAD_POOL_EXECUTOR.execute {
+            super.deleteItems(*items)
+            Executors.MAIN_EXECUTOR.execute {
+                dialog.dismiss()
+            }
         }
     }
 

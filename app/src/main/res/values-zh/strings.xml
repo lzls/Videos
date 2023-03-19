@@ -39,9 +39,6 @@
     <string name="darkTheme">深色主题</string>
     <string name="findNewVersion">发现新版本</string>
     <string name="findNewVersion_title">发现新版本</string>
-    <plurals name="findSomeVideos">
-        <item quantity="other">找到%d个视频</item>
-    </plurals>
     <string name="goNow">现在去开启</string>
     <string name="hasBeenPlacedInTheBackground">已放入后台</string>
     <string name="illegalInputLink">输入链接不合法！</string>
@@ -148,4 +145,11 @@
     <string name="youtube_retain_history_video_pages">保留历史页面</string>
     <string name="youtube_retain_history_video_pages_summary">在回退栈中保留历史视频播放页，以供下次恢复使用</string>
     <string name="youtube_video_quality_title">视频清晰度（对简洁的播放UI无效）</string>
+
+    <plurals name="deletingVideosPleaseWait">
+        <item quantity="other">删除视频中，请稍候…</item>
+    </plurals>
+    <plurals name="findSomeVideos">
+        <item quantity="other">找到%d个视频</item>
+    </plurals>
 </resources>

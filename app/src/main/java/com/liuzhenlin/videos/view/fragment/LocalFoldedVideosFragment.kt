@@ -547,11 +547,6 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
     }
 
     override fun onRefresh() {
-        if (mVideoOpCallback?.isAsyncDeletingItems == true) { // 用户下拉刷新时，还有视频在被异步删除...
-            mInteractionCallback.isRefreshLayoutRefreshing = false
-            return
-        }
-
         // 用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
         if (mVideoOptionsFrame.visibility == View.VISIBLE) {
             hideMultiselectVideoControls()
