@@ -1200,7 +1200,7 @@ class LocalVideoListFragment : BaseFragment(),
         val editText =
                 view.findViewById<OnBackPressedPreImeEventInterceptableEditText>(R.id.editor_rename)
         editText.hint = name
-        editText.setText(name.replace(postfix, EMPTY_STRING))
+        editText.setText(name.substring(0, name.length - postfix.length))
         editText.setSelection(editText.text!!.length)
         editText.tag = postfix
 
