@@ -162,29 +162,16 @@ public class FloatingMenu extends PopupWindow {
 
     private void readItem(AttributeSet attrs) {
         TypedArray ta = mContext.obtainStyledAttributes(attrs, R.styleable.MenuItem);
-        final int iconResId = ta.getResourceId(R.styleable.MenuItem_icon, 0);
-        final String text = ta.getText(R.styleable.MenuItem_text).toString();
+        final int id = ta.getResourceId(R.styleable.MenuItem_android_id, View.NO_ID);
+        final int iconResId = ta.getResourceId(R.styleable.MenuItem_android_icon, 0);
+        final String text = ta.getText(R.styleable.MenuItem_android_text).toString();
+        final boolean enabled = ta.getBoolean(R.styleable.MenuItem_android_enabled, true);
         ta.recycle();
 
-        MenuItem item = new MenuItem();
-        item.setIconResId(iconResId);
-        item.setText(text);
+        MenuItem item = new MenuItem(id, text, iconResId);
+        item.setEnabled(enabled);
 
         mMenuItems.add(item);
-    }
-
-    public void items(@Nullable String... items) {
-        items(DEFAULT_ITEM_WIDTH, items);
-    }
-
-    public void items(int itemWidth, @Nullable String... items) {
-        mMenuItems.clear();
-        if (items != null) {
-            for (String item : items) {
-                mMenuItems.add(new MenuItem(item));
-            }
-        }
-        generateLayout(itemWidth);
     }
 
     public <T extends MenuItem> void items(@Nullable List<T> items) {
@@ -211,6 +198,8 @@ public class FloatingMenu extends PopupWindow {
             MenuItem menuItem = mMenuItems.get(i);
 
             TextView textView = new TextView(mContext);
+            textView.setId(menuItem.getId());
+            textView.setEnabled(menuItem.isEnabled());
             textView.setLayoutParams(new LinearLayout.LayoutParams(
                     itemWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
             ViewCompat.setPaddingRelative(textView, padding, padding, padding * 2, padding);
@@ -222,7 +211,7 @@ public class FloatingMenu extends PopupWindow {
             textView.setTextSize(15);
             //noinspection RestrictedApi
             textView.setTextColor(
-                    ThemeUtils.getThemeAttrColor(mContext, android.R.attr.textColorPrimary));
+                    ThemeUtils.getThemeAttrColorStateList(mContext, android.R.attr.textColorPrimary));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 textView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             }
@@ -258,6 +247,14 @@ public class FloatingMenu extends PopupWindow {
         setWidth(menuLayout.getMeasuredWidth());
         setHeight(menuLayout.getMeasuredHeight());
         setContentView(menuLayout);
+    }
+
+    public boolean isItemEnabled(int id) {
+        return getContentView().findViewById(id).isEnabled();
+    }
+
+    public void setItemEnabled(int id, boolean enabled) {
+        getContentView().findViewById(id).setEnabled(enabled);
     }
 
     public void show(int x, int y) {

@@ -22,6 +22,7 @@ import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.FloatingMenu
+import com.liuzhenlin.floatingmenu.MenuItem
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
 import com.liuzhenlin.videos.R
 import com.liuzhenlin.videos.bean.TV
@@ -264,7 +265,7 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
                 getChildView(groupPosition, childPosition, false /* ignored */, view, parent)
 
                 val fm = FloatingMenu(view)
-                fm.items(getString(R.string.copyURL))
+                fm.items(Collections.singletonList(MenuItem(View.NO_ID, getString(R.string.copyURL))))
                 fm.show(mDownX, mDownY)
                 fm.setOnItemClickListener { _, _ ->
                     Utils.copyPlainTextToClipboard(parent.context, child.name, child.url)
