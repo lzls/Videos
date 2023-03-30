@@ -908,6 +908,11 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     @Override
+    public void goToVideoMoveFragment(@NonNull Bundle args) {
+        getLocalVideosFragment().goToVideoMoveFragment(args);
+    }
+
+    @Override
     public boolean isRefreshLayoutEnabled() {
         return getLocalVideosFragment().isRefreshLayoutEnabled();
     }

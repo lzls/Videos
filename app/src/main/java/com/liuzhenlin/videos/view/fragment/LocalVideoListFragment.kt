@@ -22,11 +22,8 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.ScrollingMovementMethod
 import android.text.style.ForegroundColorSpan
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
+import android.view.*
 import android.view.View.OnLayoutChangeListener
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatDialog
 import androidx.core.content.ContextCompat
@@ -61,6 +58,7 @@ import com.liuzhenlin.videos.model.LocalVideoListModel
 import com.liuzhenlin.videos.model.OnLoadListener
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.view.fragment.PackageConsts.*
+import java.io.File
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
@@ -88,6 +86,7 @@ class LocalVideoListFragment : BaseFragment(),
     private var mSelectAllButton: TextView? = null
 
     private var mTitleText_IOW: TextView? = null
+    private var mMoveButton_IOW: TextView? = null
     private var mDeleteButton_IOW: TextView? = null
     private var mRenameButton_IOW: TextView? = null
     private var mShareButton_IOW: TextView? = null
@@ -126,6 +125,28 @@ class LocalVideoListFragment : BaseFragment(),
                 }
             }
             return checkedItems
+        }
+
+    private val videoDirs: List<VideoDirectory>?
+        get() {
+            var dirs: MutableList<VideoDirectory>? = null
+            for (item in mVideoListItems) {
+                if (dirs == null) {
+                    dirs = mutableListOf()
+                }
+                if (item is VideoDirectory) {
+                    dirs.add(item)
+                } else {
+                    val video = item as Video
+                    val dir = VideoDirectory()
+                    dir.path = video.path.substring(0, video.path.lastIndexOf(File.separatorChar))
+                    dir.name = FileUtils.getFileNameFromFilePath(dir.path)
+                    dir.videos = mutableListOf(video)
+                    dir.size = video.size
+                    dirs.add(dir)
+                }
+            }
+            return dirs
         }
 
     private var _TOP: String? = null
@@ -399,6 +420,11 @@ class LocalVideoListFragment : BaseFragment(),
                         break@loop
                     }
                 }
+                REQUEST_CODE_VIDEO_MOVE_FRAGMENT -> {
+                    if (resultCode == RESULT_CODE_VIDEO_MOVE_FRAGMENT) {
+                        autoLoadVideos()
+                    }
+                }
         }
     }
 
@@ -533,7 +559,9 @@ class LocalVideoListFragment : BaseFragment(),
                     val vh = holder as VideoDirViewHolder
                     val videos = (item as VideoDirectory).videos
                     vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
-                    vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
+                    vh.videoCountText.text =
+                            resources.getQuantityString(
+                                    R.plurals.aTotalOfSeveralVideos, videos.size, videos.size)
                 }
             }
         }
@@ -581,7 +609,9 @@ class LocalVideoListFragment : BaseFragment(),
                             this@LocalVideoListFragment, vh.videodirImage, videos[0])
                     vh.videodirNameText.text = item.name
                     vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
-                    vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
+                    vh.videoCountText.text =
+                            resources.getQuantityString(
+                                    R.plurals.aTotalOfSeveralVideos, videos.size, videos.size)
                     UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
                             if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
                 }
@@ -739,6 +769,9 @@ class LocalVideoListFragment : BaseFragment(),
                 }
             }
             R.id.btn_cancel_deleteVideoListItemDialog -> mDeleteItemDialog!!.cancel()
+
+            // 移动（多个）视频
+            R.id.btn_move -> showVideosMovePage(*checkedItems?.toTypedArray() ?: return)
 
             // 删除（多个）视频
             R.id.btn_delete_vlow -> {
@@ -899,6 +932,8 @@ class LocalVideoListFragment : BaseFragment(),
 
                 val iowcv = View.inflate(v.context, R.layout.popup_window_videolist_options, null)
                 mTitleText_IOW = iowcv.findViewById(R.id.text_title)
+                mMoveButton_IOW = iowcv.findViewById(R.id.btn_move)
+                mMoveButton_IOW!!.setOnClickListener(this)
                 mDeleteButton_IOW = iowcv.findViewById(R.id.btn_delete_vlow)
                 mDeleteButton_IOW!!.setOnClickListener(this)
                 mRenameButton_IOW = iowcv.findViewById(R.id.btn_rename)
@@ -995,6 +1030,7 @@ class LocalVideoListFragment : BaseFragment(),
 
                     mItemOptionsWindow = null
                     mTitleText_IOW = null
+                    mMoveButton_IOW = null
                     mDeleteButton_IOW = null
                     mRenameButton_IOW = null
                     mShareButton_IOW = null
@@ -1066,6 +1102,9 @@ class LocalVideoListFragment : BaseFragment(),
             else -> getString(R.string.severalItemsHaveBeenSelected, checkedItemCount)
         }
 
+        mMoveButton_IOW!!.isEnabled =
+                checkedItemCount > 0 && !hasUnwritableCheckedItem
+                        && App.getInstance(contextRequired).hasAllFilesAccess()
         mDeleteButton_IOW!!.isEnabled = checkedItemCount > 0 && !hasUnwritableCheckedItem
         mRenameButton_IOW!!.isEnabled =
                 checkedItemCount == 1
@@ -1351,6 +1390,16 @@ class LocalVideoListFragment : BaseFragment(),
         }
     }
 
+    override fun showVideosMovePage(vararg items: VideoListItem) {
+        val videoDirs = videoDirs ?: return
+        val args = Bundle()
+        args.putParcelableArray(KEY_VIDEODIRS,
+                arrayListOf<VideoListItem>().apply { deepCopy(videoDirs) }.toTypedArray())
+        args.putParcelableArrayList(KEY_VIDEOS,
+                arrayListOf<VideoListItem>().apply { deepCopy(listOf(*items)) })
+        mInteractionCallback.goToVideoMoveFragment(args)
+    }
+
     override fun deleteItems(vararg items: VideoListItem) {
         val dialog = WaitingOverlayDialog(contextThemedFirst)
         dialog.message = resources.getQuantityText(R.plurals.deletingVideosPleaseWait,
@@ -1381,5 +1430,7 @@ class LocalVideoListFragment : BaseFragment(),
         fun setSideDrawerEnabled(enabled: Boolean)
 
         fun goToLocalFoldedVideosFragment(args: Bundle)
+
+        fun goToVideoMoveFragment(args: Bundle)
     }
 }

@@ -63,6 +63,9 @@ public final class AppPrefs {
     private static final String IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED =
             "isLegacyExternalStorageDataMigrated";
 
+    private static final String HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN =
+            "hasUserDeclinedVideoMovePromptDialogToBeShownAgain";
+
     private static final Singleton<Context, AppPrefs> sAppPrefsSingleton =
             new Singleton<Context, AppPrefs>() {
                 @SuppressLint("SyntheticAccessor")
@@ -201,6 +204,10 @@ public final class AppPrefs {
         return mSP.getBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, false);
     }
 
+    public boolean hasUserDeclinedVideoMovePromptDialogToBeShownAgain() {
+        return mSP.getBoolean(HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN, false);
+    }
+
     @NonNull
     public Editor edit() {
         return new Editor(this);
@@ -271,6 +278,11 @@ public final class AppPrefs {
 
         public AppPrefs.Editor setLegacyExternalStorageDataMigrated(boolean migrated) {
             mEditor.putBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, migrated);
+            return this;
+        }
+
+        public AppPrefs.Editor setUserDeclinedVideoMovePromptDialogToBeShownAgain(boolean declined) {
+            mEditor.putBoolean(HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN, declined);
             return this;
         }
 

@@ -232,6 +232,23 @@ public class SystemBarUtils {
         decor.setSystemUiVisibility(visibility);
     }
 
+    /** 改变状态栏字体颜色（黑/白），适配 Android 6+、MIUI 6+ 和 Flyme 4+ */
+    public static boolean setLightStatusCompat(@NonNull Window window, boolean light) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            SystemBarUtils.setLightStatus(window, light);
+            return true;
+            // MIUI6...
+        } else if (OSHelper.getMiuiVersion() >= 6) {
+            SystemBarUtils.setLightStatusForMIUI(window, light);
+            return true;
+            // FlyMe4...
+        } else if (OSHelper.isFlyme4OrLater()) {
+            SystemBarUtils.setLightStatusForFlyme(window, light);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 改变状态栏字体颜色（黑/白）
      *

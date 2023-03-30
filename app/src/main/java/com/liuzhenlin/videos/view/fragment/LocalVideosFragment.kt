@@ -29,6 +29,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
     private lateinit var mLocalVideoListFragment: LocalVideoListFragment
     private var mLocalFoldedVideosFragment: LocalFoldedVideosFragment? = null
     private var mLocalSearchedVideosFragment: LocalSearchedVideosFragment? = null
+    private var mVideoMoveFragment: VideoMoveFragment? = null
 
     private lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
 
@@ -85,6 +86,11 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                     as LocalSearchedVideosFragment?
             if (mLocalSearchedVideosFragment != null) {
                 onFragmentAttached(mLocalSearchedVideosFragment!!)
+            }
+
+            mVideoMoveFragment = fm.findFragmentByTag(TAG_VIDEO_MOVE_FRAGMENT) as VideoMoveFragment?
+            if (mVideoMoveFragment != null) {
+                onFragmentAttached(mVideoMoveFragment!!)
             }
         }
     }
@@ -150,6 +156,9 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                 mInteractionCallback.onLocalSearchedVideosFragmentDetached()
                 mInteractionCallback.showTabItems(true)
             }
+            childFragment === mVideoMoveFragment -> {
+                mVideoMoveFragment = null
+            }
         }
     }
 
@@ -184,6 +193,14 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                         TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
                 .addToBackStack(TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
                 .commit()
+    }
+
+    override fun goToVideoMoveFragment(args: Bundle) {
+        mVideoMoveFragment = VideoMoveFragment()
+        mVideoMoveFragment!!.arguments = args
+        mVideoMoveFragment!!.setTargetFragment(
+                mLocalVideoListFragment, REQUEST_CODE_VIDEO_MOVE_FRAGMENT)
+        mVideoMoveFragment!!.show(childFragmentManager.beginTransaction(), TAG_VIDEO_MOVE_FRAGMENT)
     }
 
     override fun onBackPressed(): Boolean {
@@ -273,6 +290,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         const val TAG_LOCAL_VIDEO_LIST_FRAGMENT = "LocalVideoListFragment"
         const val TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT = "LocalFoldedVideosFragment"
         const val TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT = "LocalSearchedVideosFragment"
+        const val TAG_VIDEO_MOVE_FRAGMENT = "VideoMoveFragment"
     }
 
     interface InteractionCallback : LocalVideoListFragment.InteractionCallback {

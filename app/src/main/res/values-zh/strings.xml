@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="aTotalOfSeveralVideos">共%d个视频</string>
     <string name="aboutApp">关于视频</string>
     <string name="adviceAndFeedback">意见反馈</string>
     <string name="alias">别名：%s</string>
@@ -29,6 +28,7 @@
     <string name="deletePicture">删除图片</string>
     <string name="details">详细信息</string>
     <string name="directoryDetails">目录详情</string>
+    <string name="dontPromptAgain">不再提示</string>
     <string name="doYouNeedToSaveTheEditedContents">是否对已编辑的内容进行保存？</string>
     <string name="doYouNeedToUpdateItSoon">请问您需要立即更新吗？</string>
     <string name="downloadError">下载异常</string>
@@ -45,6 +45,7 @@
     <string name="isTheLatestVersion">已是最新版本</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">正在载入数据，请稍候…</string>
     <string name="localVideos">本地视频</string>
+    <string name="move">移动</string>
     <string name="name">名称：%s</string>
     <string name="newAppDownloaded">新应用下载完成</string>
     <string name="noNetworkConnection">无网络连接！</string>
@@ -66,8 +67,11 @@
     <string name="pleaseInputVideoLinkFirst">请先输入视频链接！</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">请先插入SD卡</string>
     <string name="pressAgainToExitApp">再按一次退出视频</string>
+    <string name="prompt_videoMove">
+        如果目标目录已存在相同名称的视频文件，移动过去的新文件将会默认在其名称末尾加上“-&lt;数字&gt;”以示区分和共存，例如sample.mp4变为sample-1.mp4
+    </string>
     <string name="rationale_askAllFilesAccessPermission">
-        此应用需要在主共享或外部存储媒体上的所有文件访问权，以删除或重命名视频文件。请前往所有文件访问权限管理界面以授予该权限。
+        此应用需要在主共享或外部存储媒体上的所有文件访问权，以移动、删除或重命名视频文件。请前往所有文件访问权限管理界面以授予该权限。
     </string>
     <string name="rationale_askExternalStoragePermission">此应用需要访问您的存储卡，以便扫描并加载视频。</string>
     <string name="rationale_askExternalStoragePermissionAgain">
@@ -149,10 +153,19 @@
     <string name="youtube_retain_history_video_pages_summary">在回退栈中保留历史视频播放页，以供下次恢复使用</string>
     <string name="youtube_video_quality_title">视频清晰度（对简洁的播放UI无效）</string>
 
+    <plurals name="aTotalOfSeveralVideos">
+        <item quantity="other">共%d个视频</item>
+    </plurals>
     <plurals name="deletingVideosPleaseWait">
         <item quantity="other">删除视频中，请稍候…</item>
     </plurals>
     <plurals name="findSomeVideos">
         <item quantity="other">找到%d个视频</item>
+    </plurals>
+    <plurals name="moveVideosTo">
+        <item quantity="other">移动视频至</item>
+    </plurals>
+    <plurals name="movingVideosPleaseWait">
+        <item quantity="other">移动视频中, 请稍候…</item>
     </plurals>
 </resources>

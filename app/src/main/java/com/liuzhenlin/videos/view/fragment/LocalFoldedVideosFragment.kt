@@ -74,6 +74,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
     private lateinit var mSelectAllButton: Button
     private lateinit var mOptionsFrameTopDivider: View
     private lateinit var mVideoOptionsFrame: ViewGroup
+    private lateinit var mMoveButton: TextView
     private lateinit var mDeleteButton: TextView
     private lateinit var mRenameButton: TextView
     private lateinit var mShareButton: TextView
@@ -213,6 +214,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         mSelectAllButton = actionbar.findViewById(R.id.btn_selectAll)
         mOptionsFrameTopDivider = contentView.findViewById(R.id.divider_videoOptionsFrame)
         mVideoOptionsFrame = contentView.findViewById(R.id.frame_videoOptions)
+        mMoveButton = contentView.findViewById(R.id.btn_move)
         mDeleteButton = contentView.findViewById(R.id.btn_delete_videoListOptions)
         mRenameButton = contentView.findViewById(R.id.btn_rename)
         mShareButton = contentView.findViewById(R.id.btn_share)
@@ -221,6 +223,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         mBackButton.setOnClickListener(this)
         mCancelButton.setOnClickListener(this)
         mSelectAllButton.setOnClickListener(this)
+        mMoveButton.setOnClickListener(this)
         mDeleteButton.setOnClickListener(this)
         mRenameButton.setOnClickListener(this)
         mShareButton.setOnClickListener(this)
@@ -333,6 +336,10 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
                             PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
                 }
                 onVideoCheckedChange()
+            }
+            R.id.btn_move -> {
+                val videos = checkedVideos ?: return
+                mVideoOpCallback?.showVideosMovePage(*videos.toTypedArray())
             }
             R.id.btn_delete_videoListOptions -> {
                 val videos = checkedVideos ?: return
@@ -454,6 +461,9 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
             mVideos.size -> mSelectAllButton.text = SELECT_NONE
             else -> mSelectAllButton.text = SELECT_ALL
         }
+        mMoveButton.isEnabled =
+                checkedVideosCount > 0 && !hasUnwritableCheckedVideo
+                        && App.getInstance(contextRequired).hasAllFilesAccess()
         mDeleteButton.isEnabled = checkedVideosCount > 0 && !hasUnwritableCheckedVideo
         mRenameButton.isEnabled = checkedVideosCount == 1 && !hasUnwritableCheckedVideo
         mShareButton.isEnabled = checkedVideosCount == 1

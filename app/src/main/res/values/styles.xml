@@ -20,19 +20,27 @@
 
     <style name="ActivityStyle_Bootstrap" parent="AppTheme" />
 
-    <style name="DialogStyle_NoTitle" parent="Theme.AppCompat.DayNight.Dialog">
+    <style name="Theme.AppCompat.DayNight.Dialog.ThemeColored">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+    </style>
 
+    <style name="Theme.AppCompat.DayNight.Dialog.Fullscreen"
+        parent="Theme.AppCompat.DayNight.Dialog.ThemeColored">
+        <!-- 不显示title -->
+        <item name="windowNoTitle">true</item>
+        <!-- Dialog的windowFrame框为无 -->
+        <item name="android:windowFrame">@null</item>
+        <!-- 不悬浮，防止导航栏、状态栏背景色异常 -->
+        <item name="android:windowIsFloating">false</item>
+    </style>
+
+    <style name="DialogStyle_NoTitle" parent="Theme.AppCompat.DayNight.Dialog.ThemeColored">
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="DialogStyle_MinWidth" parent="Theme.AppCompat.DayNight.Dialog">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-
+    <style name="DialogStyle_MinWidth" parent="Theme.AppCompat.DayNight.Dialog.ThemeColored">
         <item name="android:windowMinWidthMinor">92%</item>
         <item name="android:windowMinWidthMajor">65%</item>
     </style>

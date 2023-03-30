@@ -235,10 +235,13 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
 
         mVideoOptionsMenu = FloatingMenu(mRecyclerView)
         mVideoOptionsMenu!!.inflate(R.menu.floatingmenu_video_ops)
+        mVideoOptionsMenu!!.setItemEnabled(R.id.move,
+                video.isWritable && App.getInstance(v.context).hasAllFilesAccess())
         mVideoOptionsMenu!!.setItemEnabled(R.id.delete, video.isWritable)
         mVideoOptionsMenu!!.setItemEnabled(R.id.rename, video.isWritable)
         mVideoOptionsMenu!!.setOnItemClickListener { menuItem, _ ->
             when (menuItem.iconResId) {
+                R.drawable.ic_file_move_menu -> mVideoOpCallback?.showVideosMovePage(video)
                 R.drawable.ic_delete_24dp_menu -> mVideoOpCallback?.showDeleteItemDialog(video) {
                     mVideos.remove(video)
 

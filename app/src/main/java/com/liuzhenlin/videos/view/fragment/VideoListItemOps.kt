@@ -54,6 +54,7 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
     fun showDeleteItemsPopupWindow(vararg items: T, onDeleteAction: (() -> Unit)? = null)
     fun showRenameItemDialog(item: T, onRenameAction: (() -> Unit)? = null)
     fun showItemDetailsDialog(item: T)
+    fun showVideosMovePage(vararg items: T)
 
     fun deleteItems(vararg items: T) = deleteItemsInternal(items)
 

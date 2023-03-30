@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="aTotalOfSeveralVideos" tools:ignore="PluralsCandidate">%d videos in all</string>
     <string name="aboutApp">About App</string>
     <string name="adviceAndFeedback">Advice &amp; Feedback</string>
     <string name="alias">Alias: %s</string>
@@ -30,6 +29,7 @@
     <string name="deletePicture">Delete picture</string>
     <string name="details">Details</string>
     <string name="directoryDetails">Directory Details</string>
+    <string name="dontPromptAgain">Don\'t prompt again</string>
     <string name="doYouNeedToSaveTheEditedContents">Do you need to save the edited contents?</string>
     <string name="doYouNeedToUpdateItSoon">Do you need to update it soon?</string>
     <string name="downloadError">Download error</string>
@@ -46,6 +46,7 @@
     <string name="isTheLatestVersion">Is the latest version</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">Loading videos, please wait…</string>
     <string name="localVideos">Local Videos</string>
+    <string name="move">Move</string>
     <string name="name">Name: %s</string>
     <string name="newAppDownloaded">New App Downloaded</string>
     <string name="noNetworkConnection">No network is connected!</string>
@@ -68,8 +69,13 @@
     <string name="pleaseInputVideoLinkFirst">Please input video link first!</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">Please insert SD card on your device first.</string>
     <string name="pressAgainToExitApp">Press again to exit app</string>
+    <string name="prompt_videoMove">
+        If a video file with the same name already exists in the target directory, the name of
+        the new file moved to there will be appended with "-&lt;number&gt;" by default
+        to let it be distinguished and coexist. For example, sample.mp4 becomes sample-1.mp4
+    </string>
     <string name="rationale_askAllFilesAccessPermission">
-        This app needs All Files Access on the primary shared/external storage media to delete
+        This app needs All Files Access on the primary shared/external storage media to move, delete
         or rename video files. Please go to the All Files Access permission management screen to
         grant it.
     </string>
@@ -175,6 +181,10 @@
         Keep historical video playback pages in the backstack for later resumption</string>
     <string name="youtube_video_quality_title">Video Quality (useless to the brief playback UI)</string>
 
+    <plurals name="aTotalOfSeveralVideos">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos in all</item>
+    </plurals>
     <plurals name="deletingVideosPleaseWait">
         <item quantity="one">Deleting video, please wait…</item>
         <item quantity="other">Deleting videos, please wait…</item>
@@ -182,5 +192,13 @@
     <plurals name="findSomeVideos">
         <item quantity="one">Find a video</item>
         <item quantity="other">Find %d videos</item>
+    </plurals>
+    <plurals name="moveVideosTo">
+        <item quantity="one">Move Video to</item>
+        <item quantity="other">Move Videos to</item>
+    </plurals>
+    <plurals name="movingVideosPleaseWait">
+        <item quantity="one">Moving video, please wait…</item>
+        <item quantity="other">Moving videos, please wait…</item>
     </plurals>
 </resources>
