@@ -32,6 +32,11 @@ public class HeaderAndFooterWrapper<VH extends RecyclerView.ViewHolder>
     }
 
     @NonNull
+    public RecyclerView.Adapter<VH> getInnerAdapter() {
+        return mInnerAdapter;
+    }
+
+    @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         int index = mHeaderViews.indexOfKey(viewType);

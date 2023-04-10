@@ -24,7 +24,8 @@ import java.net.URL
 /**
  * @author 刘振林
  */
-class OnlineVideoListModel(context: Context) : BaseModel<Nothing, Array<TVGroup>?>(context) {
+class OnlineVideoListModel(context: Context)
+    : BaseModel<Nothing, Array<TVGroup>?, BaseModel.Callback>(context) {
 
     override fun createAndStartLoader(): AsyncTask<*, *, *> {
         val loader = LoadTVsAsyncTask()

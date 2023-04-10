@@ -48,4 +48,28 @@ public class Presenter<V extends IView> implements IPresenter<V> {
         mView = null;
         mThemedContext = null;
     }
+
+    @Override
+    public void onViewCreated(@NonNull V view) {
+    }
+
+    @Override
+    public void onViewStart(@NonNull V view) {
+    }
+
+    @Override
+    public void onViewResume(@NonNull V view) {
+    }
+
+    @Override
+    public void onViewPaused(@NonNull V view) {
+    }
+
+    @Override
+    public void onViewStopped(@NonNull V view) {
+    }
+
+    @Override
+    public void onViewDestroyed(@NonNull V view) {
+    }
 }

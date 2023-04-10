@@ -14,6 +14,14 @@ import com.liuzhenlin.videos.view.IView;
  */
 @SuppressWarnings("rawtypes")
 public interface IPresenter<V extends IView> {
+
     void attachToView(@NonNull V view);
     void detachFromView(@NonNull V view);
+
+    void onViewCreated(@NonNull V view);
+    void onViewStart(@NonNull V view);
+    void onViewResume(@NonNull V view);
+    void onViewPaused(@NonNull V view);
+    void onViewStopped(@NonNull V view);
+    void onViewDestroyed(@NonNull V view);
 }

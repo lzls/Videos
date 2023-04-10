@@ -14,7 +14,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.util.Preconditions
 import com.google.android.material.snackbar.Snackbar
-import com.liuzhenlin.common.utils.*
+import com.liuzhenlin.common.utils.FileUtils
+import com.liuzhenlin.common.utils.ShareUtils
+import com.liuzhenlin.common.utils.URLUtils
+import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -150,6 +153,13 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
     }
 }
 
+fun Any?.shareVideo(video: Video) {
+    when (this) {
+        is Fragment -> shareVideo(video)
+        is Context -> shareVideo(video)
+    }
+}
+
 fun Fragment.shareVideo(video: Video) {
     (activity ?: requireContext()).shareVideo(video)
 }
@@ -211,6 +221,13 @@ fun Context.playVideos(uris: Array<Uri>, videoTitles: Array<String?>? = null, se
                     .putExtra(KEY_SELECTION, selection))
 }
 
+fun Any?.playVideo(video: Video) {
+    when (this) {
+        is Fragment -> playVideo(video)
+        is Activity -> playVideo(video)
+    }
+}
+
 fun Fragment.playVideo(video: Video) {
     startActivityForResult(
             Intent(requireContext(), VideoActivity::class.java)
@@ -223,6 +240,13 @@ fun Activity.playVideo(video: Video) {
             Intent(this, VideoActivity::class.java)
                     .putExtra(KEY_VIDEO, video),
             REQUEST_CODE_PLAY_VIDEO)
+}
+
+fun Any?.playVideos(vararg videos: Video, selection: Int) {
+    when (this) {
+        is Fragment -> playVideos(*videos, selection = selection)
+        is Activity -> playVideos(*videos, selection = selection)
+    }
 }
 
 fun Fragment.playVideos(vararg videos: Video, selection: Int) {

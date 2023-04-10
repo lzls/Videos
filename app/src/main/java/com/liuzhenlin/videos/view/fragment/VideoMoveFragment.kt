@@ -17,6 +17,8 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDialog
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -35,7 +37,7 @@ import com.liuzhenlin.videos.dao.AppPrefs
 import com.liuzhenlin.videos.presenter.IVideoMovePresenter
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.view.IView
-import com.liuzhenlin.videos.view.fragment.PackageConsts.PAYLOAD_REFRESH_CHECKBOX
+import com.liuzhenlin.videos.view.fragment.Payloads.PAYLOAD_REFRESH_CHECKBOX
 
 interface IVideoMoveView : IView<IVideoMovePresenter> {
     fun getArguments(): Bundle?
@@ -51,7 +53,7 @@ interface IVideoMoveView : IView<IVideoMovePresenter> {
     }
 }
 
-private const val PAYLOAD_REFRESH_VIDEODIR_THUMB = PackageConsts.PAYLOAD_LAST shl 1
+private const val PAYLOAD_REFRESH_VIDEODIR_THUMB = Payloads.PAYLOAD_LAST shl 1
 
 class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout.fragment_video_move),
         IVideoMoveView, View.OnClickListener {
@@ -61,6 +63,22 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
     private var mOkayButton: View? = null
 
     private val mPresenter = IVideoMovePresenter.newInstance()
+
+    init {
+        lifecycle.addObserver(object: DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) =
+                    mPresenter.onViewStart(this@VideoMoveFragment)
+
+            override fun onResume(owner: LifecycleOwner) =
+                    mPresenter.onViewResume(this@VideoMoveFragment)
+
+            override fun onPause(owner: LifecycleOwner) =
+                    mPresenter.onViewPaused(this@VideoMoveFragment)
+
+            override fun onStop(owner: LifecycleOwner) =
+                    mPresenter.onViewStopped(this@VideoMoveFragment)
+        })
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -95,6 +113,8 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         dialog.findViewById<View>(R.id.btn_cancel).setOnClickListener(this)
         mOkayButton = dialog.findViewById(R.id.btn_ok)
         mOkayButton!!.setOnClickListener(this)
+
+        mPresenter.onViewCreated(this)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
@@ -116,6 +136,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
+        mPresenter.onViewDestroyed(this)
         mVideoDirList = null
         mTitleText = null
         mOkayButton = null

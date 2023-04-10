@@ -38,6 +38,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.core.widget.TextViewCompat;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
@@ -202,6 +204,29 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
 
         mCommitButton.setOnClickListener(this);
 
+        mPresenter.onViewCreated(this);
+        getLifecycle().addObserver(new DefaultLifecycleObserver() {
+            @Override
+            public void onStart(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewStart((IFeedbackView) owner);
+            }
+
+            @Override
+            public void onResume(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewResume((IFeedbackView) owner);
+            }
+
+            @Override
+            public void onPause(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewPaused((IFeedbackView) owner);
+            }
+
+            @Override
+            public void onStop(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewStopped((IFeedbackView) owner);
+            }
+        });
+
         // 恢复上次退出此页面时保存的数据
         if (savedInstanceState == null) {
             mPresenter.restoreData(null);
@@ -258,6 +283,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         }
         // 回收Bitmaps
         mPresenter.recyclePictures();
+        mPresenter.onViewDestroyed(this);
         mPresenter.detachFromView(this);
     }
 

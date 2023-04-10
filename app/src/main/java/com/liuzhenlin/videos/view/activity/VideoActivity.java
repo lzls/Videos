@@ -112,6 +112,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     private static final int PFLAG_LAST_VIDEO_LAYOUT_IS_FULLSCREEN = 1 << 4;
 
     private static final int PFLAG_STOPPED = 1 << 5;
+    private static final int PFLAG_VIEW_CREATED = 1 << 6;
 
     private static final int PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB = 1;
     private static final int PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED = 1 << 1;
@@ -257,6 +258,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
             setRequestedOrientation(mScreenOrientation);
             setContentView(R.layout.activity_video);
             initViews(savedInstanceState);
+            mPresenter.onViewCreated(this);
+            mPrivateFlags |= PFLAG_VIEW_CREATED;
         } else {
             Activity preactivity = getPreviousActivity();
             if (preactivity == null) {
@@ -544,6 +547,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     protected void onStart() {
         super.onStart();
+        mPresenter.onViewStart(this);
         finishOtherInstanceInPiP();
     }
 
@@ -653,6 +657,18 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        mPresenter.onViewResume(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mPresenter.onViewPaused(this);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         mPrivateFlags |= PFLAG_STOPPED;
@@ -661,6 +677,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         if (!isFinishing()) {
             mPresenter.recordCurrVideoProgress();
         }
+        mPresenter.onViewStopped(this);
 
         if (!isInMultiWindowMode()) {
             observeNotchSwitch(false);
@@ -688,6 +705,10 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if ((mPrivateFlags & PFLAG_VIEW_CREATED) != 0) {
+            mPrivateFlags &= ~PFLAG_VIEW_CREATED;
+            mPresenter.onViewDestroyed(this);
+        }
         mPresenter.detachFromView(this);
         if (mHandler != null) {
             mHandler.removeCallbacks(mHideLockUnlockOrientationButtonRunnable, null);
