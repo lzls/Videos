@@ -596,8 +596,9 @@ public class SlidingDrawerLayout extends ViewGroup {
 
     /**
      * @return the percentage of the width of the left drawer relative to current view's within
-     *         the range from {@value MINIMUM_DRAWER_WIDTH_PERCENT} to {@value #MAXIMUM_DRAWER_WIDTH_PERCENT}
-     *         or just {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} if no specific percentage has been
+     *         the range from {@value MINIMUM_DRAWER_WIDTH_PERCENT}
+     *         to {@value #MAXIMUM_DRAWER_WIDTH_PERCENT} or
+     *         just {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} if no specific percentage has been
      *         applied to measuring its width or {@link #UNRESOLVED_DRAWER_WIDTH_PERCENT} if
      *         this cannot be resolved before the layout direction resolved.
      */
@@ -641,8 +642,9 @@ public class SlidingDrawerLayout extends ViewGroup {
 
     /**
      * @return the percentage of the width of the right drawer relative to current view's within
-     *         the range from {@value MINIMUM_DRAWER_WIDTH_PERCENT} to {@value #MAXIMUM_DRAWER_WIDTH_PERCENT}
-     *         or just {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} if no specific percentage has been
+     *         the range from {@value MINIMUM_DRAWER_WIDTH_PERCENT}
+     *         to {@value #MAXIMUM_DRAWER_WIDTH_PERCENT} or
+     *         just {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} if no specific percentage has been
      *         applied to measuring its width or {@link #UNRESOLVED_DRAWER_WIDTH_PERCENT} if
      *         this cannot be resolved before the layout direction resolved.
      */
@@ -687,8 +689,9 @@ public class SlidingDrawerLayout extends ViewGroup {
     /**
      * @return the width percentage of the start drawer depending on this view's resolved
      *         layout direction or just {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} if no specific
-     *         percentage has been applied to measuring its width or {@link #UNRESOLVED_DRAWER_WIDTH_PERCENT}
-     *         if this cannot be resolved before the layout direction resolved.
+     *         percentage has been applied to measuring its width or
+     *         {@link #UNRESOLVED_DRAWER_WIDTH_PERCENT} if this cannot be resolved before
+     *         the layout direction resolved.
      */
     public float getStartDrawerWidthPercent() {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
@@ -708,8 +711,8 @@ public class SlidingDrawerLayout extends ViewGroup {
 
     /**
      * Sets the width percentage (from {@value #MINIMUM_DRAWER_WIDTH_PERCENT} to
-     * {@value #MAXIMUM_DRAWER_WIDTH_PERCENT}) for the start drawer depending on this view's resolved
-     * layout direction or pass in {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} to ignore it
+     * {@value #MAXIMUM_DRAWER_WIDTH_PERCENT}) for the start drawer depending on this view's
+     * resolved layout direction or pass in {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} to ignore it
      * to use the usual measurement with a valid width defined for that drawer such as
      * {@link ViewGroup.LayoutParams#WRAP_CONTENT}, {@link ViewGroup.LayoutParams#MATCH_PARENT}.
      *
@@ -731,14 +734,16 @@ public class SlidingDrawerLayout extends ViewGroup {
     /**
      * @return the width percentage of the end drawer depending on this view's resolved
      *         layout direction or just {@link #UNSPECIFIED_DRAWER_WIDTH_PERCENT} if no specific
-     *         percentage has been applied to measuring its width or {@link #UNRESOLVED_DRAWER_WIDTH_PERCENT}
-     *         if this cannot be resolved before the layout direction resolved.
+     *         percentage has been applied to measuring its width or
+     *         {@link #UNRESOLVED_DRAWER_WIDTH_PERCENT} if this cannot be resolved before
+     *         the layout direction resolved.
      */
     public float getEndDrawerWidthPercent() {
         final int layoutDirection = ViewCompat.getLayoutDirection(this);
 
         if ((mFlags & FLAG_DRAWER_WIDTH_PERCENTAGES_RESOLVED) == 0) {
-            if ((mFlags & FLAG_SUPPORTS_RTL) == 0 || ViewCompatibility.isLayoutDirectionResolved(this)) {
+            if ((mFlags & FLAG_SUPPORTS_RTL) == 0
+                    || ViewCompatibility.isLayoutDirectionResolved(this)) {
                 resolveDrawerWidthPercentages(layoutDirection, true);
             } else {
                 return mEndDrawerWidthPercent == UNDEFINED_DRAWER_WIDTH_PERCENT ?

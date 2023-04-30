@@ -401,7 +401,7 @@ public class CircularCheckBox extends View implements Checkable {
         switch (specMode) {
             case MeasureSpec.UNSPECIFIED:
             case MeasureSpec.AT_MOST:
-                return Math.min(mDefaultDrawingSize, specSize);
+                return mDefaultDrawingSize;
             case MeasureSpec.EXACTLY:
                 return specSize;
         }

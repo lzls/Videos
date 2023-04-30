@@ -36,7 +36,8 @@ function __gitCommit() {
   local committerDate=$8
 
   GIT_COMMITTER_DATE=$committerDate GIT_COMMITTER_NAME=$committer GIT_COMMITTER_EMAIL=$committerEmail \
-    git commit $(__amend "$amendCommit") --m="$commitMsg" --date="$date" --author="$author <$authorEmail>" --no-edit
+      git commit $(__amend "$amendCommit") --m="$commitMsg" --date="$date" \
+      --author="$author <$authorEmail>" --no-edit
 }
 
 function gitCommit() {
@@ -50,7 +51,8 @@ function gitCommit() {
   local committerEmail=${6:-$(git config user.email)} # 提交者邮箱
   local committerDate=${7:-$_date}                    # 提交日期
 
-  __gitCommit $false "$commitMsg" "$author" "$authorEmail" "$date" "$committer" "$committerEmail" "$committerDate"
+  __gitCommit $false "$commitMsg" "$author" "$authorEmail" "$date" "$committer" "$committerEmail" \
+      "$committerDate"
 }
 
 function gitGetFormattedLog() {
@@ -131,10 +133,11 @@ function gitAmendCommit() {
   committer=${committer:-$(gitGetFormattedLog '--format=%cn' -1)}           # 提交者
   committerEmail=${committerEmail:-$(gitGetFormattedLog '--format=%ce' -1)} # 提交者邮箱
 
-  __gitCommit $true "$commitMsg" "$author" "$authorEmail" "$date" "$committer" "$committerEmail" "$committerDate"
+  __gitCommit $true "$commitMsg" "$author" "$authorEmail" "$date" "$committer" "$committerEmail" \
+      "$committerDate"
 }
 
 function printCodeLineCount() {
    git log "${1:-HEAD}" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 }
-     END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }'
+       END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }'
 }

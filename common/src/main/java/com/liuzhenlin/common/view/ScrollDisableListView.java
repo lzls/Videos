@@ -35,7 +35,8 @@ public class ScrollDisableListView extends ListView {
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    public ScrollDisableListView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public ScrollDisableListView(
+            Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 

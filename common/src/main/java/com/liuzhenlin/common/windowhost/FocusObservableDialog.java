@@ -26,7 +26,8 @@ public class FocusObservableDialog extends AppCompatDialog implements FocusObser
         super(context, theme);
     }
 
-    protected FocusObservableDialog(Context context, boolean cancelable, OnCancelListener cancelListener) {
+    protected FocusObservableDialog(
+            Context context, boolean cancelable, OnCancelListener cancelListener) {
         super(context, cancelable, cancelListener);
     }
 

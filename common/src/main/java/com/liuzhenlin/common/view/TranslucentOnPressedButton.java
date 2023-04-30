@@ -22,7 +22,8 @@ public class TranslucentOnPressedButton extends AppCompatButton {
         super(context, attrs);
     }
 
-    public TranslucentOnPressedButton(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public TranslucentOnPressedButton(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

@@ -294,7 +294,8 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
         return (T) mGridAdapter;
     }
 
-    private final class PictureGridAdapter extends BaseAdapter implements AdapterView.OnItemClickListener {
+    private final class PictureGridAdapter extends BaseAdapter
+            implements AdapterView.OnItemClickListener {
 
         final List<Bitmap> mPictures = new ArrayList<>(MAX_COUNT_UPLOAD_PICTURES + 1);
         final List<String> mPicturePaths = new LinkedList<>();

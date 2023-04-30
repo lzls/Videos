@@ -149,9 +149,9 @@ public interface IVideoPlayer {
 
     /**
      * Initialize the player object and prepare for the video playback.
-     * Normally, you should invoke this method to resume video playback instead of {@link #play(boolean)}
-     * whenever the Activity's restart() or resume() method is called unless the player won't
-     * be released as the Activity's lifecycle changes.
+     * Normally, you should invoke this method to resume video playback instead of
+     * {@link #play(boolean)} whenever the Activity's restart() or resume() method is called
+     * unless the player won't be released as the Activity's lifecycle changes.
      *
      * @see #play(boolean)
      * @see #closeVideo()
@@ -345,8 +345,8 @@ public interface IVideoPlayer {
      *                  {@link TrackInfo#TRACK_TYPE_AUDIO} or
      *                  {@link TrackInfo#TRACK_TYPE_SUBTITLE}.
      * @return index of the video, audio, or subtitle track currently selected for playback;
-     *         {@value #INVALID_TRACK_INDEX} is returned when there is no selected track for {@code trackType}
-     *         or when {@code trackType} is not one of video, audio, or subtitle.
+     *         {@value #INVALID_TRACK_INDEX} is returned when there is no selected track for
+     *         {@code trackType} or when {@code trackType} is not one of video, audio, or subtitle.
      */
     int getSelectedTrackIndex(@TrackInfo.TrackType int trackType);
 

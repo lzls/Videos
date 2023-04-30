@@ -67,7 +67,8 @@ import java.util.List;
 
 /**
  * A sub implementation class of {@link VideoPlayer} to deal with the audio/video playback logic
- * related to the media player component through an {@link com.google.android.exoplayer2.ExoPlayer} object.
+ * related to the media player component through an {@link com.google.android.exoplayer2.ExoPlayer}
+ * object.
  *
  * @author 刘振林
  */
@@ -218,8 +219,9 @@ public class ExoVideoPlayer extends VideoPlayer {
     /**
      * @return a user agent string based on the application name resolved from the context object
      *         of the view this player is bound to and the `exoplayer-core` library version,
-     *         which can be used to create a {@link com.google.android.exoplayer2.upstream.DataSource.Factory}
-     *         instance for the {@link MediaSource.Factory} subclasses.
+     *         which can be used to create a
+     *         {@link com.google.android.exoplayer2.upstream.DataSource.Factory} instance for
+     *         the {@link MediaSource.Factory} subclasses.
      */
     @NonNull
     public String getUserAgent() {
@@ -1003,8 +1005,9 @@ public class ExoVideoPlayer extends VideoPlayer {
         if (mExoPlayer != null) {
             final int playbackState = getPlaybackState();
             final boolean playWhenPrepared =
-                    playbackState == PLAYBACK_STATE_PREPARING && (mInternalFlags & $FLAG_PLAY_WHEN_PREPARED) != 0
-                            || playbackState == PLAYBACK_STATE_PLAYING;
+                    playbackState == PLAYBACK_STATE_PLAYING
+                            || playbackState == PLAYBACK_STATE_PREPARING
+                                    && (mInternalFlags & $FLAG_PLAY_WHEN_PREPARED) != 0;
             restartVideo(true, true, playWhenPrepared);
         }
     }

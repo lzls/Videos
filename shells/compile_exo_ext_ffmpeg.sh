@@ -17,4 +17,4 @@ verifyLastOpSuccessed
 
 trace cd "${FFMPEG_MODULE_PATH}/jni" &&
   trace ./build_ffmpeg.sh \
-    "${FFMPEG_MODULE_PATH}" "${NDK_PATH}" "${HOST_PLATFORM}" "${ENABLED_DECODERS[@]}"
+      "${FFMPEG_MODULE_PATH}" "${NDK_PATH}" "${HOST_PLATFORM}" "${ENABLED_DECODERS[@]}"

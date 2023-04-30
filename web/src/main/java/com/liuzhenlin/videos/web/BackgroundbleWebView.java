@@ -72,7 +72,8 @@ public class BackgroundbleWebView extends AndroidWebView {
                     new InvocationHandler() {
                         Object mViewDelegateProxy;
                         @Override
-                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        public Object invoke(Object proxy, Method method, Object[] args)
+                                throws Throwable {
                             if (method.getName().equals("getViewDelegate")) {
                                 if (mViewDelegateProxy == null) {
                                     Object viewDelegate = method.invoke(provider, args);

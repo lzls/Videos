@@ -12,11 +12,20 @@ import android.os.AsyncTask
 /**
  * @author 刘振林
  */
-abstract class BaseModel<Progress, Result>(context: Context) {
+abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(context: Context) {
+
+    @Suppress("RemoveEmptyClassBody")
+    interface Callback {
+    }
 
     protected val mContext: Context = context.applicationContext
     private var mLoader: AsyncTask<*, *, *>? = null
     private var mOnLoadListeners: MutableList<OnLoadListener<Progress, Result>>? = null
+    protected var mCallback: Callback? = null
+
+    fun setCallback(callback: Callback?) {
+        mCallback = callback
+    }
 
     fun addOnLoadListener(listener: OnLoadListener<Progress, Result>) {
         if (mOnLoadListeners == null)

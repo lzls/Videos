@@ -58,8 +58,13 @@ public final class AppPrefs {
 
     private static final String GUID = "GUID";
 
+    private static final String DOES_USER_PREFER_RUNNING_APP_IN_RESTRICTED_MODE =
+            "doesUserPreferRunningAppInRestrictedMode";
     private static final String IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED =
             "isLegacyExternalStorageDataMigrated";
+
+    private static final String HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN =
+            "hasUserDeclinedVideoMovePromptDialogToBeShownAgain";
 
     private static final Singleton<Context, AppPrefs> sAppPrefsSingleton =
             new Singleton<Context, AppPrefs>() {
@@ -191,8 +196,16 @@ public final class AppPrefs {
         }
     }
 
+    public boolean doesUserPreferRunningAppInRestrictedMode() {
+        return mSP.getBoolean(DOES_USER_PREFER_RUNNING_APP_IN_RESTRICTED_MODE, false);
+    }
+
     public boolean isLegacyExternalStorageDataMigrated() {
         return mSP.getBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, false);
+    }
+
+    public boolean hasUserDeclinedVideoMovePromptDialogToBeShownAgain() {
+        return mSP.getBoolean(HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN, false);
     }
 
     @NonNull
@@ -258,8 +271,18 @@ public final class AppPrefs {
             return this;
         }
 
+        public AppPrefs.Editor setUserPreferRunningAppInRestrictedMode(boolean bool) {
+            mEditor.putBoolean(DOES_USER_PREFER_RUNNING_APP_IN_RESTRICTED_MODE, bool);
+            return this;
+        }
+
         public AppPrefs.Editor setLegacyExternalStorageDataMigrated(boolean migrated) {
             mEditor.putBoolean(IS_LEGACY_EXTERNAL_STORAGE_DATA_MIGRATED, migrated);
+            return this;
+        }
+
+        public AppPrefs.Editor setUserDeclinedVideoMovePromptDialogToBeShownAgain(boolean declined) {
+            mEditor.putBoolean(HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN, declined);
             return this;
         }
 

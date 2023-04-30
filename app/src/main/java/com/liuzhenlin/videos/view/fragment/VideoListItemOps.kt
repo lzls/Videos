@@ -14,7 +14,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.util.Preconditions
 import com.google.android.material.snackbar.Snackbar
-import com.liuzhenlin.common.utils.*
+import com.liuzhenlin.common.utils.FileUtils
+import com.liuzhenlin.common.utils.ShareUtils
+import com.liuzhenlin.common.utils.URLUtils
+import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -27,45 +30,34 @@ import java.io.File
  * @author 刘振林
  */
 
-private val sDeleteItemExecutor = SerialExecutor()
-
 private fun deleteItemsInternal(items: Array<out VideoListItem>) {
     if (items.isEmpty()) return
 
     val dao = VideoListItemDao.getSingleton(App.getInstanceUnsafe()!!)
-    sDeleteItemExecutor.execute(object : Runnable {
-        override fun run() {
-            for (item in items)
-                when (item) {
-                    is Video -> deleteVideo(item)
-                    is VideoDirectory -> {
-                        for (video in item.videos) {
-                            deleteVideo(video)
-                        }
-                        dao.deleteVideoDir(item.path)
-                    }
+    for (item in items)
+        when (item) {
+            is Video -> deleteVideo(item, dao)
+            is VideoDirectory -> {
+                for (video in item.videos) {
+                    deleteVideo(video, dao)
                 }
-        }
-
-        fun deleteVideo(video: Video) {
-            // video的路径可能已在主线程中被修改（重命名视频）
-            val video2 = dao.queryVideoById(video.id)
-            if (video2 != null) {
-                File(video2.path).delete()
+                dao.deleteVideoDir(item.path)
             }
-
-            dao.deleteVideo(video.id)
         }
-    })
+}
+
+private fun deleteVideo(video: Video, dao: VideoListItemDao) {
+    File(video.path).delete()
+    dao.deleteVideo(video.id)
 }
 
 interface VideoListItemOpCallback<in T : VideoListItem> {
-    public val isAsyncDeletingItems get() = !sDeleteItemExecutor.isIdle
 
     fun showDeleteItemDialog(item: T, onDeleteAction: (() -> Unit)? = null)
     fun showDeleteItemsPopupWindow(vararg items: T, onDeleteAction: (() -> Unit)? = null)
     fun showRenameItemDialog(item: T, onRenameAction: (() -> Unit)? = null)
     fun showItemDetailsDialog(item: T)
+    fun showVideosMovePage(vararg items: T)
 
     fun deleteItems(vararg items: T) = deleteItemsInternal(items)
 
@@ -161,6 +153,13 @@ interface VideoListItemOpCallback<in T : VideoListItem> {
     }
 }
 
+fun Any?.shareVideo(video: Video) {
+    when (this) {
+        is Fragment -> shareVideo(video)
+        is Context -> shareVideo(video)
+    }
+}
+
 fun Fragment.shareVideo(video: Video) {
     (activity ?: requireContext()).shareVideo(video)
 }
@@ -222,6 +221,13 @@ fun Context.playVideos(uris: Array<Uri>, videoTitles: Array<String?>? = null, se
                     .putExtra(KEY_SELECTION, selection))
 }
 
+fun Any?.playVideo(video: Video) {
+    when (this) {
+        is Fragment -> playVideo(video)
+        is Activity -> playVideo(video)
+    }
+}
+
 fun Fragment.playVideo(video: Video) {
     startActivityForResult(
             Intent(requireContext(), VideoActivity::class.java)
@@ -234,6 +240,13 @@ fun Activity.playVideo(video: Video) {
             Intent(this, VideoActivity::class.java)
                     .putExtra(KEY_VIDEO, video),
             REQUEST_CODE_PLAY_VIDEO)
+}
+
+fun Any?.playVideos(vararg videos: Video, selection: Int) {
+    when (this) {
+        is Fragment -> playVideos(*videos, selection = selection)
+        is Activity -> playVideos(*videos, selection = selection)
+    }
 }
 
 fun Fragment.playVideos(vararg videos: Video, selection: Int) {

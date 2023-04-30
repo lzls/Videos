@@ -54,7 +54,8 @@ function __parseShellArgs() {
   done
 
   test "$APP_VERSION_NAME"
-  verifyLastOpSuccessed "Release version name is not initialized. Use $versionNamePrefix to specify it."
+  verifyLastOpSuccessed "Release version name is not initialized. Use $versionNamePrefix" \
+    'to specify it.'
   test "$APK_PARTS_COUNT"
   verifyLastOpSuccessed "The count of apk parts to upload is not initialized. Use $partsCountPrefix" \
     'to specify it.'
@@ -146,9 +147,9 @@ int i=1
 # shellcheck disable=SC2004
 while (($i <= $APK_PARTS_COUNT)); do
   if [ $i -eq 1 ]; then
-      cat "$APK_SOURCE_DIR"/app-release$i.apk > "$APK_SOURCE_DIR"/_app-release.apk
+    cat "$APK_SOURCE_DIR"/app-release$i.apk > "$APK_SOURCE_DIR"/_app-release.apk
   else
-      cat "$APK_SOURCE_DIR"/app-release$i.apk >> "$APK_SOURCE_DIR"/_app-release.apk
+    cat "$APK_SOURCE_DIR"/app-release$i.apk >> "$APK_SOURCE_DIR"/_app-release.apk
   fi
   ((i = $i + 1))
 done

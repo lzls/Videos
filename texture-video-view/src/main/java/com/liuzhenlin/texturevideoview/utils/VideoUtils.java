@@ -74,8 +74,8 @@ public class VideoUtils {
                     // This exception here could be a false positive in case we have multiple tracks
                     // with sync samples at exactly the same positions. E.g. a single movie containing
                     // multiple qualities of the same video (Microsoft Smooth Streaming file).
-                    throw new UnsupportedOperationException("Unsupported. " +
-                            "The startTime has already been corrected by another track with sync samples.");
+                    throw new UnsupportedOperationException("Unsupported. The startTime " +
+                            "has already been corrected by another track with sync samples.");
                 }
                 startTime = correctTimeToSyncSample(track, startTime, false);
                 endTime = correctTimeToSyncSample(track, endTime, true);

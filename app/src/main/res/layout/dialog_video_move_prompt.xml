@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/text_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="19dp"
+        android:layout_marginRight="19dp"
+        android:text="@string/prompt_videoMove"
+        android:textSize="@dimen/primary_text_size"
+        android:textColor="@color/textColorPrimary"
+        android:textAlignment="viewStart"
+        android:gravity="start"
+        android:scrollbars="vertical"
+        tools:ignore="InefficientWeight" />
+
+    <CheckBox
+        android:id="@+id/checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="@dimen/dialogPreferredContentPaddingHorizontal"
+        android:layout_marginRight="@dimen/dialogPreferredContentPaddingHorizontal"
+        android:text="@string/dontPromptAgain"
+        android:textSize="@dimen/secondary_text_size"
+        android:textColor="@color/textColorSecondary"
+        android:textAlignment="viewStart"
+        android:gravity="start|center_vertical" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/dialogPreferredButtonMarginHorizontal"
+        android:layout_marginRight="@dimen/dialogPreferredButtonMarginHorizontal"
+        android:layout_marginTop="@dimen/dialogPreferredButtonMarginVertical"
+        android:layout_marginBottom="@dimen/dialogPreferredButtonMarginVertical">
+
+        <TextView
+            android:id="@+id/btn_cancel_vmpd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/btn_ok_vmpd"
+            android:layout_toStartOf="@+id/btn_ok_vmpd"
+            android:background="@drawable/selector_dialog_button"
+            android:text="@string/cancel"
+            android:textSize="@dimen/dialog_button_text_size"
+            android:textColor="@color/cancelBtnTextColor" />
+
+        <TextView
+            android:id="@id/btn_ok_vmpd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/selector_dialog_button"
+            android:text="@string/ok"
+            android:textSize="@dimen/dialog_button_text_size"
+            android:textColor="@color/okBtnTextColor" />
+    </RelativeLayout>
+</LinearLayout>

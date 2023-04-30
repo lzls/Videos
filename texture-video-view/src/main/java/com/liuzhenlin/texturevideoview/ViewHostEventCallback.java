@@ -13,7 +13,8 @@ import android.app.Dialog;
  */
 public interface ViewHostEventCallback {
     /**
-     * Call this when the view host (Activity for instance) has detected the user's press of the back key.
+     * Call this when the view host (Activity for instance) has detected the user's press of
+     * the back key.
      *
      * @return true if the back key event is handled by the view
      * @see Activity#onBackPressed()

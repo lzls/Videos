@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,6 +38,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.core.widget.TextViewCompat;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
@@ -201,6 +204,29 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
 
         mCommitButton.setOnClickListener(this);
 
+        mPresenter.onViewCreated(this);
+        getLifecycle().addObserver(new DefaultLifecycleObserver() {
+            @Override
+            public void onStart(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewStart((IFeedbackView) owner);
+            }
+
+            @Override
+            public void onResume(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewResume((IFeedbackView) owner);
+            }
+
+            @Override
+            public void onPause(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewPaused((IFeedbackView) owner);
+            }
+
+            @Override
+            public void onStop(@NonNull LifecycleOwner owner) {
+                mPresenter.onViewStopped((IFeedbackView) owner);
+            }
+        });
+
         // 恢复上次退出此页面时保存的数据
         if (savedInstanceState == null) {
             mPresenter.restoreData(null);
@@ -228,6 +254,8 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         final String contactWay = mEnterContactWayEditor.getText().toString().trim();
         if (mPresenter.hasDataChanged(text, contactWay)) {
             View view = View.inflate(this, R.layout.dialog_confirm_save, null);
+            view.<TextView>findViewById(R.id.text_message)
+                    .setMovementMethod(ScrollingMovementMethod.getInstance());
             view.findViewById(R.id.btn_notSave).setOnClickListener(this);
             view.findViewById(R.id.btn_save).setOnClickListener(this);
 
@@ -255,6 +283,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         }
         // 回收Bitmaps
         mPresenter.recyclePictures();
+        mPresenter.onViewDestroyed(this);
         mPresenter.detachFromView(this);
     }
 
@@ -394,8 +423,9 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         }
     }
 
-    private final class PicturePreviewDialog extends Dialog implements DialogInterface.OnDismissListener,
-            View.OnClickListener, View.OnLongClickListener, DisplayCutoutManager.OnNotchSwitchListener {
+    private final class PicturePreviewDialog extends Dialog implements
+            DialogInterface.OnDismissListener, View.OnClickListener, View.OnLongClickListener,
+            DisplayCutoutManager.OnNotchSwitchListener {
         final Context mContext = FeedbackActivity.this;
         final Window mParentWindow;
         final Window mWindow;
@@ -526,8 +556,9 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                 case R.id.frame_btn_delete:
                 case R.id.btn_delete:
                     View view = View.inflate(mContext, R.layout.dialog_message, null);
-                    view.<TextView>findViewById(R.id.text_message)
-                            .setText(R.string.areYouSureToDeleteThisPicture);
+                    TextView messageText = view.findViewById(R.id.text_message);
+                    messageText.setText(R.string.areYouSureToDeleteThisPicture);
+                    messageText.setMovementMethod(ScrollingMovementMethod.getInstance());
                     view.findViewById(R.id.btn_cancel).setOnClickListener(this);
                     view.findViewById(R.id.btn_ok).setOnClickListener(this);
                     mConfirmDeletePictureDialog = new AppCompatDialog(

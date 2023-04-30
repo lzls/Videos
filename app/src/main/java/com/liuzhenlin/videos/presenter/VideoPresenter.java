@@ -10,24 +10,20 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.util.Synthetic;
-import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.ShareUtils;
 import com.liuzhenlin.texturevideoview.TextureVideoView;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.Files;
-import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.dao.VideoListItemDao;
-import com.liuzhenlin.videos.utils.VideoUtils2;
 import com.liuzhenlin.videos.view.activity.IVideoView;
 import com.liuzhenlin.videos.view.fragment.VideoListItemOpsKt;
 
@@ -100,8 +96,10 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
             return true;
         }
 
-        Parcelable[] videoUriParcels = (Parcelable[]) intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
-        Serializable[] videoTitleSerials = (Serializable[]) intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
+        Parcelable[] videoUriParcels = (Parcelable[])
+                intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
+        Serializable[] videoTitleSerials = (Serializable[])
+                intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
         if (videoUriParcels != null) {
             final int length = videoUriParcels.length;
             if (length > 0) {
@@ -185,6 +183,20 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
     }
 
     @Override
+    public void playVideoAt(int position) {
+        if (mVideoIndex == position) {
+            playCurrentVideo();
+        } else {
+            if (mView != null && mVideos != null) {
+                int oldPosition = mVideoIndex;
+                mVideoIndex = position;
+                mView.setVideoToPlay(mVideos[position]);
+                mView.notifyPlaylistSelectionChanged(oldPosition, position, true);
+            }
+        }
+    }
+
+    @Override
     public int getCurrentVideoPositionInList() {
         return mVideoIndex;
     }
@@ -230,7 +242,6 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
 
     @Override
     public void skipToPreviousVideo() {
-        recordCurrVideoProgress();
         if (mVideos != null) {
             final int oldVideoIndex = mVideoIndex;
             if (oldVideoIndex == 0) {
@@ -247,7 +258,6 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
 
     @Override
     public void skipToNextVideo() {
-        recordCurrVideoProgress();
         if (mVideos != null) {
             final int oldVideoIndex = mVideoIndex;
             if (oldVideoIndex == mVideos.length - 1) {
@@ -306,59 +316,8 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
         @Override
         public void onBindViewHolder(@NonNull IVideoView.PlaylistViewHolder holder,
                                      int position, @NonNull List<Object> payloads) {
-            if (payloads.isEmpty()) {
-                super.onBindViewHolder(holder, position, payloads);
-            } else {
-                for (Object payload : payloads) {
-                    if (!(payload instanceof Integer)) {
-                        continue;
-                    }
-                    boolean selected = position == mVideoIndex;
-                    int payloadInt = (Integer) payload;
-                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_REFRESH_VIDEO_THUMB) != 0) {
-                        loadItemImagesIfNotScrolling(holder);
-                    }
-                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED) != 0) {
-                        Video video = mVideos[position];
-                        if (selected) {
-                            holder.setVideoProgressAndDurationText(mContext.getString(R.string.watching));
-                        } else {
-                            if (video.getId() != NO_ID) {
-                                holder.setVideoProgressAndDurationText(
-                                        VideoUtils2.concatVideoProgressAndDuration(
-                                                video.getProgress(), video.getDuration()));
-                            } else {
-                                holder.setVideoProgressAndDurationText(null);
-                            }
-                        }
-                    }
-                    if ((payloadInt & PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED) != 0) {
-                        holder.highlightItemIfSelected(selected);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull IVideoView.PlaylistViewHolder holder, int position) {
-            super.onBindViewHolder(holder, position);
-
-            boolean selected = position == mVideoIndex;
-            holder.highlightItemIfSelected(selected);
-
-            Video video = mVideos[position];
-            holder.setVideoTitle(video.getName());
-            if (selected) {
-                holder.setVideoProgressAndDurationText(mContext.getString(R.string.watching));
-            } else {
-                if (video.getId() != NO_ID) {
-                    holder.setVideoProgressAndDurationText(
-                            VideoUtils2.concatVideoProgressAndDuration(
-                                    video.getProgress(), video.getDuration()));
-                } else {
-                    holder.setVideoProgressAndDurationText(null);
-                }
-            }
+            super.onBindViewHolder(holder, position, payloads);
+            holder.bindData(mVideos[position], position, payloads);
         }
 
         @Override
@@ -378,17 +337,8 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
         }
 
         @Override
-        public void onItemClick(@NonNull View view, int position) {
-            if (mVideoIndex == position) {
-                mView.showUserCancelableSnackbar(R.string.theVideoIsPlaying, Snackbar.LENGTH_SHORT);
-            } else {
-                recordCurrVideoProgress();
-
-                final int oldPosition = mVideoIndex;
-                mVideoIndex = position;
-                mView.setVideoToPlay(mVideos[position]);
-                mView.notifyPlaylistSelectionChanged(oldPosition, position, false);
-            }
+        public void onItemClick(@NonNull IVideoView.PlaylistViewHolder holder, int position) {
+            holder.onItemViewClick(position);
         }
     }
 }

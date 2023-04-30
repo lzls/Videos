@@ -21,5 +21,6 @@ public interface RefreshLayoutCallback {
 
     void setRefreshLayoutRefreshing(boolean refreshing);
 
-    void setOnRefreshLayoutChildScrollUpCallback(@Nullable SwipeRefreshLayout.OnChildScrollUpCallback callback);
+    void setOnRefreshLayoutChildScrollUpCallback(
+            @Nullable SwipeRefreshLayout.OnChildScrollUpCallback callback);
 }

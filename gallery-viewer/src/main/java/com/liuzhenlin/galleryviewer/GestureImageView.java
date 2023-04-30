@@ -300,8 +300,9 @@ public class GestureImageView extends AppCompatImageView {
         final boolean piiic = mFitWidthImageScale >= mFitCenterImageScale * PIIIC_THRESHOLD;
         if (piiic) {
             mDoubleTapMagnifiedImageScale = mFitWidthImageScale;
-            // Make sure the mImageMaxScale is not less than 3 times that of mDoubleTapMagnifiedImageScale,
-            // preferring to have the maximum scale for the image 5 times larger than mFitCenterImageScale.
+            // Make sure the mImageMaxScale is not less than 3 times that of
+            // mDoubleTapMagnifiedImageScale, preferring to have the maximum scale for the image
+            // 5 times larger than mFitCenterImageScale.
             if (mImageMaxScale < mDoubleTapMagnifiedImageScale * 3f) {
                 mImageMaxScale = mDoubleTapMagnifiedImageScale * 3f;
             }
@@ -313,7 +314,8 @@ public class GestureImageView extends AppCompatImageView {
         // so just reset the current matrix to its initial state.
         mImageMatrix.reset();
         if (piiic) {
-            // Scales the image to fit exactly the width of the view with the top edge showed to the user
+            // Scales the image to fit exactly the width of the view with the top edge showed
+            // to the user
             mImageMatrix.postScale(mFitWidthImageScale, mFitWidthImageScale, 0, 0);
         } else {
             // Translates the image to the center of the current view

@@ -5,28 +5,22 @@
 
 package com.liuzhenlin.videos.view.fragment
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.ScrollingMovementMethod
 import android.text.style.ForegroundColorSpan
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
+import android.view.*
 import android.view.View.OnLayoutChangeListener
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatDialog
 import androidx.core.content.ContextCompat
@@ -40,44 +34,65 @@ import com.bumptech.glide.request.transition.Transition
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.EMPTY_STRING
-import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.compat.ViewCompatibility
 import com.liuzhenlin.common.listener.OnBackPressedListener
-import com.liuzhenlin.common.utils.FileUtils
-import com.liuzhenlin.common.utils.ThemeUtils
-import com.liuzhenlin.common.utils.UiUtils
-import com.liuzhenlin.common.utils.Utils
+import com.liuzhenlin.common.utils.*
 import com.liuzhenlin.common.view.OnBackPressedPreImeEventInterceptableEditText
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.common.windowhost.FocusObservableDialog
+import com.liuzhenlin.common.windowhost.WaitingOverlayDialog
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
 import com.liuzhenlin.videos.bean.VideoListItem
-import com.liuzhenlin.videos.dao.IVideoDao
-import com.liuzhenlin.videos.dao.VideoListItemDao
-import com.liuzhenlin.videos.model.LocalVideoListModel
-import com.liuzhenlin.videos.model.OnLoadListener
+import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter
+import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT
+import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.PAYLOAD_REFRESH_VIDEODIR_THUMB
+import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.VIEW_TYPE_VIDEO
+import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.VIEW_TYPE_VIDEODIR
 import com.liuzhenlin.videos.utils.VideoUtils2
-import com.liuzhenlin.videos.view.fragment.PackageConsts.*
+import com.liuzhenlin.videos.view.IView
+import com.liuzhenlin.videos.view.fragment.Payloads.*
 import java.util.*
-import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * @author 刘振林
  */
-class LocalVideoListFragment : BaseFragment(),
-        VideoListItemOpCallback<VideoListItem>, SwipeRefreshLayout.OnRefreshListener,
-        View.OnClickListener, View.OnLongClickListener, OnBackPressedListener {
+
+interface ILocalVideoListView : IView<ILocalVideoListPresenter>, VideoListItemOpCallback<VideoListItem> {
+
+    public val isDestroying: Boolean
+
+    fun goToLocalFoldedVideosFragment(args: Bundle)
+    fun goToVideoMoveFragment(args: Bundle)
+
+    fun onVideosLoadStart()
+    fun onVideosLoadFinish()
+    fun onVideosLoadCanceled()
+
+    fun onItemCheckedChange(firstCheckedItem: VideoListItem?,
+                            checkedItemCount: Int, hasUnwritableCheckedItem: Boolean)
+
+    fun newVideoListViewHolder(parent: ViewGroup, viewType: Int): VideoListViewHolder
+
+    abstract class VideoListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        abstract fun bindData(item: VideoListItem, position: Int, payloads: List<Any>)
+        abstract fun loadItemImages(video: Video)
+        abstract fun cancelLoadingItemImages()
+    }
+}
+
+class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
+        SwipeRefreshLayout.OnRefreshListener, View.OnClickListener, View.OnLongClickListener,
+        OnBackPressedListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
     private var mLifecycleCallback: FragmentPartLifecycleCallback? = null
 
     private lateinit var mRecyclerView: SlidingItemMenuRecyclerView
-    private val mAdapter = VideoListAdapter()
+    private val mAdapter by lazy(LazyThreadSafetyMode.NONE) { presenter.getVideoListAdapter() }
 
     private var mItemOptionsWindow: PopupWindow? = null
     private var mDeleteItemsWindow: PopupWindow? = null
@@ -89,45 +104,13 @@ class LocalVideoListFragment : BaseFragment(),
     private var mSelectAllButton: TextView? = null
 
     private var mTitleText_IOW: TextView? = null
+    private var mMoveButton_IOW: TextView? = null
     private var mDeleteButton_IOW: TextView? = null
     private var mRenameButton_IOW: TextView? = null
     private var mShareButton_IOW: TextView? = null
     private var mDetailsButton_IOW: TextView? = null
 
-    private var mNeedReloadVideos = false
-    private var mVideoObserver: VideoObserver? = null
-    private val mVideoListItems = mutableListOf<VideoListItem>()
-    internal val model: LocalVideoListModel = LocalVideoListModel(App.getInstanceUnsafe()!!)
-
-    internal val allVideos: ArrayList<Video>?
-        get() {
-            var videos: ArrayList<Video>? = null
-            for (item in mVideoListItems) {
-                if (videos == null) videos = ArrayList()
-                when (item) {
-                    is Video -> videos.add(item)
-                    is VideoDirectory -> videos.addAll(item.videos)
-                }
-            }
-            return videos?.apply {
-                deepCopy(videos)
-                sortByElementName()
-            }
-        }
-
-    private val checkedItems: List<VideoListItem>?
-        get() {
-            var checkedItems: MutableList<VideoListItem>? = null
-            for (item in mVideoListItems) {
-                if (item.isChecked) {
-                    if (checkedItems == null) {
-                        checkedItems = mutableListOf()
-                    }
-                    checkedItems.add(item)
-                }
-            }
-            return checkedItems
-        }
+    internal val presenter = ILocalVideoListPresenter.newInstance()
 
     private var _TOP: String? = null
     private val TOP: String
@@ -165,6 +148,12 @@ class LocalVideoListFragment : BaseFragment(),
     private val miniThumbSize
         get() = Utils.roundFloat(512f * (resources.displayMetrics.widthPixels / 1080f))
 
+    override val isDestroying: Boolean
+        get() {
+            val activity = contextThemedFirst as? Activity
+            return activity?.isFinishing == true || isRemoving || isDetached
+        }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
 
@@ -186,26 +175,11 @@ class LocalVideoListFragment : BaseFragment(),
         }
         mLifecycleCallback?.onFragmentAttached(this)
 
-        model.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<VideoListItem>?> {
-            override fun onLoadStart() {
-                mRecyclerView.releaseItemView(false)
-                mRecyclerView.isItemDraggable = false
-            }
-
-            override fun onLoadFinish(result: MutableList<VideoListItem>?) {
-                onReloadVideoListItems(result)
-                mRecyclerView.isItemDraggable = true
-                mInteractionCallback.isRefreshLayoutRefreshing = false
-            }
-
-            override fun onLoadCanceled() {
-                mRecyclerView.isItemDraggable = true
-                mInteractionCallback.isRefreshLayoutRefreshing = false
-            }
-        })
+        presenter.attachToView(this)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val contentView = inflater.inflate(R.layout.fragment_local_video_list, container, false)
         mRecyclerView = contentView.findViewById(R.id.simrv_videoList)
         mRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
@@ -227,28 +201,29 @@ class LocalVideoListFragment : BaseFragment(),
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mLifecycleCallback?.onFragmentViewCreated(this)
-
-        autoLoadVideos()
+        presenter.onViewCreated(this)
     }
 
     override fun onStart() {
         super.onStart()
-        mVideoObserver?.stopWatching()
-        if (mNeedReloadVideos) {
-            mNeedReloadVideos = false
-            autoLoadVideos()
-        }
+        presenter.onViewStart(this)
     }
 
+    override fun onResume() {
+        super.onResume()
+        presenter.onViewResume(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        presenter.onViewPaused(this)
+    }
+
+    // This method can be called when a stopped activity is being recreated,
+    // in which case onStop() is being called unexpectedly.
     override fun onStop() {
         super.onStop()
-        val activity = contextThemedFirst as? Activity
-        if (activity?.isFinishing == false && !isRemoving && !isDetached) {
-            // This can be called when a stopped activity is being recreated,
-            // in which case onStop() is being called unexpectedly.
-            (mVideoObserver ?: VideoObserver(requireView().rootView.handler ?: return))
-                    .startWatching()
-        }
+        presenter.onViewStopped(this)
     }
 
     override fun onDestroyView() {
@@ -261,10 +236,7 @@ class LocalVideoListFragment : BaseFragment(),
         mRenameItemDialog?.dismiss()
         mItemDetailsDialog?.dismiss()
 
-        mVideoObserver?.stopWatching()
-        mNeedReloadVideos = false
-
-        model.stopLoader()
+        presenter.onViewDestroyed(this)
 //        mVideoListItems.clear()
 //        notifyListenersOnReloadVideos()
     }
@@ -272,6 +244,7 @@ class LocalVideoListFragment : BaseFragment(),
     override fun onDetach() {
         super.onDetach()
         mLifecycleCallback?.onFragmentDetached(this)
+        presenter.detachFromView(this)
     }
 
     override fun onBackPressed(): Boolean {
@@ -281,437 +254,245 @@ class LocalVideoListFragment : BaseFragment(),
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            REQUEST_CODE_PLAY_VIDEO -> if (resultCode == RESULT_CODE_PLAY_VIDEO) {
-                val video = data?.getParcelableExtra<Video>(KEY_VIDEO) ?: return
-                if (video.id == NO_ID) return
-
-                for (i in mVideoListItems.indices) {
-                    val item = mVideoListItems[i] as? Video ?: continue
-                    if (item != video) continue
-
-                    if (item.progress != video.progress) {
-                        item.progress = video.progress
-                        mAdapter.notifyItemChanged(i, PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
-                    }
-                    break
-                }
-            }
-            REQUEST_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT ->
-                if (resultCode == RESULT_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT) {
-                    val videos = data?.getParcelableArrayListExtra<Video>(KEY_VIDEOS) ?: return
-                    if (!videos.allEqual(allVideos)) {
-                        autoLoadVideos()
-                    }
-                }
-            REQUEST_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT ->
-                if (resultCode == RESULT_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT) {
-                    val dirPath = data?.getStringExtra(KEY_DIRECTORY_PATH) ?: return
-                    val videos = data.getParcelableArrayListExtra<Video>(KEY_VIDEOS) ?: return
-                    loop@ for ((i, item) in mVideoListItems.withIndex()) {
-                        if (item.path != dirPath) continue@loop
-
-                        val dao = VideoListItemDao.getSingleton(contextRequired)
-                        when (videos.size) {
-                            0 -> {
-                                if (item is VideoDirectory) {
-                                    dao.deleteVideoDir(item.path)
-                                }
-
-                                mVideoListItems.removeAt(i)
-                                mAdapter.notifyItemRemoved(i)
-                                mAdapter.notifyItemRangeChanged(i, mAdapter.itemCount - i)
-                            }
-                            1 -> {
-                                if (item is VideoDirectory) {
-                                    dao.deleteVideoDir(item.path)
-                                }
-
-                                val video = videos[0]
-                                if (video.isTopped) {
-                                    video.isTopped = false
-                                    dao.setVideoListItemTopped(video, false)
-                                }
-
-                                mVideoListItems[i] = video
-                                val newIndex = mVideoListItems.reordered().indexOf(video)
-                                if (newIndex == i) {
-                                    mAdapter.notifyItemChanged(i) // without payload
-                                } else {
-                                    mVideoListItems.add(newIndex, mVideoListItems.removeAt(i))
-                                    mAdapter.notifyItemRemoved(i)
-                                    mAdapter.notifyItemInserted(newIndex)
-                                    mAdapter.notifyItemRangeChanged(
-                                            min(i, newIndex), abs(newIndex - i) + 1)
-                                }
-                            }
-                            else -> {
-                                if (item is Video) {
-                                    var videodir = dao.queryVideoDirByPath(dirPath)
-                                    if (videodir == null) {
-                                        videodir = dao.insertVideoDir(dirPath)
-                                    } else
-                                        if (videodir.isTopped) {
-                                            videodir.isTopped = false
-                                            dao.setVideoListItemTopped(videodir, false)
-                                        }
-                                    videodir.videos = videos
-                                    videodir.size = videos.allVideoSize()
-
-                                    mVideoListItems[i] = videodir
-                                    val newIndex = mVideoListItems.reordered().indexOf(videodir)
-                                    if (newIndex == i) {
-                                        mAdapter.notifyItemChanged(i) // without payload
-                                    } else {
-                                        mVideoListItems.add(newIndex, mVideoListItems.removeAt(i))
-                                        mAdapter.notifyItemRemoved(i)
-                                        mAdapter.notifyItemInserted(newIndex)
-                                        mAdapter.notifyItemRangeChanged(
-                                                min(i, newIndex), abs(newIndex - i) + 1)
-                                    }
-                                } else if (item is VideoDirectory) {
-                                    val oldVideos = item.videos
-                                    val oldSize = item.size
-                                    val oldVideoCount = oldVideos.size
-                                    if (!oldVideos.allEqual(videos)) {
-                                        item.videos = videos
-                                        item.size = videos.allVideoSize()
-
-                                        var payloads = 0
-                                        if (!oldVideos[0].allEqual(videos[0])) {
-                                            payloads = payloads or PAYLOAD_REFRESH_VIDEODIR_THUMB
-                                        }
-                                        if (oldSize != item.size || oldVideoCount != videos.size) {
-                                            payloads = payloads or PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT
-                                        }
-                                        if (payloads != 0) {
-                                            mAdapter.notifyItemChanged(i, payloads)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        break@loop
-                    }
-                }
-        }
+        presenter.onActivityResult(requestCode, resultCode, data)
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private fun onReloadVideoListItems(items: List<VideoListItem>?) {
-        if (items == null || items.isEmpty()) {
-            if (mVideoListItems.isNotEmpty()) {
-                mVideoListItems.clear()
-                mAdapter.notifyDataSetChanged()
-            }
-        } else if (items.size == mVideoListItems.size) {
-            var changedIndices: MutableList<Int>? = null
-            for (i in items.indices) {
-                if (!items[i].allEqual(mVideoListItems[i])) {
-                    if (changedIndices == null) changedIndices = LinkedList()
-                    changedIndices.add(i)
-                }
-            }
-            if (changedIndices != null) {
-                for (index in changedIndices) {
-                    mVideoListItems[index] = items[index]
-                    mAdapter.notifyItemChanged(index) // without payload
-                }
-            }
-        } else {
-            mVideoListItems.set(items)
-            mAdapter.notifyDataSetChanged()
-        }
+    override fun goToLocalFoldedVideosFragment(args: Bundle) =
+            mInteractionCallback.goToLocalFoldedVideosFragment(args)
+
+    override fun goToVideoMoveFragment(args: Bundle) =
+            mInteractionCallback.goToVideoMoveFragment(args)
+
+    override fun onRefresh() {
+        dismissItemOptionsWindow()
+        presenter.startLoadVideos()
     }
 
-    private fun autoLoadVideos() {
-        mInteractionCallback.isRefreshLayoutRefreshing = true
-        queryAllVideos()
-    }
-
-    override fun onRefresh() = queryAllVideos()
-
-    private fun queryAllVideos() {
-        if (isAsyncDeletingItems) { // 页面自动刷新或用户手动刷新时，还有视频在被异步删除...
-            mInteractionCallback.isRefreshLayoutRefreshing = false
-            return
-        }
-
+    private fun dismissItemOptionsWindow() {
         /*
          * 1）自动刷新时隐藏弹出的多选窗口
          * 2）用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
          */
         mItemOptionsWindow?.dismiss()
-
-        model.startLoader()
     }
 
-    private inner class VideoObserver(handler: Handler) : ContentObserver(handler) {
+    override fun onVideosLoadStart() {
+        dismissItemOptionsWindow()
+        mRecyclerView.releaseItemView(false)
+        mRecyclerView.isItemDraggable = false
+        mInteractionCallback.isRefreshLayoutRefreshing = true
+    }
 
-        override fun onChange(selfChange: Boolean) {
-            // 此页面放入后台且数据有变化，标记为需要刷新数据
-            // 以在此页面重新显示在前台时刷新列表
-            mNeedReloadVideos = true
-        }
+    override fun onVideosLoadFinish() {
+        mRecyclerView.isItemDraggable = true
+        mInteractionCallback.isRefreshLayoutRefreshing = false
+    }
 
-        fun startWatching() {
-            mVideoObserver = this
-            // notifyForDescendants should be true here, for fear of Uris like
-            // content://media/external/video/media/83 not notifying us.
-            contextRequired.applicationContext.contentResolver
-                    .registerContentObserver(IVideoDao.VIDEO_URI, true, this)
-        }
+    override fun onVideosLoadCanceled() = onVideosLoadFinish()
 
-        fun stopWatching() {
-            mVideoObserver = null
-            contextRequired.applicationContext.contentResolver.unregisterContentObserver(this)
+    override fun newVideoListViewHolder(parent: ViewGroup, viewType: Int)
+            : ILocalVideoListView.VideoListViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_VIDEO -> VideoViewHolder(
+                    LayoutInflater.from(parent.context)
+                            .inflate(R.layout.video_list_item_video, parent, false))
+            VIEW_TYPE_VIDEODIR -> VideoDirViewHolder(
+                    LayoutInflater.from(parent.context)
+                            .inflate(R.layout.video_list_item_videodir, parent, false))
+            else -> throw IllegalArgumentException("Unknown itemView type")
         }
     }
 
-    private inner class VideoListAdapter : ImageLoadingListAdapter<VideoListAdapter.VideoListViewHolder>() {
+    private open inner class VideoListViewHolder(itemView: View)
+        : ILocalVideoListView.VideoListViewHolder(itemView) {
 
-        override fun getItemCount() = mVideoListItems.size
+        val itemVisibleFrame: ViewGroup = itemView.findViewById(R.id.itemVisibleFrame)
+        val checkBox: CircularCheckBox = itemView.findViewById(R.id.checkbox)
+        val topButton: TextView = itemView.findViewById(R.id.btn_top)
+        val deleteButton: TextView = itemView.findViewById(R.id.btn_delete)
 
-        override fun getItemViewType(position: Int) =
-                when (mVideoListItems[position]) {
-                    is Video -> VIEW_TYPE_VIDEO
-                    is VideoDirectory -> VIEW_TYPE_VIDEODIR
-                    else -> throw IllegalArgumentException("Unknown itemView type")
-                }
+        init {
+            itemVisibleFrame.setOnClickListener(this@LocalVideoListFragment)
+            checkBox.setOnClickListener(this@LocalVideoListFragment)
+            topButton.setOnClickListener(this@LocalVideoListFragment)
+            deleteButton.setOnClickListener(this@LocalVideoListFragment)
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoListViewHolder =
-                when (viewType) {
-                    VIEW_TYPE_VIDEO -> VideoViewHolder(
-                            LayoutInflater.from(parent.context)
-                                    .inflate(R.layout.video_list_item_video, parent, false))
-                    VIEW_TYPE_VIDEODIR -> VideoDirViewHolder(
-                            LayoutInflater.from(parent.context)
-                                    .inflate(R.layout.video_list_item_videodir, parent, false))
-                    else -> throw IllegalArgumentException("Unknown itemView type")
-                }
+            itemVisibleFrame.setOnLongClickListener(this@LocalVideoListFragment)
+        }
 
-        override fun onBindViewHolder(holder: VideoListViewHolder, position: Int, payloads: List<Any>) {
+        override fun bindData(item: VideoListItem, position: Int, payloads: List<Any>) {
             if (payloads.isEmpty()) {
-                onBindViewHolder(holder, position)
-            } else {
-                val item = mVideoListItems[position]
+                itemVisibleFrame.tag = position
+                checkBox.tag = position
+                topButton.tag = position
+                deleteButton.tag = position
 
-                val payload = payloads[0] as Int
-                if (payload and PAYLOAD_CHANGE_ITEM_LPS_AND_BG != 0) {
-                    separateToppedItemsFromUntoppedOnes(holder, position)
+                separateToppedItemsFromUntoppedOnes(position)
+
+                if (mItemOptionsWindow == null) {
+                    UiUtils.setViewVisibilityAndVerify(checkBox, View.GONE)
+                } else {
+                    UiUtils.setViewVisibilityAndVerify(checkBox, View.VISIBLE)
+                    checkBox.isChecked = item.isChecked
                 }
-                if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
-                    if (mItemOptionsWindow == null) {
-                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
-                    } else {
-                        UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
+                when (this) {
+                    is VideoViewHolder -> {
+                        val video = item as Video
+                        videoNameText.text = item.name
+                        videoSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
+                        videoProgressAndDurationText.text =
+                                VideoUtils2.concatVideoProgressAndDuration(
+                                        video.progress, video.duration)
+                        UiUtils.setViewVisibilityAndVerify(deleteButton.parent as View,
+                                if (video.isWritable) View.VISIBLE else View.GONE)
+                    }
+                    is VideoDirViewHolder -> {
+                        val videos = (item as VideoDirectory).videos
+                        var hasUnwritableVideo = false
+                        for (v in videos) {
+                            if (!v.isWritable) {
+                                hasUnwritableVideo = true
+                                break
+                            }
+                        }
+
+                        VideoUtils2.loadVideoThumbIntoFragmentImageView(
+                                this@LocalVideoListFragment, videodirImage, videos[0])
+                        videodirNameText.text = item.name
+                        videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
+                        videoCountText.text =
+                                resources.getQuantityString(
+                                        R.plurals.aTotalOfSeveralVideos, videos.size, videos.size)
+                        UiUtils.setViewVisibilityAndVerify(deleteButton.parent as View,
+                                if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
                     }
                 }
-                if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
-                    holder.checkBox.isChecked = item.isChecked
-                } else if (payload and PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR != 0) {
-                    holder.checkBox.setChecked(item.isChecked, true)
-                }
-                if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
-                    when (holder) {
-                        is VideoViewHolder -> holder.videoNameText.text = item.name
-                        is VideoDirViewHolder -> holder.videodirNameText.text = item.name
-                    }
-                }
-                if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, _, progress, duration) = item as Video
-                    (holder as VideoViewHolder).videoProgressAndDurationText.text =
-                            VideoUtils2.concatVideoProgressAndDuration(progress, duration)
-                }
-                if (payload and (PAYLOAD_REFRESH_VIDEO_THUMB or PAYLOAD_REFRESH_VIDEODIR_THUMB) != 0) {
-                    loadItemImagesIfNotScrolling(holder)
-                }
-                if (payload and PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT != 0) {
-                    val vh = holder as VideoDirViewHolder
-                    val videos = (item as VideoDirectory).videos
-                    vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
-                    vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
-                }
-            }
-        }
-
-        override fun onBindViewHolder(holder: VideoListViewHolder, position: Int) {
-            super.onBindViewHolder(holder, position)
-            holder.itemVisibleFrame.tag = position
-            holder.checkBox.tag = position
-            holder.topButton.tag = position
-            holder.deleteButton.tag = position
-
-            separateToppedItemsFromUntoppedOnes(holder, position)
-
-            val item = mVideoListItems[position]
-            if (mItemOptionsWindow == null) {
-                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.GONE)
             } else {
-                UiUtils.setViewVisibilityAndVerify(holder.checkBox, View.VISIBLE)
-                holder.checkBox.isChecked = item.isChecked
-            }
-            when (holder.itemViewType) {
-                VIEW_TYPE_VIDEO -> {
-                    val vh = holder as VideoViewHolder
-                    val video = item as Video
-
-                    vh.videoNameText.text = item.name
-                    vh.videoSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
-                    vh.videoProgressAndDurationText.text =
-                            VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
-                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
-                            if (video.isWritable) View.VISIBLE else View.GONE)
-                }
-                VIEW_TYPE_VIDEODIR -> {
-                    val vh = holder as VideoDirViewHolder
-                    val videos = (item as VideoDirectory).videos
-                    var hasUnwritableVideo = false
-                    for (v in videos) {
-                        if (!v.isWritable) {
-                            hasUnwritableVideo = true
-                            break
+                for (payload in payloads) {
+                    if (payload !is Int) continue
+                    if (payload and PAYLOAD_CHANGE_ITEM_LPS_AND_BG != 0) {
+                        separateToppedItemsFromUntoppedOnes(position)
+                    }
+                    if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
+                        if (mItemOptionsWindow == null) {
+                            UiUtils.setViewVisibilityAndVerify(checkBox, View.GONE)
+                        } else {
+                            UiUtils.setViewVisibilityAndVerify(checkBox, View.VISIBLE)
                         }
                     }
-
-                    VideoUtils2.loadVideoThumbIntoFragmentImageView(
-                            this@LocalVideoListFragment, vh.videodirImage, videos[0])
-                    vh.videodirNameText.text = item.name
-                    vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
-                    vh.videoCountText.text = getString(R.string.aTotalOfSeveralVideos, videos.size)
-                    UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
-                            if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
+                    if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
+                        checkBox.isChecked = item.isChecked
+                    } else if (payload and PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR != 0) {
+                        checkBox.setChecked(item.isChecked, true)
+                    }
+                    if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
+                        when (this) {
+                            is VideoViewHolder -> videoNameText.text = item.name
+                            is VideoDirViewHolder -> videodirNameText.text = item.name
+                        }
+                    }
+                    if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
+                        val (_, _, _, _, _, _, progress, duration) = item as Video
+                        (this as VideoViewHolder).videoProgressAndDurationText.text =
+                                VideoUtils2.concatVideoProgressAndDuration(progress, duration)
+                    }
+                    if (payload and (PAYLOAD_REFRESH_VIDEO_THUMB or PAYLOAD_REFRESH_VIDEODIR_THUMB)
+                            != 0) {
+                        @Suppress("UNCHECKED_CAST")
+                        (bindingAdapter as ImageLoadingListAdapter<VideoListViewHolder>)
+                                .loadItemImagesIfNotScrolling(this)
+                    }
+                    if (payload and PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT != 0) {
+                        val vh = this as VideoDirViewHolder
+                        val videos = (item as VideoDirectory).videos
+                        vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
+                        vh.videoCountText.text =
+                                resources.getQuantityString(
+                                        R.plurals.aTotalOfSeveralVideos, videos.size, videos.size)
+                    }
                 }
             }
         }
 
-        override fun loadItemImages(holder: VideoListViewHolder) {
-            val item = mVideoListItems[holder.bindingAdapterPosition]
-            when (holder.itemViewType) {
-                VIEW_TYPE_VIDEO -> {
-                    val vh = holder as VideoViewHolder
-                    val video = item as Video
+        override fun loadItemImages(video: Video) {
+            when (this) {
+                is VideoViewHolder -> {
                     VideoUtils2.loadVideoThumbIntoFragmentImageView(
-                            this@LocalVideoListFragment, vh.videoImage, video)
+                            this@LocalVideoListFragment, videoImage, video)
                 }
-                VIEW_TYPE_VIDEODIR -> {
-                    val vh = holder as VideoDirViewHolder
-                    val videos = (item as VideoDirectory).videos
+                is VideoDirViewHolder -> {
                     VideoUtils2.loadVideoThumbIntoFragmentImageView(
-                            this@LocalVideoListFragment, vh.videodirImage, videos[0])
+                            this@LocalVideoListFragment, videodirImage, video)
                 }
             }
         }
 
-        override fun cancelLoadingItemImages(holder: VideoListViewHolder) {
+        override fun cancelLoadingItemImages() {
             val requestManager = Glide.with(this@LocalVideoListFragment)
-            when (holder.itemViewType) {
-                VIEW_TYPE_VIDEO -> {
-                    val vh = holder as VideoViewHolder
-                    requestManager.clear(vh.videoImage)
-                }
-                VIEW_TYPE_VIDEODIR -> {
-                    val vh = holder as VideoDirViewHolder
-                    requestManager.clear(vh.videodirImage)
-                }
+            when (this) {
+                is VideoViewHolder -> requestManager.clear(videoImage)
+                is VideoDirViewHolder -> requestManager.clear(videodirImage)
             }
         }
 
-        fun separateToppedItemsFromUntoppedOnes(holder: VideoListViewHolder, position: Int) {
+        fun separateToppedItemsFromUntoppedOnes(position: Int) {
             val context = contextThemedFirst
-            if (mVideoListItems[position].isTopped) {
-                ViewCompat.setBackground(holder.itemVisibleFrame,
+            if (presenter.isItemTopped(position)) {
+                ViewCompat.setBackground(itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
-                holder.topButton.text = CANCEL_TOP
+                topButton.text = CANCEL_TOP
             } else {
-                ViewCompat.setBackground(holder.itemVisibleFrame,
+                ViewCompat.setBackground(itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.default_selector_recycler_item))
-                holder.topButton.text = TOP
+                topButton.text = TOP
             }
         }
+    }
 
-        open inner class VideoListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val itemVisibleFrame: ViewGroup = itemView.findViewById(R.id.itemVisibleFrame)
-            val checkBox: CircularCheckBox = itemView.findViewById(R.id.checkbox)
-            val topButton: TextView = itemView.findViewById(R.id.btn_top)
-            val deleteButton: TextView = itemView.findViewById(R.id.btn_delete)
+    private inner class VideoViewHolder(itemView: View) : VideoListViewHolder(itemView) {
+        val videoImage: ImageView = itemView.findViewById(R.id.image_video)
+        val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
+        val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
+        val videoProgressAndDurationText: TextView =
+                itemView.findViewById(R.id.text_videoProgressAndDuration)
+    }
 
-            init {
-                itemVisibleFrame.setOnClickListener(this@LocalVideoListFragment)
-                checkBox.setOnClickListener(this@LocalVideoListFragment)
-                topButton.setOnClickListener(this@LocalVideoListFragment)
-                deleteButton.setOnClickListener(this@LocalVideoListFragment)
-
-                itemVisibleFrame.setOnLongClickListener(this@LocalVideoListFragment)
-            }
-        }
-
-        inner class VideoViewHolder(itemView: View) : VideoListViewHolder(itemView) {
-            val videoImage: ImageView = itemView.findViewById(R.id.image_video)
-            val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
-            val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
-            val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
-        }
-
-        inner class VideoDirViewHolder(itemView: View) : VideoListViewHolder(itemView) {
-            val videodirImage: ImageView = itemView.findViewById(R.id.image_videodir)
-            val videodirNameText: TextView = itemView.findViewById(R.id.text_videodirName)
-            val videodirSizeText: TextView = itemView.findViewById(R.id.text_videodirSize)
-            val videoCountText: TextView = itemView.findViewById(R.id.text_videoCount)
-        }
+    private inner class VideoDirViewHolder(itemView: View) : VideoListViewHolder(itemView) {
+        val videodirImage: ImageView = itemView.findViewById(R.id.image_videodir)
+        val videodirNameText: TextView = itemView.findViewById(R.id.text_videodirName)
+        val videodirSizeText: TextView = itemView.findViewById(R.id.text_videodirSize)
+        val videoCountText: TextView = itemView.findViewById(R.id.text_videoCount)
     }
 
     override fun onClick(v: View) {
         when (v.id) {
             R.id.itemVisibleFrame -> {
                 val position = v.tag as Int
-                val item = mVideoListItems[position]
-
                 if (mItemOptionsWindow == null) {
-                    when (item) {
-                        is Video -> playVideo(item) // 播放视频
-                        is VideoDirectory -> { // 显示指定目录的视频
-                            val args = Bundle()
-                            args.putParcelable(KEY_VIDEODIR, item.deepCopy())
-                            mInteractionCallback.goToLocalFoldedVideosFragment(args)
+                    when (mAdapter.getItemViewType(position)) {
+                        VIEW_TYPE_VIDEO -> presenter.playVideoAt(position) // 播放视频
+                        VIEW_TYPE_VIDEODIR -> { // 显示指定目录的视频
+                            presenter.openVideoDirectoryAt(position)
                         }
                     }
                 } else {
-                    item.isChecked = !item.isChecked
-                    mAdapter.notifyItemChanged(position, PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
-                    onItemCheckedChange()
+                    presenter.setItemChecked(position, !presenter.isItemChecked(position))
                 }
             }
 
             R.id.checkbox -> {
-                val item = mVideoListItems[v.tag as Int]
-                item.isChecked = !item.isChecked
-                onItemCheckedChange()
+                val position = v.tag as Int
+                presenter.setItemChecked(position, !presenter.isItemChecked(position))
             }
 
             // 置顶或取消置顶视频（目录）
             R.id.btn_top -> {
                 val position = v.tag as Int
-                val item = mVideoListItems[position]
-
-                val topped = !item.isTopped
-                item.isTopped = topped
-                VideoListItemDao.getSingleton(v.context).setVideoListItemTopped(item, topped)
-
-                val newPosition = mVideoListItems.reordered().indexOf(item)
-                if (newPosition == position) {
-                    mAdapter.notifyItemChanged(position, PAYLOAD_CHANGE_ITEM_LPS_AND_BG)
-                } else {
-                    mVideoListItems.add(newPosition, mVideoListItems.removeAt(position))
-                    mAdapter.notifyItemRemoved(position)
-                    mAdapter.notifyItemInserted(newPosition)
-                    mAdapter.notifyItemRangeChanged(
-                            min(position, newPosition), abs(newPosition - position) + 1)
-                }
+                presenter.setItemTopped(position, !presenter.isItemTopped(position))
             }
 
             // 删除视频
-            R.id.btn_delete -> showDeleteItemDialog(mVideoListItems[v.tag as Int])
+            R.id.btn_delete -> presenter.deleteItemAt(v.tag as Int, true)
             R.id.btn_confirm_deleteVideoListItemDialog -> {
                 val window = mDeleteItemDialog!!.window!!
                 val decorView = window.decorView as ViewGroup
@@ -726,21 +507,16 @@ class LocalVideoListFragment : BaseFragment(),
                 if (onDeleteAction != null) {
                     onDeleteAction()
                 } else {
-                    val index = mVideoListItems.indexOf(item)
-                    if (index != -1) {
-                        mVideoListItems.removeAt(index)
-                        mAdapter.notifyItemRemoved(index)
-                        mAdapter.notifyItemRangeChanged(index, mAdapter.itemCount - index)
-                    }
+                    presenter.deleteItem(item, false)
                 }
             }
             R.id.btn_cancel_deleteVideoListItemDialog -> mDeleteItemDialog!!.cancel()
 
+            // 移动（多个）视频
+            R.id.btn_move -> presenter.moveCheckedItems()
+
             // 删除（多个）视频
-            R.id.btn_delete_vlow -> {
-                val items = checkedItems ?: return
-                showDeleteItemsPopupWindow(*items.toTypedArray())
-            }
+            R.id.btn_delete_vlow -> presenter.deleteCheckedItems(true)
             R.id.btn_confirm_deleteItemsWindow -> {
                 val view = mDeleteItemsWindow!!.contentView as ViewGroup
                 @Suppress("UNCHECKED_CAST")
@@ -759,12 +535,7 @@ class LocalVideoListFragment : BaseFragment(),
                     if (onDeleteAction != null) {
                         onDeleteAction()
                     } else {
-                        val index = mVideoListItems.indexOf(item)
-                        if (index != -1) {
-                            mVideoListItems.removeAt(index)
-                            mAdapter.notifyItemRemoved(index)
-                            mAdapter.notifyItemRangeChanged(index, mAdapter.itemCount - index)
-                        }
+                        presenter.deleteItem(item, false)
                     }
                 } else {
                     deleteItems(*items)
@@ -772,21 +543,7 @@ class LocalVideoListFragment : BaseFragment(),
                     if (onDeleteAction != null) {
                         onDeleteAction()
                     } else {
-                        var start = -1
-                        var index = 0
-                        val it = mVideoListItems.iterator()
-                        while (it.hasNext()) {
-                            if (items.contains(it.next())) {
-                                if (start == -1) {
-                                    start = index
-                                }
-                                it.remove()
-                                mAdapter.notifyItemRemoved(index)
-                                index--
-                            }
-                            index++
-                        }
-                        mAdapter.notifyItemRangeChanged(start, mAdapter.itemCount - start)
+                        presenter.deleteItems(*items, needUserConfirm = false)
                     }
                 }
             }
@@ -794,7 +551,7 @@ class LocalVideoListFragment : BaseFragment(),
 
             // 重命名视频或给视频目录取别名
             R.id.btn_rename -> {
-                showRenameItemDialog(checkedItems?.get(0) ?: return)
+                presenter.renameCheckedItem()
                 mItemOptionsWindow!!.dismiss()
             }
             R.id.btn_complete_renameVideoListItemDialog -> {
@@ -816,19 +573,7 @@ class LocalVideoListFragment : BaseFragment(),
                     if (onRenameAction != null) {
                         onRenameAction()
                     } else {
-                        val position = mVideoListItems.indexOf(item)
-                        if (position != -1) {
-                            val newPosition = mVideoListItems.reordered().indexOf(item)
-                            if (newPosition == position) {
-                                mAdapter.notifyItemChanged(position, PAYLOAD_REFRESH_ITEM_NAME)
-                            } else {
-                                mVideoListItems.add(newPosition, mVideoListItems.removeAt(position))
-                                mAdapter.notifyItemRemoved(position)
-                                mAdapter.notifyItemInserted(newPosition)
-                                mAdapter.notifyItemRangeChanged(
-                                        min(position, newPosition), abs(newPosition - position) + 1)
-                            }
-                        }
+                        presenter.renameItemTo(item)
                     }
                 }
             }
@@ -836,13 +581,13 @@ class LocalVideoListFragment : BaseFragment(),
 
             // 分享
             R.id.btn_share -> {
-                shareVideo(checkedItems?.get(0) as? Video ?: return)
+                presenter.shareCheckedVideo()
                 mItemOptionsWindow!!.dismiss()
             }
 
             // 显示视频（目录）详情
             R.id.btn_details -> {
-                showItemDetailsDialog(checkedItems?.get(0) ?: return)
+                presenter.viewCheckedItemDetails()
                 mItemOptionsWindow!!.dismiss()
             }
             R.id.btn_ok_videoListItemDetailsDialog -> mItemDetailsDialog!!.cancel()
@@ -852,22 +597,11 @@ class LocalVideoListFragment : BaseFragment(),
             R.id.btn_selectAll -> {
                 // 全选
                 if (SELECT_ALL == mSelectAllButton!!.text.toString()) {
-                    for (i in mVideoListItems.indices) {
-                        val item = mVideoListItems[i]
-                        if (!item.isChecked) {
-                            item.isChecked = true
-                            mAdapter.notifyItemChanged(i, PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
-                        }
-                    }
+                    presenter.selectAllItems()
                     // 全不选
                 } else {
-                    for (item in mVideoListItems) {
-                        item.isChecked = false
-                    }
-                    mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
-                            PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
+                    presenter.unselectAllItems()
                 }
-                onItemCheckedChange()
             }
         }
     }
@@ -895,6 +629,8 @@ class LocalVideoListFragment : BaseFragment(),
 
                 val iowcv = View.inflate(v.context, R.layout.popup_window_videolist_options, null)
                 mTitleText_IOW = iowcv.findViewById(R.id.text_title)
+                mMoveButton_IOW = iowcv.findViewById(R.id.btn_move)
+                mMoveButton_IOW!!.setOnClickListener(this)
                 mDeleteButton_IOW = iowcv.findViewById(R.id.btn_delete_vlow)
                 mDeleteButton_IOW!!.setOnClickListener(this)
                 mRenameButton_IOW = iowcv.findViewById(R.id.btn_rename)
@@ -977,11 +713,10 @@ class LocalVideoListFragment : BaseFragment(),
                         notifyItemRangeChanged(selection + 1, itemCount - selection - 1,
                                 PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
                         // 勾选当前长按的itemView
-                        mVideoListItems[selection].isChecked = true
+                        presenter.setItemChecked(selection, true)
                         notifyItemChanged(selection,
                                 PAYLOAD_CHANGE_CHECKBOX_VISIBILITY
                                         or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
-                        onItemCheckedChange()
                     }
                 })
                 mItemOptionsWindow!!.setOnDismissListener {
@@ -991,6 +726,7 @@ class LocalVideoListFragment : BaseFragment(),
 
                     mItemOptionsWindow = null
                     mTitleText_IOW = null
+                    mMoveButton_IOW = null
                     mDeleteButton_IOW = null
                     mRenameButton_IOW = null
                     mShareButton_IOW = null
@@ -998,8 +734,8 @@ class LocalVideoListFragment : BaseFragment(),
 
                     mRecyclerView.setPadding(0, 0, 0, 0)
 
-                    for (item in mVideoListItems) {
-                        item.isChecked = false
+                    for (index in 0 until mAdapter.itemCount) {
+                        presenter.setItemChecked(index, false)
                     }
                     mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
                             PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
@@ -1015,36 +751,11 @@ class LocalVideoListFragment : BaseFragment(),
         return false
     }
 
-    private fun onItemCheckedChange() {
+    override fun onItemCheckedChange(firstCheckedItem: VideoListItem?,
+                                     checkedItemCount: Int, hasUnwritableCheckedItem: Boolean) {
         mItemOptionsWindow ?: return
 
-        var firstCheckedItem: VideoListItem? = null
-        var checkedItemCount = 0
-        var hasUnwritableCheckedItem = false
-        for (item in mVideoListItems) {
-            if (item.isChecked) {
-                checkedItemCount++
-                if (checkedItemCount == 1) {
-                    firstCheckedItem = item
-                }
-                if (item is VideoDirectory) {
-                    var index = item.videos.size - 1
-                    while (!hasUnwritableCheckedItem && index >= 0) {
-                        if (!item.videos[index].isWritable) {
-                            hasUnwritableCheckedItem = true
-                            break
-                        }
-                        index--
-                    }
-                } else /* if (item is Video) */ {
-                    if (!hasUnwritableCheckedItem && !(item as Video).isWritable) {
-                        hasUnwritableCheckedItem = true
-                    }
-                }
-            }
-        }
-
-        if (checkedItemCount == mVideoListItems.size) {
+        if (checkedItemCount == mAdapter.itemCount) {
             mSelectAllButton!!.text = SELECT_NONE
         } else {
             mSelectAllButton!!.text = SELECT_ALL
@@ -1062,6 +773,9 @@ class LocalVideoListFragment : BaseFragment(),
             else -> getString(R.string.severalItemsHaveBeenSelected, checkedItemCount)
         }
 
+        mMoveButton_IOW!!.isEnabled =
+                checkedItemCount > 0 && !hasUnwritableCheckedItem
+                        && App.getInstance(contextRequired).hasAllFilesAccess()
         mDeleteButton_IOW!!.isEnabled = checkedItemCount > 0 && !hasUnwritableCheckedItem
         mRenameButton_IOW!!.isEnabled =
                 checkedItemCount == 1
@@ -1074,9 +788,12 @@ class LocalVideoListFragment : BaseFragment(),
         val context = contextThemedFirst
         val view = View.inflate(context, R.layout.dialog_message, null)
 
-        view.findViewById<TextView>(R.id.text_message).text = when (item) {
+        val message = view.findViewById<TextView>(R.id.text_message)
+        message.movementMethod = ScrollingMovementMethod.getInstance()
+        message.text = when (item) {
             is Video -> getString(R.string.areYouSureToDeleteSth, item.name)
-            else /* is VideoDirectory */ -> getString(R.string.areYouSureToDeleteSomeVideoDir, item.name)
+            else /* is VideoDirectory */ ->
+                getString(R.string.areYouSureToDeleteSomeVideoDir, item.name)
         }
 
         val cancel = view.findViewById<TextView>(R.id.btn_cancel)
@@ -1193,7 +910,7 @@ class LocalVideoListFragment : BaseFragment(),
         val editText =
                 view.findViewById<OnBackPressedPreImeEventInterceptableEditText>(R.id.editor_rename)
         editText.hint = name
-        editText.setText(name.replace(postfix, EMPTY_STRING))
+        editText.setText(name.substring(0, name.length - postfix.length))
         editText.setSelection(editText.text!!.length)
         editText.tag = postfix
 
@@ -1344,12 +1061,22 @@ class LocalVideoListFragment : BaseFragment(),
         }
     }
 
-    private companion object {
-        const val PAYLOAD_REFRESH_VIDEODIR_THUMB = PAYLOAD_LAST shl 1
-        const val PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT = PAYLOAD_LAST shl 2
+    override fun showVideosMovePage(vararg items: VideoListItem) = presenter.moveItems(*items)
 
-        const val VIEW_TYPE_VIDEODIR = 1
-        const val VIEW_TYPE_VIDEO = 2
+    override fun deleteItems(vararg items: VideoListItem) {
+        val dialog = WaitingOverlayDialog(contextThemedFirst)
+        dialog.message = resources.getQuantityText(R.plurals.deletingVideosPleaseWait,
+                if (items.size == 1
+                        && (items[0] is Video || (items[0] as VideoDirectory).videos.size == 1))
+                    1
+                else 1.inv())
+        dialog.show()
+        Executors.THREAD_POOL_EXECUTOR.execute {
+            super.deleteItems(*items)
+            Executors.MAIN_EXECUTOR.execute {
+                dialog.dismiss()
+            }
+        }
     }
 
     interface InteractionCallback : RefreshLayoutCallback {
@@ -1358,5 +1085,7 @@ class LocalVideoListFragment : BaseFragment(),
         fun setSideDrawerEnabled(enabled: Boolean)
 
         fun goToLocalFoldedVideosFragment(args: Bundle)
+
+        fun goToVideoMoveFragment(args: Bundle)
     }
 }

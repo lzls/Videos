@@ -8,6 +8,7 @@
     <color name="textColorSecondary_inverse">@color/secondary_text_default_material_light</color> <!-- #8a000000 -->
 
     <color name="toppedItemBgColor">@color/gray_rgb15</color>
+    <color name="mainTabItemsBgColor">@color/gray_rgb15</color>
     <color name="mainTitlePopupBtnStrokeColor">@color/gray_rgb66</color>
     <color name="videolistOptionsPopupTitleBgColor">@color/gray_rgb39</color>
     <color name="searchViewPlateBgColor">@color/gray_rgb39</color>

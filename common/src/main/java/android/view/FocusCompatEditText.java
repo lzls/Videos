@@ -31,7 +31,8 @@ public class FocusCompatEditText extends AppCompatEditText {
         super(context, attrs);
     }
 
-    public FocusCompatEditText(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public FocusCompatEditText(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

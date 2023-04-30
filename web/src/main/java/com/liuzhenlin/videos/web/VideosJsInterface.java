@@ -13,8 +13,6 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.liuzhenlin.common.utils.Executors;
-
 public abstract class VideosJsInterface {
 
     public static final int JSE_ERR = 0;
@@ -27,10 +25,13 @@ public abstract class VideosJsInterface {
         mContext = context;
     }
 
+    // Be final to avoid subclasses overriding this and without the @JavascriptInterface annotation
+    // on the overriding methods. Instead, subclasses should override the handleEvent(int, String)
+    // method below.
     @Keep
     @JavascriptInterface
-    public void onEvent(int event, @Nullable String data) {
-        Executors.MAIN_EXECUTOR.execute(() -> handleEvent(event, data));
+    public final void onEvent(int event, @Nullable String data) {
+        handleEvent(event, data);
     }
 
     protected void handleEvent(int event, @Nullable String data) {

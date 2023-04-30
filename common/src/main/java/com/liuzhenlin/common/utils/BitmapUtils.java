@@ -158,7 +158,8 @@ public class BitmapUtils {
     /**
      * 计算图片的缩放值
      */
-    private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    private static int calculateInSampleSize(
+            BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int width = options.outWidth;
         final int height = options.outHeight;
         int inSampleSize = 1;

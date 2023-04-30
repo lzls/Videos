@@ -31,7 +31,8 @@ public class FocusCompatTextInputEditText extends TextInputEditText {
         super(context, attrs);
     }
 
-    public FocusCompatTextInputEditText(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public FocusCompatTextInputEditText(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

@@ -212,7 +212,8 @@ public class TrackSelectionView extends LinearLayout {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        public void onBindViewHolder(
+                @NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
             if (payloads.isEmpty()) {
                 super.onBindViewHolder(holder, position, payloads);
             } else {
@@ -298,7 +299,8 @@ public class TrackSelectionView extends LinearLayout {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        public void onBindViewHolder(
+                @NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
             if (payloads.isEmpty()) {
                 super.onBindViewHolder(holder, position, payloads);
             } else {

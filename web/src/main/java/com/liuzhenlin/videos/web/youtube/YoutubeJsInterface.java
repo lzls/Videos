@@ -81,7 +81,8 @@ import com.liuzhenlin.videos.web.player.Constants.Keys;
     @JavascriptInterface
     public void onPlayerReady() {
         Executors.MAIN_EXECUTOR.execute(
-                () -> YoutubePlaybackService.peekIfNonnullThenDo(YoutubePlaybackService::onPlayerReady));
+                () -> YoutubePlaybackService.peekIfNonnullThenDo(
+                        YoutubePlaybackService::onPlayerReady));
     }
 
     @JavascriptInterface

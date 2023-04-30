@@ -10,12 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.presenter.IVideoPresenter;
 import com.liuzhenlin.videos.view.IView;
+
+import java.util.List;
 
 /**
  * @author 刘振林
@@ -42,8 +43,10 @@ public interface IVideoView extends IView<IVideoPresenter> {
 
         public abstract void loadVideoThumb(@NonNull Video video);
         public abstract void cancelLoadingVideoThumb();
-        public abstract void setVideoTitle(@Nullable String text);
-        public abstract void setVideoProgressAndDurationText(@Nullable String text);
-        public abstract void highlightItemIfSelected(boolean selected);
+
+        public abstract void bindData(
+                @NonNull Video video, int position, @NonNull List<Object> payloads);
+
+        public abstract void onItemViewClick(int position);
     }
 }

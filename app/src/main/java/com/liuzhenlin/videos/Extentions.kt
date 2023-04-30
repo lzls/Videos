@@ -207,6 +207,31 @@ fun Collection<Video>?.allVideoSize(): Long {
     return size
 }
 
+@get:JvmName("getVideoTitle")
+val Video?.title: String
+    get() =
+        if (this == null) ""
+        else {
+            val indexOfSuffix = name.lastIndexOf(".")
+            if (indexOfSuffix > 0) {
+                name.substring(0, indexOfSuffix)
+            } else {
+                name
+            }
+        }
+
+@get:JvmName("getVideoSuffix")
+val Video?.suffix: String
+    get() {
+        if (this != null) {
+            val indexOfSuffix = name.lastIndexOf(".")
+            if (indexOfSuffix > 0) {
+                return name.substring(indexOfSuffix)
+            }
+        }
+        return ""
+    }
+
 fun CharSequence?.equalsOrMatches(pattern: CharSequence?, equalsIgnoreCase: Boolean = false): Boolean {
     if (this === pattern) return true
     if (this != null && pattern != null) {
