@@ -29,8 +29,8 @@ task clean(type: Delete) {
 }
 
 ext {
-    compileSdkVersion = 31
-    targetSdkVersion = 31
+    compileSdkVersion = 33
+    targetSdkVersion = 33
 
     appcompatVersion = '1.4.2' // Avoid using 1.5.*, which rolls the night mode issue back
     exoplayer2Version = '2.18.1' // Limited by used compile sdk version 31

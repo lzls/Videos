@@ -48,6 +48,14 @@ public class App extends Application {
 
     private volatile boolean mSystemUiNightMode;
 
+    public static final String[] STORAGE_PERMISSION =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    ? new String[]{
+                            Manifest.permission.READ_MEDIA_AUDIO,
+                            Manifest.permission.READ_MEDIA_VIDEO,
+                            Manifest.permission.READ_MEDIA_IMAGES}
+                    : new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
 //    static {
 //        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 //    }
@@ -119,7 +127,7 @@ public class App extends Application {
     }
 
     public boolean hasStoragePermission() {
-        return EasyPermissions.hasPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        return EasyPermissions.hasPermissions(this, STORAGE_PERMISSION);
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
