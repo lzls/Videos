@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.7.20'
+    ext.kotlin_version = '1.8.21'
 
     repositories {
         google()
@@ -32,11 +32,11 @@ ext {
     compileSdkVersion = 33
     targetSdkVersion = 33
 
-    appcompatVersion = '1.4.2' // Avoid using 1.5.*, which rolls the night mode issue back
-    exoplayer2Version = '2.18.1' // Limited by used compile sdk version 31
+    appcompatVersion = '1.4.2' // Avoid using 1.6.*, which rolls the night mode issue back
+    exoplayer2Version = '2.18.7'
 
     testJunitVersion = '4.13.2'
-    androidTestJunitVersion = '1.1.4'
+    androidTestJunitVersion = '1.1.5'
 
     proguardRulesFileName = 'proguard-rules.pro'
 }
