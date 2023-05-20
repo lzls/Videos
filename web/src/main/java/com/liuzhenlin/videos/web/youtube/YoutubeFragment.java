@@ -184,9 +184,20 @@ public class YoutubeFragment extends Fragment implements View.OnClickListener, O
     @Override
     public void onResume() {
         super.onResume();
-        if (mYoutubeView != null && !mIdleHandlerAdded) {
-            mIdleHandlerAdded = true;
-            Looper.myQueue().addIdleHandler(mCheckCurrentUrlIdleHandler);
+        if (mYoutubeView != null) {
+            mYoutubeView.onResume();
+            if (!mIdleHandlerAdded) {
+                mIdleHandlerAdded = true;
+                Looper.myQueue().addIdleHandler(mCheckCurrentUrlIdleHandler);
+            }
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mYoutubeView != null) {
+            mYoutubeView.onPause();
         }
     }
 
