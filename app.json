@@ -64,11 +64,11 @@
       "18.修复用户反馈页面在部分机型上显示的虚拟按键顶部分割线颜色异常的问题"
     ],
     "beta": {
-      "versionCode": 61,
-      "versionName": "2.3-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.3-beta01.apk",
-      "appLength": 31918886,
-      "appSha1": "da88788cbc86912aecdd02a1d6fd1ec4f5607362",
+      "versionCode": 62,
+      "versionName": "2.3-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.3-beta02.apk",
+      "appLength": 32143740,
+      "appSha1": "b49a8f1b2b0a2ff6a07bcd4662bf12fddf75911d",
       "updateLogs": [
         "1. 调整深色模式下首页底部标签栏的背景色，使其与页面上的其它内容更加协调",
         "2. 部分弹窗内容超出一屏时的可滑动区域缩小",
@@ -77,15 +77,18 @@
         "5. 针对安卓11及以上平台，启动页面新增所有文件访问权限许可弹窗",
         "6. 视频文件名存在与后缀相同的部分会在重名时被抹去的问题修复",
         "7. 搜索页面长按无法被删除或重命名的视频后执行相应操作无效的问题修复（对不可删除或重命名的视频屏蔽相关操作）",
-        "8. 新增视频文件移动功能"
+        "8. 新增视频文件移动功能",
+        "9. 首页重建时不再自动检测应用更新",
+        "10.从在线视频页切回本地视频页面，YouTube短视频仍然在播放的问题修复",
+        "11.在安卓13及以上平台，应用启动时可能会显示通知权限许可弹窗。如拒绝，应用检测更新及视频后台播放功能将无法正常被使用"
       ]
     },
     "dev": {
-      "versionCode": 61,
-      "versionName": "2.3-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.3-beta01.apk",
-      "appLength": 31918886,
-      "appSha1": "da88788cbc86912aecdd02a1d6fd1ec4f5607362",
+      "versionCode": 62,
+      "versionName": "2.3-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.3-beta02.apk",
+      "appLength": 32143740,
+      "appSha1": "b49a8f1b2b0a2ff6a07bcd4662bf12fddf75911d",
       "updateLogs": [
         "1. 调整深色模式下首页底部标签栏的背景色，使其与页面上的其它内容更加协调",
         "2. 部分弹窗内容超出一屏时的可滑动区域缩小",
@@ -94,7 +97,10 @@
         "5. 针对安卓11及以上平台，启动页面新增所有文件访问权限许可弹窗",
         "6. 视频文件名存在与后缀相同的部分会在重名时被抹去的问题修复",
         "7. 搜索页面长按无法被删除或重命名的视频后执行相应操作无效的问题修复（对不可删除或重命名的视频屏蔽相关操作）",
-        "8. 新增视频文件移动功能"
+        "8. 新增视频文件移动功能",
+        "9. 首页重建时不再自动检测应用更新",
+        "10.从在线视频页切回本地视频页面，YouTube短视频仍然在播放的问题修复",
+        "11.在安卓13及以上平台，应用启动时可能会显示通知权限许可弹窗。如拒绝，应用检测更新及视频后台播放功能将无法正常被使用"
       ]
     },
     "promptDialogAnchorActivityClsName": "com.liuzhenlin.videos.view.activity.MainActivity"
