@@ -20,6 +20,7 @@ import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.analytics.DefaultAnalyticsCollector;
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
@@ -152,7 +153,7 @@ public class Utils {
         return new ExoPlayer.Builder(
                 context,
                 renderersFactory,
-                /* mediaSourceFactory= */ null,
+                new DefaultMediaSourceFactory(context),
                 trackSelector == null ? new DefaultTrackSelector(context) : trackSelector,
                 new DefaultLoadControl(),
                 DefaultBandwidthMeter.getSingletonInstance(context),

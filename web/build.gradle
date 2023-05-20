@@ -33,6 +33,5 @@ android {
 
 dependencies {
     api project(':common')
-    //noinspection GradleDependency (limited by used compile sdk version 31)
-    api 'androidx.webkit:webkit:1.4.0'
+    api 'androidx.webkit:webkit:1.6.1'
 }

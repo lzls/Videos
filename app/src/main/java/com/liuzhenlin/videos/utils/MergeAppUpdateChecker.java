@@ -758,7 +758,8 @@ public final class MergeAppUpdateChecker {
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                     .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-                    .setVisibility(NotificationCompat.VISIBILITY_SECRET);
+                    .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+                    .setOngoing(true);
 
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
 
@@ -969,6 +970,7 @@ public final class MergeAppUpdateChecker {
                             .setPriority(NotificationCompat.PRIORITY_HIGH) // 高优先级以显示抬头式通知
                             .setCategory(NotificationCompat.CATEGORY_PROMO)
                             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                            .setOngoing(false)
                             .build());
         }
 

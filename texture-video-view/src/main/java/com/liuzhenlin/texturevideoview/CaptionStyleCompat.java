@@ -17,6 +17,7 @@ package com.liuzhenlin.texturevideoview;
 
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.view.accessibility.CaptioningManager;
 import android.view.accessibility.CaptioningManager.CaptionStyle;
 
 import androidx.annotation.IntDef;
@@ -28,6 +29,9 @@ import com.google.android.exoplayer2.util.Util;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE_USE;
 
 /** A compatibility wrapper for {@link CaptionStyle}. */
 public final class CaptionStyleCompat {
@@ -39,6 +43,7 @@ public final class CaptionStyleCompat {
    */
   @Documented
   @Retention(RetentionPolicy.SOURCE)
+  @Target(TYPE_USE)
   @IntDef({
     EDGE_TYPE_NONE,
     EDGE_TYPE_OUTLINE,
@@ -47,30 +52,18 @@ public final class CaptionStyleCompat {
     EDGE_TYPE_DEPRESSED
   })
   public @interface EdgeType {}
-  /**
-   * Edge type value specifying no character edges.
-   */
+  /** Edge type value specifying no character edges. */
   public static final int EDGE_TYPE_NONE = 0;
-  /**
-   * Edge type value specifying uniformly outlined character edges.
-   */
+  /** Edge type value specifying uniformly outlined character edges. */
   public static final int EDGE_TYPE_OUTLINE = 1;
-  /**
-   * Edge type value specifying drop-shadowed character edges.
-   */
+  /** Edge type value specifying drop-shadowed character edges. */
   public static final int EDGE_TYPE_DROP_SHADOW = 2;
-  /**
-   * Edge type value specifying raised bevel character edges.
-   */
+  /** Edge type value specifying raised bevel character edges. */
   public static final int EDGE_TYPE_RAISED = 3;
-  /**
-   * Edge type value specifying depressed bevel character edges.
-   */
+  /** Edge type value specifying depressed bevel character edges. */
   public static final int EDGE_TYPE_DEPRESSED = 4;
 
-  /**
-   * Use color setting specified by the track and fallback to default caption style.
-   */
+  /** Use color setting specified by the track and fallback to default caption style. */
   public static final int USE_TRACK_COLOR_SETTINGS = 1;
 
   /** Default caption style. */
@@ -83,36 +76,29 @@ public final class CaptionStyleCompat {
           Color.WHITE,
           /* typeface= */ null);
 
-  /**
-   * The preferred foreground color.
-   */
+  /** The preferred foreground color. */
   public final int foregroundColor;
 
-  /**
-   * The preferred background color.
-   */
+  /** The preferred background color. */
   public final int backgroundColor;
 
-  /**
-   * The preferred window color.
-   */
+  /** The preferred window color. */
   public final int windowColor;
 
   /**
    * The preferred edge type. One of:
+   *
    * <ul>
-   * <li>{@link #EDGE_TYPE_NONE}
-   * <li>{@link #EDGE_TYPE_OUTLINE}
-   * <li>{@link #EDGE_TYPE_DROP_SHADOW}
-   * <li>{@link #EDGE_TYPE_RAISED}
-   * <li>{@link #EDGE_TYPE_DEPRESSED}
+   *   <li>{@link #EDGE_TYPE_NONE}
+   *   <li>{@link #EDGE_TYPE_OUTLINE}
+   *   <li>{@link #EDGE_TYPE_DROP_SHADOW}
+   *   <li>{@link #EDGE_TYPE_RAISED}
+   *   <li>{@link #EDGE_TYPE_DEPRESSED}
    * </ul>
    */
-  @EdgeType public final int edgeType;
+  public final @EdgeType int edgeType;
 
-  /**
-   * The preferred edge color, if using an edge type other than {@link #EDGE_TYPE_NONE}.
-   */
+  /** The preferred edge color, if using an edge type other than {@link #EDGE_TYPE_NONE}. */
   public final int edgeColor;
 
   /** The preferred typeface, or {@code null} if unspecified. */
@@ -126,7 +112,7 @@ public final class CaptionStyleCompat {
    */
   @RequiresApi(19)
   public static CaptionStyleCompat createFromCaptionStyle(
-      CaptionStyle captionStyle) {
+      CaptioningManager.CaptionStyle captionStyle) {
     if (Util.SDK_INT >= 21) {
       return createFromCaptionStyleV21(captionStyle);
     } else {
@@ -162,16 +148,20 @@ public final class CaptionStyleCompat {
   @RequiresApi(19)
   @SuppressWarnings("ResourceType")
   private static CaptionStyleCompat createFromCaptionStyleV19(
-      CaptionStyle captionStyle) {
+      CaptioningManager.CaptionStyle captionStyle) {
     return new CaptionStyleCompat(
-        captionStyle.foregroundColor, captionStyle.backgroundColor, Color.TRANSPARENT,
-        captionStyle.edgeType, captionStyle.edgeColor, captionStyle.getTypeface());
+        captionStyle.foregroundColor,
+        captionStyle.backgroundColor,
+        Color.TRANSPARENT,
+        captionStyle.edgeType,
+        captionStyle.edgeColor,
+        captionStyle.getTypeface());
   }
 
   @RequiresApi(21)
   @SuppressWarnings("ResourceType")
   private static CaptionStyleCompat createFromCaptionStyleV21(
-      CaptionStyle captionStyle) {
+      CaptioningManager.CaptionStyle captionStyle) {
     return new CaptionStyleCompat(
         captionStyle.hasForegroundColor() ? captionStyle.foregroundColor : DEFAULT.foregroundColor,
         captionStyle.hasBackgroundColor() ? captionStyle.backgroundColor : DEFAULT.backgroundColor,

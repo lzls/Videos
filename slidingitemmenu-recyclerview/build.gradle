@@ -12,6 +12,6 @@ android {
 }
 
 dependencies {
-    api 'androidx.recyclerview:recyclerview:1.2.1'
+    api 'androidx.recyclerview:recyclerview:1.3.0'
     api project(':common')
 }

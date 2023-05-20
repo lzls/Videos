@@ -151,10 +151,6 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         // 有新的热更新补丁可用时，加载...
         SophixManager.getInstance().queryAndLoadNewPatch();
 
-//        // 打开应用时自动检测更新（有悬浮窗权限时才去检查，不然弹不出更新提示对话框）
-//        checkUpdateIfPermissionGranted(false);
-        checkUpdate(false);
-
         mIsTheLatestVersion = getString(R.string.isTheLatestVersion);
         mFindNewVersion = getString(R.string.findNewVersion);
     }
@@ -182,6 +178,12 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         ((YoutubeFragment) mFragments[INDEX_YOUTUBE_FRAGMENT]).setCallback(this);
 
         initViews();
+
+        if (savedInstanceState == null) {
+//            // 打开应用时自动检测更新（有悬浮窗权限时才去检查，不然弹不出更新提示对话框）
+//            checkUpdateIfPermissionGranted(false);
+            checkUpdate(false);
+        }
     }
 
     private void initViews() {

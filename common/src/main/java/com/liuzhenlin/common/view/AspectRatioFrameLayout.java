@@ -102,7 +102,7 @@ public final class AspectRatioFrameLayout extends FrameLayout {
   @Nullable @Synthetic AspectRatioListener aspectRatioListener;
 
   private float videoAspectRatio;
-  @ResizeMode private int resizeMode;
+  private @ResizeMode int resizeMode;
 
   public AspectRatioFrameLayout(Context context) {
     this(context, /* attrs= */ null);

@@ -101,6 +101,7 @@ import com.google.android.material.transition.MaterialSharedAxis;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
+import com.liuzhenlin.common.compat.MediaMetadataRetrieverCompat;
 import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
@@ -2585,7 +2586,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     } catch (RuntimeException e) {
                         e.printStackTrace();
                     } finally {
-                        mmr.release();
+                        MediaMetadataRetrieverCompat.release(mmr);
                     }
                     return null;
                 }
@@ -3610,7 +3611,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         mmr.setDataSource(mContext, videoUri);
                     } catch (RuntimeException e) {
                         e.printStackTrace();
-                        mmr.release();
+                        MediaMetadataRetrieverCompat.release(mmr);
                         mmr = null;
                     }
                 }
@@ -3622,7 +3623,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     task.executeOnExecutor(ParallelThreadExecutor.getSingleton());
                     showSeekingVideoThumb(true);
                 } else {
-                    mmr.release();
+                    MediaMetadataRetrieverCompat.release(mmr);
                     mmr = null;
                     showSeekingTextProgress(true);
                 }
@@ -3762,7 +3763,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             if (mmr != null) {
                 task.cancel(false);
                 task = null;
-                mmr.release();
+                MediaMetadataRetrieverCompat.release(mmr);
                 mmr = null;
             }
             if (translateAnimator != null) {
