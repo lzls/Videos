@@ -35,6 +35,8 @@
     <string name="stretchVideoToFitFullscreen">满屏观影</string>
     <string name="singleVideoLoopPlayback">单视频循环播放</string>
     <string name="allowAudioToPlayInBackground">允许音频在后台播放</string>
+    <string name="prompt_enableNotificationsForBackgroundPlaybackOfMedia">
+        请开启应用通知，否则媒体在后台播放时可能会被系统停止。</string>
     <string name="timedOff">定时关闭：</string>
     <string name="whenThisEpisodeEnds">播完本集</string>
     <string name="_30Minutes">30分钟</string>

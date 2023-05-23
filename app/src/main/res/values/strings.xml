@@ -69,6 +69,8 @@
     <string name="pleaseInputVideoLinkFirst">Please input video link first!</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">Please insert SD card on your device first.</string>
     <string name="pressAgainToExitApp">Press again to exit app</string>
+    <string name="prompt_enableNotificationsForAppDownload">
+        Please enable notifications from Settings, or app download result will not show.</string>
     <string name="prompt_videoMove">
         If a video file with the same name already exists in the target directory, the name of
         the new file moved to there will be appended with "-&lt;number&gt;" by default

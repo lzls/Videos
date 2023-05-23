@@ -38,6 +38,9 @@
     <string name="stretchVideoToFitFullscreen">Stretch Video to Fit Fullscreen</string>
     <string name="singleVideoLoopPlayback">Single Video Loop Playback</string>
     <string name="allowAudioToPlayInBackground">Allow Audio to Play in Background</string>
+    <string name="prompt_enableNotificationsForBackgroundPlaybackOfMedia">
+        Please enable app notifications, or background playback of media may be stopped by system.
+    </string>
     <string name="timedOff">Timed Off:</string>
     <string name="whenThisEpisodeEnds">when this episode ends</string>
     <string name="_30Minutes">30 minutes</string>

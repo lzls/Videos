@@ -41,6 +41,7 @@ import androidx.appcompat.app.AppCompatDialog;
 import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -704,7 +705,7 @@ public final class MergeAppUpdateChecker {
         @Synthetic Context mContext;
         private String mPkgName;
 
-        @Synthetic NotificationManager mNotificationManager;
+        @Synthetic NotificationManagerCompat mNotificationManager;
         @Synthetic NotificationCompat.Builder mNotificationBuilder;
         private static final int ID_NOTIFICATION = 20200330;
 
@@ -742,8 +743,7 @@ public final class MergeAppUpdateChecker {
             mContext = getApplicationContext();
             mPkgName = getPackageName();
 
-            mNotificationManager = (NotificationManager)
-                    mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager = NotificationManagerCompat.from(mContext);
             String channelId = NotificationChannelManager.getDownloadNotificationChannelId(mContext);
             RemoteViews nv = createNotificationView();
             mNotificationBuilder = new NotificationCompat.Builder(mContext, channelId)
@@ -761,6 +761,10 @@ public final class MergeAppUpdateChecker {
                     .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                     .setOngoing(true);
 
+            if (!mNotificationManager.areNotificationsEnabled()) {
+                Toast.makeText(mContext, R.string.prompt_enableNotificationsForAppDownload,
+                        Toast.LENGTH_LONG).show();
+            }
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
 
             mReceiver = new CancelAppUpdateReceiver();
@@ -918,8 +922,10 @@ public final class MergeAppUpdateChecker {
                     if (Configs.DEBUG_APP_UPDATE) {
                         Log.d(TAG, "Start checking if any notifications use id " + ID_NOTIFICATION);
                     }
+                    NotificationManager nm = (NotificationManager)
+                            mContext.getSystemService(Context.NOTIFICATION_SERVICE);
                     runOnConditionMet(handler, action,
-                            () -> !hasNotification(mNotificationManager, ID_NOTIFICATION, null));
+                            () -> !hasNotification(nm, ID_NOTIFICATION, null));
                 } else {
                     if (Configs.DEBUG_APP_UPDATE) {
                         Log.d(TAG, "Postpone showing app installation prompt notification for "

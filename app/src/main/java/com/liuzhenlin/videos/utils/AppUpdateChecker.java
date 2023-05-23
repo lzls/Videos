@@ -41,6 +41,7 @@ import androidx.appcompat.app.AppCompatDialog;
 import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -765,7 +766,7 @@ public final class AppUpdateChecker {
             final Context mContext;
             final String mPkgName;
 
-            final NotificationManager mNotificationManager;
+            final NotificationManagerCompat mNotificationManager;
             final NotificationCompat.Builder mNotificationBuilder;
             static final int ID_NOTIFICATION = 20191103;
 
@@ -786,8 +787,7 @@ public final class AppUpdateChecker {
                 mContext = service.getApplicationContext();
                 mPkgName = service.getPackageName();
 
-                mNotificationManager = (NotificationManager)
-                        mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+                mNotificationManager = NotificationManagerCompat.from(mContext);
                 String channelId = NotificationChannelManager.getDownloadNotificationChannelId(mContext);
                 RemoteViews nv = createNotificationView();
                 mNotificationBuilder = new NotificationCompat.Builder(mContext, channelId)
@@ -820,6 +820,10 @@ public final class AppUpdateChecker {
 
             @Override
             protected void onPreExecute() {
+                if (!mNotificationManager.areNotificationsEnabled()) {
+                    Toast.makeText(mContext, R.string.prompt_enableNotificationsForAppDownload,
+                            Toast.LENGTH_LONG).show();
+                }
                 mService.startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
             }
 
@@ -975,8 +979,10 @@ public final class AppUpdateChecker {
                         if (Configs.DEBUG_APP_UPDATE) {
                             Log.d(TAG, "Start checking if any notifications use id " + ID_NOTIFICATION);
                         }
+                        NotificationManager nm = (NotificationManager)
+                                mContext.getSystemService(Context.NOTIFICATION_SERVICE);
                         runOnConditionMet(handler, action,
-                                () -> !hasNotification(mNotificationManager, ID_NOTIFICATION, null));
+                                () -> !hasNotification(nm, ID_NOTIFICATION, null));
                     } else {
                         if (Configs.DEBUG_APP_UPDATE) {
                             Log.d(TAG, "Postpone showing app installation prompt notification for "
