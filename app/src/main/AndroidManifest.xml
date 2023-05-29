@@ -29,9 +29,11 @@
         android:label="@string/appName"
         android:theme="@style/AppTheme"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
         android:preserveLegacyExternalStorage="true"
+        android:requestRawExternalStorageAccess="true"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"
         tools:ignore="UnusedAttribute">

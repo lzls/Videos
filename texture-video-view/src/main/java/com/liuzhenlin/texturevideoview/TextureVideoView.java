@@ -2273,9 +2273,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         if (directory == null) {
             //noinspection deprecation
             directory =
-                    (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q
-                            ? Environment.getExternalStoragePublicDirectory(dirType)
-                            : Environment.getExternalStorageDirectory()
+                    (Utils.getAppTargetSdkVersion(mContext) >= Build.VERSION_CODES.R
+                            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                                    ? Environment.getExternalStoragePublicDirectory(dirType)
+                                    : Environment.getExternalStorageDirectory()
                     ) + "/" + mAppName;
         }
         return directory;

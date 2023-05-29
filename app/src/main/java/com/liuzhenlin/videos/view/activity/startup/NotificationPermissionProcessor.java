@@ -14,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.liuzhenlin.common.utils.Utils;
+
 public class NotificationPermissionProcessor<H extends Activity & LifecycleOwner>
         extends BaseProcessor<H> {
 
@@ -22,8 +24,7 @@ public class NotificationPermissionProcessor<H extends Activity & LifecycleOwner
     @Override
     public boolean process(@NonNull LaunchChain<H> chain) {
         if (!super.process(chain)) {
-            if (chain.host.getApplicationInfo().targetSdkVersion < 33
-                    || Build.VERSION.SDK_INT < 33) {
+            if (Utils.getAppTargetSdkVersion(mChain.host) < 33 || Build.VERSION.SDK_INT < 33) {
                 chain.pass(this);
                 return true;
             }

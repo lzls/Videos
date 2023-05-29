@@ -202,7 +202,8 @@ public class ActivityUtils {
     /** 锁定屏幕方向 */
     public static void setOrientationLocked(@NonNull Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.O) {
+            if (Utils.getAppTargetSdkVersion(activity) > Build.VERSION_CODES.O
+                    && Build.VERSION.SDK_INT == Build.VERSION_CODES.O) {
                 try {
                     Class<ActivityInfo> activityInfoClass = ActivityInfo.class;
                     //noinspection JavaReflectionMemberAccess

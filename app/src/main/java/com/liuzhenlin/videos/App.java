@@ -27,6 +27,7 @@ import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.InternetResourceLoadTask;
 import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.crashhandler.CrashMailReporter;
 import com.liuzhenlin.videos.crashhandler.LogOnCrashHandler;
 import com.liuzhenlin.videos.dao.AppPrefs;
@@ -49,7 +50,7 @@ public class App extends Application {
     private volatile boolean mSystemUiNightMode;
 
     public static final String[] STORAGE_PERMISSION =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            BuildConfig.TARGET_SDK_VERSION >= 33 && Build.VERSION.SDK_INT >= 33
                     ? new String[]{
                             Manifest.permission.READ_MEDIA_AUDIO,
                             Manifest.permission.READ_MEDIA_VIDEO,
@@ -78,7 +79,8 @@ public class App extends Application {
         if (procName != null) {
             // Each directory storing WebView data can be used by only one process in the application
             // when targetSdk >= P.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (Utils.getAppTargetSdkVersion(this) >= Build.VERSION_CODES.P
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 String pkgName = getPackageName();
                 if (!procName.equals(pkgName)) {
                     android.webkit.WebView.setDataDirectorySuffix(procName.replace(pkgName, ""));
@@ -119,7 +121,9 @@ public class App extends Application {
 
     @SuppressLint("NewApi")
     public boolean hasAllFilesAccess() {
-        boolean sdkBeforeR = Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q;
+        boolean sdkBeforeR =
+                Utils.getAppTargetSdkVersion(this) < Build.VERSION_CODES.R
+                        || Build.VERSION.SDK_INT < Build.VERSION_CODES.R;
         boolean hasStoragePermission = hasStoragePermission();
         return sdkBeforeR && hasStoragePermission
                 || !sdkBeforeR && hasStoragePermission && Environment.isExternalStorageLegacy()
