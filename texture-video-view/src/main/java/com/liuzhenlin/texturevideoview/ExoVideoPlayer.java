@@ -52,6 +52,7 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoSize;
 import com.google.android.material.snackbar.Snackbar;
+import com.liuzhenlin.common.compat.AudioManagerCompat;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
 import com.liuzhenlin.common.utils.UiUtils;
@@ -577,7 +578,8 @@ public class ExoVideoPlayer extends VideoPlayer {
                         // Register MediaButtonEventReceiver every time the video starts, which
                         // will ensure it to be the sole receiver of MEDIA_BUTTON intents
                         MediaButtonEventReceiver.setMediaButtonEventHandler(getMediaButtonEventHandler());
-                        mAudioManager.registerMediaButtonEventReceiver(sMediaButtonEventReceiverComponent);
+                        AudioManagerCompat.registerMediaButtonEventReceiver(mContext, mAudioManager,
+                                sMediaButtonEventReceiverComponent);
                         break;
 
                     case AudioManager.AUDIOFOCUS_REQUEST_DELAYED:
