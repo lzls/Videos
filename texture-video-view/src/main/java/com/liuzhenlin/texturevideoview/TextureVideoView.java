@@ -2171,7 +2171,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         mSavedPhoto = photo;
                         if (photo == null) {
                             UiUtils.showUserCancelableSnackbar(TextureVideoView.this,
-                                    R.string.saveScreenshotFailed, Snackbar.LENGTH_SHORT);
+                                    R.string.failedToSaveScreenshot, Snackbar.LENGTH_SHORT);
                             if (capturedPhotoViewValid) {
                                 hideCapturedPhotoView(false);
                             }

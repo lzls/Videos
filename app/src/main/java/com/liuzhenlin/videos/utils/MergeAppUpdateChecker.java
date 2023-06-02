@@ -96,7 +96,7 @@ import static com.liuzhenlin.common.utils.Utils.runOnConditionMet;
 public final class MergeAppUpdateChecker {
 
     public interface OnResultListener {
-        void onResult(boolean findNewVersion);
+        void onResult(boolean newVersionFound);
     }
 
     private static final String TAG = "AppUpdateChecker";
@@ -183,7 +183,7 @@ public final class MergeAppUpdateChecker {
         if (mCheckInProgress) return;
         mCheckInProgress = true;
         new AsyncTask<Void, Void, Integer>() {
-            static final int RESULT_FIND_NEW_VERSION = 1;
+            static final int RESULT_NEW_VERSION_FOUND = 1;
             static final int RESULT_NO_NEW_VERSION = 2;
             static final int RESULT_CONNECTION_TIMEOUT = 3;
             static final int RESULT_READ_TIMEOUT = 4;
@@ -226,10 +226,10 @@ public final class MergeAppUpdateChecker {
                         JsonParser.parseString(json).getAsJsonObject()
                                 .get("appInfos").getAsJsonObject();
 
-                final boolean findNewVersion = Configs.DEBUG_APP_UPDATE
+                final boolean newVersionFound = Configs.DEBUG_APP_UPDATE
                         || appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
                 // 检测到版本更新
-                if (findNewVersion) {
+                if (newVersionFound) {
                     mAppName = appInfos.get("appName").getAsString();
                     mVersionName = appInfos.get("versionName").getAsString();
 
@@ -252,15 +252,15 @@ public final class MergeAppUpdateChecker {
                             appInfos.get("promptDialogAnchorActivityClsName").getAsString();
                 }
 
-                mNewVersionFound = findNewVersion;
-                return findNewVersion ? RESULT_FIND_NEW_VERSION : RESULT_NO_NEW_VERSION;
+                mNewVersionFound = newVersionFound;
+                return newVersionFound ? RESULT_NEW_VERSION_FOUND : RESULT_NO_NEW_VERSION;
             }
 
             @Override
             protected void onPostExecute(Integer result) {
                 switch (result) {
-                    case RESULT_FIND_NEW_VERSION:
-                        mH.sendEmptyMessage(H.MSG_FIND_NEW_VERSION);
+                    case RESULT_NEW_VERSION_FOUND:
+                        mH.sendEmptyMessage(H.MSG_NEW_VERSION_FOUND);
                         showUpdatePromptDialog();
                         break;
                     case RESULT_NO_NEW_VERSION:
@@ -323,7 +323,7 @@ public final class MergeAppUpdateChecker {
     private final class H extends Handler {
         static final int MSG_STOP_UPDATE_APP_SERVICE = -1;
         static final int MSG_NO_NEW_VERSION = 0;
-        static final int MSG_FIND_NEW_VERSION = 1;
+        static final int MSG_NEW_VERSION_FOUND = 1;
         static final int MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD = 2;
         static final int MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD = 3;
 
@@ -342,7 +342,7 @@ public final class MergeAppUpdateChecker {
                     }
                     break;
                 case MSG_NO_NEW_VERSION:
-                case MSG_FIND_NEW_VERSION:
+                case MSG_NEW_VERSION_FOUND:
                     if (hasOnResultListener()) {
                         for (int i = mListeners.size() - 1; i >= 0; i--) {
                             mListeners.get(i).onResult(what != MSG_NO_NEW_VERSION);

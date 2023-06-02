@@ -37,8 +37,6 @@
     <string name="drawerBackground">抽屉背景</string>
     <string name="drawerSettings">抽屉设置</string>
     <string name="darkTheme">深色主题</string>
-    <string name="findNewVersion">发现新版本</string>
-    <string name="findNewVersion_title">发现新版本</string>
     <string name="goNow">现在去开启</string>
     <string name="hasBeenPlacedInTheBackground">已放入后台</string>
     <string name="illegalInputLink">输入链接不合法！</string>
@@ -48,6 +46,8 @@
     <string name="move">移动</string>
     <string name="name">名称：%s</string>
     <string name="newAppDownloaded">新应用下载完成</string>
+    <string name="newVersionFound">发现新版本</string>
+    <string name="newVersionFound_title">发现新版本</string>
     <string name="noNetworkConnection">无网络连接！</string>
     <string name="notHaveEnoughStorage">存储卡空间不足</string>
     <string name="notOpenNow">暂不开启</string>
@@ -161,7 +161,7 @@
     <plurals name="deletingVideosPleaseWait">
         <item quantity="other">删除视频中，请稍候…</item>
     </plurals>
-    <plurals name="findSomeVideos">
+    <plurals name="foundSomeVideos">
         <item quantity="other">找到%d个视频</item>
     </plurals>
     <plurals name="moveVideosTo">

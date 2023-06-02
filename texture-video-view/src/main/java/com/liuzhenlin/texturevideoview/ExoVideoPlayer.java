@@ -329,7 +329,7 @@ public class ExoVideoPlayer extends VideoPlayer {
                             && ((ExoPlaybackException) error).type == ExoPlaybackException.TYPE_SOURCE) {
                         stringRes = R.string.failedToLoadThisVideo;
                     } else {
-                        stringRes = R.string.unknownErrorOccurredWhenVideoIsPlaying;
+                        stringRes = R.string.unknownErrorOccurredWhenVideoWasPlaying;
                     }
                     if (mVideoView != null) {
                         UiUtils.showUserCancelableSnackbar(mVideoView, stringRes, Snackbar.LENGTH_SHORT);

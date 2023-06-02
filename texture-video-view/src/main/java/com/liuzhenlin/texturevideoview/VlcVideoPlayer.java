@@ -353,7 +353,7 @@ public class VlcVideoPlayer extends VideoPlayer {
                 stringRes = R.string.videoInThisFormatIsNotSupported;
                 break;
             default:
-                stringRes = R.string.unknownErrorOccurredWhenVideoIsPlaying;
+                stringRes = R.string.unknownErrorOccurredWhenVideoWasPlaying;
                 break;
         }
         if (mVideoView != null) {
