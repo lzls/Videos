@@ -423,6 +423,11 @@ import java.io.IOException;
                     return;
                 }
                 mMediaPlayer.setDisplay(mSurfaceHolder);
+                // We gave MediaPlayer a SurfaceHolder and it will automatically call
+                // SurfaceHolder#setKeepScreenOn(boolean) when its playback state changes, so
+                // if we want setKeepScreenOn() to work, we need also set its mScreenOnWhilePlaying
+                // to true.
+                mMediaPlayer.setScreenOnWhilePlaying(true);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     mMediaPlayer.setAudioAttributes(
                             VideoPlayer.sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes);
