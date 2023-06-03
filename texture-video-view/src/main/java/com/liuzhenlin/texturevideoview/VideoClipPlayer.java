@@ -154,7 +154,11 @@ import java.io.IOException;
         @Override
         public void seekTo(int positionMs) {
             if (mVlcPlayer != null) {
-                mVlcPlayer.setTime(positionMs);
+                if (mVlcPlayer.isPlaying()) {
+                    mVlcPlayer.setTime(positionMs);
+                } else {
+                    mSeekOnPlay = positionMs;
+                }
             }
         }
 
@@ -212,7 +216,9 @@ import java.io.IOException;
         @Override
         public void release() {
             if (mVlcPlayer != null) {
-                mSeekOnPlay = (int) mVlcPlayer.getTime();
+                if (mSeekOnPlay == 0) {
+                    mSeekOnPlay = (int) mVlcPlayer.getTime();
+                }
                 mVlcPlayer.getVLCVout().detachViews();
                 mVlcPlayer.stop();
                 mVlcPlayer.release();
@@ -375,12 +381,16 @@ import java.io.IOException;
         @Override
         public void seekTo(int positionMs) {
             if (mMediaPlayer != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // Precise seek with larger performance overhead compared to the default one.
-                    // Slow! Really slow!
-                    mMediaPlayer.seekTo(positionMs, android.media.MediaPlayer.SEEK_CLOSEST);
+                if (mMediaPlayer.isPlaying()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        // Precise seek with larger performance overhead compared to the default one.
+                        // Slow! Really slow!
+                        mMediaPlayer.seekTo(positionMs, android.media.MediaPlayer.SEEK_CLOSEST);
+                    } else {
+                        mMediaPlayer.seekTo(positionMs /*, android.media.MediaPlayer.SEEK_PREVIOUS_SYNC*/);
+                    }
                 } else {
-                    mMediaPlayer.seekTo(positionMs /*, android.media.MediaPlayer.SEEK_PREVIOUS_SYNC*/);
+                    mSeekOnPlay = positionMs;
                 }
             }
         }
@@ -433,7 +443,9 @@ import java.io.IOException;
         @Override
         public void release() {
             if (mMediaPlayer != null) {
-                mSeekOnPlay = mMediaPlayer.getCurrentPosition();
+                if (mSeekOnPlay == 0) {
+                    mSeekOnPlay = mMediaPlayer.getCurrentPosition();
+                }
                 mMediaPlayer.stop();
                 mMediaPlayer.release();
                 mMediaPlayer = null;

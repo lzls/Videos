@@ -2604,15 +2604,23 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }.executeOnExecutor(ParallelThreadExecutor.getSingleton());
         });
         holder.addCallback(new SurfaceHolder.Callback() {
+            boolean videoProgressInitialized;
+
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 player.create();
-                // Seeks to the playback millisecond position mapping to the initial selection
-                // as we were impossible to seek in the above OnSelectionChangeListener's
-                // onSelectionChange() method when the player was not created; also we
-                // have been leaving out the selection changes that are caused by the program code
-                // rather than the user.
-                player.seekTo(progress);
+                // Sets the start playback position for the created player only if it has never
+                // been created before. In other conditions, the player will self-track where
+                // it is playing.
+                if (!videoProgressInitialized) {
+                    videoProgressInitialized = true;
+                    // Seeks to the playback millisecond position mapping to the initial selection
+                    // as we were impossible to seek in the above OnSelectionChangeListener's
+                    // onSelectionChange() method when the player was not created; also we
+                    // have been leaving out the selection changes that are caused by the program code
+                    // rather than the user.
+                    player.seekTo(progress);
+                }
                 if (!selectionBeingDragged[0]) {
                     holder.setKeepScreenOn(true);
                     // We need to make sure of the video to be closed before the clip preview starts,
