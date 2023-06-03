@@ -180,6 +180,7 @@ import java.io.IOException;
             if (mVlcPlayer == null) {
                 final ArrayList<String> options = new ArrayList<>(1);
                 options.add("-vvv");
+                options.add("--repeat");
                 mLibVLC = new LibVLC(mContext, options);
 
                 final Rect surfaceFrame = mSurfaceHolder.getSurfaceFrame();
@@ -302,6 +303,7 @@ import java.io.IOException;
                 mExoPlayer.setVideoSurfaceHolder(mSurfaceHolder);
                 mExoPlayer.setAudioAttributes(VideoPlayer.sDefaultAudioAttrs, true);
                 mExoPlayer.setMediaSource(mMediaSource);
+                mExoPlayer.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
                 mExoPlayer.prepare();
             }
         }
@@ -417,6 +419,7 @@ import java.io.IOException;
                 } else {
                     mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 }
+                mMediaPlayer.setLooping(true);
                 mMediaPlayer.setOnPreparedListener(mp -> {
                     mPrepared = true;
                     if (mPlayWhenPrepared) {
