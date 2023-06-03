@@ -6,6 +6,7 @@
 package com.liuzhenlin.texturevideoview;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -22,9 +23,15 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
+import com.liuzhenlin.common.utils.URLUtils;
 import com.liuzhenlin.texturevideoview.utils.Utils;
 
+import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.Media;
+import org.videolan.libvlc.interfaces.IVLCVout;
+
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * @author 刘振林
@@ -88,7 +95,7 @@ import java.io.IOException;
     public void release() {
         IMPL.release();
     }
-/*
+
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private static final class VideoClipPlayerApi17Impl implements IVideoClipPlayer {
         final Context mContext;
@@ -196,7 +203,7 @@ import java.io.IOException;
 
                 mVlcPlayer.setAspectRatio(null);
                 mVlcPlayer.setScale(0);
-                mVlcPlayer.setVideoScale(MediaPlayer.ScaleType.SURFACE_BEST_FIT);
+                mVlcPlayer.setVideoScale(org.videolan.libvlc.MediaPlayer.ScaleType.SURFACE_BEST_FIT);
                 vout.setWindowSize(surfaceWidth, surfaceHeight);
                 vout.setVideoSurface(mSurfaceHolder.getSurface(), mSurfaceHolder);
                 vout.attachViews();
@@ -229,7 +236,7 @@ import java.io.IOException;
             }
         }
     }
-*/
+
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
     private static final class VideoClipPlayerApi16Impl implements IVideoClipPlayer {
         final Context mContext;
