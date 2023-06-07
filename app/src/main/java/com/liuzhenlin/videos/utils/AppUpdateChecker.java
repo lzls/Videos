@@ -234,12 +234,20 @@ public final class AppUpdateChecker {
                                 appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
                         break;
                     case Prefs.UPDATE_CHANNEL_BETA:
-                        appInfos = appInfos.get("beta").getAsJsonObject();
+                        JsonElement beta = appInfos.get("beta");
+                        while (beta.isJsonPrimitive()) {
+                            beta = appInfos.get(beta.getAsString());
+                        }
+                        appInfos = beta.getAsJsonObject();
                         newVersionFound |=
                                 appInfos.get("versionCode").getAsInt() > BuildConfig.BETA_VERSION_CODE;
                         break;
                     case Prefs.UPDATE_CHANNEL_DEV:
-                        appInfos = appInfos.get("dev").getAsJsonObject();
+                        JsonElement dev = appInfos.get("dev");
+                        while (dev.isJsonPrimitive()) {
+                            dev = appInfos.get(dev.getAsString());
+                        }
+                        appInfos = dev.getAsJsonObject();
                         newVersionFound |=
                                 appInfos.get("versionCode").getAsInt() > BuildConfig.DEV_VERSION_CODE;
                         break;
