@@ -28,6 +28,7 @@ import com.liuzhenlin.swipeback.SwipeBackPreferenceFragment;
 import com.liuzhenlin.videos.Prefs;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
+import com.liuzhenlin.videos.utils.AppUpdateChecker;
 import com.liuzhenlin.videos.web.youtube.WebService;
 import com.liuzhenlin.videos.web.youtube.Youtube;
 
@@ -147,7 +148,11 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
                     AppCompatDelegate.setDefaultNightMode(mode);
                 });
                 return true;
+
             case Prefs.KEY_UPDATE_CHANNEL:
+                AppUpdateChecker.getSingleton(this).checkUpdate();
+                return true;
+
             case Youtube.Prefs.KEY_PLAYBACK_PAGE_STYLE:
             case Youtube.Prefs.KEY_PIP:
             case Youtube.Prefs.KEY_VIDEO_QUALITY:
