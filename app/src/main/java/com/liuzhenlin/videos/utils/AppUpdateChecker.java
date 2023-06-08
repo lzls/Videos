@@ -176,6 +176,9 @@ public final class AppUpdateChecker {
 
         if (mCheckInProgress) return;
         mCheckInProgress = true;
+
+        final boolean chinese =
+                "zh".equals(mContext.getResources().getConfiguration().locale.getLanguage());
         new AsyncTask<Void, Void, Integer>() {
             static final int RESULT_NEW_VERSION_FOUND = 1;
             static final int RESULT_NO_NEW_VERSION = 2;
@@ -220,7 +223,7 @@ public final class AppUpdateChecker {
                         JsonParser.parseString(json).getAsJsonObject()
                                 .get("appInfos").getAsJsonObject();
 
-                mAppName = appInfos.get("appName").getAsString();
+                mAppName = appInfos.get(chinese ? "appName" : "appName-en").getAsString();
                 mPromptDialogAnchorActivityClsName =
                         appInfos.get("promptDialogAnchorActivityClsName").getAsString();
 
@@ -259,7 +262,8 @@ public final class AppUpdateChecker {
                     mAppSha1 = appInfos.get("appSha1").getAsString();
                     mVersionName = appInfos.get("versionName").getAsString();
                     mUpdateLog = new StringBuilder();
-                    for (JsonElement log : appInfos.get("updateLogs").getAsJsonArray()) {
+                    for (JsonElement log
+                            : appInfos.getAsJsonArray(chinese ? "updateLogs" : "updateLogs-en")) {
                         mUpdateLog.append(log.getAsString()).append("\n");
                     }
                     mUpdateLog.deleteCharAt(mUpdateLog.length() - 1);

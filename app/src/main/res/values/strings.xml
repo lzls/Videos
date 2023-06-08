@@ -135,7 +135,7 @@
     <string name="theVideoIsPlaying">The video is playing</string>
     <string name="top">Top</string>
     <string name="unfold">Unfold</string>
-    <string name="updateLog">%1$sv%2$s update log: </string>
+    <string name="updateLog">%1$s v%2$s update log: </string>
     <string name="updateLogs">Update Logs</string>
     <string name="userFeedback">User Feedback</string>
     <string name="videoCount">Video count: %d</string>

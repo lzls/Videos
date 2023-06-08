@@ -1,6 +1,7 @@
 {
   "appInfos": {
     "appName": "视频",
+    "appName-en": "Videos",
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 16,
     "targetSdkVersion": 31,
@@ -63,6 +64,26 @@
       "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子",
       "18.修复用户反馈页面在部分机型上显示的虚拟按键顶部分割线颜色异常的问题"
     ],
+    "updateLogs-en": [
+      "1. 应用启动时展示应用图标放大的闪屏页，避免用户感知到应用启动有延迟的现象",
+      "2. 修复在应用更新提示的弹窗出现时如果首页发生了重建，用户点击检查更新不会有任何回应的问题",
+      "3. 解决在Android 12上新应用下载通知会延迟10s显示的问题",
+      "4. 在YouTube页上下滑动时自动显示或隐藏首页标题栏，且在进入短视频页面时也会自动收起标题栏",
+      "5. 回退销毁YouTube视频播放页或从最近任务划掉该页面时自动停止播放服务及其通知栏显示",
+      "6. 添加是否在回退栈中保留先前打开的YouTube视频播放页的设置开关",
+      "7. YouTube视频播放页增加对下拉刷新的支持",
+      "8. 解决下拉刷新与YouTube网页之间的滑动冲突",
+      "9. 修复刷新YouTube视频播放通知时可能引起播放进程崩溃的问题",
+      "10.解决在部分设备上，YouTube视频播放页以全屏模式从后台再次恢复到前台时，页面状态栏和导航栏会重新显现的问题",
+      "11.将可显示的反馈文本行数放宽到最多为10行",
+      "12.支持外部网络链接跳转至应用进行播放音视频",
+      "13.适配分屏和弹出窗口",
+      "14.调整UI内容边距，使UI更加松散美观",
+      "15.受沙盒存储机制的影响，应用运行于安卓11及以上版本的系统中，很可能将无法删除或重命名非本应用创建的媒体内容",
+      "16.确认删除视频的底部弹窗出现时不再暗淡虚拟按键区域",
+      "17.修复勾选视频的多选按钮选中时的动画有时无法正常运行的问题，表现为按钮选中一下突然又变回未选中的样子",
+      "18.修复用户反馈页面在部分机型上显示的虚拟按键顶部分割线颜色异常的问题"
+    ],
     "beta": {
       "versionCode": 62,
       "versionName": "2.3-beta02",
@@ -81,6 +102,19 @@
         "9. 首页重建时不再自动检测应用更新",
         "10.从在线视频页切回本地视频页面，YouTube短视频仍然在播放的问题修复",
         "11.在安卓13及以上平台，应用启动时可能会显示通知权限许可弹窗。如拒绝，应用检测更新及视频后台播放功能将无法正常被使用"
+      ],
+      "updateLogs-en": [
+        "1. Adjust the background color of the tab bar at the bottom of the homepage in dark mode to make it more coordinated with other contents on the screen.",
+        "2. Reduced height of scrollable area for Dialogs whose content exceeds one screen.",
+        "3. Fix the problem that the app couldn't monitor the changes of the video files in the background after the homepage had been recreated.",
+        "4. Behavior change: when a video is being deleted, a waiting Dialog will be displayed.",
+        "5. For Android 11 and above platforms, a Dialog for All Files Access permission has been added to the application launch screen.",
+        "6. Fix the problem that the parts of the video file name that are the same as the suffix would be erased when the video was renamed.",
+        "7. Fix the problem that the corresponding operations performed were invalid after a long press on the video that can not be deleted or renamed on the search page (hiding related operations for videos that can't be deleted or renamed).",
+        "8. Added the function of moving video files.",
+        "9. No longer automatically check for application updates when the homepage is recreated.",
+        "10.Fix the problem that the YouTube short video was still playing when we switched the page back to Local Videos from Online Videos.",
+        "11.On Android 13 and above platforms, a notification permission Dialog may be displayed when the app is starting. If you refuse, the app update check and the video background playback features will not be able to be normally used."
       ]
     },
     "dev": "beta",

@@ -122,7 +122,7 @@
     <string name="theVideoIsPlaying">正在播放该视频</string>
     <string name="top">置顶</string>
     <string name="unfold">展开</string>
-    <string name="updateLog">%1$sv%2$s 更新日志：</string>
+    <string name="updateLog">%1$sv%2$s更新日志：</string>
     <string name="updateLogs">更新日志</string>
     <string name="userFeedback">用户反馈</string>
     <string name="videoCount">视频数：%d</string>

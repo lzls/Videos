@@ -182,6 +182,9 @@ public final class MergeAppUpdateChecker {
 
         if (mCheckInProgress) return;
         mCheckInProgress = true;
+
+        final boolean chinese =
+                "zh".equals(mContext.getResources().getConfiguration().locale.getLanguage());
         new AsyncTask<Void, Void, Integer>() {
             static final int RESULT_NEW_VERSION_FOUND = 1;
             static final int RESULT_NO_NEW_VERSION = 2;
@@ -230,7 +233,7 @@ public final class MergeAppUpdateChecker {
                         || appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
                 // 检测到版本更新
                 if (newVersionFound) {
-                    mAppName = appInfos.get("appName").getAsString();
+                    mAppName = appInfos.get(chinese ? "appName" : "appName-en").getAsString();
                     mVersionName = appInfos.get("versionName").getAsString();
 
                     JsonArray links = appInfos.get("appPartLinks").getAsJsonArray();
@@ -243,7 +246,8 @@ public final class MergeAppUpdateChecker {
                     mAppSha1 = appInfos.get("appSha1").getAsString();
 
                     mUpdateLog = new StringBuilder();
-                    for (JsonElement log : appInfos.get("updateLogs").getAsJsonArray()) {
+                    for (JsonElement log
+                            : appInfos.getAsJsonArray(chinese ? "updateLogs" : "updateLogs-en")) {
                         mUpdateLog.append(log.getAsString()).append("\n");
                     }
                     mUpdateLog.deleteCharAt(mUpdateLog.length() - 1);
