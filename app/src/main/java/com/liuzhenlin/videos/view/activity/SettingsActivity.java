@@ -22,6 +22,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
+import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.swipeback.SwipeBackPreferenceFragment;
@@ -36,7 +37,8 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
         PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
         Preference.OnPreferenceChangeListener, View.OnClickListener {
 
-    private static final String TITLE_TAG = "settingsActivityTitle";
+    private static final String TAG_ACTIVE_PREF_FRAGMENT_KEY = "activePrefFragmentKey";
+    private String mActivePrefFragmentKey;
 
     private TextView mTitleText;
 
@@ -59,13 +61,22 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
                     .add(R.id.container_fragments, new HeaderFragment())
                     .commit();
             setTitle(R.string.settings);
+            mActivePrefFragmentKey = null;
         } else {
-            setTitle(savedInstanceState.getCharSequence(TITLE_TAG));
+            mActivePrefFragmentKey = savedInstanceState.getString(TAG_ACTIVE_PREF_FRAGMENT_KEY);
+            if (mActivePrefFragmentKey == null) {
+                setTitle(R.string.settings);
+            } else if (mActivePrefFragmentKey.equals(Prefs.KEY_GENERAL_HEADER)) {
+                setTitle(R.string.general_header);
+            } else if (mActivePrefFragmentKey.equals(Prefs.KEY_YOUTUBE_PLAYBACK_HEADER)) {
+                setTitle(R.string.youtube_playback_header);
+            }
         }
         getSupportFragmentManager().addOnBackStackChangedListener(
                 () -> {
                     if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
                         setTitle(R.string.settings);
+                        mActivePrefFragmentKey = null;
                     }
                 });
     }
@@ -74,7 +85,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         // Save current activity title so we can set it again after a configuration change
-        outState.putCharSequence(TITLE_TAG, getTitle());
+        outState.putString(TAG_ACTIVE_PREF_FRAGMENT_KEY, mActivePrefFragmentKey);
     }
 
     @Override
@@ -95,6 +106,7 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
                 .addToBackStack(null)
                 .commit();
         setTitle(pref.getTitle());
+        mActivePrefFragmentKey = pref.getKey();
         return true;
     }
 
@@ -146,6 +158,36 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
                     // after this Activity is bound with the web service or this onBindAction will
                     // probably not be called at all.
                     AppCompatDelegate.setDefaultNightMode(mode);
+                });
+                return true;
+
+            case Prefs.KEY_LANGUAGE:
+                int language;
+                switch (newValue.toString()) {
+                    case Prefs.LANGUAGE_SIMPLIFIED_CHINESE:
+                        language = LanguageUtils.MODE_LANGUAGE_SIMPLIFIED_CHINESE;
+                        break;
+                    case Prefs.LANGUAGE_ENGLISH:
+                        language = LanguageUtils.MODE_LANGUAGE_ENGLISH;
+                        break;
+                    case Prefs.LANGUAGE_FOLLOWS_SYSTEM:
+                        language = LanguageUtils.MODE_LANGUAGE_FOLLOWS_SYSTEM;
+                        break;
+                    default:
+                        return false;
+                }
+                AppPrefs.getSingleton(this).edit().setDefaultLanguageMode(language).apply();
+                WebService.bind(this, webService -> {
+                    try {
+                        // Apply default language mode for web process...
+                        webService.applyDefaultLanguageMode(language);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                    // This can cause the current Activity to recreate, so it can only be invoked
+                    // after this Activity is bound with the web service or this onBindAction will
+                    // probably not be called at all.
+                    LanguageUtils.setDefaultLanguageMode(this, language);
                 });
                 return true;
 

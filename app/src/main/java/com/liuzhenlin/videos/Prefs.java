@@ -17,4 +17,12 @@ public class Prefs {
     public static final String DARK_MODE_ON = "on";
     public static final String DARK_MODE_OFF = "off";
     public static final String DARK_MODE_FOLLOWS_SYSTEM = "followsSystem";
+
+    public static final String KEY_LANGUAGE = "language";
+    public static final String LANGUAGE_SIMPLIFIED_CHINESE = "zh";
+    public static final String LANGUAGE_ENGLISH = "en";
+    public static final String LANGUAGE_FOLLOWS_SYSTEM = "followsSystem";
+
+    public static final String KEY_GENERAL_HEADER = "general_header";
+    public static final String KEY_YOUTUBE_PLAYBACK_HEADER = "youtube_playback_header";
 }

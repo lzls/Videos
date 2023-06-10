@@ -145,6 +145,7 @@
 
     <!-- General Preferences -->
     <string name="dark_mode_title">深色主题</string>
+    <string name="language_title">语言</string>
 
     <!-- YouTube Playback Preferences -->
     <string name="youtube_playback_page_style_title">页面风格</string>

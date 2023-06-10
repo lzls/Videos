@@ -8,11 +8,14 @@ package com.liuzhenlin.common.utils;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityOptions;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -34,6 +37,8 @@ import java.util.Map;
 public class ActivityUtils {
     private ActivityUtils() {
     }
+
+    private static final String TAG = "ActivityUtils";
 
     /**
      * 获取应用处于前台且为活跃状态（未被暂停）的Activity实例
@@ -329,6 +334,41 @@ public class ActivityUtils {
                             translucentConversionListener, ActivityOptions.class)
                     .invoke(activity,
                             null, getActivityOptions.invoke(activity));
+        }
+    }
+
+    /**
+     * Checks whether the given set of bits for the {@link android.R.attr#configChanges}
+     * attribute are specified for the Activity {@code activity} in AndroidManifest.xml.
+     */
+    public static boolean isActivityManifestHandingConfigs(
+            @NonNull Activity activity, /*@ActivityInfo.Config*/ int configs) {
+        final PackageManager pm = activity.getPackageManager();
+        if (pm == null) {
+            // If we don't have a PackageManager, return false. Don't set
+            // the checked flag though so we still check again later
+            return false;
+        }
+        try {
+            int flags = 0;
+            // On newer versions of the OS we need to pass direct boot flags
+            // so that getActivityInfo doesn't crash under strict mode checks
+            if (Build.VERSION.SDK_INT >= 29) {
+                flags = PackageManager.MATCH_DIRECT_BOOT_AUTO
+                        | PackageManager.MATCH_DIRECT_BOOT_AWARE
+                        | PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
+            } else if (Build.VERSION.SDK_INT >= 24) {
+                flags = PackageManager.MATCH_DIRECT_BOOT_AWARE
+                        | PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
+            }
+            final ActivityInfo info =
+                    pm.getActivityInfo(new ComponentName(activity, activity.getClass()), flags);
+            return info != null && (info.configChanges & configs) == configs;
+        } catch (PackageManager.NameNotFoundException e) {
+            // This shouldn't happen but let's not crash because of it, we'll just log
+            // and return false (since most apps won't be handling it)
+            Log.d(TAG, "Exception while getting ActivityInfo", e);
+            return false;
         }
     }
 }

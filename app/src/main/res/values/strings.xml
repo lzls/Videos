@@ -169,6 +169,7 @@
 
     <!-- General Preferences -->
     <string name="dark_mode_title">Dark Mode</string>
+    <string name="language_title">Language</string>
 
     <!-- YouTube Playback Preferences -->
     <string name="youtube_playback_page_style_title">UI Style</string>
