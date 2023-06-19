@@ -39,10 +39,11 @@ public class Files {
 
     @NonNull
     public static File getAppExternalFilesDir(@NonNull String dirType) {
-        @SuppressWarnings("deprecation") File base =
-                Build.VERSION.SDK_INT > Build.VERSION_CODES.Q
-                        ? Environment.getExternalStoragePublicDirectory(dirType)
-                        : Environment.getExternalStorageDirectory();
+        @SuppressWarnings({"deprecation", "ConstantConditions"}) File base =
+                BuildConfig.TARGET_SDK_VERSION >= Build.VERSION_CODES.R
+                        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                                ? Environment.getExternalStoragePublicDirectory(dirType)
+                                : Environment.getExternalStorageDirectory();
         File dir = new File(base, EXTERNAL_FILES_FOLDER);
         if (!dir.exists()) {
             //noinspection ResultOfMethodCallIgnored

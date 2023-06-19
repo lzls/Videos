@@ -7,7 +7,7 @@
     <com.liuzhenlin.common.view.AspectRatioFrameLayout
         android:id="@+id/container_videoview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         app:resize_mode="fixed_width">
 
         <com.liuzhenlin.texturevideoview.TextureVideoView

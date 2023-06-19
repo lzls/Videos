@@ -8,4 +8,12 @@
         app:title="@string/dark_mode_title"
         app:useSimpleSummaryProvider="true" />
 
+    <ListPreference
+        app:defaultValue="followsSystem"
+        app:entries="@array/language_entries"
+        app:entryValues="@array/language_values"
+        app:key="language"
+        app:title="@string/language_title"
+        app:useSimpleSummaryProvider="true" />
+
 </PreferenceScreen>

@@ -40,6 +40,7 @@ import com.liuzhenlin.videos.web.player.PlayerWebView;
 import com.liuzhenlin.videos.web.player.WebPlayer;
 
 import java.lang.reflect.Field;
+import java.util.Locale;
 
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
@@ -168,7 +169,17 @@ public class YoutubePlaybackActivity extends AppCompatActivity implements Player
             getDelegate().setPendingTransitionOverrides(new PlatformPendingTransitionOverrides());
         }
         // This avoids the unnecessary recreation for this Activity when day night mode changes.
-        getDelegate().setHostCallback(night -> true);
+        getDelegate().setHostCallback(new AppCompatDelegateWrapper.HostCallback() {
+            @Override
+            public boolean onDayNightAppliedToResourcesConfig(boolean night) {
+                return true;
+            }
+
+            @Override
+            public boolean onLanguageAppliedToResourcesConfig(@NonNull Locale language) {
+                return true;
+            }
+        });
     }
 
     @Override

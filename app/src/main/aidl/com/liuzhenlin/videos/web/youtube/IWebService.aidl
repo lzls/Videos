@@ -7,5 +7,7 @@ interface IWebService {
 
     void applyDefaultNightMode(int mode);
 
+    void applyDefaultLanguageMode(int mode);
+
     void finishYoutubePlaybackActivityIfItIsInPiP();
 }

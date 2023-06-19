@@ -137,7 +137,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     @Synthetic String mCheckUpdateResultText;
     private String mIsTheLatestVersion;
-    @Synthetic String mFindNewVersion;
+    @Synthetic String mNewVersionFound;
     private AppUpdateChecker.OnResultListener mOnCheckUpdateResultListener;
 
     private boolean mIsBackPressed;
@@ -152,7 +152,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         SophixManager.getInstance().queryAndLoadNewPatch();
 
         mIsTheLatestVersion = getString(R.string.isTheLatestVersion);
-        mFindNewVersion = getString(R.string.findNewVersion);
+        mNewVersionFound = getString(R.string.newVersionFound);
     }
 
     @Override
@@ -663,7 +663,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             if (position == 0 && !TextUtils.isEmpty(mCheckUpdateResultText)) {
                 vh.subText.setText(mCheckUpdateResultText);
                 vh.subText.setTextColor(
-                        mFindNewVersion.equals(mCheckUpdateResultText) ?
+                        mNewVersionFound.equals(mCheckUpdateResultText) ?
                                 SUBTEXT_HIGHLIGHT_COLOR : mSubTextColor);
                 vh.subText.setCompoundDrawables(null, null, null, null);
             } else {
@@ -734,8 +734,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     private void baseCheckUpdate(boolean toastResult) {
         AppUpdateChecker auc = AppUpdateChecker.getSingleton(this);
         if (mOnCheckUpdateResultListener == null) {
-            mOnCheckUpdateResultListener = findNewVersion -> {
-                mCheckUpdateResultText = findNewVersion ? mFindNewVersion : mIsTheLatestVersion;
+            mOnCheckUpdateResultListener = newVersionFound -> {
+                mCheckUpdateResultText = newVersionFound ? mNewVersionFound : mIsTheLatestVersion;
                 if (mDrawerListAdapter != null) {
                     mDrawerListAdapter.notifyItemChanged(0);
                 }

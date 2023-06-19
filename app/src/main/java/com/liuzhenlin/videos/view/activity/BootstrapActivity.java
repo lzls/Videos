@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.core.splashscreen.SplashScreen;
 
 import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.view.activity.startup.LaunchChain;
 import com.liuzhenlin.videos.view.activity.startup.LaunchProcessor;
 import com.liuzhenlin.videos.view.activity.startup.NotificationPermissionProcessor;
@@ -41,9 +42,10 @@ public class BootstrapActivity extends BaseActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Only fullscreen opaque activities can request fixed orientation on Oreo
         setRequestedOrientation(
-                Build.VERSION.SDK_INT == Build.VERSION_CODES.O
-                        ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                        : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                Utils.getAppTargetSdkVersion(this) > Build.VERSION_CODES.O
+                        && Build.VERSION.SDK_INT == Build.VERSION_CODES.O
+                                ? ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                                : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             SplashScreen.installSplashScreen(this);
         }

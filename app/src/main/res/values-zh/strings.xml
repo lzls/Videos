@@ -37,8 +37,6 @@
     <string name="drawerBackground">抽屉背景</string>
     <string name="drawerSettings">抽屉设置</string>
     <string name="darkTheme">深色主题</string>
-    <string name="findNewVersion">发现新版本</string>
-    <string name="findNewVersion_title">发现新版本</string>
     <string name="goNow">现在去开启</string>
     <string name="hasBeenPlacedInTheBackground">已放入后台</string>
     <string name="illegalInputLink">输入链接不合法！</string>
@@ -48,6 +46,8 @@
     <string name="move">移动</string>
     <string name="name">名称：%s</string>
     <string name="newAppDownloaded">新应用下载完成</string>
+    <string name="newVersionFound">发现新版本</string>
+    <string name="newVersionFound_title">发现新版本</string>
     <string name="noNetworkConnection">无网络连接！</string>
     <string name="notHaveEnoughStorage">存储卡空间不足</string>
     <string name="notOpenNow">暂不开启</string>
@@ -67,6 +67,8 @@
     <string name="pleaseInputVideoLinkFirst">请先输入视频链接！</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">请先插入SD卡</string>
     <string name="pressAgainToExitApp">再按一次退出视频</string>
+    <string name="prompt_enableNotificationsForAppDownload">
+        请从系统设置中开启通知，否则应用下载结果将无法显示。</string>
     <string name="prompt_videoMove">
         如果目标目录已存在相同名称的视频文件，移动过去的新文件将会默认在其名称末尾加上“-&lt;数字&gt;”以示区分和共存，例如sample.mp4变为sample-1.mp4
     </string>
@@ -120,7 +122,7 @@
     <string name="theVideoIsPlaying">正在播放该视频</string>
     <string name="top">置顶</string>
     <string name="unfold">展开</string>
-    <string name="updateLog">%1$sv%2$s 更新日志：</string>
+    <string name="updateLog">%1$sv%2$s更新日志：</string>
     <string name="updateLogs">更新日志</string>
     <string name="userFeedback">用户反馈</string>
     <string name="videoCount">视频数：%d</string>
@@ -143,6 +145,7 @@
 
     <!-- General Preferences -->
     <string name="dark_mode_title">深色主题</string>
+    <string name="language_title">语言</string>
 
     <!-- YouTube Playback Preferences -->
     <string name="youtube_playback_page_style_title">页面风格</string>
@@ -159,7 +162,7 @@
     <plurals name="deletingVideosPleaseWait">
         <item quantity="other">删除视频中，请稍候…</item>
     </plurals>
-    <plurals name="findSomeVideos">
+    <plurals name="foundSomeVideos">
         <item quantity="other">找到%d个视频</item>
     </plurals>
     <plurals name="moveVideosTo">
