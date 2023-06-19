@@ -21,6 +21,7 @@ import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.utils.AESUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.IOUtils;
+import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.Files;
@@ -55,6 +56,7 @@ public final class AppPrefs {
             "_nightUIWithNoDrawerBackground";
 
     private static final String DEFAULT_NIGHT_MODE = "defaultNightMode";
+    private static final String DEFAULT_LANGUAGE_MODE = "defaultLanguageMode";
 
     private static final String GUID = "GUID";
 
@@ -126,6 +128,10 @@ public final class AppPrefs {
 
     public int getDefaultNightMode() {
         return mSP.getInt(DEFAULT_NIGHT_MODE, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+    }
+
+    public int getDefaultLanguageMode() {
+        return mSP.getInt(DEFAULT_LANGUAGE_MODE, LanguageUtils.MODE_LANGUAGE_FOLLOWS_SYSTEM);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -268,6 +274,11 @@ public final class AppPrefs {
 
         public AppPrefs.Editor setDefaultNightMode(int mode) {
             mEditor.putInt(DEFAULT_NIGHT_MODE, mode);
+            return this;
+        }
+
+        public AppPrefs.Editor setDefaultLanguageMode(int mode) {
+            mEditor.putInt(DEFAULT_LANGUAGE_MODE, mode);
             return this;
         }
 

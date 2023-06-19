@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
+import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.LegacyExternalStorageDataMigrator;
 import com.liuzhenlin.videos.dao.AppPrefs;
@@ -36,7 +37,8 @@ public class LaunchProcessor<H extends Activity & LifecycleOwner> extends BasePr
                 appPrefs.edit().setUserPreferRunningAppInRestrictedMode(false).apply();
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+            if (Utils.getAppTargetSdkVersion(mChain.host) >= Build.VERSION_CODES.R
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                     && !appPrefs.isLegacyExternalStorageDataMigrated()) {
                 Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                     boolean migrated = true;

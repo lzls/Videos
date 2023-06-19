@@ -41,6 +41,7 @@ import androidx.appcompat.app.AppCompatDialog;
 import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -91,7 +92,7 @@ import static com.liuzhenlin.common.utils.Utils.runOnConditionMet;
 public final class AppUpdateChecker {
 
     public interface OnResultListener {
-        void onResult(boolean findNewVersion);
+        void onResult(boolean newVersionFound);
     }
 
     private static final String TAG = "AppUpdateChecker";
@@ -175,8 +176,11 @@ public final class AppUpdateChecker {
 
         if (mCheckInProgress) return;
         mCheckInProgress = true;
+
+        final boolean chinese =
+                "zh".equals(mContext.getResources().getConfiguration().locale.getLanguage());
         new AsyncTask<Void, Void, Integer>() {
-            static final int RESULT_FIND_NEW_VERSION = 1;
+            static final int RESULT_NEW_VERSION_FOUND = 1;
             static final int RESULT_NO_NEW_VERSION = 2;
             static final int RESULT_CONNECTION_TIMEOUT = 3;
             static final int RESULT_READ_TIMEOUT = 4;
@@ -219,52 +223,61 @@ public final class AppUpdateChecker {
                         JsonParser.parseString(json).getAsJsonObject()
                                 .get("appInfos").getAsJsonObject();
 
-                mAppName = appInfos.get("appName").getAsString();
+                mAppName = appInfos.get(chinese ? "appName" : "appName-en").getAsString();
                 mPromptDialogAnchorActivityClsName =
                         appInfos.get("promptDialogAnchorActivityClsName").getAsString();
 
-                boolean findNewVersion = Configs.DEBUG_APP_UPDATE;
+                boolean newVersionFound = Configs.DEBUG_APP_UPDATE;
                 String updateChannel =
                         PreferenceManager.getDefaultSharedPreferences(mContext)
                                 .getString(Prefs.KEY_UPDATE_CHANNEL, Prefs.UPDATE_CHANNEL_STABLE);
                 switch (updateChannel) {
                     case Prefs.UPDATE_CHANNEL_STABLE:
-                        findNewVersion |=
+                        newVersionFound |=
                                 appInfos.get("versionCode").getAsInt() > BuildConfig.VERSION_CODE;
                         break;
                     case Prefs.UPDATE_CHANNEL_BETA:
-                        appInfos = appInfos.get("beta").getAsJsonObject();
-                        findNewVersion |=
+                        JsonElement beta = appInfos.get("beta");
+                        while (beta.isJsonPrimitive()) {
+                            beta = appInfos.get(beta.getAsString());
+                        }
+                        appInfos = beta.getAsJsonObject();
+                        newVersionFound |=
                                 appInfos.get("versionCode").getAsInt() > BuildConfig.BETA_VERSION_CODE;
                         break;
                     case Prefs.UPDATE_CHANNEL_DEV:
-                        appInfos = appInfos.get("dev").getAsJsonObject();
-                        findNewVersion |=
+                        JsonElement dev = appInfos.get("dev");
+                        while (dev.isJsonPrimitive()) {
+                            dev = appInfos.get(dev.getAsString());
+                        }
+                        appInfos = dev.getAsJsonObject();
+                        newVersionFound |=
                                 appInfos.get("versionCode").getAsInt() > BuildConfig.DEV_VERSION_CODE;
                         break;
                 }
 
                 // 检测到版本更新
-                if (findNewVersion) {
+                if (newVersionFound) {
                     mAppLink = appInfos.get("appLink").getAsString();
                     mAppSha1 = appInfos.get("appSha1").getAsString();
                     mVersionName = appInfos.get("versionName").getAsString();
                     mUpdateLog = new StringBuilder();
-                    for (JsonElement log : appInfos.get("updateLogs").getAsJsonArray()) {
+                    for (JsonElement log
+                            : appInfos.getAsJsonArray(chinese ? "updateLogs" : "updateLogs-en")) {
                         mUpdateLog.append(log.getAsString()).append("\n");
                     }
                     mUpdateLog.deleteCharAt(mUpdateLog.length() - 1);
                 }
 
-                mNewVersionFound = findNewVersion;
-                return findNewVersion ? RESULT_FIND_NEW_VERSION : RESULT_NO_NEW_VERSION;
+                mNewVersionFound = newVersionFound;
+                return newVersionFound ? RESULT_NEW_VERSION_FOUND : RESULT_NO_NEW_VERSION;
             }
 
             @Override
             protected void onPostExecute(Integer result) {
                 switch (result) {
-                    case RESULT_FIND_NEW_VERSION:
-                        mH.sendEmptyMessage(H.MSG_FIND_NEW_VERSION);
+                    case RESULT_NEW_VERSION_FOUND:
+                        mH.sendEmptyMessage(H.MSG_NEW_VERSION_FOUND);
                         showUpdatePromptDialog();
                         break;
                     case RESULT_NO_NEW_VERSION:
@@ -325,7 +338,7 @@ public final class AppUpdateChecker {
     private final class H extends Handler {
         static final int MSG_STOP_UPDATE_APP_SERVICE = -1;
         static final int MSG_NO_NEW_VERSION = 0;
-        static final int MSG_FIND_NEW_VERSION = 1;
+        static final int MSG_NEW_VERSION_FOUND = 1;
         static final int MSG_REMOVE_FRAGMENT_MANAGERS_PENDING_ADD = 2;
         static final int MSG_REMOVE_SUPPORT_FRAGMENT_MANAGERS_PENDING_ADD = 3;
 
@@ -344,7 +357,7 @@ public final class AppUpdateChecker {
                     }
                     break;
                 case MSG_NO_NEW_VERSION:
-                case MSG_FIND_NEW_VERSION:
+                case MSG_NEW_VERSION_FOUND:
                     if (hasOnResultListener()) {
                         for (int i = mListeners.size() - 1; i >= 0; i--) {
                             mListeners.get(i).onResult(what != MSG_NO_NEW_VERSION);
@@ -765,7 +778,7 @@ public final class AppUpdateChecker {
             final Context mContext;
             final String mPkgName;
 
-            final NotificationManager mNotificationManager;
+            final NotificationManagerCompat mNotificationManager;
             final NotificationCompat.Builder mNotificationBuilder;
             static final int ID_NOTIFICATION = 20191103;
 
@@ -786,8 +799,7 @@ public final class AppUpdateChecker {
                 mContext = service.getApplicationContext();
                 mPkgName = service.getPackageName();
 
-                mNotificationManager = (NotificationManager)
-                        mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+                mNotificationManager = NotificationManagerCompat.from(mContext);
                 String channelId = NotificationChannelManager.getDownloadNotificationChannelId(mContext);
                 RemoteViews nv = createNotificationView();
                 mNotificationBuilder = new NotificationCompat.Builder(mContext, channelId)
@@ -820,6 +832,10 @@ public final class AppUpdateChecker {
 
             @Override
             protected void onPreExecute() {
+                if (!mNotificationManager.areNotificationsEnabled()) {
+                    Toast.makeText(mContext, R.string.prompt_enableNotificationsForAppDownload,
+                            Toast.LENGTH_LONG).show();
+                }
                 mService.startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
             }
 
@@ -975,8 +991,10 @@ public final class AppUpdateChecker {
                         if (Configs.DEBUG_APP_UPDATE) {
                             Log.d(TAG, "Start checking if any notifications use id " + ID_NOTIFICATION);
                         }
+                        NotificationManager nm = (NotificationManager)
+                                mContext.getSystemService(Context.NOTIFICATION_SERVICE);
                         runOnConditionMet(handler, action,
-                                () -> !hasNotification(mNotificationManager, ID_NOTIFICATION, null));
+                                () -> !hasNotification(nm, ID_NOTIFICATION, null));
                     } else {
                         if (Configs.DEBUG_APP_UPDATE) {
                             Log.d(TAG, "Postpone showing app installation prompt notification for "

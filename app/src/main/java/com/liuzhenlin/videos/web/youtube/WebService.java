@@ -20,6 +20,7 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import com.liuzhenlin.common.utils.Executors;
+import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.ServiceBindHelper;
 import com.liuzhenlin.common.utils.Utils;
 
@@ -53,6 +54,14 @@ public class WebService extends Service {
                                     web.getSettings(), Utils.nightModeToWebSettingsForceDarkInt(mode));
                         }
                     });
+                });
+            }
+
+            @Override
+            public void applyDefaultLanguageMode(int mode) throws RemoteException {
+                Executors.MAIN_EXECUTOR.execute(() -> {
+                    // TODO: apply the new language mode onto YoutubePlaybackView
+                    LanguageUtils.setDefaultLanguageMode(WebService.this, mode);
                 });
             }
 

@@ -371,6 +371,11 @@ public class Utils {
         return appVersion;
     }
 
+    /** @see android.content.pm.ApplicationInfo#targetSdkVersion */
+    public static int getAppTargetSdkVersion(@NonNull Context context) {
+        return context.getApplicationInfo().targetSdkVersion;
+    }
+
     /**
      * Creates a new MotionEvent with {@link MotionEvent#ACTION_CANCEL} action being performed,
      * filling in a subset of the basic motion values. Those not specified here are:

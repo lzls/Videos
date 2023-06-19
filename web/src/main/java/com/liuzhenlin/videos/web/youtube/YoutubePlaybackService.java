@@ -34,6 +34,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.util.Consumer;
 
 import com.liuzhenlin.common.Consts;
+import com.liuzhenlin.common.compat.AudioManagerCompat;
 import com.liuzhenlin.common.compat.RemoteViewsCompat;
 import com.liuzhenlin.common.notification.style.DecoratedMediaCustomViewStyle;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
@@ -519,7 +520,8 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 // Register MediaButtonEventReceiver every time the video starts, which
                 // will ensure it to be the sole receiver of MEDIA_BUTTON intents
                 MediaButtonEventReceiver.setMediaButtonEventHandler(getMediaButtonEventHandler());
-                mAudioManager.registerMediaButtonEventReceiver(getMediaButtonEventReceiverComponent());
+                AudioManagerCompat.registerMediaButtonEventReceiver(
+                        mContext, mAudioManager, getMediaButtonEventReceiverComponent());
                 break;
             case Youtube.PlayingStatus.PAUSED:
                 mPlayPauseBtnImgSrc = R.drawable.ic_play_white_24dp;

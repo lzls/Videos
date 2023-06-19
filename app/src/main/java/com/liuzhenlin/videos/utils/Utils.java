@@ -17,6 +17,8 @@ import com.liuzhenlin.videos.Files;
 
 import java.io.File;
 
+import static com.liuzhenlin.common.utils.Utils.getAppTargetSdkVersion;
+
 /**
  * @author 刘振林
  */
@@ -34,7 +36,8 @@ public class Utils {
         Intent it = new Intent(Intent.ACTION_INSTALL_PACKAGE)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         // Android 7.0 共享文件需要通过 FileProvider 添加临时权限，否则系统会抛出 FileUriExposedException.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (getAppTargetSdkVersion(context) >= Build.VERSION_CODES.N
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             Uri contentUri = FileProvider.getUriForFile(context, Files.PROVIDER_AUTHORITY, apk);
             it.setData(contentUri);

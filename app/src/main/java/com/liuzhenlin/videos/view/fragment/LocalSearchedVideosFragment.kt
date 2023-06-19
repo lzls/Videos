@@ -327,7 +327,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         } else {
             mRecyclerView.visibility = View.VISIBLE
             mSearchResultTextView.text =
-                    resources.getQuantityString(R.plurals.findSomeVideos, videoCount, videoCount)
+                    resources.getQuantityString(R.plurals.foundSomeVideos, videoCount, videoCount)
         }
     }
 

@@ -6,6 +6,7 @@
 package com.liuzhenlin.texturevideoview;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -22,9 +23,15 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
+import com.liuzhenlin.common.utils.URLUtils;
 import com.liuzhenlin.texturevideoview.utils.Utils;
 
+import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.Media;
+import org.videolan.libvlc.interfaces.IVLCVout;
+
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * @author 刘振林
@@ -88,7 +95,7 @@ import java.io.IOException;
     public void release() {
         IMPL.release();
     }
-/*
+
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private static final class VideoClipPlayerApi17Impl implements IVideoClipPlayer {
         final Context mContext;
@@ -154,7 +161,11 @@ import java.io.IOException;
         @Override
         public void seekTo(int positionMs) {
             if (mVlcPlayer != null) {
-                mVlcPlayer.setTime(positionMs);
+                if (mVlcPlayer.isPlaying()) {
+                    mVlcPlayer.setTime(positionMs);
+                } else {
+                    mSeekOnPlay = positionMs;
+                }
             }
         }
 
@@ -180,6 +191,7 @@ import java.io.IOException;
             if (mVlcPlayer == null) {
                 final ArrayList<String> options = new ArrayList<>(1);
                 options.add("-vvv");
+                options.add("--repeat");
                 mLibVLC = new LibVLC(mContext, options);
 
                 final Rect surfaceFrame = mSurfaceHolder.getSurfaceFrame();
@@ -191,7 +203,7 @@ import java.io.IOException;
 
                 mVlcPlayer.setAspectRatio(null);
                 mVlcPlayer.setScale(0);
-                mVlcPlayer.setVideoScale(MediaPlayer.ScaleType.SURFACE_BEST_FIT);
+                mVlcPlayer.setVideoScale(org.videolan.libvlc.MediaPlayer.ScaleType.SURFACE_BEST_FIT);
                 vout.setWindowSize(surfaceWidth, surfaceHeight);
                 vout.setVideoSurface(mSurfaceHolder.getSurface(), mSurfaceHolder);
                 vout.attachViews();
@@ -211,7 +223,9 @@ import java.io.IOException;
         @Override
         public void release() {
             if (mVlcPlayer != null) {
-                mSeekOnPlay = (int) mVlcPlayer.getTime();
+                if (mSeekOnPlay == 0) {
+                    mSeekOnPlay = (int) mVlcPlayer.getTime();
+                }
                 mVlcPlayer.getVLCVout().detachViews();
                 mVlcPlayer.stop();
                 mVlcPlayer.release();
@@ -222,7 +236,7 @@ import java.io.IOException;
             }
         }
     }
-*/
+
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
     private static final class VideoClipPlayerApi16Impl implements IVideoClipPlayer {
         final Context mContext;
@@ -302,6 +316,7 @@ import java.io.IOException;
                 mExoPlayer.setVideoSurfaceHolder(mSurfaceHolder);
                 mExoPlayer.setAudioAttributes(VideoPlayer.sDefaultAudioAttrs, true);
                 mExoPlayer.setMediaSource(mMediaSource);
+                mExoPlayer.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
                 mExoPlayer.prepare();
             }
         }
@@ -373,12 +388,16 @@ import java.io.IOException;
         @Override
         public void seekTo(int positionMs) {
             if (mMediaPlayer != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // Precise seek with larger performance overhead compared to the default one.
-                    // Slow! Really slow!
-                    mMediaPlayer.seekTo(positionMs, android.media.MediaPlayer.SEEK_CLOSEST);
+                if (mMediaPlayer.isPlaying()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        // Precise seek with larger performance overhead compared to the default one.
+                        // Slow! Really slow!
+                        mMediaPlayer.seekTo(positionMs, android.media.MediaPlayer.SEEK_CLOSEST);
+                    } else {
+                        mMediaPlayer.seekTo(positionMs /*, android.media.MediaPlayer.SEEK_PREVIOUS_SYNC*/);
+                    }
                 } else {
-                    mMediaPlayer.seekTo(positionMs /*, android.media.MediaPlayer.SEEK_PREVIOUS_SYNC*/);
+                    mSeekOnPlay = positionMs;
                 }
             }
         }
@@ -411,12 +430,18 @@ import java.io.IOException;
                     return;
                 }
                 mMediaPlayer.setDisplay(mSurfaceHolder);
+                // We gave MediaPlayer a SurfaceHolder and it will automatically call
+                // SurfaceHolder#setKeepScreenOn(boolean) when its playback state changes, so
+                // if we want setKeepScreenOn() to work, we need also set its mScreenOnWhilePlaying
+                // to true.
+                mMediaPlayer.setScreenOnWhilePlaying(true);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     mMediaPlayer.setAudioAttributes(
                             VideoPlayer.sDefaultAudioAttrs.getAudioAttributesV21().audioAttributes);
                 } else {
                     mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 }
+                mMediaPlayer.setLooping(true);
                 mMediaPlayer.setOnPreparedListener(mp -> {
                     mPrepared = true;
                     if (mPlayWhenPrepared) {
@@ -430,7 +455,9 @@ import java.io.IOException;
         @Override
         public void release() {
             if (mMediaPlayer != null) {
-                mSeekOnPlay = mMediaPlayer.getCurrentPosition();
+                if (mSeekOnPlay == 0) {
+                    mSeekOnPlay = mMediaPlayer.getCurrentPosition();
+                }
                 mMediaPlayer.stop();
                 mMediaPlayer.release();
                 mMediaPlayer = null;

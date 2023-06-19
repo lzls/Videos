@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import androidx.webkit.WebViewClientCompat;
 
 import com.liuzhenlin.common.Configs;
+import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Regex;
@@ -49,6 +50,13 @@ public class AndroidWebView extends WebView {
     }
 
     private void init() {
+        // WebView would reset app locale to the one from system Settings during its construction，
+        // which might invalidate the user-preferred app language that was already set. So we need
+        // ensure the locale of the Application Context's Resources Configuration to be the user
+        // preferred value here.
+        LanguageUtils.updateResourcesConfigLocale(mContext.getApplicationContext(),
+                LanguageUtils.getDefaultLanguageLocale());
+
         setup(getSettings());
 
         // So that we can catch the back button

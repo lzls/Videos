@@ -6,8 +6,10 @@
 package com.liuzhenlin.common.utils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class ReflectionUtils {
@@ -64,5 +66,45 @@ public class ReflectionUtils {
             }
         }
         return false;
+    }
+
+    @Nullable
+    public static Field getDeclaredField(@NonNull Class<?> clazz, @NonNull String fieldName) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field;
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getDeclaredMethod(
+            @NonNull Class<?> clazz, @NonNull String methodName, @Nullable Class<?>... parameterTypes) {
+        try {
+            Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
+            method.setAccessible(true);
+            return method;
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static <T> T getDeclaredFieldValue(
+            @NonNull Class<?> clazz, @Nullable Object obj, @NonNull String fieldName) {
+        Field field = getDeclaredField(clazz, fieldName);
+        if (field != null) {
+            try {
+                //noinspection unchecked
+                return (T) field.get(obj);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }

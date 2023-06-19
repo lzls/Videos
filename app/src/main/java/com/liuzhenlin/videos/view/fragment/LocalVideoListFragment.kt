@@ -802,10 +802,9 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             UiUtils.setRuleForRelativeLayoutChild(
                     cancel, RelativeLayout.START_OF, R.id.btn_confirm_deleteVideoListItemDialog)
-        } else {
-            UiUtils.setRuleForRelativeLayoutChild(
-                    cancel, RelativeLayout.LEFT_OF, R.id.btn_confirm_deleteVideoListItemDialog)
         }
+        UiUtils.setRuleForRelativeLayoutChild(
+                cancel, RelativeLayout.LEFT_OF, R.id.btn_confirm_deleteVideoListItemDialog)
 
         val confirm = view.findViewById<TextView>(R.id.btn_ok)
         confirm.id = R.id.btn_confirm_deleteVideoListItemDialog

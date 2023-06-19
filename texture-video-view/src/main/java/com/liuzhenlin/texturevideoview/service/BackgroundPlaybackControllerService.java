@@ -6,7 +6,6 @@
 package com.liuzhenlin.texturevideoview.service;
 
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -27,11 +26,13 @@ import android.os.RemoteException;
 import android.os.SystemClock;
 import android.view.View;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
@@ -73,7 +74,7 @@ public class BackgroundPlaybackControllerService extends Service {
     @Synthetic long mMediaProgress;
     @Synthetic long mMediaDuration;
 
-    @Synthetic NotificationManager mNotificationManager;
+    @Synthetic NotificationManagerCompat mNotificationManager;
     @Synthetic NotificationCompat.Builder mNotificationBuilder;
     private static final int ID_NOTIFICATION = 20191203;
 
@@ -151,8 +152,6 @@ public class BackgroundPlaybackControllerService extends Service {
     @Override
     public void onCreate() {
         String channelId = NotificationChannelManager.getPlaybackControlNotificationChannelId(this);
-        mNotificationManager = (NotificationManager)
-                getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationBuilder = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_media_app_notification)
                 .setStyle(new DecoratedMediaCustomViewStyle())
@@ -163,6 +162,11 @@ public class BackgroundPlaybackControllerService extends Service {
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOngoing(true);
+        mNotificationManager = NotificationManagerCompat.from(getApplicationContext());
+        if (!mNotificationManager.areNotificationsEnabled()) {
+            Toast.makeText(this, R.string.prompt_enableNotificationsForBackgroundPlaybackOfMedia,
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     @Nullable
