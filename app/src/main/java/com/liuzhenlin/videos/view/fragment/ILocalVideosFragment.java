@@ -17,4 +17,5 @@ import com.liuzhenlin.common.listener.OnBackPressedListener;
 public interface ILocalVideosFragment extends OnBackPressedListener {
     void goToLocalFoldedVideosFragment(@NonNull Bundle args);
     void goToLocalSearchedVideosFragment();
+    void goToVideoMoveFragment(@NonNull Bundle args);
 }

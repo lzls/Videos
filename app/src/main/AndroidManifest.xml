@@ -5,11 +5,17 @@
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
 <!--    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />-->
 
@@ -23,9 +29,11 @@
         android:label="@string/appName"
         android:theme="@style/AppTheme"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
         android:preserveLegacyExternalStorage="true"
+        android:requestRawExternalStorageAccess="true"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"
         tools:ignore="UnusedAttribute">
@@ -33,7 +41,7 @@
         <activity
             android:name=".view.activity.BootstrapActivity"
             android:theme="@style/ActivityStyle_Bootstrap"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|locale|layoutDirection"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -78,7 +86,7 @@
         <activity
             android:name=".view.activity.VideoActivity"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection"
             android:supportsPictureInPicture="true"
             android:launchMode="singleTask"
             tools:ignore="LockedOrientationActivity" />
@@ -86,13 +94,13 @@
         <activity
             android:name=".view.activity.MainActivity"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection"
             tools:ignore="LockedOrientationActivity" />
 
         <activity
             android:name=".view.activity.FeedbackActivity"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection"
             android:launchMode="singleTop"
             android:windowSoftInputMode="stateHidden"
             tools:ignore="LockedOrientationActivity" />
@@ -100,7 +108,7 @@
         <activity
             android:name=".view.activity.SettingsActivity"
             android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection"
             android:launchMode="singleTop"
             tools:ignore="LockedOrientationActivity" />
 
@@ -110,7 +118,7 @@
 
         <activity
             android:name=".web.youtube.YoutubePlaybackActivity"
-            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"
+            android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection"
             android:taskAffinity=".web.youtube"
             android:process=":web"
             tools:replace="android:configChanges, android:taskAffinity" />

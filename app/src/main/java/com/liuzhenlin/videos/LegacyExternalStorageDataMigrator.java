@@ -30,8 +30,7 @@ public class LegacyExternalStorageDataMigrator {
     }
 
     public boolean isLegacyDataAccessible() {
-        return Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
-                || Environment.isExternalStorageLegacy();
+        return App.getInstance(mContext).hasAllFilesAccess();
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

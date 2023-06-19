@@ -247,8 +247,9 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
         native_setup(new WeakReference<IjkMediaPlayer>(this));
     }
 
-    private native void _setFrameAtTime(String imgCachePath, long startTime, long endTime, int num, int imgDefinition)
-            throws IllegalArgumentException, IllegalStateException;
+    private native void _setFrameAtTime(
+            String imgCachePath, long startTime, long endTime, int num, int imgDefinition
+    ) throws IllegalArgumentException, IllegalStateException;
 
     /*
      * Update the IjkMediaPlayer SurfaceTexture. Call after setting a new
@@ -1225,7 +1226,8 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
             if (TextUtils.isEmpty(mimeType))
                 return null;
 
-            Log.i(TAG, String.format(Locale.US, "onSelectCodec: mime=%s, profile=%d, level=%d", mimeType, profile, level));
+            Log.i(TAG, String.format(Locale.US, "onSelectCodec: mime=%s, profile=%d, level=%d",
+                    mimeType, profile, level));
             ArrayList<IjkMediaCodecInfo> candidateCodecList = new ArrayList<IjkMediaCodecInfo>();
             int numCodecs = MediaCodecList.getCodecCount();
             for (int i = 0; i < numCodecs; i++) {
@@ -1246,12 +1248,14 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
                     if (!type.equalsIgnoreCase(mimeType))
                         continue;
 
-                    IjkMediaCodecInfo candidate = IjkMediaCodecInfo.setupCandidate(codecInfo, mimeType);
+                    IjkMediaCodecInfo candidate =
+                            IjkMediaCodecInfo.setupCandidate(codecInfo, mimeType);
                     if (candidate == null)
                         continue;
 
                     candidateCodecList.add(candidate);
-                    Log.i(TAG, String.format(Locale.US, "candidate codec: %s rank=%d", codecInfo.getName(), candidate.mRank));
+                    Log.i(TAG, String.format(Locale.US, "candidate codec: %s rank=%d",
+                            codecInfo.getName(), candidate.mRank));
                     candidate.dumpProfileLevels(mimeType);
                 }
             }
@@ -1269,11 +1273,13 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
             }
 
             if (bestCodec.mRank < IjkMediaCodecInfo.RANK_LAST_CHANCE) {
-                Log.w(TAG, String.format(Locale.US, "unaccetable codec: %s", bestCodec.mCodecInfo.getName()));
+                Log.w(TAG, String.format(Locale.US, "unaccetable codec: %s",
+                        bestCodec.mCodecInfo.getName()));
                 return null;
             }
 
-            Log.i(TAG, String.format(Locale.US, "selected codec: %s rank=%d", bestCodec.mCodecInfo.getName(), bestCodec.mRank));
+            Log.i(TAG, String.format(Locale.US, "selected codec: %s rank=%d",
+                    bestCodec.mCodecInfo.getName(), bestCodec.mRank));
             return bestCodec.mCodecInfo.getName();
         }
     }

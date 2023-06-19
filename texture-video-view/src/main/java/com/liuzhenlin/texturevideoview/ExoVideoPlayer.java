@@ -52,6 +52,7 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoSize;
 import com.google.android.material.snackbar.Snackbar;
+import com.liuzhenlin.common.compat.AudioManagerCompat;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
 import com.liuzhenlin.common.utils.UiUtils;
@@ -67,7 +68,8 @@ import java.util.List;
 
 /**
  * A sub implementation class of {@link VideoPlayer} to deal with the audio/video playback logic
- * related to the media player component through an {@link com.google.android.exoplayer2.ExoPlayer} object.
+ * related to the media player component through an {@link com.google.android.exoplayer2.ExoPlayer}
+ * object.
  *
  * @author 刘振林
  */
@@ -218,8 +220,9 @@ public class ExoVideoPlayer extends VideoPlayer {
     /**
      * @return a user agent string based on the application name resolved from the context object
      *         of the view this player is bound to and the `exoplayer-core` library version,
-     *         which can be used to create a {@link com.google.android.exoplayer2.upstream.DataSource.Factory}
-     *         instance for the {@link MediaSource.Factory} subclasses.
+     *         which can be used to create a
+     *         {@link com.google.android.exoplayer2.upstream.DataSource.Factory} instance for
+     *         the {@link MediaSource.Factory} subclasses.
      */
     @NonNull
     public String getUserAgent() {
@@ -326,7 +329,7 @@ public class ExoVideoPlayer extends VideoPlayer {
                             && ((ExoPlaybackException) error).type == ExoPlaybackException.TYPE_SOURCE) {
                         stringRes = R.string.failedToLoadThisVideo;
                     } else {
-                        stringRes = R.string.unknownErrorOccurredWhenVideoIsPlaying;
+                        stringRes = R.string.unknownErrorOccurredWhenVideoWasPlaying;
                     }
                     if (mVideoView != null) {
                         UiUtils.showUserCancelableSnackbar(mVideoView, stringRes, Snackbar.LENGTH_SHORT);
@@ -575,7 +578,8 @@ public class ExoVideoPlayer extends VideoPlayer {
                         // Register MediaButtonEventReceiver every time the video starts, which
                         // will ensure it to be the sole receiver of MEDIA_BUTTON intents
                         MediaButtonEventReceiver.setMediaButtonEventHandler(getMediaButtonEventHandler());
-                        mAudioManager.registerMediaButtonEventReceiver(sMediaButtonEventReceiverComponent);
+                        AudioManagerCompat.registerMediaButtonEventReceiver(mContext, mAudioManager,
+                                sMediaButtonEventReceiverComponent);
                         break;
 
                     case AudioManager.AUDIOFOCUS_REQUEST_DELAYED:
@@ -1003,8 +1007,9 @@ public class ExoVideoPlayer extends VideoPlayer {
         if (mExoPlayer != null) {
             final int playbackState = getPlaybackState();
             final boolean playWhenPrepared =
-                    playbackState == PLAYBACK_STATE_PREPARING && (mInternalFlags & $FLAG_PLAY_WHEN_PREPARED) != 0
-                            || playbackState == PLAYBACK_STATE_PLAYING;
+                    playbackState == PLAYBACK_STATE_PLAYING
+                            || playbackState == PLAYBACK_STATE_PREPARING
+                                    && (mInternalFlags & $FLAG_PLAY_WHEN_PREPARED) != 0;
             restartVideo(true, true, playWhenPrepared);
         }
     }

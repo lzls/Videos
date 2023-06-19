@@ -27,35 +27,56 @@ import android.widget.TextView
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import com.bumptech.glide.Glide
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.*
-import com.liuzhenlin.common.adapter.HeaderAndFooterWrapper
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
-import com.liuzhenlin.common.utils.AlgorithmUtil
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.FloatingMenu
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
-import com.liuzhenlin.videos.model.LocalSearchedVideoListModel
-import com.liuzhenlin.videos.model.OnLoadListener
-import com.liuzhenlin.videos.model.OnReloadVideosListener
+import com.liuzhenlin.videos.presenter.ILocalSearchedVideosPresenter
 import com.liuzhenlin.videos.utils.VideoUtils2
-import com.liuzhenlin.videos.view.fragment.PackageConsts.*
+import com.liuzhenlin.videos.view.IView
+import com.liuzhenlin.videos.view.fragment.Payloads.*
 import java.util.*
-import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * @author 刘振林
  */
-class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListener,
-        View.OnTouchListener, OnReloadVideosListener, SwipeRefreshLayout.OnRefreshListener {
+
+interface ILocalSearchedVideosView : IView<ILocalSearchedVideosPresenter>,
+        VideoListItemOpCallback<Video> {
+
+    public val searchText: String
+
+    fun getArguments(): Bundle?
+    fun onReturnResult(resultCode: Int, data: Intent?)
+
+    fun onVideosLoadStart()
+    fun onVideosLoadFinish()
+    fun onVideosLoadCanceled()
+
+    fun updateListVisibilityAndSearchResultText()
+
+    fun newSearchedVideoListViewHolder(parent: ViewGroup): SearchedVideoListViewHolder
+
+    abstract class SearchedVideoListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        abstract fun bindData(video: Video, position: Int, payloads: List<Any>)
+        abstract fun loadItemImages(video: Video)
+        abstract fun cancelLoadingItemImages()
+    }
+}
+
+class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, View.OnClickListener,
+        View.OnLongClickListener, View.OnTouchListener, SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
     private var mLifecycleCallback: FragmentPartLifecycleCallback? = null
@@ -66,23 +87,34 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
     private lateinit var mSearchSrcEditText: EditText
     private lateinit var mSearchResultTextView: TextView
     private lateinit var mRecyclerView: RecyclerView
-    private val mAdapterWrapper = HeaderAndFooterWrapper(SearchedVideoListAdapter())
-    private val mSearchedVideos = mutableListOf<Video>()
+    private val mAdapterWrapper by lazy(LazyThreadSafetyMode.NONE) {
+        presenter.getSearchedVideoListAdapter() }
     private var mSelectedItemIndex = NO_POSITION
 
-    private lateinit var mModel: LocalSearchedVideoListModel
-    private var _mVideos: ArrayList<Video>? = null
-    private val mVideos: ArrayList<Video>
-        get() {
-            if (_mVideos == null) {
-                _mVideos = arguments?.getParcelableArrayList(KEY_VIDEOS) ?: arrayListOf()
-            }
-            return _mVideos!!
-        }
+    internal val presenter = ILocalSearchedVideosPresenter.newInstance()
 
     private var mVideoOptionsMenu: FloatingMenu? = null
     private var mDownX = 0
     private var mDownY = 0
+
+    override val searchText: String
+        get() = mSearchText
+
+    init {
+        lifecycle.addObserver(object: DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) =
+                    presenter.onViewStart(this@LocalSearchedVideosFragment)
+
+            override fun onResume(owner: LifecycleOwner) =
+                    presenter.onViewResume(this@LocalSearchedVideosFragment)
+
+            override fun onPause(owner: LifecycleOwner) =
+                    presenter.onViewPaused(this@LocalSearchedVideosFragment)
+
+            override fun onStop(owner: LifecycleOwner) =
+                    presenter.onViewStopped(this@LocalSearchedVideosFragment)
+        })
+    }
 
     fun setVideoOpCallback(callback: VideoListItemOpCallback<Video>?) {
         mVideoOpCallback = callback
@@ -109,17 +141,7 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
         }
         mLifecycleCallback?.onFragmentAttached(this)
 
-        mModel = LocalSearchedVideoListModel(context)
-        mModel.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<Video>?> {
-            override fun onLoadFinish(result: MutableList<Video>?) {
-                onReloadVideos(result)
-                mInteractionCallback.isRefreshLayoutRefreshing = false
-            }
-
-            override fun onLoadCanceled() {
-                mInteractionCallback.isRefreshLayoutRefreshing = false
-            }
-        })
+        presenter.attachToView(this)
     }
 
     override fun onScreenWidthDpLevelChanged(
@@ -129,7 +151,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
                 PAYLOAD_REFRESH_VIDEO_THUMB)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_local_searched_videos, container, false)
         initViews(view)
         return view
@@ -142,7 +165,8 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
         actionbar.findViewById<SearchView>(R.id.searchview).run {
             UiUtils.setViewMargins(findViewById(R.id.search_edit_frame), 0, 0, 0, 0)
 
-            findViewById<View>(R.id.search_plate).setBackgroundResource(R.drawable.bg_search_view_plate)
+            findViewById<View>(R.id.search_plate)
+                    .setBackgroundResource(R.drawable.bg_search_view_plate)
 
             mSearchSrcEditText = findViewById<SearchView.SearchAutoComplete>(R.id.search_src_text)
             mSearchSrcEditText.setTextSize(
@@ -155,7 +179,7 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
 
                 override fun onQueryTextChange(newText: String): Boolean {
                     mSearchText = newText.trim()
-                    refreshList(true)
+                    presenter.refreshList(true)
                     return true
                 }
             })
@@ -218,56 +242,30 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
             Unit
         }
         v.parent === mRecyclerView -> {
-            playVideo(mSearchedVideos[v.tag as Int])
+            presenter.playVideoAt(v.tag as Int)
         }
         else -> Unit
     }
 
     override fun onLongClick(v: View) = if (v.parent === mRecyclerView) {
         val index = v.tag as Int
-        val video = mSearchedVideos[index]
-
         val headersCount = mAdapterWrapper.headersCount
         val position = headersCount + index
-        val itemCount = mAdapterWrapper.itemCount - position
+        val videoWritable = presenter.isVideoWritable(index)
 
         mVideoOptionsMenu = FloatingMenu(mRecyclerView)
         mVideoOptionsMenu!!.inflate(R.menu.floatingmenu_video_ops)
+        mVideoOptionsMenu!!.setItemEnabled(R.id.move,
+                videoWritable && App.getInstance(v.context).hasAllFilesAccess())
+        mVideoOptionsMenu!!.setItemEnabled(R.id.delete, videoWritable)
+        mVideoOptionsMenu!!.setItemEnabled(R.id.rename, videoWritable)
         mVideoOptionsMenu!!.setOnItemClickListener { menuItem, _ ->
             when (menuItem.iconResId) {
-                R.drawable.ic_delete_24dp_menu -> mVideoOpCallback?.showDeleteItemDialog(video) {
-                    mVideos.remove(video)
-
-                    mSearchedVideos.removeAt(index)
-                    mAdapterWrapper.notifyItemRemoved(position)
-                    mAdapterWrapper.notifyItemRangeChanged(position, itemCount - 1)
-                    updateSearchResult()
-                }
-                R.drawable.ic_edit_24dp_menu -> mVideoOpCallback?.showRenameItemDialog(video) {
-                    mVideos.sortByElementName()
-
-                    if (mSearchText.length
-                            == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
-                        mSearchedVideos.sortByElementName()
-                        val newIndex = mSearchedVideos.indexOf(video)
-                        if (newIndex == index) {
-                            mAdapterWrapper.notifyItemChanged(position, PAYLOAD_REFRESH_ITEM_NAME)
-                        } else {
-                            val newPosition = headersCount + newIndex
-                            mAdapterWrapper.notifyItemRemoved(position)
-                            mAdapterWrapper.notifyItemInserted(newPosition)
-                            mAdapterWrapper.notifyItemRangeChanged(
-                                    min(position, newPosition), abs(newPosition - position) + 1)
-                        }
-                    } else {
-                        mSearchedVideos.removeAt(index)
-                        mAdapterWrapper.notifyItemRemoved(position)
-                        mAdapterWrapper.notifyItemRangeChanged(position, itemCount - 1)
-                        updateSearchResult()
-                    }
-                }
-                R.drawable.ic_share_24dp_menu -> shareVideo(video)
-                R.drawable.ic_info_24dp_menu -> mVideoOpCallback?.showItemDetailsDialog(video)
+                R.drawable.ic_file_move_menu -> presenter.moveVideoAt(index)
+                R.drawable.ic_delete_24dp_menu -> presenter.deleteVideoAt(index)
+                R.drawable.ic_edit_24dp_menu -> presenter.renameVideoAt(index)
+                R.drawable.ic_share_24dp_menu -> presenter.shareVideoAt(index)
+                R.drawable.ic_info_24dp_menu -> presenter.viewDetailsOfVideoAt(index)
             }
         }
         mVideoOptionsMenu!!.setOnDismissListener {
@@ -287,6 +285,7 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mLifecycleCallback?.onFragmentViewCreated(this)
+        presenter.onViewCreated(this)
     }
 
     override fun onDestroyView() {
@@ -296,9 +295,12 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
         mSelectedItemIndex = NO_POSITION
         mVideoOptionsMenu?.dismiss()
 
-        mSearchText = EMPTY_STRING
-        mSearchedVideos.clear()
-        mModel.stopLoader()
+        if (mSearchText != EMPTY_STRING) {
+            mSearchText = EMPTY_STRING
+            presenter.refreshList(true)
+        }
+        presenter.stopLoadVideos()
+        presenter.onViewDestroyed(this)
 
         mInteractionCallback.setOnRefreshLayoutChildScrollUpCallback(null)
     }
@@ -306,162 +308,127 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
     override fun onDetach() {
         super.onDetach()
         mLifecycleCallback?.onFragmentDetached(this)
+        presenter.detachFromView(this)
+    }
 
-        targetFragment?.onActivityResult(
-                targetRequestCode,
-                RESULT_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT,
-                Intent().putParcelableArrayListExtra(KEY_VIDEOS, mVideos))
+    override fun onReturnResult(resultCode: Int, data: Intent?) {
+        targetFragment?.onActivityResult(targetRequestCode, resultCode, data)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            REQUEST_CODE_PLAY_VIDEO -> if (resultCode == RESULT_CODE_PLAY_VIDEO) {
-                val video = data?.getParcelableExtra<Video>(KEY_VIDEO) ?: return
-                if (video.id == NO_ID) return
-
-                val headersCount = mAdapterWrapper.headersCount
-                for ((i, v) in mSearchedVideos.withIndex()) {
-                    if (v != video) continue
-                    if (v.progress != video.progress) {
-                        v.progress = video.progress
-                        mAdapterWrapper.notifyItemChanged(
-                                headersCount + i, PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
-                    }
-                    break
-                }
-            }
-        }
+        presenter.onActivityResult(requestCode, resultCode, data)
     }
 
-    override fun onReloadVideos(videos: MutableList<Video>?) =
-            if (!mVideos.allEqual(videos)) {
-                mVideos.set(videos)
-                refreshList(false)
-            } else Unit
-
-    @SuppressLint("NotifyDataSetChanged")
-    private fun refreshList(searchTextChanged: Boolean) {
-        var searchedVideos: MutableList<Video>? = null
-        if (mSearchText.isNotEmpty()) {
-            for (video in mVideos) {
-                if (mSearchText.length
-                        == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
-                    if (searchedVideos == null) searchedVideos = mutableListOf()
-                    searchedVideos.add(video)
-                }
-            }
-        }
-        if (searchedVideos == null || searchedVideos.isEmpty()) {
-            if (mSearchedVideos.isNotEmpty()) {
-                mSearchedVideos.clear()
-                mAdapterWrapper.notifyDataSetChanged()
-                updateSearchResult()
-            }
-        } else if (searchedVideos.size == mSearchedVideos.size) {
-            var changedIndices: MutableList<Int>? = null
-            for (i in searchedVideos.indices) {
-                if (!searchedVideos[i].allEqual(mSearchedVideos[i])) {
-                    if (changedIndices == null) changedIndices = LinkedList()
-                    changedIndices.add(i)
-                }
-            }
-            val headersCount = mAdapterWrapper.headersCount
-            if (searchTextChanged) {
-                for (index in searchedVideos.indices) {
-                    if (changedIndices?.contains(index) == true) {
-                        mSearchedVideos[index] = searchedVideos[index]
-                        mAdapterWrapper.notifyItemChanged(headersCount + index) // without payload
-                    } else {
-                        mAdapterWrapper.notifyItemChanged(headersCount + index, PAYLOAD_REFRESH_ITEM_NAME)
-                    }
-                }
-            } else if (changedIndices != null) {
-                for (index in changedIndices) {
-                    mSearchedVideos[index] = searchedVideos[index]
-                    mAdapterWrapper.notifyItemChanged(headersCount + index) // without payload
-                }
-            }
-        } else {
-            mSearchedVideos.set(searchedVideos)
-            mAdapterWrapper.notifyDataSetChanged()
-            updateSearchResult()
-        }
-    }
-
-    private fun updateSearchResult() {
-        val size = mSearchedVideos.size
-        if (size == 0) {
+    override fun updateListVisibilityAndSearchResultText() {
+        val videoCount = mAdapterWrapper.itemCount - mAdapterWrapper.headersCount
+        if (videoCount == 0) {
             mRecyclerView.visibility = View.GONE
         } else {
             mRecyclerView.visibility = View.VISIBLE
-            mSearchResultTextView.text = resources.getQuantityString(R.plurals.findSomeVideos, size, size)
+            mSearchResultTextView.text =
+                    resources.getQuantityString(R.plurals.foundSomeVideos, videoCount, videoCount)
         }
     }
 
-    override fun onRefresh() {
-        if (mVideoOpCallback?.isAsyncDeletingItems == true) {
-            mInteractionCallback.isRefreshLayoutRefreshing = false
-            return
-        }
-        mModel.startLoader()
+    override fun onRefresh() = presenter.startLoadVideos()
+
+    override fun onVideosLoadStart() {
     }
 
-    private inner class SearchedVideoListAdapter : ImageLoadingListAdapter<SearchedVideoListAdapter.ViewHolder>() {
-        override fun getItemCount() = mSearchedVideos.size
+    override fun onVideosLoadFinish() {
+        mInteractionCallback.isRefreshLayoutRefreshing = false
+    }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-                ViewHolder(
-                        LayoutInflater.from(parent.context)
-                                .inflate(R.layout.item_searched_video_list, parent, false))
+    override fun onVideosLoadCanceled() = onVideosLoadFinish()
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+    override fun showDeleteItemDialog(video: Video, onDeleteAction: (() -> Unit)?) {
+        mVideoOpCallback?.showDeleteItemDialog(video, onDeleteAction)
+    }
+
+    override fun showDeleteItemsPopupWindow(vararg videos: Video, onDeleteAction: (() -> Unit)?) {
+        mVideoOpCallback?.showDeleteItemsPopupWindow(*videos, onDeleteAction = onDeleteAction)
+    }
+
+    override fun showRenameItemDialog(video: Video, onRenameAction: (() -> Unit)?) {
+        mVideoOpCallback?.showRenameItemDialog(video, onRenameAction)
+    }
+
+    override fun showItemDetailsDialog(video: Video) {
+        mVideoOpCallback?.showItemDetailsDialog(video)
+    }
+
+    override fun showVideosMovePage(vararg videos: Video) {
+        mVideoOpCallback?.showVideosMovePage(*videos)
+    }
+
+    override fun newSearchedVideoListViewHolder(parent: ViewGroup)
+            : ILocalSearchedVideosView.SearchedVideoListViewHolder {
+        return SearchedVideoListViewHolder(
+                LayoutInflater.from(parent.context)
+                        .inflate(R.layout.item_searched_video_list, parent, false))
+    }
+
+    private inner class SearchedVideoListViewHolder(itemView: View)
+        : ILocalSearchedVideosView.SearchedVideoListViewHolder(itemView) {
+
+        val selectorView: View = (itemView as ViewGroup)[0]
+        val videoImage: ImageView = itemView.findViewById(R.id.image_video)
+        val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
+        val videoProgressAndDurationText: TextView =
+                itemView.findViewById(R.id.text_videoProgressAndDuration)
+
+        init {
+            itemView.setOnTouchListener(this@LocalSearchedVideosFragment)
+            itemView.setOnClickListener(this@LocalSearchedVideosFragment)
+            itemView.setOnLongClickListener(this@LocalSearchedVideosFragment)
+        }
+
+        override fun bindData(video: Video, position: Int, payloads: List<Any>) {
             if (payloads.isEmpty()) {
-                onBindViewHolder(holder, position)
+                itemView.tag = position
+
+                highlightSelectedItemIfExists(position)
+
+                updateItemName(video.name)
+                videoProgressAndDurationText.text =
+                        VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
             } else {
-                val payload = payloads[0] as Int
-                if (payload and PAYLOAD_HIGHLIGHT_SELECTED_ITEM_IF_EXISTS != 0) {
-                    highlightSelectedItemIfExists(holder, position)
-                }
-                if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
-                    loadItemImagesIfNotScrolling(holder)
-                }
-                if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
-                    updateItemName(holder, mSearchedVideos[position].name)
-                }
-                if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    val (_, _, _, _, _, _, progress, duration) = mSearchedVideos[position]
-                    holder.videoProgressAndDurationText.text =
-                            VideoUtils2.concatVideoProgressAndDuration(progress, duration)
+                for (payload in payloads) {
+                    if (payload !is Int) continue
+                    if (payload and PAYLOAD_HIGHLIGHT_SELECTED_ITEM_IF_EXISTS != 0) {
+                        highlightSelectedItemIfExists(position)
+                    }
+                    if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
+                        @Suppress("UNCHECKED_CAST")
+                        val adapter = mAdapterWrapper.innerAdapter
+                                as ImageLoadingListAdapter<RecyclerView.ViewHolder>
+                        adapter.loadItemImagesIfNotScrolling(this)
+                    }
+                    if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
+                        updateItemName(video.name)
+                    }
+                    if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
+                        val (_, _, _, _, _, _, progress, duration) = video
+                        videoProgressAndDurationText.text =
+                                VideoUtils2.concatVideoProgressAndDuration(progress, duration)
+                    }
                 }
             }
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            super.onBindViewHolder(holder, position)
-            holder.itemView.tag = position
-
-            highlightSelectedItemIfExists(holder, position)
-
-            val video = mSearchedVideos[position]
-            updateItemName(holder, video.name)
-            holder.videoProgressAndDurationText.text =
-                    VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
-        }
-
-        override fun loadItemImages(holder: ViewHolder) {
-            val video = mSearchedVideos[holder.bindingAdapterPosition - mAdapterWrapper.headersCount]
+        override fun loadItemImages(video: Video) {
             VideoUtils2.loadVideoThumbIntoFragmentImageView(
-                    this@LocalSearchedVideosFragment, holder.videoImage, video)
+                    this@LocalSearchedVideosFragment, videoImage, video)
         }
 
-        override fun cancelLoadingItemImages(holder: ViewHolder) {
-            Glide.with(this@LocalSearchedVideosFragment).clear(holder.videoImage)
+        override fun cancelLoadingItemImages() {
+            Glide.with(this@LocalSearchedVideosFragment).clear(videoImage)
         }
 
         // 高亮搜索关键字
         @SuppressLint("DefaultLocale")
-        fun updateItemName(holder: ViewHolder, name: String) {
+        fun updateItemName(name: String) {
             val text = SpannableString(name)
             var fromIndex = 0
             for (char in mSearchText.toCharArray()) {
@@ -470,32 +437,18 @@ class LocalSearchedVideosFragment : BaseFragment(), View.OnClickListener, View.O
                         start, start + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 fromIndex = start + 1
             }
-            holder.videoNameText.text = text
+            videoNameText.text = text
         }
 
-        fun highlightSelectedItemIfExists(holder: ViewHolder, position: Int) {
+        fun highlightSelectedItemIfExists(position: Int) {
             if (position == mSelectedItemIndex) {
-                if (holder.selectorView.tag == null) {
-                    holder.selectorView.tag = holder.selectorView.background
+                if (selectorView.tag == null) {
+                    selectorView.tag = selectorView.background
                 }
-                holder.selectorView.setBackgroundColor(
-                        ContextCompat.getColor(holder.itemView.context, R.color.selectorColor))
+                selectorView.setBackgroundColor(
+                        ContextCompat.getColor(itemView.context, R.color.selectorColor))
             } else {
-                ViewCompat.setBackground(
-                        holder.selectorView, holder.selectorView.tag as Drawable? ?: return)
-            }
-        }
-
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val selectorView: View = (itemView as ViewGroup)[0]
-            val videoImage: ImageView = itemView.findViewById(R.id.image_video)
-            val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
-            val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
-
-            init {
-                itemView.setOnTouchListener(this@LocalSearchedVideosFragment)
-                itemView.setOnClickListener(this@LocalSearchedVideosFragment)
-                itemView.setOnLongClickListener(this@LocalSearchedVideosFragment)
+                ViewCompat.setBackground(selectorView, selectorView.tag as Drawable? ?: return)
             }
         }
     }

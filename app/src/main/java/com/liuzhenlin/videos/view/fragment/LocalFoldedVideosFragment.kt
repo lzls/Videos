@@ -5,7 +5,6 @@
 
 package com.liuzhenlin.videos.view.fragment
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -15,13 +14,14 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
-import com.liuzhenlin.common.Consts.NO_ID
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.listener.OnBackPressedListener
 import com.liuzhenlin.common.utils.FileUtils
@@ -31,49 +31,58 @@ import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
-import com.liuzhenlin.videos.bean.VideoDirectory
-import com.liuzhenlin.videos.dao.VideoListItemDao
-import com.liuzhenlin.videos.model.LocalFoldedVideoListModel
-import com.liuzhenlin.videos.model.OnLoadListener
-import com.liuzhenlin.videos.model.OnReloadVideosListener
+import com.liuzhenlin.videos.presenter.ILocalFoldedVideosPresenter
 import com.liuzhenlin.videos.utils.VideoUtils2
-import com.liuzhenlin.videos.view.fragment.PackageConsts.*
-import java.io.File
+import com.liuzhenlin.videos.view.IView
+import com.liuzhenlin.videos.view.fragment.Payloads.*
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * @author 刘振林
  */
-class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListener,
-        OnReloadVideosListener, SwipeRefreshLayout.OnRefreshListener, OnBackPressedListener {
+
+interface ILocalFoldedVideosView : IView<ILocalFoldedVideosPresenter>, VideoListItemOpCallback<Video> {
+
+    fun getArguments(): Bundle?
+    fun onReturnResult(resultCode: Int, data: Intent?)
+
+    fun onVideosLoadStart()
+    fun onVideosLoadFinish()
+    fun onVideosLoadCanceled()
+
+    fun onVideoCheckedChange(checkedVideosCount: Int, hasUnwritableCheckedVideo: Boolean)
+
+    fun isVideoSelectControlsShown(): Boolean
+    fun hideVideoSelectControls()
+
+    fun newVideoListViewHolder(parent: ViewGroup): VideoListViewHolder
+
+    abstract class VideoListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        abstract fun bindData(video: Video, position: Int, payloads: List<Any>)
+        abstract fun loadItemImages(video: Video)
+        abstract fun cancelLoadingItemImages()
+    }
+}
+
+class LocalFoldedVideosFragment : BaseFragment(), ILocalFoldedVideosView, View.OnClickListener,
+        View.OnLongClickListener, SwipeRefreshLayout.OnRefreshListener, OnBackPressedListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
     private var mLifecycleCallback: FragmentPartLifecycleCallback? = null
 
     private var mVideoOpCallback: VideoListItemOpCallback<Video>? = null
 
+    internal val presenter = ILocalFoldedVideosPresenter.newInstance()
+
     private lateinit var mRecyclerView: SlidingItemMenuRecyclerView
-    private val mAdapter = VideoListAdapter()
-    private val mVideoDir
-        get() = arguments?.get(KEY_VIDEODIR) as? VideoDirectory
-    private var _mVideos: MutableList<Video>? = null
-    private val mVideos: MutableList<Video>
-        get() {
-            if (_mVideos == null) {
-                _mVideos = mVideoDir?.videos ?: mutableListOf()
-            }
-            return _mVideos!!
-        }
-    private var mModel: LocalFoldedVideoListModel? = null
+    private val mAdapter by lazy(LazyThreadSafetyMode.NONE) { presenter.getVideoListAdapter() }
 
     private lateinit var mBackButton: ImageButton
     private lateinit var mCancelButton: Button
     private lateinit var mSelectAllButton: Button
     private lateinit var mOptionsFrameTopDivider: View
     private lateinit var mVideoOptionsFrame: ViewGroup
+    private lateinit var mMoveButton: TextView
     private lateinit var mDeleteButton: TextView
     private lateinit var mRenameButton: TextView
     private lateinit var mShareButton: TextView
@@ -112,6 +121,22 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
             return _SELECT_NONE!!
         }
 
+    init {
+        lifecycle.addObserver(object: DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) =
+                    presenter.onViewStart(this@LocalFoldedVideosFragment)
+
+            override fun onResume(owner: LifecycleOwner) =
+                    presenter.onViewResume(this@LocalFoldedVideosFragment)
+
+            override fun onPause(owner: LifecycleOwner) =
+                    presenter.onViewPaused(this@LocalFoldedVideosFragment)
+
+            override fun onStop(owner: LifecycleOwner) =
+                    presenter.onViewStopped(this@LocalFoldedVideosFragment)
+        })
+    }
+
     fun setVideoOpCallback(callback: VideoListItemOpCallback<Video>?) {
         mVideoOpCallback = callback
     }
@@ -137,58 +162,41 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         }
         mLifecycleCallback?.onFragmentAttached(this)
 
-        val videodir = mVideoDir
-        if (videodir != null) {
-            mModel = LocalFoldedVideoListModel(videodir, context)
-            mModel!!.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<Video>?> {
-                override fun onLoadStart() {
-                    mRecyclerView.isItemDraggable = false
-                    mRecyclerView.releaseItemView(false)
-                }
-
-                override fun onLoadFinish(result: MutableList<Video>?) {
-                    onReloadDirectoryVideos(result)
-                    mRecyclerView.isItemDraggable = true
-                    mInteractionCallback.isRefreshLayoutRefreshing = false
-                }
-
-                override fun onLoadCanceled() {
-                    mRecyclerView.isItemDraggable = true
-                    mInteractionCallback.isRefreshLayoutRefreshing = false
-                }
-            })
-        }
+        presenter.attachToView(this)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mLifecycleCallback?.onFragmentViewCreated(this)
+        presenter.onViewCreated(this)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         mLifecycleCallback?.onFragmentViewDestroyed(this)
 
-        mModel?.stopLoader()
-        if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-            for (video in mVideos) {
-                video.isChecked = false
+        presenter.stopLoadVideos()
+        if (isVideoSelectControlsShown()) {
+            for (i in 0 until mAdapter.itemCount) {
+                presenter.setVideoChecked(i, false)
             }
             mInteractionCallback.isRefreshLayoutEnabled = true
         }
+        presenter.onViewDestroyed(this)
     }
 
     override fun onDetach() {
         super.onDetach()
         mLifecycleCallback?.onFragmentDetached(this)
-
-        targetFragment?.onActivityResult(targetRequestCode, RESULT_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT,
-                Intent().putExtra(KEY_DIRECTORY_PATH, mVideoDir?.path)
-                        .putParcelableArrayListExtra(
-                                KEY_VIDEOS, mVideos as? ArrayList<Video> ?: ArrayList(mVideos)))
+        presenter.detachFromView(this)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onReturnResult(resultCode: Int, data: Intent?) {
+        targetFragment?.onActivityResult(targetRequestCode, resultCode, data)
+    }
+
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_local_folded_videos, container, false)
         initViews(view)
         return attachViewToSwipeBackLayout(view)
@@ -198,7 +206,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         val actionbar = mInteractionCallback.getActionBar(this)
 
         val titleText = actionbar.findViewById<TextView>(R.id.text_title)
-        titleText.text = mVideoDir?.name
+        titleText.text = presenter.videoDirName
 
         mRecyclerView = contentView.findViewById(R.id.simrv_foldedVideoList)
         mRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
@@ -212,6 +220,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         mSelectAllButton = actionbar.findViewById(R.id.btn_selectAll)
         mOptionsFrameTopDivider = contentView.findViewById(R.id.divider_videoOptionsFrame)
         mVideoOptionsFrame = contentView.findViewById(R.id.frame_videoOptions)
+        mMoveButton = contentView.findViewById(R.id.btn_move)
         mDeleteButton = contentView.findViewById(R.id.btn_delete_videoListOptions)
         mRenameButton = contentView.findViewById(R.id.btn_rename)
         mShareButton = contentView.findViewById(R.id.btn_share)
@@ -220,6 +229,7 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         mBackButton.setOnClickListener(this)
         mCancelButton.setOnClickListener(this)
         mSelectAllButton.setOnClickListener(this)
+        mMoveButton.setOnClickListener(this)
         mDeleteButton.setOnClickListener(this)
         mRenameButton.setOnClickListener(this)
         mShareButton.setOnClickListener(this)
@@ -232,40 +242,14 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
     }
 
     override fun onBackPressed() =
-            if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-                hideMultiselectVideoControls()
+            if (isVideoSelectControlsShown()) {
+                hideVideoSelectControls()
                 true
             } else false
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            REQUEST_CODE_PLAY_VIDEO -> if (resultCode == RESULT_CODE_PLAY_VIDEO) {
-                val video = data?.getParcelableExtra<Video>(KEY_VIDEO) ?: return
-                if (video.id == NO_ID) return
-
-                for ((i, v) in mVideos.withIndex()) {
-                    if (v != video) continue
-                    if (v.progress != video.progress) {
-                        v.progress = video.progress
-                        mAdapter.notifyItemChanged(i, PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
-                    }
-                    break
-                }
-            }
-            REQUEST_CODE_PLAY_VIDEOS -> if (resultCode == RESULT_CODE_PLAY_VIDEOS) {
-                val parcelables = data?.getParcelableArrayExtra(KEY_VIDEOS) ?: return
-                val videos = Array(parcelables.size) { parcelables[it] as Video }
-                for (video in videos) {
-                    val index = mVideos.indexOf(video)
-                    val v = if (index != -1) mVideos[index] else null
-                    if (v != null && v.progress != video.progress) {
-                        v.progress = video.progress
-                        mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
-                    }
-                }
-            }
-        }
+        presenter.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onClick(v: View) {
@@ -274,130 +258,53 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
 
             R.id.itemVisibleFrame -> {
                 val position = v.tag as Int
-                if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-                    val video = mVideos[position]
-                    video.isChecked = !video.isChecked
-                    mAdapter.notifyItemChanged(position, PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
-                    onVideoCheckedChange()
+                if (isVideoSelectControlsShown()) {
+                    presenter.setVideoChecked(position, !presenter.isVideoChecked(position))
                 } else {
-                    if (mVideos.size == 1) {
-                        playVideo(mVideos[0])
-                    } else {
-                        playVideos(*mVideos.toTypedArray(), selection = position)
-                    }
+                    presenter.playAllVideos(position)
                 }
             }
             R.id.checkbox -> {
-                val video = mVideos[v.tag as Int]
-                video.isChecked = !video.isChecked
-                onVideoCheckedChange()
+                val position = v.tag as Int
+                presenter.setVideoChecked(position, !presenter.isVideoChecked(position))
             }
             R.id.btn_top -> {
-                val index = v.tag as Int
-                val video = mVideos[index]
-
-                val topped = !video.isTopped
-                video.isTopped = topped
-                VideoListItemDao.getSingleton(v.context).setVideoListItemTopped(video, topped)
-
-                val newIndex = mVideos.reordered().indexOf(video)
-                if (newIndex == index) {
-                    mAdapter.notifyItemChanged(index, PAYLOAD_CHANGE_ITEM_LPS_AND_BG)
-                } else {
-                    mVideos.add(newIndex, mVideos.removeAt(index))
-                    mAdapter.notifyItemRemoved(index)
-                    mAdapter.notifyItemInserted(newIndex)
-                    mAdapter.notifyItemRangeChanged(
-                            min(index, newIndex), abs(newIndex - index) + 1)
-                }
+                val position = v.tag as Int
+                presenter.setVideoTopped(position, !presenter.isVideoTopped(position))
             }
             R.id.btn_delete -> {
-                val video = mVideos[v.tag as Int]
-                mVideoOpCallback?.showDeleteItemDialog(video) {
-                    onVideoDeleted(video)
-                }
+                presenter.deleteVideo(v.tag as Int)
             }
 
-            R.id.btn_cancel -> hideMultiselectVideoControls()
+            R.id.btn_cancel -> hideVideoSelectControls()
             R.id.btn_selectAll -> {
                 if (mSelectAllButton.text == SELECT_ALL) {
-                    for ((index, video) in mVideos.withIndex())
-                        if (!video.isChecked) {
-                            video.isChecked = true
-                            mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
-                        }
+                    presenter.selectAllVideos()
                 } else {
-                    for (video in mVideos) video.isChecked = false
-                    mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
-                            PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
+                    presenter.unselectAllVideos()
                 }
-                onVideoCheckedChange()
+            }
+            R.id.btn_move -> {
+                presenter.moveCheckedVideos()
             }
             R.id.btn_delete_videoListOptions -> {
-                val videos = checkedVideos ?: return
-                if (videos.size == 1) {
-                    mVideoOpCallback?.showDeleteItemsPopupWindow(videos[0]) {
-                        hideMultiselectVideoControls()
-                        onVideoDeleted(videos[0])
-                    }
-                } else {
-                    mVideoOpCallback?.showDeleteItemsPopupWindow(*videos.toTypedArray()) {
-                        hideMultiselectVideoControls()
-
-                        var start = -1
-                        var index = 0
-                        val it = mVideos.iterator()
-                        while (it.hasNext()) {
-                            if (videos.contains(it.next())) {
-                                if (start == -1) {
-                                    start = index
-                                }
-                                it.remove()
-                                mAdapter.notifyItemRemoved(index)
-                                index--
-                            }
-                            index++
-                        }
-                        mAdapter.notifyItemRangeChanged(start, mAdapter.itemCount - start)
-                    }
-                }
+                presenter.deleteCheckedVideos()
             }
             R.id.btn_rename -> {
-                val video = checkedVideos?.get(0) ?: return
-
-                hideMultiselectVideoControls()
-                mVideoOpCallback?.showRenameItemDialog(video) {
-                    val index = mVideos.indexOf(video)
-                    val newIndex = mVideos.reordered().indexOf(video)
-                    if (newIndex == index) {
-                        mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_ITEM_NAME)
-                    } else {
-                        mVideos.add(newIndex, mVideos.removeAt(index))
-                        mAdapter.notifyItemRemoved(index)
-                        mAdapter.notifyItemInserted(newIndex)
-                        mAdapter.notifyItemRangeChanged(
-                                min(index, newIndex), abs(newIndex - index) + 1)
-                    }
-                }
+                presenter.renameCheckedVideo()
             }
             R.id.btn_share -> {
-                val video = checkedVideos?.get(0) ?: return
-
-                hideMultiselectVideoControls()
-                shareVideo(video)
+                presenter.shareCheckedVideo()
             }
             R.id.btn_details -> {
-                val video = checkedVideos?.get(0) ?: return
-
-                hideMultiselectVideoControls()
-                mVideoOpCallback?.showItemDetailsDialog(video)
+                presenter.viewCheckedVideoDetails()
             }
         }
     }
 
     override fun onLongClick(v: View) = when (v.id) {
         R.id.itemVisibleFrame ->
-            if (mVideoOptionsFrame.visibility == View.VISIBLE
+            if (isVideoSelectControlsShown()
                     || mInteractionCallback.isRefreshLayoutRefreshing) {
                 false
             } else {
@@ -426,11 +333,10 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
                     notifyItemRangeChanged(selection + 1, itemCount - selection - 1,
                             PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
 
-                    mVideos[selection].isChecked = true
+                    presenter.setVideoChecked(selection, true)
                     notifyItemChanged(selection,
                             PAYLOAD_CHANGE_CHECKBOX_VISIBILITY
                                     or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
-                    onVideoCheckedChange()
                 }
 
                 true
@@ -438,40 +344,24 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         else -> false
     }
 
-    private fun onVideoCheckedChange() {
-        var checkedVideosCount = 0
-        var hasUnwritableCheckedVideo = false
-        for (video in mVideos) {
-            if (video.isChecked) {
-                checkedVideosCount++
-                if (!hasUnwritableCheckedVideo && !video.isWritable) {
-                    hasUnwritableCheckedVideo = true
-                }
-            }
-        }
+    override fun onVideoCheckedChange(checkedVideosCount: Int, hasUnwritableCheckedVideo: Boolean) {
         when (checkedVideosCount) {
-            mVideos.size -> mSelectAllButton.text = SELECT_NONE
+            mAdapter.itemCount -> mSelectAllButton.text = SELECT_NONE
             else -> mSelectAllButton.text = SELECT_ALL
         }
+        mMoveButton.isEnabled =
+                checkedVideosCount > 0 && !hasUnwritableCheckedVideo
+                        && App.getInstance(contextRequired).hasAllFilesAccess()
         mDeleteButton.isEnabled = checkedVideosCount > 0 && !hasUnwritableCheckedVideo
         mRenameButton.isEnabled = checkedVideosCount == 1 && !hasUnwritableCheckedVideo
         mShareButton.isEnabled = checkedVideosCount == 1
         mDetailsButton.isEnabled = checkedVideosCount == 1
     }
 
-    private val checkedVideos: List<Video>?
-        get() {
-            var videos: MutableList<Video>? = null
-            for (video in mVideos) {
-                if (video.isChecked) {
-                    if (videos == null) videos = mutableListOf()
-                    videos.add(video)
-                }
-            }
-            return videos
-        }
+    override fun isVideoSelectControlsShown() =
+            mVideoOptionsFrame.visibility == View.VISIBLE
 
-    private fun hideMultiselectVideoControls() {
+    override fun hideVideoSelectControls() {
         UiUtils.setRuleForRelativeLayoutChild(mRecyclerView, RelativeLayout.ABOVE,  /* false */ 0)
         mRecyclerView.isItemDraggable = true
         mInteractionCallback.isRefreshLayoutEnabled = true
@@ -481,187 +371,152 @@ class LocalFoldedVideosFragment : BaseFragment(), View.OnClickListener, View.OnL
         mOptionsFrameTopDivider.visibility = View.GONE
         mVideoOptionsFrame.visibility = View.GONE
 
-        for (video in mVideos) {
-            video.isChecked = false
+        for (index in 0 until mAdapter.itemCount) {
+            presenter.setVideoChecked(index, false)
         }
         mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
                 PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
     }
 
-    private fun onVideoDeleted(video: Video) {
-        val index = mVideos.indexOf(video)
-        if (index != -1) {
-            mVideos.removeAt(index)
-            mAdapter.notifyItemRemoved(index)
-            mAdapter.notifyItemRangeChanged(index, mAdapter.itemCount - index)
-        }
-    }
-
-    override fun onReloadVideos(videos: MutableList<Video>?) =
-            if (videos == null || videos.isEmpty()) {
-                onReloadDirectoryVideos(null)
-            } else {
-                onReloadDirectoryVideos(
-                        videos.filter {
-                            it.path.substring(0, it.path.lastIndexOf(File.separatorChar))
-                                    .equals(mVideoDir?.path, ignoreCase = true)
-                        }.reordered())
-            }
-
-    @SuppressLint("NotifyDataSetChanged")
-    private fun onReloadDirectoryVideos(videos: List<Video>?) {
-        if (videos == null || videos.isEmpty()) {
-            if (mVideos.isNotEmpty()) {
-                mVideos.clear()
-                mAdapter.notifyDataSetChanged()
-                if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-                    hideMultiselectVideoControls()
-                }
-            }
-        } else
-            if (videos.size == mVideos.size) {
-                var changedIndices: MutableList<Int>? = null
-                for (i in videos.indices) {
-                    if (!videos[i].allEqual(mVideos[i])) {
-                        if (changedIndices == null) changedIndices = LinkedList()
-                        changedIndices.add(i)
-                    }
-                }
-                if (changedIndices != null) {
-                    for (index in changedIndices) {
-                        mVideos[index] = videos[index]
-                        mAdapter.notifyItemChanged(index) // without payload
-                    }
-                    if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-                        hideMultiselectVideoControls()
-                    }
-                }
-            } else {
-                mVideos.set(videos)
-                mAdapter.notifyDataSetChanged()
-                if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-                    hideMultiselectVideoControls()
-                }
-            }
-    }
-
     override fun onRefresh() {
-        if (mVideoOpCallback?.isAsyncDeletingItems == true) { // 用户下拉刷新时，还有视频在被异步删除...
-            mInteractionCallback.isRefreshLayoutRefreshing = false
-            return
-        }
-
         // 用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
-        if (mVideoOptionsFrame.visibility == View.VISIBLE) {
-            hideMultiselectVideoControls()
+        if (isVideoSelectControlsShown()) {
+            hideVideoSelectControls()
         }
 
-        mModel?.startLoader()
+        presenter.startLoadVideos()
     }
 
-    private inner class VideoListAdapter : ImageLoadingListAdapter<VideoListAdapter.ViewHolder>() {
+    override fun onVideosLoadStart() {
+        mRecyclerView.isItemDraggable = false
+        mRecyclerView.releaseItemView(false)
+    }
 
-        override fun getItemCount() = mVideos.size
+    override fun onVideosLoadFinish() {
+        mRecyclerView.isItemDraggable = true
+        mInteractionCallback.isRefreshLayoutRefreshing = false
+    }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-                ViewHolder(
-                        LayoutInflater.from(parent.context)
-                                .inflate(R.layout.video_list_item_video, parent, false))
+    override fun onVideosLoadCanceled() = onVideosLoadFinish()
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
+    override fun showDeleteItemDialog(video: Video, onDeleteAction: (() -> Unit)?) {
+        mVideoOpCallback?.showDeleteItemDialog(video, onDeleteAction)
+    }
+
+    override fun showDeleteItemsPopupWindow(vararg videos: Video, onDeleteAction: (() -> Unit)?) {
+        mVideoOpCallback?.showDeleteItemsPopupWindow(*videos, onDeleteAction = onDeleteAction)
+    }
+
+    override fun showRenameItemDialog(video: Video, onRenameAction: (() -> Unit)?) {
+        mVideoOpCallback?.showRenameItemDialog(video, onRenameAction)
+    }
+
+    override fun showItemDetailsDialog(video: Video) {
+        mVideoOpCallback?.showItemDetailsDialog(video)
+    }
+
+    override fun showVideosMovePage(vararg videos: Video) {
+        mVideoOpCallback?.showVideosMovePage(*videos)
+    }
+
+    override fun newVideoListViewHolder(parent: ViewGroup): ILocalFoldedVideosView.VideoListViewHolder {
+        return VideoListViewHolder(
+                LayoutInflater.from(parent.context)
+                        .inflate(R.layout.video_list_item_video, parent, false))
+    }
+
+    private inner class VideoListViewHolder(itemView: View)
+        : ILocalFoldedVideosView.VideoListViewHolder(itemView) {
+
+        val itemVisibleFrame: ViewGroup = itemView.findViewById(R.id.itemVisibleFrame)
+        val checkBox: CircularCheckBox = itemView.findViewById(R.id.checkbox)
+        val videoImage: ImageView = itemView.findViewById(R.id.image_video)
+        val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
+        val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
+        val videoProgressAndDurationText: TextView =
+                itemView.findViewById(R.id.text_videoProgressAndDuration)
+        val topButton: TextView = itemView.findViewById(R.id.btn_top)
+        val deleteButton: TextView = itemView.findViewById(R.id.btn_delete)
+
+        init {
+            itemVisibleFrame.setOnClickListener(this@LocalFoldedVideosFragment)
+            checkBox.setOnClickListener(this@LocalFoldedVideosFragment)
+            topButton.setOnClickListener(this@LocalFoldedVideosFragment)
+            deleteButton.setOnClickListener(this@LocalFoldedVideosFragment)
+
+            itemVisibleFrame.setOnLongClickListener(this@LocalFoldedVideosFragment)
+        }
+
+        override fun bindData(video: Video, position: Int, payloads: List<Any>) {
             if (payloads.isEmpty()) {
-                onBindViewHolder(holder, position)
+                itemVisibleFrame.tag = position
+                checkBox.tag = position
+                topButton.tag = position
+                deleteButton.tag = position
+
+                separateToppedItemsFromUntoppedOnes(video)
+
+                checkBox.run {
+                    UiUtils.setViewVisibilityAndVerify(checkBox, mVideoOptionsFrame.visibility)
+                    isChecked = video.isChecked
+                }
+                videoNameText.text = video.name
+                videoSizeText.text = FileUtils.formatFileSize(video.size.toDouble())
+                videoProgressAndDurationText.text =
+                        VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+                UiUtils.setViewVisibilityAndVerify(deleteButton.parent as View,
+                        if (video.isWritable) View.VISIBLE else View.GONE)
             } else {
-                val video = mVideos[position]
+                for (payload in payloads) {
+                    if (payload !is Int) continue
+                    if (payload and PAYLOAD_CHANGE_ITEM_LPS_AND_BG != 0) {
+                        separateToppedItemsFromUntoppedOnes(video)
+                    }
+                    if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
+                        UiUtils.setViewVisibilityAndVerify(checkBox, mVideoOptionsFrame.visibility)
+                    }
+                    if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
+                        checkBox.isChecked = video.isChecked
 
-                val payload = payloads[0] as Int
-                if (payload and PAYLOAD_CHANGE_ITEM_LPS_AND_BG != 0) {
-                    separateToppedItemsFromUntoppedOnes(holder, position)
-                }
-                if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
-                    UiUtils.setViewVisibilityAndVerify(holder.checkBox, mVideoOptionsFrame.visibility)
-                }
-                if (payload and PAYLOAD_REFRESH_CHECKBOX != 0) {
-                    holder.checkBox.isChecked = video.isChecked
-
-                } else if (payload and PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR != 0) {
-                    holder.checkBox.setChecked(video.isChecked, true)
-                }
-                if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
-                    loadItemImagesIfNotScrolling(holder)
-                }
-                if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
-                    holder.videoNameText.text = video.name
-                }
-                if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
-                    holder.videoProgressAndDurationText.text =
-                            VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
+                    } else if (payload and PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR != 0) {
+                        checkBox.setChecked(video.isChecked, true)
+                    }
+                    if (payload and PAYLOAD_REFRESH_VIDEO_THUMB != 0) {
+                        @Suppress("UNCHECKED_CAST")
+                        (bindingAdapter as ImageLoadingListAdapter<VideoListViewHolder>)
+                                .loadItemImagesIfNotScrolling(this)
+                    }
+                    if (payload and PAYLOAD_REFRESH_ITEM_NAME != 0) {
+                        videoNameText.text = video.name
+                    }
+                    if (payload and PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION != 0) {
+                        videoProgressAndDurationText.text =
+                                VideoUtils2.concatVideoProgressAndDuration(
+                                        video.progress, video.duration)
+                    }
                 }
             }
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            super.onBindViewHolder(holder, position)
-            holder.itemVisibleFrame.tag = position
-            holder.checkBox.tag = position
-            holder.topButton.tag = position
-            holder.deleteButton.tag = position
-
-            separateToppedItemsFromUntoppedOnes(holder, position)
-
-            val video = mVideos[position]
-            holder.checkBox.run {
-                UiUtils.setViewVisibilityAndVerify(holder.checkBox, mVideoOptionsFrame.visibility)
-                isChecked = video.isChecked
-            }
-            holder.videoNameText.text = video.name
-            holder.videoSizeText.text = FileUtils.formatFileSize(video.size.toDouble())
-            holder.videoProgressAndDurationText.text =
-                    VideoUtils2.concatVideoProgressAndDuration(video.progress, video.duration)
-            UiUtils.setViewVisibilityAndVerify(holder.deleteButton.parent as View,
-                    if (video.isWritable) View.VISIBLE else View.GONE)
-        }
-
-        override fun loadItemImages(holder: ViewHolder) {
-            val video = mVideos[holder.bindingAdapterPosition]
+        override fun loadItemImages(video: Video) {
             VideoUtils2.loadVideoThumbIntoFragmentImageView(
-                    this@LocalFoldedVideosFragment, holder.videoImage, video)
+                    this@LocalFoldedVideosFragment, videoImage, video)
         }
 
-        override fun cancelLoadingItemImages(holder: ViewHolder) {
-            Glide.with(this@LocalFoldedVideosFragment).clear(holder.videoImage)
+        override fun cancelLoadingItemImages() {
+            Glide.with(this@LocalFoldedVideosFragment).clear(videoImage)
         }
 
-        fun separateToppedItemsFromUntoppedOnes(holder: ViewHolder, position: Int) {
+        fun separateToppedItemsFromUntoppedOnes(video: Video) {
             val context = contextThemedFirst
-            if (mVideos[position].isTopped) {
-                ViewCompat.setBackground(holder.itemVisibleFrame,
+            if (video.isTopped) {
+                ViewCompat.setBackground(itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
-                holder.topButton.text = CANCEL_TOP
+                topButton.text = CANCEL_TOP
             } else {
-                ViewCompat.setBackground(holder.itemVisibleFrame,
+                ViewCompat.setBackground(itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.default_selector_recycler_item))
-                holder.topButton.text = TOP
-            }
-        }
-
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val itemVisibleFrame: ViewGroup = itemView.findViewById(R.id.itemVisibleFrame)
-            val checkBox: CircularCheckBox = itemView.findViewById(R.id.checkbox)
-            val videoImage: ImageView = itemView.findViewById(R.id.image_video)
-            val videoNameText: TextView = itemView.findViewById(R.id.text_videoName)
-            val videoSizeText: TextView = itemView.findViewById(R.id.text_videoSize)
-            val videoProgressAndDurationText: TextView = itemView.findViewById(R.id.text_videoProgressAndDuration)
-            val topButton: TextView = itemView.findViewById(R.id.btn_top)
-            val deleteButton: TextView = itemView.findViewById(R.id.btn_delete)
-
-            init {
-                itemVisibleFrame.setOnClickListener(this@LocalFoldedVideosFragment)
-                checkBox.setOnClickListener(this@LocalFoldedVideosFragment)
-                topButton.setOnClickListener(this@LocalFoldedVideosFragment)
-                deleteButton.setOnClickListener(this@LocalFoldedVideosFragment)
-
-                itemVisibleFrame.setOnLongClickListener(this@LocalFoldedVideosFragment)
+                topButton.text = TOP
             }
         }
     }

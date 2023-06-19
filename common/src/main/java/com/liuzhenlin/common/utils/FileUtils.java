@@ -184,7 +184,8 @@ public class FileUtils {
         return splitCount;
     }
 
-    public static boolean mergeFiles(@NonNull File[] files, @NonNull File dstFile, boolean deleteInputs) {
+    public static boolean mergeFiles(
+            @NonNull File[] files, @NonNull File dstFile, boolean deleteInputs) {
         if (dstFile.exists()) {
             //noinspection ResultOfMethodCallIgnored
             dstFile.delete();
@@ -457,7 +458,8 @@ public class FileUtils {
          * @param selectionArgs (Optional) Selection arguments used in the query.
          * @return The value of the '_data' column, which is typically a file path.
          */
-        private static String getDataColumn(Context context, Uri uri, String selection, String[] selectionArgs) {
+        private static String getDataColumn(
+                Context context, Uri uri, String selection, String[] selectionArgs) {
             final String column = "_data";
             final String[] projection = {column};
             Cursor cursor = context.getContentResolver().query(

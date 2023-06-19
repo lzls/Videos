@@ -40,14 +40,15 @@ public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
         mDefaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
-    public static final Singleton<Context, LogOnCrashHandler> INSTANCE = new Singleton<Context, LogOnCrashHandler>() {
-        @SuppressLint("SyntheticAccessor")
-        @NonNull
-        @Override
-        protected LogOnCrashHandler onCreate(Context... ctxes) {
-            return new LogOnCrashHandler(ctxes[0]);
-        }
-    };
+    public static final Singleton<Context, LogOnCrashHandler> INSTANCE =
+            new Singleton<Context, LogOnCrashHandler>() {
+                @SuppressLint("SyntheticAccessor")
+                @NonNull
+                @Override
+                protected LogOnCrashHandler onCreate(Context... ctxes) {
+                    return new LogOnCrashHandler(ctxes[0]);
+                }
+            };
 
     @Override
     public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
@@ -94,7 +95,8 @@ public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
         return sb.toString();
     }
 
-    private void deepAppendClassConstantFields(StringBuilder sb, Class<?> clazz) throws IllegalAccessException {
+    private void deepAppendClassConstantFields(StringBuilder sb, Class<?> clazz)
+            throws IllegalAccessException {
         for (Field field : clazz.getFields()) {
             if ((field.getModifiers() & (Modifier.STATIC | Modifier.FINAL))
                     == (Modifier.STATIC | Modifier.FINAL)) {

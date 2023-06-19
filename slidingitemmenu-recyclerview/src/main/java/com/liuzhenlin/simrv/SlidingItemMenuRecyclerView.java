@@ -686,7 +686,8 @@ public class SlidingItemMenuRecyclerView extends RecyclerView {
         }
     }
 
-    private void translateItemViewXTo(ViewGroup itemView, @SuppressWarnings("SameParameterValue") float x) {
+    private void translateItemViewXTo(
+            ViewGroup itemView, @SuppressWarnings("SameParameterValue") float x) {
         translateItemViewXBy(itemView, x - itemView.getChildAt(0).getTranslationX());
     }
 

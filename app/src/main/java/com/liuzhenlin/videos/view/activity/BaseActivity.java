@@ -83,16 +83,8 @@ public class BaseActivity extends SwipeBackActivity {
 
     public void setLightStatus(boolean light) {
         Window window = getWindow();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            SystemBarUtils.setLightStatus(window, light);
-            // MIUI6...
-        } else if (OSHelper.getMiuiVersion() >= 6) {
-            SystemBarUtils.setLightStatusForMIUI(window, light);
-            // FlyMe4...
-        } else if (OSHelper.isFlyme4OrLater()) {
-            SystemBarUtils.setLightStatusForFlyme(window, light);
-
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (!SystemBarUtils.setLightStatusCompat(window, light)
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             SystemBarUtils.setTranslucentStatus(window, light);
         }
     }

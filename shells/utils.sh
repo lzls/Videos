@@ -32,7 +32,7 @@ if ! [ "$SHELL_TYPE" ]; then
     __shell_regex___='.*(\/|[[:blank:]]|-)([[:alpha:]]*sh)([[:blank:]].*)?'
     # shellcheck disable=SC2116
     ps -ef | grep "$(echo $$)" | grep -E "$__shell_regex___" \
-      | sed -r "s/$__shell_regex___/\2/" | head -n 1
+        | sed -r "s/$__shell_regex___/\2/" | head -n 1
   )
   echo "shell type: $SHELL_TYPE"
 fi

@@ -14,7 +14,7 @@
     <string name="videoThumbnail">Video Thumbnail</string>
     <string name="captureVideoPhoto">Capture a Video Photo</string>
     <string name="capturedVideoPhoto">Captured Video Photo</string>
-    <string name="saveScreenshotFailed">Save screenshot failed</string>
+    <string name="failedToSaveScreenshot">Failed to save screenshot</string>
     <string name="clipVideo">Clip Video</string>
     <string name="cutoutShortVideo">Short Video</string>
     <string name="cutoutGif">GIF</string>
@@ -38,6 +38,9 @@
     <string name="stretchVideoToFitFullscreen">Stretch Video to Fit Fullscreen</string>
     <string name="singleVideoLoopPlayback">Single Video Loop Playback</string>
     <string name="allowAudioToPlayInBackground">Allow Audio to Play in Background</string>
+    <string name="prompt_enableNotificationsForBackgroundPlaybackOfMedia">
+        Please enable app notifications, or background playback of media may be stopped by system.
+    </string>
     <string name="timedOff">Timed Off:</string>
     <string name="whenThisEpisodeEnds">when this episode ends</string>
     <string name="_30Minutes">30 minutes</string>
@@ -52,8 +55,8 @@
     <string name="videoIsLoading">Video is loading…</string>
     <string name="failedToLoadThisVideo">Failed to load this video!</string>
     <string name="videoInThisFormatIsNotSupported">Video in this format is not supported!</string>
-    <string name="unknownErrorOccurredWhenVideoIsPlaying">
-        Unknown error occurs while the video is playing!</string>
+    <string name="unknownErrorOccurredWhenVideoWasPlaying">
+        Unknown error occurred while the video was playing!</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="selectTracks">Select Tracks</string>
@@ -92,9 +95,9 @@
                so do not use an equivalent of 'and'. -->
     <string name="item_list"><xliff:g id="list" example="apple, pear">%1$s</xliff:g>, <xliff:g id="item" example="banana">%2$s</xliff:g></string>
     <!-- Shown in a UI component to indicate a video track selection has failed. -->
-    <string name="selectVideoTrackFailed">Select video track "%1$s" failed.</string>
+    <string name="failedToSelectVideoTrack">Failed to select video track "%1$s".</string>
     <!-- Shown in a UI component to indicate an audio track selection has failed. -->
-    <string name="selectAudioTrackFailed">Select audio track "%1$s" failed.</string>
+    <string name="failedToSelectAudioTrack">Failed to select audio track "%1$s".</string>
     <!-- Shown in a UI component to indicate a subtitle track selection has failed. -->
-    <string name="selectSubtitleTrackFailed">Select subtitle track "%1$s" failed.</string>
+    <string name="failedToSelectSubtitleTrack">Failed to select subtitle track "%1$s".</string>
 </resources>

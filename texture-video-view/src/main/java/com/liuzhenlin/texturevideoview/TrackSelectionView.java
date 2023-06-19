@@ -212,7 +212,8 @@ public class TrackSelectionView extends LinearLayout {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        public void onBindViewHolder(
+                @NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
             if (payloads.isEmpty()) {
                 super.onBindViewHolder(holder, position, payloads);
             } else {
@@ -298,7 +299,8 @@ public class TrackSelectionView extends LinearLayout {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        public void onBindViewHolder(
+                @NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
             if (payloads.isEmpty()) {
                 super.onBindViewHolder(holder, position, payloads);
             } else {
@@ -366,13 +368,13 @@ public class TrackSelectionView extends LinearLayout {
             int stringRes;
             switch (mTrackType) {
                 case TrackInfo.TRACK_TYPE_VIDEO:
-                    stringRes = R.string.selectVideoTrackFailed;
+                    stringRes = R.string.failedToSelectVideoTrack;
                     break;
                 case TrackInfo.TRACK_TYPE_AUDIO:
-                    stringRes = R.string.selectAudioTrackFailed;
+                    stringRes = R.string.failedToSelectAudioTrack;
                     break;
                 case TrackInfo.TRACK_TYPE_SUBTITLE:
-                    stringRes = R.string.selectSubtitleTrackFailed;
+                    stringRes = R.string.failedToSelectSubtitleTrack;
                     break;
                 default:
                     return;

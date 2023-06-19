@@ -68,7 +68,8 @@ public class ShareUtils {
                 Context context, String authority, File file, String defMimeType) {
             Intent it = new Intent(Intent.ACTION_SEND);
             Uri uri;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (Utils.getAppTargetSdkVersion(context) >= Build.VERSION_CODES.N
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
                 uri = FileProvider.getUriForFile(context, authority, file);

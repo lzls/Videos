@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="aTotalOfSeveralVideos" tools:ignore="PluralsCandidate">%d videos in all</string>
     <string name="aboutApp">About App</string>
     <string name="adviceAndFeedback">Advice &amp; Feedback</string>
     <string name="alias">Alias: %s</string>
@@ -30,6 +29,7 @@
     <string name="deletePicture">Delete picture</string>
     <string name="details">Details</string>
     <string name="directoryDetails">Directory Details</string>
+    <string name="dontPromptAgain">Don\'t prompt again</string>
     <string name="doYouNeedToSaveTheEditedContents">Do you need to save the edited contents?</string>
     <string name="doYouNeedToUpdateItSoon">Do you need to update it soon?</string>
     <string name="downloadError">Download error</string>
@@ -38,20 +38,17 @@
     <string name="drawerBackground">Drawer background</string>
     <string name="drawerSettings">Drawer Settings</string>
     <string name="darkTheme">Dark Theme</string>
-    <string name="findNewVersion">Find new version</string>
-    <string name="findNewVersion_title">Find New Version</string>
-    <plurals name="findSomeVideos">
-        <item quantity="one">Find a video</item>
-        <item quantity="other">Find %d videos</item>
-    </plurals>
     <string name="goNow">Go Now</string>
     <string name="hasBeenPlacedInTheBackground">Has been placed in the background</string>
     <string name="illegalInputLink">Illegal input link!</string>
     <string name="isTheLatestVersion">Is the latest version</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">Loading videos, please wait…</string>
     <string name="localVideos">Local Videos</string>
+    <string name="move">Move</string>
     <string name="name">Name: %s</string>
     <string name="newAppDownloaded">New App Downloaded</string>
+    <string name="newVersionFound">New version found</string>
+    <string name="newVersionFound_title">New Version Found</string>
     <string name="noNetworkConnection">No network is connected!</string>
     <string name="notHaveEnoughStorage">Device does not have enough storage.</string>
     <string name="notOpenNow">Not Open</string>
@@ -72,6 +69,18 @@
     <string name="pleaseInputVideoLinkFirst">Please input video link first!</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">Please insert SD card on your device first.</string>
     <string name="pressAgainToExitApp">Press again to exit app</string>
+    <string name="prompt_enableNotificationsForAppDownload">
+        Please enable notifications from Settings, or app download result will not show.</string>
+    <string name="prompt_videoMove">
+        If a video file with the same name already exists in the target directory, the name of
+        the new file moved to there will be appended with "-&lt;number&gt;" by default
+        to let it be distinguished and coexist. For example, sample.mp4 becomes sample-1.mp4
+    </string>
+    <string name="rationale_askAllFilesAccessPermission">
+        This app needs All Files Access on the primary shared/external storage media to move, delete
+        or rename video files. Please go to the All Files Access permission management screen to
+        grant it.
+    </string>
     <string name="rationale_askExternalStoragePermission">
         This app needs access to your memory card to scan and load videos.</string>
     <string name="rationale_askExternalStoragePermissionAgain">
@@ -96,6 +105,7 @@
     <string name="renameSuccessful">Rename successful</string>
     <string name="renameVideo">Rename Video</string>
     <string name="resolution">Resolution: %s</string>
+    <string name="runAppInRestrictedMode">Run App in Restricted Mode</string>
     <string name="save">Save</string>
     <string name="saveSuccessful">Save successful</string>
     <string name="screenshot">screenshot</string>
@@ -125,7 +135,7 @@
     <string name="theVideoIsPlaying">The video is playing</string>
     <string name="top">Top</string>
     <string name="unfold">Unfold</string>
-    <string name="updateLog">%1$sv%2$s update log: </string>
+    <string name="updateLog">%1$s v%2$s update log: </string>
     <string name="updateLogs">Update Logs</string>
     <string name="userFeedback">User Feedback</string>
     <string name="videoCount">Video count: %d</string>
@@ -139,8 +149,9 @@
     <string name="youHaveNotCommitted">You Have Not Committed</string>
 
     <string name="appName_chinese" translatable="false">视频</string>
-    <string name="version" translatable="false">2.2</string>
-    <string name="copyright" translatable="false">Copyright © 2017–present 刘振林.\nAll rights reserved.</string>
+    <string name="version" translatable="false">2.3</string>
+    <string name="copyright" translatable="false">
+        Copyright © 2017–present 刘振林.\nAll rights reserved.</string>
     <string name="projectLink" translatable="false">https://github.com/lzls/Videos</string>
     <string name="pictureCount" translatable="false">%d/3</string>
     <string name="wordCount" translatable="false">%d/500</string>
@@ -158,6 +169,7 @@
 
     <!-- General Preferences -->
     <string name="dark_mode_title">Dark Mode</string>
+    <string name="language_title">Language</string>
 
     <!-- YouTube Playback Preferences -->
     <string name="youtube_playback_page_style_title">UI Style</string>
@@ -171,4 +183,25 @@
     <string name="youtube_retain_history_video_pages_summary">
         Keep historical video playback pages in the backstack for later resumption</string>
     <string name="youtube_video_quality_title">Video Quality (useless to the brief playback UI)</string>
+
+    <plurals name="aTotalOfSeveralVideos">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+    <plurals name="deletingVideosPleaseWait">
+        <item quantity="one">Deleting video, please wait…</item>
+        <item quantity="other">Deleting videos, please wait…</item>
+    </plurals>
+    <plurals name="foundSomeVideos">
+        <item quantity="one">Found a video</item>
+        <item quantity="other">Found %d videos</item>
+    </plurals>
+    <plurals name="moveVideosTo">
+        <item quantity="one">Move Video to</item>
+        <item quantity="other">Move Videos to</item>
+    </plurals>
+    <plurals name="movingVideosPleaseWait">
+        <item quantity="one">Moving video, please wait…</item>
+        <item quantity="other">Moving videos, please wait…</item>
+    </plurals>
 </resources>

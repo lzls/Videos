@@ -24,7 +24,8 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-public class TextureMediaPlayer extends MediaPlayerProxy implements IMediaPlayer, ISurfaceTextureHolder {
+public class TextureMediaPlayer extends MediaPlayerProxy implements IMediaPlayer,
+        ISurfaceTextureHolder {
     private SurfaceTexture mSurfaceTexture;
     private ISurfaceTextureHost mSurfaceTextureHost;
 

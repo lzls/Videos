@@ -24,11 +24,13 @@ public class OnBackPressedPreImeEventInterceptableEditText extends FocusCompatEd
         super(context);
     }
 
-    public OnBackPressedPreImeEventInterceptableEditText(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public OnBackPressedPreImeEventInterceptableEditText(
+            @NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public OnBackPressedPreImeEventInterceptableEditText(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public OnBackPressedPreImeEventInterceptableEditText(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

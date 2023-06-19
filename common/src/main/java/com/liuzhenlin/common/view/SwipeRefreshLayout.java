@@ -833,7 +833,8 @@ public class SwipeRefreshLayout extends ViewGroup
     @Override
     public void requestDisallowInterceptTouchEvent(boolean b) {
         if (mRequestDisallowInterceptTouchEventCallback != null) {
-            if (mRequestDisallowInterceptTouchEventCallback.shouldPassUpToRequestDisallowInterceptTouchEvent()) {
+            if (mRequestDisallowInterceptTouchEventCallback
+                    .shouldPassUpToRequestDisallowInterceptTouchEvent()) {
                 super.requestDisallowInterceptTouchEvent(b);
             }
         } else {
@@ -945,7 +946,8 @@ public class SwipeRefreshLayout extends ViewGroup
     }
 
     @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
+    public void onNestedPreScroll(
+            @NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         // Should always be true because onStartNestedScroll returns false for all type !=
         // ViewCompat.TYPE_TOUCH, but check just in case.
         if (type == ViewCompat.TYPE_TOUCH) {
@@ -956,7 +958,8 @@ public class SwipeRefreshLayout extends ViewGroup
     // NestedScrollingParent 1
 
     @Override
-    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int nestedScrollAxes) {
+    public boolean onStartNestedScroll(
+            @NonNull View child, @NonNull View target, int nestedScrollAxes) {
         return isEnabled() && !mReturningToStart && !mRefreshing
                 && (nestedScrollAxes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
     }
@@ -1035,7 +1038,8 @@ public class SwipeRefreshLayout extends ViewGroup
     }
 
     @Override
-    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
+    public boolean onNestedFling(
+            @NonNull View target, float velocityX, float velocityY, boolean consumed) {
         return dispatchNestedFling(velocityX, velocityY, consumed);
     }
 

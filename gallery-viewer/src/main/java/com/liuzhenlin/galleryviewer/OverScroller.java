@@ -375,7 +375,8 @@ public class OverScroller {
      * @return true if a springback was initiated, false if startX and startY were
      *          already within the valid range.
      */
-    public boolean springBack(float startX, float startY, float minX, float maxX, float minY, float maxY) {
+    public boolean springBack(
+            float startX, float startY, float minX, float maxX, float minY, float maxY) {
         mMode = FLING_MODE;
 
         // Make sure both methods are called.
@@ -716,7 +717,8 @@ public class OverScroller {
             return !mFinished;
         }
 
-        private void startSpringback(float start, float end, @SuppressWarnings("unused") float velocity) {
+        private void startSpringback(
+                float start, float end, @SuppressWarnings("unused") float velocity) {
             // mStartTime has been set
             mFinished = false;
             mState = CUBIC;

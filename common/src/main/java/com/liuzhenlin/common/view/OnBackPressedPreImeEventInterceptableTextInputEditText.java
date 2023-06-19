@@ -24,11 +24,13 @@ public class OnBackPressedPreImeEventInterceptableTextInputEditText
         super(context);
     }
 
-    public OnBackPressedPreImeEventInterceptableTextInputEditText(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public OnBackPressedPreImeEventInterceptableTextInputEditText(
+            @NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public OnBackPressedPreImeEventInterceptableTextInputEditText(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public OnBackPressedPreImeEventInterceptableTextInputEditText(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

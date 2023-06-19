@@ -23,6 +23,7 @@
             android:paddingTop="@dimen/dialogPreferredContentPaddingVertical"
             android:layout_marginLeft="@dimen/dialogPreferredContentPaddingHorizontal"
             android:layout_marginRight="@dimen/dialogPreferredContentPaddingHorizontal"
+            android:lineSpacingExtra="1dp"
             android:textSize="@dimen/secondary_text_size"
             android:textIsSelectable="true"
             tools:ignore="RtlHardcoded" />

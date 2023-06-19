@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="MenuItem">
-        <attr name="text" format="string" />
-        <attr name="icon" format="reference" />
+        <attr name="android:id" />
+        <attr name="android:text" />
+        <attr name="android:icon" />
+        <attr name="android:enabled" />
     </declare-styleable>
 </resources>

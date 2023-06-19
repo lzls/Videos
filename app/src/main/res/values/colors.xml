@@ -29,6 +29,7 @@
     <color name="gray_rgb242">#F2F2F2</color>
 
     <color name="toppedItemBgColor">@color/gray_rgb242</color>
+    <color name="mainTabItemsBgColor">@android:color/white</color>
     <color name="mainTitlePopupBtnStrokeColor">@color/gray_rgb230</color>
     <color name="videolistOptionsPopupTitleBgColor">@color/gray_rgb230</color>
     <color name="searchViewPlateBgColor">@color/gray_rgb240</color>

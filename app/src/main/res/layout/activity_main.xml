@@ -40,6 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/tabHeight"
             android:layout_weight="0"
+            android:background="@color/mainTabItemsBgColor"
             app:tabIndicatorColor="@color/pink"
             app:tabIndicatorGravity="top"
             app:tabTextAppearance="@style/TextAppearance_TabItem"

@@ -247,7 +247,8 @@ public final class Youtube {
                     "infoObj['" + Keys.DURATION + "'] = duration;\n" +
                     "infoObj['" + Keys.BUFFERED_POSITION + "'] = bufferedPosition;\n" +
                     "infoObj['" + Keys.CURRENT_POSITION + "'] = currentPosition;\n" +
-                    "infoObj['" + Keys.REFRESH_NOTIFICATION + "'] = " + refreshNotificationOnInfoRetrieved + ";\n" +
+                    "infoObj['" + Keys.REFRESH_NOTIFICATION + "'] = "
+                    + refreshNotificationOnInfoRetrieved + ";\n" +
                     JSI_ON_EVENT + "(" + JSE_VIDEO_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
         }
     }
@@ -596,7 +597,8 @@ public final class Youtube {
                     "infoObj['" + Keys.DURATION + "'] = duration;\n" +
                     "infoObj['" + Keys.BUFFERED_POSITION + "'] = bufferedPosition;\n" +
                     "infoObj['" + Keys.CURRENT_POSITION + "'] = currentPosition;\n" +
-                    "infoObj['" + Keys.REFRESH_NOTIFICATION + "'] = " + refreshNotificationOnInfoRetrieved + ";\n" +
+                    "infoObj['" + Keys.REFRESH_NOTIFICATION + "'] = "
+                    + refreshNotificationOnInfoRetrieved + ";\n" +
                     JSI_ON_EVENT + "(" + JSE_VIDEO_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
         }
 

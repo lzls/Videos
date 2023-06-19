@@ -7,6 +7,7 @@ package com.liuzhenlin.videos.web.youtube;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Looper;
 import android.os.MessageQueue;
 import android.text.TextUtils;
 import android.view.View;
@@ -19,7 +20,6 @@ import android.webkit.WebView;
 import androidx.annotation.Nullable;
 
 import com.liuzhenlin.common.compat.LooperCompat;
-import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.Utils;
@@ -165,7 +165,7 @@ import static com.liuzhenlin.videos.web.youtube.Youtube.Util.getVideoStartMsFrom
 
     private void addOrRemoveIdleHandler() {
         @Nullable
-        MessageQueue msgQueue = LooperCompat.getQueue(Executors.MAIN_EXECUTOR.getLooper());
+        MessageQueue msgQueue = LooperCompat.getQueue(Looper.getMainLooper());
         if (msgQueue != null) {
             if (ALWAYS_CHECK_CURRENT_URL || (mVisible /*&& getWebPlayer() instanceof YoutubePlayer*/)) {
                 if (!mIdleHandlerAdded) {

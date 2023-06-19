@@ -18,6 +18,7 @@ internal const val PROCESS_NAME_WEB = Consts.APPLICATION_ID + ":web"
 
 internal const val KEY_DIRECTORY_PATH = "directoryPath"
 internal const val KEY_VIDEODIR = "videodir"
+internal const val KEY_VIDEODIRS = "videodirs"
 internal const val KEY_VIDEO = "video"
 internal const val KEY_VIDEOS = "videos"
 internal const val KEY_VIDEO_TITLE = "videoTitle"
@@ -36,6 +37,9 @@ internal const val RESULT_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT = 3
 
 internal const val REQUEST_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT = 4
 internal const val RESULT_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT = 4
+
+internal const val REQUEST_CODE_VIDEO_MOVE_FRAGMENT = 5
+internal const val RESULT_CODE_VIDEO_MOVE_FRAGMENT = 5
 
 internal const val REQUEST_CODE_GET_PICTURE = 5
 internal const val RESULT_CODE_GET_PICTURE = 5

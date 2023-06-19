@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.liuzhenlin.common.Consts;
+import com.liuzhenlin.common.compat.MediaMetadataRetrieverCompat;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.videos.bean.Video;
@@ -448,7 +449,7 @@ public final class VideoListItemDao implements IVideoListItemDao {
             e.printStackTrace();
             return false;
         } finally {
-            mmr.release();
+            MediaMetadataRetrieverCompat.release(mmr);
         }
     }
 

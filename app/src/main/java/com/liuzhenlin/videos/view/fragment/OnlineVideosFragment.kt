@@ -22,6 +22,7 @@ import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.common.utils.Utils
 import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.floatingmenu.FloatingMenu
+import com.liuzhenlin.floatingmenu.MenuItem
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
 import com.liuzhenlin.videos.R
 import com.liuzhenlin.videos.bean.TV
@@ -73,7 +74,7 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
                 mSwipeRefreshLayout.isRefreshing = false
                 when (cause) {
                     // 连接服务器超时
-                    is @kotlin.Suppress("DEPRECATION") org.apache.http.conn.ConnectTimeoutException ->
+                    is @Suppress("DEPRECATION") org.apache.http.conn.ConnectTimeoutException ->
                         UiUtils.showUserCancelableSnackbar(
                                 view!!, R.string.connectionTimeout, Snackbar.LENGTH_SHORT)
                     // 读取数据超时
@@ -90,7 +91,8 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
         })
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_online_videos, container, false)
         initViews(view)
         return view
@@ -170,7 +172,9 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
 
         override fun hasStableIds() = false
 
-        override fun getGroupView(groupPosition: Int, isExpanded: Boolean, convertView: View?, parent: ViewGroup): View {
+        override fun getGroupView(
+                groupPosition: Int, isExpanded: Boolean, convertView: View?, parent: ViewGroup)
+        : View {
             val groupHolder: GroupViewHolder
             val groupView: View
 
@@ -199,7 +203,10 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
         override fun getGroupId(groupPosition: Int): Long =
                 groupPosition.toLong()
 
-        override fun getChildView(groupPosition: Int, childPosition: Int, isLastChild: Boolean, convertView: View?, parent: ViewGroup): View {
+        override fun getChildView(
+                groupPosition: Int, childPosition: Int, isLastChild: Boolean, convertView: View?,
+                parent: ViewGroup)
+        : View {
             val childHolder: ChildViewHolder
             val childView: View
 
@@ -230,7 +237,9 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
 
         override fun getGroupCount() = tvGroups?.size ?: 0
 
-        override fun onChildClick(parent: ExpandableListView, v: View, groupPosition: Int, childPosition: Int, id: Long): Boolean {
+        override fun onChildClick(
+                parent: ExpandableListView, v: View, groupPosition: Int, childPosition: Int, id: Long)
+        : Boolean {
             val tvs = tvGroups!![groupPosition].tVs
             val tvNames = arrayOfNulls<String>(tvs.size)
             val tvUrls = arrayOfNulls<String>(tvs.size)
@@ -243,7 +252,8 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
             return true
         }
 
-        override fun onItemLongClick(parent: AdapterView<*>, view: View, position: Int, id: Long): Boolean {
+        override fun onItemLongClick(
+                parent: AdapterView<*>, view: View, position: Int, id: Long) : Boolean {
             if (ExpandableListView.getPackedPositionType(id)
                     == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
                 val packedPos = (parent as ExpandableListView).getExpandableListPosition(position)
@@ -255,7 +265,7 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
                 getChildView(groupPosition, childPosition, false /* ignored */, view, parent)
 
                 val fm = FloatingMenu(view)
-                fm.items(getString(R.string.copyURL))
+                fm.items(Collections.singletonList(MenuItem(View.NO_ID, getString(R.string.copyURL))))
                 fm.show(mDownX, mDownY)
                 fm.setOnItemClickListener { _, _ ->
                     Utils.copyPlainTextToClipboard(parent.context, child.name, child.url)

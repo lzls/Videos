@@ -5,10 +5,14 @@
 
 package com.liuzhenlin.videos;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -22,12 +26,18 @@ import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.DensityUtils;
 import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.InternetResourceLoadTask;
+import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.videos.crashhandler.CrashMailReporter;
 import com.liuzhenlin.videos.crashhandler.LogOnCrashHandler;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.web.youtube.YoutubePlaybackService;
+
+import java.util.Locale;
+
+import pub.devrel.easypermissions.EasyPermissions;
 
 /**
  * @author 刘振林
@@ -42,6 +52,15 @@ public class App extends Application {
     private static volatile boolean sNightMode;
 
     private volatile boolean mSystemUiNightMode;
+    private Locale mLocale;
+
+    public static final String[] STORAGE_PERMISSION =
+            BuildConfig.TARGET_SDK_VERSION >= 33 && Build.VERSION.SDK_INT >= 33
+                    ? new String[]{
+                            Manifest.permission.READ_MEDIA_AUDIO,
+                            Manifest.permission.READ_MEDIA_VIDEO,
+                            Manifest.permission.READ_MEDIA_IMAGES}
+                    : new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
 //    static {
 //        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
@@ -56,16 +75,20 @@ public class App extends Application {
         Thread.setDefaultUncaughtExceptionHandler(LogOnCrashHandler.INSTANCE.get(this));
 
         mSystemUiNightMode = ThemeUtils.isNightMode(this);
+        mLocale = getResources().getConfiguration().locale;
 
+        AppPrefs appPrefs = AppPrefs.getSingleton(this);
         registerComponentCallbacks(Glide.get(this));
         InternetResourceLoadTask.setAppContext(this);
-        AppCompatDelegate.setDefaultNightMode(AppPrefs.getSingleton(this).getDefaultNightMode());
+        AppCompatDelegate.setDefaultNightMode(appPrefs.getDefaultNightMode());
+        LanguageUtils.setDefaultLanguageMode(this, appPrefs.getDefaultLanguageMode());
 
         String procName = ApplicationCompat.getProcessName(this);
         if (procName != null) {
             // Each directory storing WebView data can be used by only one process in the application
             // when targetSdk >= P.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (Utils.getAppTargetSdkVersion(this) >= Build.VERSION_CODES.P
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 String pkgName = getPackageName();
                 if (!procName.equals(pkgName)) {
                     android.webkit.WebView.setDataDirectorySuffix(procName.replace(pkgName, ""));
@@ -102,6 +125,21 @@ public class App extends Application {
     @Nullable
     public static App getInstanceUnsafe() {
         return sApp;
+    }
+
+    @SuppressLint("NewApi")
+    public boolean hasAllFilesAccess() {
+        boolean sdkBeforeR =
+                Utils.getAppTargetSdkVersion(this) < Build.VERSION_CODES.R
+                        || Build.VERSION.SDK_INT < Build.VERSION_CODES.R;
+        boolean hasStoragePermission = hasStoragePermission();
+        return sdkBeforeR && hasStoragePermission
+                || !sdkBeforeR && hasStoragePermission && Environment.isExternalStorageLegacy()
+                || !sdkBeforeR && Environment.isExternalStorageManager();
+    }
+
+    public boolean hasStoragePermission() {
+        return EasyPermissions.hasPermissions(this, STORAGE_PERMISSION);
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
@@ -167,8 +205,38 @@ public class App extends Application {
     }
 
     @Override
+    public Resources getResources() {
+        Resources res = getResourcesNoConfigCheck();
+        if (!Configs.LanguageDiff.areLocaleEqual(mLocale, res.getConfiguration().locale)) {
+            onConfigurationChanged(res.getConfiguration());
+        }
+        return res;
+    }
+
+    private Resources getResourcesNoConfigCheck() {
+        return super.getResources();
+    }
+
+    @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        Locale locale = mLocale;
+        // Configuration can be updated without this method called. Temporarily cache the current
+        // locale in case of getResources() to be called in super.onConfigurationChanged(), which
+        // would cause us to recurse back to this method.
+        mLocale = getResourcesNoConfigCheck().getConfiguration().locale;
         super.onConfigurationChanged(newConfig);
+        // Also, cache the new locale as early as possible. This will be used later in
+        // getResources() for locale equality checks.
+        newConfig = getResourcesNoConfigCheck().getConfiguration();
+        mLocale = newConfig.locale;
+
+        if (!Configs.LanguageDiff.areLocaleEqual(locale, newConfig.locale)) {
+            if (LanguageUtils.getDefaultLanguageMode() != LanguageUtils.MODE_LANGUAGE_FOLLOWS_SYSTEM) {
+                LanguageUtils.updateResourcesConfigLocale(
+                        this, LanguageUtils.getDefaultLanguageLocale());
+            }
+        }
+
         boolean night = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK)
                 == Configuration.UI_MODE_NIGHT_YES;
         if (mSystemUiNightMode != night) {

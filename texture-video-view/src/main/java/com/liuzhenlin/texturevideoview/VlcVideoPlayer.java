@@ -23,6 +23,7 @@ import androidx.annotation.RestrictTo;
 
 import com.bumptech.glide.util.Synthetic;
 import com.google.android.material.snackbar.Snackbar;
+import com.liuzhenlin.common.compat.AudioManagerCompat;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver;
 import com.liuzhenlin.common.utils.URLUtils;
@@ -352,7 +353,7 @@ public class VlcVideoPlayer extends VideoPlayer {
                 stringRes = R.string.videoInThisFormatIsNotSupported;
                 break;
             default:
-                stringRes = R.string.unknownErrorOccurredWhenVideoIsPlaying;
+                stringRes = R.string.unknownErrorOccurredWhenVideoWasPlaying;
                 break;
         }
         if (mVideoView != null) {
@@ -501,7 +502,8 @@ public class VlcVideoPlayer extends VideoPlayer {
                         // Register MediaButtonEventReceiver every time the video starts, which
                         // will ensure it to be the sole receiver of MEDIA_BUTTON intents
                         MediaButtonEventReceiver.setMediaButtonEventHandler(getMediaButtonEventHandler());
-                        mAudioManager.registerMediaButtonEventReceiver(sMediaButtonEventReceiverComponent);
+                        AudioManagerCompat.registerMediaButtonEventReceiver(mContext, mAudioManager,
+                                sMediaButtonEventReceiverComponent);
                         break;
 
                     case AudioManager.AUDIOFOCUS_REQUEST_DELAYED:
