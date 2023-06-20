@@ -68,7 +68,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
             childFragmentManager.beginTransaction()
                     .add(R.id.container_child_fragments, mLocalVideoListFragment,
                             TAG_LOCAL_VIDEO_LIST_FRAGMENT)
-                    .commit()
+                    .commitNow()
         } else {
             val fm = childFragmentManager
 
@@ -179,6 +179,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                         TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT)
                 .addToBackStack(TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT)
                 .commit()
+        childFragmentManager.executePendingTransactions()
     }
 
     override fun goToLocalSearchedVideosFragment() {
@@ -193,6 +194,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                         TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
                 .addToBackStack(TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
                 .commit()
+        childFragmentManager.executePendingTransactions()
     }
 
     override fun goToVideoMoveFragment(args: Bundle) {
@@ -200,7 +202,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         mVideoMoveFragment!!.arguments = args
         mVideoMoveFragment!!.setTargetFragment(
                 mLocalVideoListFragment, REQUEST_CODE_VIDEO_MOVE_FRAGMENT)
-        mVideoMoveFragment!!.show(childFragmentManager.beginTransaction(), TAG_VIDEO_MOVE_FRAGMENT)
+        mVideoMoveFragment!!.showNow(childFragmentManager, TAG_VIDEO_MOVE_FRAGMENT)
     }
 
     override fun onBackPressed(): Boolean {
