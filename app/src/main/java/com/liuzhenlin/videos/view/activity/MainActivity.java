@@ -136,9 +136,9 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     private static final int REQUEST_CODE_APPLY_FOR_FLOATING_WINDOW_PERMISSION = 8;
 
     @Synthetic String mCheckUpdateResultText;
-    private String mIsTheLatestVersion;
+    @Synthetic String mIsTheLatestVersion;
     @Synthetic String mNewVersionFound;
-    private AppUpdateChecker.OnResultListener mOnCheckUpdateResultListener;
+    private AppUpdateChecker.Listener mOnCheckUpdateListener;
 
     private boolean mIsBackPressed;
 
@@ -179,6 +179,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
         initViews();
 
+        registerAppUpdateCheckListener();
         if (savedInstanceState == null) {
 //            // 打开应用时自动检测更新（有悬浮窗权限时才去检查，不然弹不出更新提示对话框）
 //            checkUpdateIfPermissionGranted(false);
@@ -494,8 +495,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         if (mDrawerList != null) {
             recycleDrawerImage();
         }
-        if (mOnCheckUpdateResultListener != null) {
-            AppUpdateChecker.getSingleton(this).removeOnResultListener(mOnCheckUpdateResultListener);
+        if (mOnCheckUpdateListener != null) {
+            AppUpdateChecker.getSingleton(this).removeListener(mOnCheckUpdateListener);
         }
     }
 
@@ -560,6 +561,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         final String[] mDrawerListItems;
 
         final Context mContext = MainActivity.this;
+        final AppUpdateChecker mAppUpdateChecker = AppUpdateChecker.getSingleton(mContext);
 
         @ColorInt
         int mTextColor;
@@ -638,7 +640,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                 if (!TextUtils.isEmpty(mCheckUpdateResultText)) {
                     return 31L * baseId + mCheckUpdateResultText.hashCode();
                 }
-                return baseId;
+                return 31L * baseId + mAppUpdateChecker.getState();
             }
             return sDrawerListItemIDs[position];
         }
@@ -660,11 +662,28 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             }
             vh.text.setText(mDrawerListItems[position]);
             vh.text.setTextColor(mTextColor);
-            if (position == 0 && !TextUtils.isEmpty(mCheckUpdateResultText)) {
-                vh.subText.setText(mCheckUpdateResultText);
-                vh.subText.setTextColor(
-                        mNewVersionFound.equals(mCheckUpdateResultText) ?
-                                SUBTEXT_HIGHLIGHT_COLOR : mSubTextColor);
+            if (position == 0
+                    && (!TextUtils.isEmpty(mCheckUpdateResultText)
+                            || mAppUpdateChecker.getState() == AppUpdateChecker.State.CHECKING
+                            || mAppUpdateChecker.getState() == AppUpdateChecker.State.DOWNLOADING)) {
+                switch (mAppUpdateChecker.getState()) {
+                    case AppUpdateChecker.State.ERROR:
+                    case AppUpdateChecker.State.IDLE:
+                    case AppUpdateChecker.State.INTERACTING_WITH_USER:
+                        vh.subText.setText(mCheckUpdateResultText);
+                        vh.subText.setTextColor(
+                                mNewVersionFound.equals(mCheckUpdateResultText) ?
+                                        SUBTEXT_HIGHLIGHT_COLOR : mSubTextColor);
+                        break;
+                    case AppUpdateChecker.State.CHECKING:
+                        vh.subText.setText(R.string.checking);
+                        vh.subText.setTextColor(mSubTextColor);
+                        break;
+                    case AppUpdateChecker.State.DOWNLOADING:
+                        vh.subText.setText(R.string.downloadingUpdates);
+                        vh.subText.setTextColor(mSubTextColor);
+                        break;
+                }
                 vh.subText.setCompoundDrawables(null, null, null, null);
             } else {
                 vh.subText.setText(EMPTY_STRING);
@@ -732,17 +751,31 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 //    }
 
     private void baseCheckUpdate(boolean toastResult) {
-        AppUpdateChecker auc = AppUpdateChecker.getSingleton(this);
-        if (mOnCheckUpdateResultListener == null) {
-            mOnCheckUpdateResultListener = newVersionFound -> {
+        AppUpdateChecker.getSingleton(this).checkUpdate(toastResult);
+    }
+
+    private void registerAppUpdateCheckListener() {
+        mOnCheckUpdateListener = new AppUpdateChecker.Listener() {
+            @Override
+            public void onCheckResult(boolean newVersionFound) {
                 mCheckUpdateResultText = newVersionFound ? mNewVersionFound : mIsTheLatestVersion;
                 if (mDrawerListAdapter != null) {
                     mDrawerListAdapter.notifyItemChanged(0);
                 }
-            };
-            auc.addOnResultListener(mOnCheckUpdateResultListener);
-        }
-        auc.checkUpdate(toastResult);
+            }
+
+            @Override
+            public void onStateChange(int oldState, int newState) {
+                if (oldState == AppUpdateChecker.State.CHECKING
+                        && newState == AppUpdateChecker.State.ERROR) {
+                    mCheckUpdateResultText = EMPTY_STRING;
+                }
+                if (mDrawerListAdapter != null) {
+                    mDrawerListAdapter.notifyItemChanged(0);
+                }
+            }
+        };
+        AppUpdateChecker.getSingleton(this).addListener(mOnCheckUpdateListener);
     }
 
     private void showAboutAppDialog() {
