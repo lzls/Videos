@@ -14,7 +14,9 @@
     <string name="cancel">Cancel</string>
     <string name="cancelTop">Cancel Top</string>
     <string name="cannotPlayThisVideo">Cannot play this video</string>
+    <string name="checkError">Check error</string>
     <string name="checkForUpdates">Check for Updates</string>
+    <string name="checking">Checking…</string>
     <string name="clearBackground">Clear background</string>
     <string name="clickToInstallIt">Click to install it</string>
     <string name="colon">:</string>
@@ -34,7 +36,8 @@
     <string name="doYouNeedToUpdateItSoon">Do you need to update it soon?</string>
     <string name="downloadError">Download error</string>
     <string name="downloading" tools:keep="@string/downloading">Downloading…</string>
-    <string name="downloadingUpdates">Downloading Updates…</string>
+    <string name="downloadingUpdates">Downloading updates…</string>
+    <string name="downloadingUpdates_title">Downloading Updates…</string>
     <string name="drawerBackground">Drawer background</string>
     <string name="drawerSettings">Drawer Settings</string>
     <string name="darkTheme">Dark Theme</string>

@@ -13,7 +13,9 @@
     <string name="cancel">取消</string>
     <string name="cancelTop">取消置顶</string>
     <string name="cannotPlayThisVideo">无法播放此视频</string>
+    <string name="checkError">检测异常</string>
     <string name="checkForUpdates">检查更新</string>
+    <string name="checking">检测中…</string>
     <string name="clearBackground">清除背景</string>
     <string name="clickToInstallIt">点击安装</string>
     <string name="colon">：</string>
@@ -33,7 +35,8 @@
     <string name="doYouNeedToUpdateItSoon">请问您需要立即更新吗？</string>
     <string name="downloadError">下载异常</string>
     <string name="downloading" tools:keep="@string/downloading">正在下载…</string>
-    <string name="downloadingUpdates">正在下载更新…</string>
+    <string name="downloadingUpdates">下载更新中…</string>
+    <string name="downloadingUpdates_title">正在下载更新…</string>
     <string name="drawerBackground">抽屉背景</string>
     <string name="drawerSettings">抽屉设置</string>
     <string name="darkTheme">深色主题</string>
