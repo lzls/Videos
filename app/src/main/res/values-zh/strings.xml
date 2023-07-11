@@ -3,8 +3,13 @@
     <string name="aboutApp">关于视频</string>
     <string name="adviceAndFeedback">意见反馈</string>
     <string name="alias">别名：%s</string>
+    <string name="alreadyTheLatestVersion">已是最新版本</string>
+    <string name="appDownload">应用下载</string>
+    <string name="appDownloadError">应用下载出错</string>
     <string name="appIcon" tools:keep="@string/appIcon">应用图标</string>
     <string name="appName">视频</string>
+    <string name="appUpdateCheck">应用更新检测</string>
+    <string name="appUpdateCheckError">应用更新检测异常</string>
     <string name="areYouSureToDelete">确认删除？</string>
     <string name="areYouSureToDeleteSomeVideoDir">确定删除“%s”目录下的所有视频吗？</string>
     <string name="areYouSureToDeleteSth">确定删除“%s”？</string>
@@ -13,7 +18,6 @@
     <string name="cancel">取消</string>
     <string name="cancelTop">取消置顶</string>
     <string name="cannotPlayThisVideo">无法播放此视频</string>
-    <string name="checkError">检测异常</string>
     <string name="checkForUpdates">检查更新</string>
     <string name="checking">检测中…</string>
     <string name="clearBackground">清除背景</string>
@@ -22,6 +26,7 @@
     <string name="commit">提交</string>
     <string name="complete">完成</string>
     <string name="confirm">@string/ok</string>
+    <string name="connectionForSthTimedOut">%s连接超时</string>
     <string name="connectionTimeout">连接超时</string>
     <string name="contactWay">联系方式</string>
     <string name="copyURL">复制链接</string>
@@ -33,17 +38,18 @@
     <string name="dontPromptAgain">不再提示</string>
     <string name="doYouNeedToSaveTheEditedContents">是否对已编辑的内容进行保存？</string>
     <string name="doYouNeedToUpdateItSoon">请问您需要立即更新吗？</string>
-    <string name="downloadError">下载异常</string>
     <string name="downloading" tools:keep="@string/downloading">正在下载…</string>
     <string name="downloadingUpdates">下载更新中…</string>
     <string name="downloadingUpdates_title">正在下载更新…</string>
     <string name="drawerBackground">抽屉背景</string>
     <string name="drawerSettings">抽屉设置</string>
     <string name="darkTheme">深色主题</string>
+    <string name="feedbackCanceled" tools:keep="@string/sendCanceled">反馈取消</string>
+    <string name="feedbackFailed">反馈失败</string>
+    <string name="feedbackSuccessful">反馈成功</string>
     <string name="goNow">现在去开启</string>
     <string name="hasBeenPlacedInTheBackground">已放入后台</string>
     <string name="illegalInputLink">输入链接不合法！</string>
-    <string name="isTheLatestVersion">已是最新版本</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">正在载入数据，请稍候…</string>
     <string name="localVideos">本地视频</string>
     <string name="move">移动</string>
@@ -83,6 +89,7 @@
         没有读写存储卡的权限，此应用将无法正常工作。请先前往应用程序设置界面以允许该权限。
     </string>
     <string name="rationale_askFloatingWindowPermission">此应用还没有被授予悬浮窗权限，请开启后再试！</string>
+    <string name="readOfSthTimedOut">%s读取超时</string>
     <string name="readTimeout">读取超时</string>
     <string name="refreshError">刷新异常</string>
     <string name="refreshingVideos" tools:keep="@string/refreshingVideos">正在刷新数据，请稍候…</string>
@@ -102,9 +109,6 @@
     <string name="searchVideos">搜索视频</string>
     <string name="selectAll">全选</string>
     <string name="selectNone">全不选</string>
-    <string name="sendCanceled" tools:keep="@string/sendCanceled">发送取消</string>
-    <string name="sendFailed">发送失败</string>
-    <string name="sendSuccessful">发送成功</string>
     <string name="sending">正在发送…</string>
     <string name="setBackground">设置背景</string>
     <string name="setDarkIcons">设置深色图标</string>

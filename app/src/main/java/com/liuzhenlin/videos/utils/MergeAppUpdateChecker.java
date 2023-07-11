@@ -302,28 +302,30 @@ public final class MergeAppUpdateChecker {
                     case RESULT_NO_NEW_VERSION:
                         mH.sendEmptyMessage(H.MSG_NO_NEW_VERSION);
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.isTheLatestVersion, Toast.LENGTH_SHORT)
-                                    .show();
+                            Toast.makeText(mContext, R.string.alreadyTheLatestVersion,
+                                    Toast.LENGTH_SHORT).show();
                         }
                         reset(false);
                         break;
                     case RESULT_CONNECTION_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
-                                    .show();
+                            String text = mContext.getString(R.string.connectionForSthTimedOut,
+                                    mContext.getString(R.string.appUpdateCheck));
+                            Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                         }
                         reset(true);
                         break;
                     case RESULT_READ_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
-                                    .show();
+                            String text = mContext.getString(R.string.readOfSthTimedOut,
+                                    mContext.getString(R.string.appUpdateCheck));
+                            Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                         }
                         reset(true);
                         break;
                     default:
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.checkError, Toast.LENGTH_SHORT)
+                            Toast.makeText(mContext, R.string.appUpdateCheckError, Toast.LENGTH_SHORT)
                                     .show();
                         }
                         reset(true);
@@ -1035,8 +1037,9 @@ public final class MergeAppUpdateChecker {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
                     cancel(false, true);
-                    Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
-                            .show();
+                    String text = mContext.getString(R.string.connectionForSthTimedOut,
+                            mContext.getString(R.string.appDownload));
+                    Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                 });
             }
         }
@@ -1045,8 +1048,9 @@ public final class MergeAppUpdateChecker {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
                     cancel(false, true);
-                    Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
-                            .show();
+                    String text = mContext.getString(R.string.readOfSthTimedOut,
+                            mContext.getString(R.string.appDownload));
+                    Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                 });
             }
         }
@@ -1055,7 +1059,7 @@ public final class MergeAppUpdateChecker {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
                     cancel(false, true);
-                    Toast.makeText(mContext, R.string.downloadError, Toast.LENGTH_SHORT)
+                    Toast.makeText(mContext, R.string.appDownloadError, Toast.LENGTH_SHORT)
                             .show();
                 });
             }

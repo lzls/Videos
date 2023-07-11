@@ -3,8 +3,13 @@
     <string name="aboutApp">About App</string>
     <string name="adviceAndFeedback">Advice &amp; Feedback</string>
     <string name="alias">Alias: %s</string>
+    <string name="alreadyTheLatestVersion">Already the latest version</string>
+    <string name="appDownload">app download</string>
+    <string name="appDownloadError">App download error</string>
     <string name="appIcon" tools:keep="@string/appIcon">App icon</string>
     <string name="appName">Videos</string>
+    <string name="appUpdateCheck">app update check</string>
+    <string name="appUpdateCheckError">App update check error</string>
     <string name="areYouSureToDelete">Are you sure to delete?</string>
     <string name="areYouSureToDeleteSomeVideoDir">
         Are you sure to delete all the videos under \"%s\" directory?</string>
@@ -14,7 +19,6 @@
     <string name="cancel">Cancel</string>
     <string name="cancelTop">Cancel Top</string>
     <string name="cannotPlayThisVideo">Cannot play this video</string>
-    <string name="checkError">Check error</string>
     <string name="checkForUpdates">Check for Updates</string>
     <string name="checking">Checking…</string>
     <string name="clearBackground">Clear background</string>
@@ -23,6 +27,7 @@
     <string name="commit">Commit</string>
     <string name="complete">OK</string>
     <string name="confirm">@string/ok</string>
+    <string name="connectionForSthTimedOut">Connection for %s timed out</string>
     <string name="connectionTimeout">Connection timeout</string>
     <string name="contactWay">Contact way</string>
     <string name="copyURL">Copy URL</string>
@@ -34,17 +39,18 @@
     <string name="dontPromptAgain">Don\'t prompt again</string>
     <string name="doYouNeedToSaveTheEditedContents">Do you need to save the edited contents?</string>
     <string name="doYouNeedToUpdateItSoon">Do you need to update it soon?</string>
-    <string name="downloadError">Download error</string>
     <string name="downloading" tools:keep="@string/downloading">Downloading…</string>
     <string name="downloadingUpdates">Downloading updates…</string>
     <string name="downloadingUpdates_title">Downloading Updates…</string>
     <string name="drawerBackground">Drawer background</string>
     <string name="drawerSettings">Drawer Settings</string>
     <string name="darkTheme">Dark Theme</string>
+    <string name="feedbackCanceled" tools:keep="@string/sendCanceled">Feedback canceled</string>
+    <string name="feedbackFailed">Feedback failed</string>
+    <string name="feedbackSuccessful">Feedback successful</string>
     <string name="goNow">Go Now</string>
     <string name="hasBeenPlacedInTheBackground">Has been placed in the background</string>
     <string name="illegalInputLink">Illegal input link!</string>
-    <string name="isTheLatestVersion">Is the latest version</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">Loading videos, please wait…</string>
     <string name="localVideos">Local Videos</string>
     <string name="move">Move</string>
@@ -94,6 +100,7 @@
         This app has not been granted the floating window permission.
         Please try it again after opening!
     </string>
+    <string name="readOfSthTimedOut">Read of %s timed out</string>
     <string name="readTimeout">Read timeout</string>
     <string name="refreshError">Refresh Error</string>
     <string name="refreshingVideos" tools:keep="@string/refreshingVideos">
@@ -115,9 +122,6 @@
     <string name="searchVideos">Search videos</string>
     <string name="selectAll">Select All</string>
     <string name="selectNone">Select None</string>
-    <string name="sendCanceled" tools:keep="@string/sendCanceled">Send canceled</string>
-    <string name="sendFailed">Send failed</string>
-    <string name="sendSuccessful">Send successful</string>
     <string name="sending">Sending…</string>
     <string name="setBackground">Set background</string>
     <string name="setDarkIcons">Set dark icons</string>
