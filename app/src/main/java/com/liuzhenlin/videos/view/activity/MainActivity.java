@@ -136,7 +136,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     private static final int REQUEST_CODE_APPLY_FOR_FLOATING_WINDOW_PERMISSION = 8;
 
     @Synthetic String mCheckUpdateResultText;
-    @Synthetic String mIsTheLatestVersion;
+    @Synthetic String mAlreadyTheLatestVersion;
     @Synthetic String mNewVersionFound;
     private AppUpdateChecker.Listener mOnCheckUpdateListener;
 
@@ -151,7 +151,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         // 有新的热更新补丁可用时，加载...
         SophixManager.getInstance().queryAndLoadNewPatch();
 
-        mIsTheLatestVersion = getString(R.string.isTheLatestVersion);
+        mAlreadyTheLatestVersion = getString(R.string.alreadyTheLatestVersion);
         mNewVersionFound = getString(R.string.newVersionFound);
     }
 
@@ -758,7 +758,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         mOnCheckUpdateListener = new AppUpdateChecker.Listener() {
             @Override
             public void onCheckResult(boolean newVersionFound) {
-                mCheckUpdateResultText = newVersionFound ? mNewVersionFound : mIsTheLatestVersion;
+                mCheckUpdateResultText =
+                        newVersionFound ? mNewVersionFound : mAlreadyTheLatestVersion;
                 if (mDrawerListAdapter != null) {
                     mDrawerListAdapter.notifyItemChanged(0);
                 }

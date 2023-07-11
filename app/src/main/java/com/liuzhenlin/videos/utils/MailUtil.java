@@ -105,8 +105,8 @@ public class MailUtil {
             if (mProgressDialog != null) {
                 mProgressDialog.dismiss();
             }
-            Toast.makeText(mContext, successful ? R.string.sendSuccessful : R.string.sendFailed,
-                    Toast.LENGTH_SHORT).show();
+            int stringRes = successful ? R.string.feedbackSuccessful : R.string.feedbackFailed;
+            Toast.makeText(mContext, stringRes, Toast.LENGTH_SHORT).show();
         }
 
         @Override
