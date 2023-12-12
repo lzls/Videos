@@ -101,7 +101,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         get() = mSearchText
 
     init {
-        lifecycle.addObserver(object: DefaultLifecycleObserver {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) =
                     presenter.onViewStart(this@LocalSearchedVideosFragment)
 

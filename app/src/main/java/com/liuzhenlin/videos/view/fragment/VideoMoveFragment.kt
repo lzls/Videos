@@ -65,7 +65,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
     private val mPresenter = IVideoMovePresenter.newInstance()
 
     init {
-        lifecycle.addObserver(object: DefaultLifecycleObserver {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) =
                     mPresenter.onViewStart(this@VideoMoveFragment)
 

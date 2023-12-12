@@ -497,7 +497,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
                     evaluateColorChange(
                             (interpolatedTime - COLOR_CHANGE_OFFSET)
                                     / (1f - COLOR_CHANGE_OFFSET), ring.getStartingColor(),
-                    ring.getNextColor()));
+                            ring.getNextColor()));
         } else {
             ring.setColor(ring.getStartingColor());
         }

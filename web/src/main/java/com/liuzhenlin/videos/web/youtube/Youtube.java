@@ -23,18 +23,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import static com.liuzhenlin.common.utils.Utils.roundDouble;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_PLAYLIST_INFO_RETRIEVED;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_INFO_RETRIEVED;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_READY;
-import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_STATE_CHANGE;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_ERR;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_PLAYLIST_INFO_RETRIEVED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_BUFFERING;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_ENDED;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_INFO_RETRIEVED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_PAUSED;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_PLAYING;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_SELECTOR_FOUND;
 import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSE_VIDEO_UNSTARTED;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_EVENT;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_READY;
+import static com.liuzhenlin.videos.web.youtube.YoutubeJsInterface.JSI_ON_PLAYER_STATE_CHANGE;
 
 @NonNullApi
 public final class Youtube {
