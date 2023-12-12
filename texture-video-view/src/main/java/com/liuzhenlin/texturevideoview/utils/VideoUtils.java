@@ -181,6 +181,6 @@ public class VideoUtils {
             videoW = Utils.roundFloat(videoW * pixelWidthHeightRatio);
         }
 
-        return new int[] {videoW, videoH};
+        return new int[]{videoW, videoH};
     }
 }

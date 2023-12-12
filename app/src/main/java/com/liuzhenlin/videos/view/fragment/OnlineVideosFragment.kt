@@ -253,7 +253,7 @@ class OnlineVideosFragment : Fragment(), SlidingDrawerLayout.OnDrawerScrollListe
         }
 
         override fun onItemLongClick(
-                parent: AdapterView<*>, view: View, position: Int, id: Long) : Boolean {
+                parent: AdapterView<*>, view: View, position: Int, id: Long): Boolean {
             if (ExpandableListView.getPackedPositionType(id)
                     == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
                 val packedPos = (parent as ExpandableListView).getExpandableListPosition(position)

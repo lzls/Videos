@@ -450,8 +450,9 @@ public class Utils {
 
     /**
      * Log a {@link ConsoleMessage web console message} to the Android logcat.
+     *
      * @param consoleMessage The message object would be output onto the web console.
-     * @param logTag Used to identify the source of a log message.
+     * @param logTag         Used to identify the source of a log message.
      */
     public static void logWebConsoleMessage(
             @NonNull ConsoleMessage consoleMessage, @NonNull String logTag) {

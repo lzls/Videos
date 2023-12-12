@@ -96,7 +96,7 @@ public class LegacyExternalStorageDataMigrator {
                 mContext.getContentResolver().delete(
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         MediaStore.Images.Media.DATA + "='"
-                                + StringsKt.replace(screenshotOldPath,"'", "''", false)
+                                + StringsKt.replace(screenshotOldPath, "'", "''", false)
                                 + "' COLLATE NOCASE",
                         null);
                 FileUtils.recordMediaFileToDatabaseAndScan(

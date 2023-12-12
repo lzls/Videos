@@ -122,7 +122,7 @@ class LocalFoldedVideosFragment : BaseFragment(), ILocalFoldedVideosView, View.O
         }
 
     init {
-        lifecycle.addObserver(object: DefaultLifecycleObserver {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) =
                     presenter.onViewStart(this@LocalFoldedVideosFragment)
 

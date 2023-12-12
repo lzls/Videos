@@ -16,7 +16,6 @@ import androidx.appcompat.app.AppCompatDelegateWrapper;
 
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
 import com.liuzhenlin.common.Consts;
-import com.liuzhenlin.common.utils.OSHelper;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
 import com.liuzhenlin.common.utils.SystemBarUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
