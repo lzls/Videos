@@ -357,7 +357,7 @@ public final class Youtube {
             int plIdx = next ? 1 : 0;
             return "javascript:\n" +
                     "var e = document.getElementsByClassName('player-controls-middle center');\n" +
-                    "if (e.length > 0) e = e[0].querySelectorAll('button');\n" +
+                    "if (e.length > 0) e = e[0].getElementsByTagName('button');\n" +
                     "if (e.length >= 5) e[" + idx + "].click();\n" +
                     "else {\n" +
                     "  e = document.getElementsByClassName('playlist-controls-primary');\n" +
@@ -415,7 +415,7 @@ public final class Youtube {
                     "  if (settings == null) return retrySetVideoQuality(quality, attempt, false);\n" +
                     "  var select = settings.querySelector('.select');\n" +
                     "  if (select == null) return retrySetVideoQuality(quality, attempt, false);\n" +
-                    "  var options = select.querySelectorAll('.option');\n" +
+                    "  var options = select.getElementsByClassName('option');\n" +
                     "  var idx = options.length - 1;\n" +
                     "  quality = quality.trim().toLowerCase();\n" +
                     "  if (!quality.match(/^" + VideoQuality.AUTO + "$/i)) {\n" +
@@ -489,7 +489,7 @@ public final class Youtube {
             return "function getPlaylistIndex() {\n" +
                     "  var e = document.querySelector('ytm-section-list-renderer');\n" +
                     "  if (e != null) {\n" +
-                    "    e = e.querySelectorAll('ytm-playlist-panel-video-renderer');\n" +
+                    "    e = e.getElementsByTagName('ytm-playlist-panel-video-renderer');\n" +
                     "    for (let i = e.length - 1; i >= 0; i--) {\n" +
                     "      if (e[i].getAttribute('aria-selected') == 'true') {\n" +
                     "        return i;\n" +
