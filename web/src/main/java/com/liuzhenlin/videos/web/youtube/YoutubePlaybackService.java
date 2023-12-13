@@ -44,6 +44,7 @@ import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.InternetResourceLoadTask;
 import com.liuzhenlin.common.utils.ListenerSet;
 import com.liuzhenlin.common.utils.NotificationChannelManager;
+import com.liuzhenlin.common.utils.SerialExecutor;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.Utils;
@@ -105,6 +106,15 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
     private ComponentName mMediaButtonEventReceiverComponent;
 
     private ListenerSet<PlayerListener> mListeners;
+
+    private static final Executor NOTIFICATION_EXECUTOR = new SerialExecutor() {
+        @Override
+        public synchronized void execute(@NonNull Runnable r) {
+            // Removes useless pending playback notifications in the middle for better performance
+            clear();
+            super.execute(r);
+        }
+    };
 
     public static void peekIfNonnullThenDo(@NonNull Consumer<YoutubePlaybackService> consumer) {
         YoutubePlaybackService service = sInstance;
@@ -188,7 +198,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                     long videoStartMs = bundle.getLong(Constants.Extras.VIDEO_START_MS);
                     boolean fromPlaybackView = bundle.getBoolean(Constants.Extras.FROM_PLAYBACK_VIEW);
                     if (action.equals(Constants.Actions.START_FOREGROUND)) {
-                        Executors.THREAD_POOL_EXECUTOR.execute(() -> {
+                        NOTIFICATION_EXECUTOR.execute(() -> {
                             Notification notification =
                                     createNotification(videoId, SystemClock.elapsedRealtime(), false);
                             Executors.MAIN_EXECUTOR.execute(() -> {
@@ -593,7 +603,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
 
     private void refreshNotification(boolean showVideoInfo) {
         long elapsedTime = SystemClock.elapsedRealtime();
-        Executors.THREAD_POOL_EXECUTOR.execute(() -> {
+        NOTIFICATION_EXECUTOR.execute(() -> {
             NotificationManager notificationManager =
                     (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
             Notification notification = createNotification(mVideoId, elapsedTime, showVideoInfo);

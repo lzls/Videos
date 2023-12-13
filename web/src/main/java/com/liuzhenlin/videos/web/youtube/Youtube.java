@@ -550,7 +550,18 @@ public final class Youtube {
 
         private static String jsFunGetVideoId() {
             return "function getVideoId() {\n" +
-                    "  var e = document.querySelector('player-microformat-renderer');\n" +
+                    "  var vidParamRegex = /(\\?|\\&)v=([A-Za-z0-9_-]+)\\&?/;\n" +
+                    "  var e = document.querySelector('link[rel=\"canonical\"]');\n" +
+                    "  if (e != null && vidParamRegex.test(e.href)) {\n" +
+                    "    return RegExp.$2;\n" +
+                    "  }\n" +
+                    "  e = document.querySelector('.icon-avatar_logged_out');\n" +
+                    "  if (e != null) {\n" +
+                    "    let href = e.querySelector('a').href;\n" +
+                    "    if (vidParamRegex.test(href))\n" +
+                    "      return RegExp.$2;\n" +
+                    "  }\n" +
+                    "  e = document.querySelector('player-microformat-renderer');\n" +
                     "  if (e != null) {\n" +
                     "    let json = JSON.parse(e.firstChild.innerText);\n" +
                     "    let embedUrl = json.embedUrl;\n" +
