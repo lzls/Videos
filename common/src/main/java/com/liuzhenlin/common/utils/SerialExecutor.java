@@ -13,7 +13,7 @@ import java.util.concurrent.Executor;
 /**
  * An {@link Executor} that executes tasks one at a time in serial order.
  */
-public final class SerialExecutor implements Executor {
+public class SerialExecutor implements Executor {
 
     private final LinkedList<Runnable> mTasks = new LinkedList<>();
     private Runnable mActive;
@@ -39,14 +39,17 @@ public final class SerialExecutor implements Executor {
 
     public synchronized boolean remove(@Nullable Runnable r) {
         if (r == null) {
-            if (mTasks.size() > 0) {
-                mTasks.clear();
-                return true;
-            }
+            return clear();
         } else {
             return mTasks.remove(r);
         }
-        return false;
+    }
+
+    public synchronized boolean clear() {
+        if (mTasks.size() > 0) {
+            mTasks.clear();
+        }
+        return true;
     }
 
     public synchronized boolean isIdle() {
