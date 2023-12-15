@@ -23,6 +23,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.RemoteViews;
@@ -63,6 +64,8 @@ import org.json.JSONObject;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 
+import static com.liuzhenlin.common.utils.Utils.emptyIfStringNull;
+
 public class YoutubePlaybackService extends Service implements PlayerListener {
 
     private static final int ID_NOTIFICATION = 20220216;
@@ -80,6 +83,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
 
     private long mSeekOnPlayerReady = Constants.UNKNOWN;
 
+    private String mNotiVideoId = "";
     private String mVideoId = "";
     private String mPlaylistId = "";
 
@@ -88,7 +92,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
     private int mPlaylistSize;
     private int mPlaylistIndex;
 
-    /*package*/ volatile Video mVideo = EMPTY_VIDEO;
+    private volatile Video mVideo = EMPTY_VIDEO;
     /*package*/ static final Video EMPTY_VIDEO = new Video();
 
     @Youtube.PlayingStatus /*package*/ volatile int mPlayingStatus = Youtube.PlayingStatus.UNSTARTED;
@@ -377,6 +381,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         }
 
         boolean playerChanged;
+        boolean videoIdChanged = !videoId.equals(mVideoId);
 
         if (mView == null) {
             mView = new YoutubePlaybackView(this);
@@ -389,7 +394,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
             mPlayerReady = false;
         }
 
-        if (playerChanged || (!playlistId.equals(mPlaylistId) || !videoId.equals(mVideoId))) {
+        if (playerChanged || (!playlistId.equals(mPlaylistId) || videoIdChanged)) {
             mSeekOnPlayerReady = Constants.UNKNOWN;
             mReplayPlaylist = mReplayVideo = false;
             if (Youtube.Prefs.get(mContext).retainHistoryVideoPages()) {
@@ -457,6 +462,11 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
                 }
             }
             playInForeground();
+        }
+        if (videoIdChanged) {
+            Video video = new Video();
+            video.setId(videoId);
+            refreshNotificationForVideo(video);
         }
     }
 
@@ -579,21 +589,33 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
             if (video == null) {
                 video = EMPTY_VIDEO;
             }
-            boolean changed = mLastPlayingStatus != mPlayingStatus
-                    || mVideo.getDuration() != video.getDuration()
-                    || mVideo.getBufferedPosition() != video.getBufferedPosition()
-                    || mVideo.getCurrentPosition() != video.getCurrentPosition();
-            mLastPlayingStatus = mPlayingStatus;
-            mVideo = video;
-            String videoId = Utils.emptyIfStringNull(video.getId());
-            if (!mVideoId.equals(videoId)) {
-                mVideoId = videoId;
-                changed = true;
-                refreshNotification(false);
-            }
-            if (changed) {
-                refreshNotification(true);
-            }
+            refreshNotificationForVideo(video);
+        }
+    }
+
+    private void refreshNotificationForVideo(Video video) {
+        boolean changed = mLastPlayingStatus != mPlayingStatus
+                || mVideo.getDuration() != video.getDuration()
+                || mVideo.getCurrentPosition() != video.getCurrentPosition();
+        recacheVideoInfo(video);
+        if (!mNotiVideoId.equals(mVideoId)) {
+            mNotiVideoId = mVideoId;
+            changed = true;
+        }
+        if (changed) {
+            refreshNotification(true);
+        }
+    }
+
+    private void recacheVideoInfo(Video video) {
+        String lastVideoId = mVideo.getId();
+        mLastPlayingStatus = mPlayingStatus;
+        mVideo = video;
+        // Video id may not currently available from the player, so we need to verify if we can
+        // modify the mVideoId, as the played video can be changed directly through the web player,
+        // like prev() and next() of the YoutubeIFramePlayer.
+        if (!TextUtils.isEmpty(video.getId()) || emptyIfStringNull(lastVideoId).equals(mVideoId)) {
+            mVideoId = emptyIfStringNull(video.getId());
         }
     }
 
@@ -629,7 +651,7 @@ public class YoutubePlaybackService extends Service implements PlayerListener {
         String[] title_author = new String[2];
         CountDownLatch[] latch = new CountDownLatch[1];
 
-        if (loadInfo) {
+        if (loadInfo && !TextUtils.isEmpty(videoId)) {
             latch[0] = new CountDownLatch(2);
             Executors.MAIN_EXECUTOR.execute(() -> {
                 Executor workerExecutor = Executors.THREAD_POOL_EXECUTOR;
