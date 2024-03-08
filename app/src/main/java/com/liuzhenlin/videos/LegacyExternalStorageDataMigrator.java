@@ -57,6 +57,7 @@ public class LegacyExternalStorageDataMigrator {
         }
 
         boolean suceessful = true;
+        String[] mimeTypes = null;
 
         File guidFile = new File(Environment.getExternalStorageDirectory(), Files.GUID);
         if (guidFile.exists()) {
@@ -73,38 +74,40 @@ public class LegacyExternalStorageDataMigrator {
         File[] shortVideos = legacyAppShortClipsDir.listFiles(File::isFile);
         if (shortVideos != null) {
             VideoListItemDao videoDao = VideoListItemDao.getSingleton(mContext);
-            for (File shortVideo : shortVideos) {
-                String shortVideoOldPath = shortVideo.getAbsolutePath();
-                suceessful &= shortVideo.renameTo(new File(appShortClipsDir, shortVideo.getName()));
+            mimeTypes = new String[shortVideos.length];
+            for (int i = 0; i < shortVideos.length; i++) {
+                String shortVideoOldPath = shortVideos[i].getAbsolutePath();
+                mimeTypes[i] = FileUtils.getMimeTypeFromPath(shortVideoOldPath, "video/mp4");
+                suceessful &=
+                        shortVideos[i].renameTo(new File(appShortClipsDir, shortVideos[i].getName()));
                 Video video = videoDao.queryVideoByPath(shortVideoOldPath);
                 if (video != null) {
                     videoDao.deleteVideo(video.getId());
                 }
-                FileUtils.recordMediaFileToDatabaseAndScan(
-                        mContext,
-                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                        shortVideo,
-                        FileUtils.getMimeTypeFromPath(shortVideoOldPath, "video/mp4"));
             }
+            FileUtils.recordMediaFilesToDatabaseAndScan(
+                    mContext, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, shortVideos, mimeTypes);
         }
 
         File[] screenshots = legacyAppScreenshotsDir.listFiles(File::isFile);
         if (screenshots != null) {
-            for (File screenshot : screenshots) {
-                String screenshotOldPath = screenshot.getAbsolutePath();
-                suceessful &= screenshot.renameTo(new File(appScreenshotsDir, screenshot.getName()));
+            if (mimeTypes == null || mimeTypes.length != screenshots.length) {
+                mimeTypes = new String[screenshots.length];
+            }
+            for (int i = 0; i < screenshots.length; i++) {
+                String screenshotOldPath = screenshots[i].getAbsolutePath();
+                mimeTypes[i] = FileUtils.getMimeTypeFromPath(screenshotOldPath, "image/png");
+                suceessful &=
+                        screenshots[i].renameTo(new File(appScreenshotsDir, screenshots[i].getName()));
                 mContext.getContentResolver().delete(
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         MediaStore.Images.Media.DATA + "='"
                                 + StringsKt.replace(screenshotOldPath, "'", "''", false)
                                 + "' COLLATE NOCASE",
                         null);
-                FileUtils.recordMediaFileToDatabaseAndScan(
-                        mContext,
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        screenshot,
-                        FileUtils.getMimeTypeFromPath(screenshotOldPath, "image/png"));
             }
+            FileUtils.recordMediaFilesToDatabaseAndScan(
+                    mContext, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, screenshots, mimeTypes);
         }
 
         if (suceessful) {
