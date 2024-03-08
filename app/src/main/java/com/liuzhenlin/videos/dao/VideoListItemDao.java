@@ -20,6 +20,7 @@ import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.util.ObjectsCompat;
 
 import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.compat.MediaMetadataRetrieverCompat;
@@ -101,29 +102,21 @@ public final class VideoListItemDao implements IVideoListItemDao {
         if (video == null) return false;
 
         ContentValues values = new ContentValues(5);
-        values.put(VIDEOS_COL_ID, video.getId());
-        values.put(VIDEOS_COL_PROGRESS, video.getProgress());
-        values.put(VIDEOS_COL_IS_TOPPED, video.isTopped() ? 1 : 0);
+        values.put(VIDEO_NAME, video.getName());
+        values.put(VIDEO_PATH, video.getPath());
+        values.put(VIDEO_SIZE, video.getSize());
+        values.put(VIDEO_DURATION, video.getDuration());
+        values.put(VIDEO_RESOLUTION,
+                video.getWidth() + DEFAULT_RESOLUTION_SEPARATOR + video.getHeight());
 
-        mDB.beginTransaction();
-        try {
-            if (mDB.insert(TABLE_VIDEOS, null, values) == Consts.NO_ID) {
-                return false;
-            }
-
+        Uri videoUri = mContentResolver.insert(VIDEO_URI, values);
+        if (videoUri != null) {
+            video.setId(Long.parseLong(ObjectsCompat.requireNonNull(videoUri.getLastPathSegment())));
             values.clear();
-            values.put(VIDEO_NAME, video.getName());
-            values.put(VIDEO_PATH, video.getPath());
-            values.put(VIDEO_SIZE, video.getSize());
-            values.put(VIDEO_DURATION, video.getDuration());
-            values.put(VIDEO_RESOLUTION,
-                    video.getWidth() + DEFAULT_RESOLUTION_SEPARATOR + video.getHeight());
-            if (mContentResolver.insert(VIDEO_URI, values) != null) {
-                mDB.setTransactionSuccessful();
-                return true;
-            }
-        } finally {
-            mDB.endTransaction();
+            values.put(VIDEOS_COL_ID, video.getId());
+            values.put(VIDEOS_COL_PROGRESS, video.getProgress());
+            values.put(VIDEOS_COL_IS_TOPPED, video.isTopped() ? 1 : 0);
+            return mDB.insert(TABLE_VIDEOS, null, values) != Consts.NO_ID;
         }
         return false;
     }
@@ -148,17 +141,40 @@ public final class VideoListItemDao implements IVideoListItemDao {
     public boolean updateVideo(@Nullable Video video) {
         if (video == null) return false;
 
-        final long id = video.getId();
+        long id = video.getId();
         ContentValues values = new ContentValues(5);
         values.put(VIDEOS_COL_PROGRESS, video.getProgress());
         values.put(VIDEOS_COL_IS_TOPPED, video.isTopped() ? 1 : 0);
 
+        final boolean sdkAtLeastQ = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+        Video vNowInQDB = null;
+        if (sdkAtLeastQ) {
+            // On Android R and above, video record of a video that is renamed or moved
+            // (its path changes) will be deleted by the framework.
+            vNowInQDB = queryVideoById(id);
+        }
+
         mDB.beginTransaction();
         try {
-            if (mDB.update(TABLE_VIDEOS, values, VIDEOS_COL_ID + "=" + id, null) == 0) {
-                values.put(VIDEOS_COL_ID, id);
-                if (mDB.insert(TABLE_VIDEOS, null, values) == Consts.NO_ID) {
-                    return false;
+            final long oldId = id;
+            if (sdkAtLeastQ && vNowInQDB == null) {
+                vNowInQDB = queryVideoByPath(video.getPath());
+                if (vNowInQDB == null) {
+                    mDB.delete(TABLE_VIDEOS, VIDEOS_COL_ID + "=" + id, null);
+                } else {
+                    id = vNowInQDB.getId();
+                    values.put(VIDEOS_COL_ID, id);
+                }
+            }
+            if (!sdkAtLeastQ || vNowInQDB != null) {
+                if (mDB.update(TABLE_VIDEOS, values, VIDEOS_COL_ID + "=" + oldId, null) == 0) {
+                    if (id == oldId
+                            || mDB.update(TABLE_VIDEOS, values, VIDEOS_COL_ID + "=" + id, null) == 0) {
+                        values.put(VIDEOS_COL_ID, id);
+                        if (mDB.insert(TABLE_VIDEOS, null, values) == Consts.NO_ID) {
+                            return false;
+                        }
+                    }
                 }
             }
 
@@ -169,16 +185,23 @@ public final class VideoListItemDao implements IVideoListItemDao {
             values.put(VIDEO_DURATION, video.getDuration());
             values.put(VIDEO_RESOLUTION,
                     video.getWidth() + DEFAULT_RESOLUTION_SEPARATOR + video.getHeight());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Storage usages for this app may be restricted to several scopes. We need update
-                // the remote MediaProvider through an exact Uri for the given video or
-                // IllegalArgumentException might be raised.
-                Uri videoUri = ContentUris.withAppendedId(
-                        MediaStore.Video.Media.getContentUri(MediaStore.getVolumeName(VIDEO_URI)),
-                        id);
-                if (mContentResolver.update(videoUri, values, null, null) == 1) {
-                    mDB.setTransactionSuccessful();
-                    return true;
+            // Storage usages for this app may be restricted to several scopes.
+            if (sdkAtLeastQ) {
+                if (vNowInQDB == null) {
+                    if (insertVideo(video)) {
+                        mDB.setTransactionSuccessful();
+                        return true;
+                    }
+                } else {
+                    // We need to update the remote MediaProvider through an exact Uri for
+                    // the given video or IllegalArgumentException might be raised.
+                    Uri videoUri = ContentUris.withAppendedId(
+                            MediaStore.Video.Media.getContentUri(MediaStore.getVolumeName(VIDEO_URI)),
+                            id);
+                    if (mContentResolver.update(videoUri, values, null, null) == 1) {
+                        mDB.setTransactionSuccessful();
+                        return true;
+                    }
                 }
             } else {
                 if (mContentResolver.update(VIDEO_URI, values, VIDEO_ID + "=" + id, null) == 1) {
