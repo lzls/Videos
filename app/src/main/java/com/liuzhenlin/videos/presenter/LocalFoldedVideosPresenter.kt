@@ -65,6 +65,12 @@ class LocalFoldedVideosPresenter : Presenter<ILocalFoldedVideosView>(), ILocalFo
     override val videoDirName: String?
         get() = mModel?.videodir?.name
 
+    private var mAllVideosModel: BaseModel<*, *, *>? = null
+
+    internal fun setAllVideosModel(allVideosModel: BaseModel<*, *, *>?) {
+        mAllVideosModel = allVideosModel
+    }
+
     override fun attachToView(view: ILocalFoldedVideosView) {
         super.attachToView(view)
         val videodir = view.getArguments()?.get(KEY_VIDEODIR) as? VideoDirectory ?: VideoDirectory()
@@ -186,6 +192,14 @@ class LocalFoldedVideosPresenter : Presenter<ILocalFoldedVideosView>(), ILocalFo
                 val videos = Array(parcelables.size) { parcelables[it] as Video }
                 for (video in videos) {
                     mModel?.updateVideoProgress(video)
+                }
+            }
+            REQUEST_CODE_VIDEO_MOVE_FRAGMENT -> if (resultCode == REQUEST_CODE_VIDEO_MOVE_FRAGMENT) {
+                val moved = data?.getBooleanExtra(KEY_MOVED, false) ?: return
+                if (moved) {
+                    mAllVideosModel?.startLoader() ?: startLoadVideos()
+                } else {
+                    mView?.hideVideoSelectControls()
                 }
             }
         }
