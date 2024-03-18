@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.ViewGroup
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.utils.LateinitProperty
+import com.liuzhenlin.common.utils.Regex
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -127,28 +128,36 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
     private fun moveVideoTo(video: Video, videodir: VideoDirectory) {
         val videoPath = video.path
         for (v in videodir.videos) {
-            if (v.name == video.name) {
-                if (v.path == videoPath)
+            if (v.name.equals(video.name, ignoreCase = true)) {
+                if (v.path.equals(videoPath, ignoreCase = true))
                     return
 
                 var i = 1
                 var videoName: String
+                val vTitleSuffixRegex = Regex("(-\\d+)$")
+                var vTitle = v.title
+                if (vTitleSuffixRegex.find(vTitle)) {
+                    i = vTitleSuffixRegex.group()!!.substring(1).toInt() + 1
+                    vTitle = vTitle.substring(0, vTitleSuffixRegex.start())
+                }
                 outer@
                 while (true) {
+                    videoName = vTitle + '-' + i + v.suffix
                     for (v2 in videodir.videos) {
-                        videoName = v.title + '-' + i + v.suffix
-                        if (v2.name == videoName) {
+                        if (v2.name.equals(videoName, ignoreCase = true)) {
                             i++
-                            break
+                            continue@outer
                         }
-                        break@outer
                     }
+                    break
                 }
                 video.name = videoName
                 video.path = video.path.replaceAfterLast(File.separatorChar, video.name)
                 break
             }
         }
+        videodir.videos.add(video)
+        video.isTopped = false
         video.path = video.path.replaceBeforeLast(File.separatorChar, videodir.path)
         File(videoPath).renameTo(File(video.path))
         VideoListItemDao.getSingleton(mContext).updateVideo(video)
