@@ -68,6 +68,8 @@ interface ILocalVideoListView : IView<ILocalVideoListPresenter>, VideoListItemOp
     fun goToLocalFoldedVideosFragment(args: Bundle)
     fun goToVideoMoveFragment(args: Bundle)
 
+    fun dismissItemOptionsWindow()
+
     fun onVideosLoadStart()
     fun onVideosLoadFinish()
     fun onVideosLoadCanceled()
@@ -268,11 +270,10 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         presenter.startLoadVideos()
     }
 
-    private fun dismissItemOptionsWindow() {
-        /*
-         * 1）自动刷新时隐藏弹出的多选窗口
-         * 2）用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
-         */
+    override fun dismissItemOptionsWindow() {
+        // 1）自动刷新时隐藏弹出的多选窗口
+        // 2) 用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
+        // 3) 视频移动完成后关闭多选窗口
         mItemOptionsWindow?.dismiss()
     }
 

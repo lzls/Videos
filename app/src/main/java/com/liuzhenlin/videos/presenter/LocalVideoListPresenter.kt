@@ -85,7 +85,8 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVide
 
 class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoListPresenter {
 
-    private val mModel: LocalVideoListModel = LocalVideoListModel(App.getInstanceUnsafe()!!)
+    internal val model = LocalVideoListModel(App.getInstanceUnsafe()!!)
+    private inline val mModel get()= model
 
     private val mAdapter = VideoListAdapter()
 
@@ -178,7 +179,12 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
                 }
             REQUEST_CODE_VIDEO_MOVE_FRAGMENT -> {
                 if (resultCode == RESULT_CODE_VIDEO_MOVE_FRAGMENT) {
-                    startLoadVideos()
+                    val moved = data?.getBooleanExtra(KEY_MOVED, false) ?: return
+                    if (moved) {
+                        startLoadVideos()
+                    } else {
+                        mView?.dismissItemOptionsWindow()
+                    }
                 }
             }
         }
