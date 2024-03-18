@@ -25,6 +25,7 @@ internal const val KEY_VIDEO_TITLE = "videoTitle"
 internal const val KEY_VIDEO_TITLES = "videoTitles"
 internal const val KEY_VIDEO_URIS = "videoURIs"
 internal const val KEY_SELECTION = "index"
+internal const val KEY_MOVED = "moved"
 
 internal const val REQUEST_CODE_PLAY_VIDEO = 1
 internal const val RESULT_CODE_PLAY_VIDEO = 1

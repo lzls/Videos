@@ -16,6 +16,8 @@ import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
 import com.liuzhenlin.swipeback.SwipeBackLayout
 import com.liuzhenlin.videos.*
+import com.liuzhenlin.videos.presenter.LocalFoldedVideosPresenter
+import com.liuzhenlin.videos.presenter.LocalVideoListPresenter
 
 /**
  * @author 刘振林
@@ -107,6 +109,12 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
             }
             childFragment === mLocalFoldedVideosFragment -> {
                 childFragment.setVideoOpCallback(mLocalVideoListFragment)
+                if (childFragment.presenter is LocalFoldedVideosPresenter) {
+                    val localVideoListPresenter = mLocalVideoListFragment.presenter
+                    if (localVideoListPresenter is LocalVideoListPresenter) {
+                        childFragment.presenter.setAllVideosModel(localVideoListPresenter.model)
+                    }
+                }
                 mLocalVideoListFragment.presenter.addOnReloadVideosListener(childFragment.presenter)
                 mSwipeRefreshLayout.setOnRefreshListener(childFragment)
 
@@ -200,8 +208,8 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
     override fun goToVideoMoveFragment(args: Bundle) {
         mVideoMoveFragment = VideoMoveFragment()
         mVideoMoveFragment!!.arguments = args
-        mVideoMoveFragment!!.setTargetFragment(
-                mLocalVideoListFragment, REQUEST_CODE_VIDEO_MOVE_FRAGMENT)
+        mVideoMoveFragment!!.setTargetFragment(mLocalFoldedVideosFragment ?: mLocalVideoListFragment,
+                REQUEST_CODE_VIDEO_MOVE_FRAGMENT)
         mVideoMoveFragment!!.showNow(childFragmentManager, TAG_VIDEO_MOVE_FRAGMENT)
     }
 

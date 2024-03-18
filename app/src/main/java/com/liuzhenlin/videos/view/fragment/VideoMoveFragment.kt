@@ -8,6 +8,7 @@ package com.liuzhenlin.videos.view.fragment
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
@@ -28,6 +29,7 @@ import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.common.windowhost.WaitingOverlayDialog
+import com.liuzhenlin.videos.KEY_MOVED
 import com.liuzhenlin.videos.R
 import com.liuzhenlin.videos.RESULT_CODE_VIDEO_MOVE_FRAGMENT
 import com.liuzhenlin.videos.bean.Video
@@ -193,13 +195,12 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 resources.getQuantityText(R.plurals.movingVideosPleaseWait, mPresenter.videoQuantity)
         waitingDialog.show()
         Executors.THREAD_POOL_EXECUTOR.execute {
-            if (mPresenter.moveVideos()) {
-                Executors.MAIN_EXECUTOR.execute {
-                    targetFragment?.onActivityResult(
-                            targetRequestCode, RESULT_CODE_VIDEO_MOVE_FRAGMENT, null)
-                    dismiss()
-                    waitingDialog.dismiss()
-                }
+            val moved = mPresenter.moveVideos()
+            Executors.MAIN_EXECUTOR.execute {
+                targetFragment?.onActivityResult(targetRequestCode, RESULT_CODE_VIDEO_MOVE_FRAGMENT,
+                        Intent().putExtra(KEY_MOVED, moved))
+                dismiss()
+                waitingDialog.dismiss()
             }
         }
     }
