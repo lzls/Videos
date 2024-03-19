@@ -20,7 +20,7 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
 
-interface ILocalFoldedVideosPresenter : IPresenter<ILocalFoldedVideosView>, OnReloadVideosListener,
+interface ILocalFoldedVideosPresenter : IPresenter<ILocalFoldedVideosView>, OnVideosLoadListener,
         ILocalFoldedVideoListModel.Callback {
 
     public val videoDirName: String?
@@ -80,10 +80,8 @@ class LocalFoldedVideosPresenter : Presenter<ILocalFoldedVideosView>(), ILocalFo
                 mView?.onVideosLoadStart()
             }
 
-            override fun onLoadFinish(result: MutableList<Video>?) {
-                onReloadDirectoryVideos(result)
-                mView?.onVideosLoadFinish()
-            }
+            override fun onLoadFinish(result: MutableList<Video>?) =
+                    onDirectoryVideosReloaded(result)
 
             override fun onLoadCanceled() {
                 mView?.onVideosLoadCanceled()
@@ -110,22 +108,28 @@ class LocalFoldedVideosPresenter : Presenter<ILocalFoldedVideosView>(), ILocalFo
         mModel?.stopLoader()
     }
 
-    override fun onReloadVideos(videos: MutableList<Video>?) =
+    override fun onVideosLoadStart() {
+        mView?.onVideosLoadStart()
+    }
+
+    override fun onVideosLoadFinish(videos: MutableList<Video>?) =
             if (videos == null || videos.isEmpty()) {
-                onReloadDirectoryVideos(null)
+                onDirectoryVideosReloaded(null)
             } else {
-                onReloadDirectoryVideos(
+                onDirectoryVideosReloaded(
                         videos.filter {
                             it.path.substring(0, it.path.lastIndexOf(File.separatorChar))
                                     .equals(mModel?.videodir?.path, ignoreCase = true)
                         }.reordered())
             }
 
-    private fun onReloadDirectoryVideos(videos: List<Video>?) {
+    private fun onDirectoryVideosReloaded(videos: List<Video>?) {
         mModel?.setVideos(videos)
-        if (mView?.isVideoSelectControlsShown() == true) {
-            mView?.hideVideoSelectControls()
-        }
+        mView?.onVideosLoadFinish()
+    }
+
+    override fun onVideosLoadCanceled() {
+        mView?.onVideosLoadCanceled()
     }
 
     override fun onAllVideosRemoved() = onAllVideosChanged()

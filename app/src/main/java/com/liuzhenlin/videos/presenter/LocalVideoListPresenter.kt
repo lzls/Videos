@@ -18,7 +18,7 @@ import com.liuzhenlin.videos.bean.VideoListItem
 import com.liuzhenlin.videos.model.ILocalVideoListModel
 import com.liuzhenlin.videos.model.LocalVideoListModel
 import com.liuzhenlin.videos.model.OnLoadListener
-import com.liuzhenlin.videos.model.OnReloadVideosListener
+import com.liuzhenlin.videos.model.OnVideosLoadListener
 import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT
 import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.PAYLOAD_REFRESH_VIDEODIR_THUMB
 import com.liuzhenlin.videos.view.fragment.*
@@ -32,8 +32,8 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVide
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
 
-    fun addOnReloadVideosListener(listener: OnReloadVideosListener)
-    fun removeOnReloadVideosListener(listener: OnReloadVideosListener)
+    fun addOnVideosLoadListener(listener: OnVideosLoadListener)
+    fun removeOnVideosLoadListener(listener: OnVideosLoadListener)
 
     fun startLoadVideos()
     fun stopLoadVideos()
@@ -85,6 +85,8 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVide
 
 class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoListPresenter {
 
+    private var mViewsCreated = false
+
     internal val model = LocalVideoListModel(App.getInstanceUnsafe()!!)
     private inline val mModel get()= model
 
@@ -119,14 +121,16 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         mModel.setCallback(null)
     }
 
-    override fun onViewCreated(view: ILocalVideoListView) {
-        super.onViewCreated(view)
-        startLoadVideos()
-    }
-
     override fun onViewStart(view: ILocalVideoListView) {
         super.onViewStart(view)
         mModel.stopWatchingVideos(true)
+        // Make sure to load the videos after all restored Fragments have created their views,
+        // otherwise the application will crash when the video loading callback is sent to one
+        // of the upper Fragments because its UI controls will probably not have been initialized.
+        if (!mViewsCreated) {
+            mViewsCreated = true
+            startLoadVideos()
+        }
     }
 
     override fun onViewStopped(view: ILocalVideoListView) {
@@ -138,6 +142,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun onViewDestroyed(view: ILocalVideoListView) {
         super.onViewDestroyed(view)
+        mViewsCreated = false
         mModel.stopWatchingVideos(false)
         stopLoadVideos()
     }
@@ -146,11 +151,11 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun stopLoadVideos() = mModel.stopLoader()
 
-    override fun addOnReloadVideosListener(listener: OnReloadVideosListener) =
-            mModel.addOnReloadVideosListener(listener)
+    override fun addOnVideosLoadListener(listener: OnVideosLoadListener) =
+            mModel.addOnVideosLoadListener(listener)
 
-    override fun removeOnReloadVideosListener(listener: OnReloadVideosListener) =
-            mModel.removeOnReloadVideosListener(listener)
+    override fun removeOnVideosLoadListener(listener: OnVideosLoadListener) =
+            mModel.removeOnVideosLoadListener(listener)
 
     override fun setArgsForLocalSearchedVideosFragment(localSearchedVideosFragment: Fragment) {
         val args = Bundle()

@@ -378,26 +378,27 @@ class LocalFoldedVideosFragment : BaseFragment(), ILocalFoldedVideosView, View.O
                 PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
     }
 
-    override fun onRefresh() {
-        // 用户长按列表时可能又在下拉刷新，多选窗口会被弹出，需要隐藏
-        if (isVideoSelectControlsShown()) {
-            hideVideoSelectControls()
-        }
-
-        presenter.startLoadVideos()
-    }
+    override fun onRefresh() = presenter.startLoadVideos()
 
     override fun onVideosLoadStart() {
         mRecyclerView.isItemDraggable = false
         mRecyclerView.releaseItemView(false)
+        if (isVideoSelectControlsShown()) {
+            hideVideoSelectControls()
+        }
     }
 
     override fun onVideosLoadFinish() {
+        onVideosLoadCanceled()
+        if (isVideoSelectControlsShown()) {
+            hideVideoSelectControls()
+        }
+    }
+
+    override fun onVideosLoadCanceled() {
         mRecyclerView.isItemDraggable = true
         mInteractionCallback.isRefreshLayoutRefreshing = false
     }
-
-    override fun onVideosLoadCanceled() = onVideosLoadFinish()
 
     override fun showDeleteItemDialog(video: Video, onDeleteAction: (() -> Unit)?) {
         mVideoOpCallback?.showDeleteItemDialog(video, onDeleteAction)
