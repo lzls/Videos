@@ -5,12 +5,13 @@
 
 package com.liuzhenlin.videos.model
 
-
 import com.liuzhenlin.videos.bean.Video
 
 /**
  * @author 刘振林
  */
-interface OnReloadVideosListener {
-    fun onReloadVideos(videos: MutableList<Video>?)
+interface OnVideosLoadListener {
+    fun onVideosLoadStart()
+    fun onVideosLoadFinish(videos: MutableList<Video>?)
+    fun onVideosLoadCanceled()
 }
