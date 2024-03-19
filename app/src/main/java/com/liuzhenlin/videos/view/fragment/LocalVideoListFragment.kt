@@ -231,16 +231,8 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     override fun onDestroyView() {
         super.onDestroyView()
         mLifecycleCallback?.onFragmentViewDestroyed(this)
-
-        mItemOptionsWindow?.dismiss()
-        mDeleteItemsWindow?.dismiss()
-        mDeleteItemDialog?.dismiss()
-        mRenameItemDialog?.dismiss()
-        mItemDetailsDialog?.dismiss()
-
+        dismissAllFloatingWindows()
         presenter.onViewDestroyed(this)
-//        mVideoListItems.clear()
-//        notifyListenersOnReloadVideos()
     }
 
     override fun onDetach() {
@@ -265,10 +257,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     override fun goToVideoMoveFragment(args: Bundle) =
             mInteractionCallback.goToVideoMoveFragment(args)
 
-    override fun onRefresh() {
-        dismissItemOptionsWindow()
-        presenter.startLoadVideos()
-    }
+    override fun onRefresh() = presenter.startLoadVideos()
 
     override fun dismissItemOptionsWindow() {
         // 1）自动刷新时隐藏弹出的多选窗口
@@ -277,19 +266,30 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         mItemOptionsWindow?.dismiss()
     }
 
-    override fun onVideosLoadStart() {
+    private fun dismissAllFloatingWindows() {
         dismissItemOptionsWindow()
+        mDeleteItemsWindow?.dismiss()
+        mDeleteItemDialog?.dismiss()
+        mRenameItemDialog?.dismiss()
+        mItemDetailsDialog?.dismiss()
+    }
+
+    override fun onVideosLoadStart() {
+        dismissAllFloatingWindows()
         mRecyclerView.releaseItemView(false)
         mRecyclerView.isItemDraggable = false
         mInteractionCallback.isRefreshLayoutRefreshing = true
     }
 
     override fun onVideosLoadFinish() {
+        dismissAllFloatingWindows()
+        onVideosLoadCanceled()
+    }
+
+    override fun onVideosLoadCanceled() {
         mRecyclerView.isItemDraggable = true
         mInteractionCallback.isRefreshLayoutRefreshing = false
     }
-
-    override fun onVideosLoadCanceled() = onVideosLoadFinish()
 
     override fun newVideoListViewHolder(parent: ViewGroup, viewType: Int)
             : ILocalVideoListView.VideoListViewHolder {

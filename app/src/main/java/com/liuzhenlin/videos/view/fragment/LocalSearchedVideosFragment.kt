@@ -334,13 +334,17 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
     override fun onRefresh() = presenter.startLoadVideos()
 
     override fun onVideosLoadStart() {
+        mVideoOptionsMenu?.dismiss()
     }
 
     override fun onVideosLoadFinish() {
-        mInteractionCallback.isRefreshLayoutRefreshing = false
+        mVideoOptionsMenu?.dismiss()
+        onVideosLoadCanceled()
     }
 
-    override fun onVideosLoadCanceled() = onVideosLoadFinish()
+    override fun onVideosLoadCanceled() {
+        mInteractionCallback.isRefreshLayoutRefreshing = false
+    }
 
     override fun showDeleteItemDialog(video: Video, onDeleteAction: (() -> Unit)?) {
         mVideoOpCallback?.showDeleteItemDialog(video, onDeleteAction)

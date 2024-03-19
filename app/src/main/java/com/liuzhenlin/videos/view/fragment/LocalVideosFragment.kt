@@ -115,7 +115,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                         childFragment.presenter.setAllVideosModel(localVideoListPresenter.model)
                     }
                 }
-                mLocalVideoListFragment.presenter.addOnReloadVideosListener(childFragment.presenter)
+                mLocalVideoListFragment.presenter.addOnVideosLoadListener(childFragment.presenter)
                 mSwipeRefreshLayout.setOnRefreshListener(childFragment)
 
                 mInteractionCallback.setSideDrawerEnabled(false)
@@ -125,7 +125,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
             }
             childFragment === mLocalSearchedVideosFragment -> {
                 childFragment.setVideoOpCallback(mLocalVideoListFragment)
-                mLocalVideoListFragment.presenter.addOnReloadVideosListener(childFragment.presenter)
+                mLocalVideoListFragment.presenter.addOnVideosLoadListener(childFragment.presenter)
                 mSwipeRefreshLayout.setOnRefreshListener(childFragment)
 
                 mInteractionCallback.setSideDrawerEnabled(false)
@@ -147,7 +147,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         when {
             childFragment === mLocalFoldedVideosFragment -> {
                 mLocalVideoListFragment.presenter
-                        .removeOnReloadVideosListener(childFragment.presenter)
+                        .removeOnVideosLoadListener(childFragment.presenter)
                 mLocalFoldedVideosFragment = null
                 mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
 
@@ -158,7 +158,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
             }
             childFragment === mLocalSearchedVideosFragment -> {
                 mLocalVideoListFragment.presenter
-                        .removeOnReloadVideosListener(childFragment.presenter)
+                        .removeOnVideosLoadListener(childFragment.presenter)
                 mLocalSearchedVideosFragment = null
                 mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
 

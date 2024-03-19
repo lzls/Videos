@@ -125,30 +125,48 @@ class LocalVideoListModel(context: Context)
     private var mNeedReloadVideos = false
     private var mVideoObserver: VideoObserver? = null
 
-    private var mOnReloadVideosListeners: MutableList<OnReloadVideosListener>? = null
+    private var mOnVideosLoadListeners: MutableList<OnVideosLoadListener>? = null
 
-    fun addOnReloadVideosListener(listener: OnReloadVideosListener) {
-        if (mOnReloadVideosListeners == null)
-            mOnReloadVideosListeners = mutableListOf()
-        if (!mOnReloadVideosListeners!!.contains(listener))
-            mOnReloadVideosListeners!!.add(listener)
+    fun addOnVideosLoadListener(listener: OnVideosLoadListener) {
+        if (mOnVideosLoadListeners == null)
+            mOnVideosLoadListeners = mutableListOf()
+        if (!mOnVideosLoadListeners!!.contains(listener))
+            mOnVideosLoadListeners!!.add(listener)
     }
 
-    fun removeOnReloadVideosListener(listener: OnReloadVideosListener) {
-        mOnReloadVideosListeners?.remove(listener)
+    fun removeOnVideosLoadListener(listener: OnVideosLoadListener) {
+        mOnVideosLoadListeners?.remove(listener)
     }
 
-    private fun notifyListenersOnReloadVideos(videos: ArrayList<Video>?) =
-            mOnReloadVideosListeners?.let {
+    private fun notifyListenersOnVideosLoaded(videos: ArrayList<Video>?) =
+            mOnVideosLoadListeners?.let {
                 if (it.isEmpty()) return@let
 
                 for (i in it.size - 1 downTo 0) {
                     @Suppress("UNCHECKED_CAST")
                     val copy = videos?.clone() as? MutableList<Video>
                     copy?.deepCopy(videos)
-                    it[i].onReloadVideos(copy)
+                    it[i].onVideosLoadFinish(copy)
                 }
             }
+
+    override fun onLoadStart() {
+        super.onLoadStart()
+        mOnVideosLoadListeners?.let {
+            for (i in it.size - 1 downTo 0) {
+                it[i].onVideosLoadStart()
+            }
+        }
+    }
+
+    override fun onLoadCanceled() {
+        super.onLoadCanceled()
+        mOnVideosLoadListeners?.let {
+            for (i in it.size - 1 downTo 0) {
+                it[i].onVideosLoadCanceled()
+            }
+        }
+    }
 
     override fun createAndStartLoader(): AsyncTask<*, *, *> {
         val loader = LoadVideosTask()
@@ -200,7 +218,7 @@ class LocalVideoListModel(context: Context)
             onLoadFinish(result?.get(0) as MutableList<VideoListItem>?)
 
             @Suppress("UNCHECKED_CAST")
-            notifyListenersOnReloadVideos(result?.get(1) as ArrayList<Video>?)
+            notifyListenersOnVideosLoaded(result?.get(1) as ArrayList<Video>?)
         }
     }
 
