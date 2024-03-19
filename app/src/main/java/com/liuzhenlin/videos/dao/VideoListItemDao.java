@@ -276,8 +276,8 @@ public final class VideoListItemDao implements IVideoListItemDao {
         return mContentResolver.query(
                 VIDEO_URI,
                 PROJECTION_VIDEO_URI,
-                "SUBSTR(" + VIDEO_PATH + ",1," + strlength + ")='"
-                        + escapedComparisionString(directory) + "' COLLATE NOCASE "
+                "SUBSTR(" + VIDEO_PATH + ",1," + (strlength + 1) + ")='"
+                        + escapedComparisionString(directory) + File.separator + "' COLLATE NOCASE "
                         + "AND SUBSTR(" + VIDEO_PATH + "," + (strlength + 2) + ") "
                         + "NOT LIKE '%" + File.separator + "%'", null,
                 null);
