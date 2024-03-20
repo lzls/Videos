@@ -116,10 +116,7 @@ class LocalVideoListModel(context: Context)
                     is VideoDirectory -> videos.addAll(item.videos)
                 }
             }
-            return videos?.apply {
-                deepCopy(videos)
-                sortByElementName()
-            }
+            return videos?.apply { sortByElementName() }
         }
 
     private var mNeedReloadVideos = false
@@ -138,14 +135,13 @@ class LocalVideoListModel(context: Context)
         mOnVideosLoadListeners?.remove(listener)
     }
 
-    private fun notifyListenersOnVideosLoaded(videos: ArrayList<Video>?) =
+    private fun notifyListenersOnVideosLoaded(videos: List<Video>?) =
             mOnVideosLoadListeners?.let {
                 if (it.isEmpty()) return@let
 
                 for (i in it.size - 1 downTo 0) {
-                    @Suppress("UNCHECKED_CAST")
-                    val copy = videos?.clone() as? MutableList<Video>
-                    copy?.deepCopy(videos)
+                    val copy = if (videos == null) null else ArrayList(videos)
+                    copy?.deepCopy(videos as List<Video>)
                     it[i].onVideosLoadFinish(copy)
                 }
             }
@@ -209,7 +205,7 @@ class LocalVideoListModel(context: Context)
                 videodirCursor.close()
             }
 
-            return arrayOf(items, arrayListOf(*videos!!.toTypedArray()))
+            return arrayOf(items, videos)
         }
 
         override fun onPostExecute(result: Array<*>?) {
@@ -218,7 +214,7 @@ class LocalVideoListModel(context: Context)
             onLoadFinish(result?.get(0) as MutableList<VideoListItem>?)
 
             @Suppress("UNCHECKED_CAST")
-            notifyListenersOnVideosLoaded(result?.get(1) as ArrayList<Video>?)
+            notifyListenersOnVideosLoaded(result?.get(1) as List<Video>?)
         }
     }
 
