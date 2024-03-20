@@ -159,7 +159,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun setArgsForLocalSearchedVideosFragment(localSearchedVideosFragment: Fragment) {
         val args = Bundle()
-        args.putParcelableArrayList(KEY_VIDEOS, mModel.videos)
+        args.putParcelableArrayList(KEY_VIDEOS, mModel.videos.also { it?.deepCopy(it) })
         localSearchedVideosFragment.arguments = args
     }
 
