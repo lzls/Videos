@@ -65,7 +65,10 @@ interface ILocalVideoListView : IView<ILocalVideoListPresenter>, VideoListItemOp
 
     public val isDestroying: Boolean
 
-    fun goToLocalFoldedVideosFragment(args: Bundle)
+    fun getArguments(): Bundle?
+    fun onReturnResult(resultCode: Int, data: Intent?)
+
+    fun goToLocalVideoSubListFragment(args: Bundle)
     fun goToVideoMoveFragment(args: Bundle)
 
     fun dismissItemOptionsWindow()
@@ -182,6 +185,16 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        if (presenter.isSublist) {
+            val actionbar = mInteractionCallback.getActionBar(this)
+            actionbar.findViewById<View>(R.id.btn_back).setOnClickListener(this)
+            actionbar.findViewById<TextView>(R.id.text_title).text = presenter.listTitle
+            actionbar.findViewById<TextView>(R.id.text_titleDesc).text = presenter.listTitleDesc
+            actionbar.findViewById<HorizontalScrollView>(R.id.hsv_titleDescText).let {
+                Utils.runOnLayoutValid(it) { it.fullScroll(View.FOCUS_RIGHT) }
+            }
+        }
+
         val contentView = inflater.inflate(R.layout.fragment_local_video_list, container, false)
         mRecyclerView = contentView.findViewById(R.id.simrv_videoList)
         mRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
@@ -190,7 +203,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 DividerItemDecoration(contentView.context, DividerItemDecoration.VERTICAL))
         mRecyclerView.setHasFixedSize(true)
 
-        isSwipeBackEnabled = false
+        isSwipeBackEnabled = presenter.isSublist
         return attachViewToSwipeBackLayout(contentView)
     }
 
@@ -241,8 +254,16 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         presenter.detachFromView(this)
     }
 
+    override fun onReturnResult(resultCode: Int, data: Intent?) {
+        targetFragment?.onActivityResult(targetRequestCode, resultCode, data)
+    }
+
     override fun onBackPressed(): Boolean {
-        mItemOptionsWindow?.dismiss() ?: return false
+        mItemOptionsWindow?.dismiss()
+                ?: if (presenter.isSublist) {
+                    swipeBackLayout.scrollToFinishActivityOrPopUpFragment()
+                    return true
+                } else return false
         return true
     }
 
@@ -251,8 +272,8 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         presenter.onActivityResult(requestCode, resultCode, data)
     }
 
-    override fun goToLocalFoldedVideosFragment(args: Bundle) =
-            mInteractionCallback.goToLocalFoldedVideosFragment(args)
+    override fun goToLocalVideoSubListFragment(args: Bundle) =
+            mInteractionCallback.goToLocalVideoSubListFragment(args)
 
     override fun goToVideoMoveFragment(args: Bundle) =
             mInteractionCallback.goToVideoMoveFragment(args)
@@ -348,24 +369,19 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                                 if (video.isWritable) View.VISIBLE else View.GONE)
                     }
                     is VideoDirViewHolder -> {
-                        val videos = (item as VideoDirectory).videos
-                        var hasUnwritableVideo = false
-                        for (v in videos) {
-                            if (!v.isWritable) {
-                                hasUnwritableVideo = true
-                                break
-                            }
-                        }
+                        val videodir = item as VideoDirectory
+                        val firstVideo = videodir.firstVideoOrNull()!!
+                        val videoCount = videodir.videoCount()
 
                         VideoUtils2.loadVideoThumbIntoFragmentImageView(
-                                this@LocalVideoListFragment, videodirImage, videos[0])
+                                this@LocalVideoListFragment, videodirImage, firstVideo)
                         videodirNameText.text = item.name
                         videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                         videoCountText.text =
                                 resources.getQuantityString(
-                                        R.plurals.aTotalOfSeveralVideos, videos.size, videos.size)
+                                        R.plurals.aTotalOfSeveralVideos, videoCount, videoCount)
                         UiUtils.setViewVisibilityAndVerify(deleteButton.parent as View,
-                                if (!hasUnwritableVideo) View.VISIBLE else View.GONE)
+                                if (!videodir.hasUnwrittableVideo()) View.VISIBLE else View.GONE)
                     }
                 }
             } else {
@@ -405,11 +421,11 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                     }
                     if (payload and PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT != 0) {
                         val vh = this as VideoDirViewHolder
-                        val videos = (item as VideoDirectory).videos
+                        val videoCount = (item as VideoDirectory).videoCount()
                         vh.videodirSizeText.text = FileUtils.formatFileSize(item.size.toDouble())
                         vh.videoCountText.text =
                                 resources.getQuantityString(
-                                        R.plurals.aTotalOfSeveralVideos, videos.size, videos.size)
+                                        R.plurals.aTotalOfSeveralVideos, videoCount, videoCount)
                     }
                 }
             }
@@ -467,6 +483,8 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun onClick(v: View) {
         when (v.id) {
+            R.id.btn_back -> swipeBackLayout.scrollToFinishActivityOrPopUpFragment()
+
             R.id.itemVisibleFrame -> {
                 val position = v.tag as Int
                 if (mItemOptionsWindow == null) {
@@ -616,6 +634,10 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
                 mTitleWindowFrame = View.inflate(
                         v.context, R.layout.popup_window_main_title, null) as FrameLayout
+                if (presenter.isSublist) {
+                    mTitleWindowFrame!!.findViewById<TextView>(R.id.text_title).text =
+                            presenter.listTitle
+                }
                 mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
                         .setOnClickListener(this)
                 mSelectAllButton = mTitleWindowFrame!!.findViewById(R.id.btn_selectAll)
@@ -655,6 +677,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                             mInteractionCallback.setLightStatus(true)
                         }
                         mInteractionCallback.setSideDrawerEnabled(false)
+                        isSwipeBackEnabled = false
                         mInteractionCallback.isRefreshLayoutEnabled = false
                         mRecyclerView.isItemDraggable = false
                     }
@@ -741,8 +764,10 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                     mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
                             PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
 
+                    val sublist = presenter.isSublist
                     mInteractionCallback.setLightStatus(false)
-                    mInteractionCallback.setSideDrawerEnabled(true)
+                    isSwipeBackEnabled = sublist
+                    mInteractionCallback.setSideDrawerEnabled(!sublist)
                     mInteractionCallback.isRefreshLayoutEnabled = true
                     mRecyclerView.isItemDraggable = true
                 }
@@ -901,7 +926,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         thumbImage.adjustViewBounds = true
         val glideRequestManager = Glide.with(context.applicationContext)
         glideRequestManager
-                .load((item as? Video ?: (item as VideoDirectory).videos[0]).path)
+                .load((item as? Video ?: (item as VideoDirectory).firstVideoOrNull())?.path)
                 .override(thumbSize)
                 .fitCenter()
                 .placeholder(R.drawable.ic_default_thumb)
@@ -945,7 +970,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         val context = contextThemedFirst
         val view: View
         val thumbTextView: TextView
-        val video: Video
+        val video: Video?
 
         val colon = getString(R.string.colon)
         val textColorPrimary = ContextCompat.getColor(context, R.color.textColorPrimary)
@@ -982,9 +1007,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         } else /* if (item is VideoDirectory) */ {
             view = View.inflate(context, R.layout.dialog_videodir_details, null)
 
-            val videos = (item as VideoDirectory).videos
-            video = item.videos[0]
-
+            video = (item as VideoDirectory).firstVideoOrNull()
             val path = item.path
             val dirname = FileUtils.getFileNameFromFilePath(path)
 
@@ -1005,7 +1028,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
             videodirSizeText.text = ss
 
             val videoCountText = view.findViewById<TextView>(R.id.text_videoCount)
-            ss = SpannableString(getString(R.string.videoCount, videos.size))
+            ss = SpannableString(getString(R.string.videoCount, item.videoCount()))
             ss.setSpan(ForegroundColorSpan(textColorPrimary),
                     0, ss.indexOf(colon) + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             videoCountText.text = ss
@@ -1047,7 +1070,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         }
         val glideRequestManager = Glide.with(context.applicationContext)
         glideRequestManager
-                .load(video.path)
+                .load(video?.path)
                 .override(thumbSize)
                 .fitCenter()
                 .into(thumbTextViewTarget)
@@ -1067,7 +1090,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         val dialog = WaitingOverlayDialog(contextThemedFirst)
         dialog.message = resources.getQuantityText(R.plurals.deletingVideosPleaseWait,
                 if (items.size == 1
-                        && (items[0] is Video || (items[0] as VideoDirectory).videos.size == 1))
+                        && (items[0] is Video || (items[0] as VideoDirectory).videoCount() == 1))
                     1
                 else 1.inv())
         dialog.show()
@@ -1079,12 +1102,12 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         }
     }
 
-    interface InteractionCallback : RefreshLayoutCallback {
+    interface InteractionCallback : ActionBarCallback, RefreshLayoutCallback {
         fun setLightStatus(light: Boolean)
 
         fun setSideDrawerEnabled(enabled: Boolean)
 
-        fun goToLocalFoldedVideosFragment(args: Bundle)
+        fun goToLocalVideoSubListFragment(args: Bundle)
 
         fun goToVideoMoveFragment(args: Bundle)
     }

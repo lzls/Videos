@@ -64,12 +64,12 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         if (model == null) {
             model = LocalSearchedVideoListModel(mContext)
             model.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<Video>?> {
-                override fun onLoadStart() = onVideosLoadStart()
+                override fun onLoadStart() = onVideoItemsLoadStart()
 
                 override fun onLoadFinish(result: MutableList<Video>?) =
-                        onVideosLoadFinish(result)
+                        onVideoItemsLoadFinish(result)
 
-                override fun onLoadCanceled() = onVideosLoadCanceled()
+                override fun onLoadCanceled() = onVideoItemsLoadCanceled()
             })
             mModel = model
         }
@@ -94,16 +94,16 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         mModel?.stopLoader()
     }
 
-    override fun onVideosLoadStart() {
+    override fun onVideoItemsLoadStart() {
         mView?.onVideosLoadStart()
     }
 
-    override fun onVideosLoadFinish(videos: MutableList<Video>?) {
-        mModel?.setVideos(videos)
+    override fun onVideoItemsLoadFinish(videoItems: MutableList<Video>?) {
+        mModel?.setVideos(videoItems)
         mView?.onVideosLoadFinish()
     }
 
-    override fun onVideosLoadCanceled() {
+    override fun onVideoItemsLoadCanceled() {
         mView?.onVideosLoadCanceled()
     }
 

@@ -8,6 +8,7 @@ package com.liuzhenlin.videos.presenter
 import android.os.Bundle
 import android.view.ViewGroup
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
+import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.LateinitProperty
 import com.liuzhenlin.common.utils.Regex
 import com.liuzhenlin.videos.*
@@ -99,7 +100,7 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
         get() {
             val videos = mVideos.get()
             return if (videos.size == 1
-                    && (videos[0] is Video || (videos[0] as VideoDirectory).videos.size == 1)) {
+                    && (videos[0] is Video || (videos[0] as VideoDirectory).videoCount() == 1)) {
                 1
             } else {
                 1.inv()
@@ -110,14 +111,13 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
         for (videodir in mTargetDirs.get()) {
             if (videodir.isChecked) {
                 var moved = false
+                val dao = VideoListItemDao.getSingleton(mContext)
                 for (video in mVideos.get()) {
-                    if (video is VideoDirectory) {
-                        for (v in video.videos) {
-                            moved = moved or moveVideoTo(v, videodir)
-                        }
+                    moved = if (video is VideoDirectory) {
+                        moved or moveVideoDirTo(video, videodir, dao)
                     } else {
                         val v = video as Video
-                        moved = moved or moveVideoTo(v, videodir)
+                        moved or moveVideoTo(v, videodir, dao)
                     }
                 }
                 return moved
@@ -126,10 +126,38 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
         return false
     }
 
-    private fun moveVideoTo(video: Video, videodir: VideoDirectory): Boolean {
+    private fun moveVideoDirTo(
+            videodir: VideoDirectory, targetVideoDir: VideoDirectory, dao: VideoListItemDao)
+    : Boolean {
+        val dirName = FileUtils.getFileNameFromFilePath(videodir.path)
+        val targetDirPath = targetVideoDir.path + File.separator + dirName
+        val targetDirFile = File(targetDirPath)
+        if (!targetDirFile.exists()) {
+            targetDirFile.mkdirs()
+        }
+        var targetDir = mTargetDirs.get().find { it.path.equals(targetDirPath, ignoreCase = true) }
+        if (targetDir == null) {
+            targetDir = dao.queryVideoDirByPath(targetDirPath)
+            if (targetDir == null) {
+                targetDir = dao.insertVideoDir(targetDirPath)
+            }
+        }
+        var moved = false
+        for (item in videodir.videoListItems) {
+            moved = if (item is VideoDirectory) {
+                moved or moveVideoDirTo(item, targetDir, dao)
+            } else {
+                val v = item as Video
+                moved or moveVideoTo(v, targetDir, dao)
+            }
+        }
+        return moved
+    }
+
+    private fun moveVideoTo(video: Video, videodir: VideoDirectory, dao: VideoListItemDao): Boolean {
         val videoPath = video.path
-        for (v in videodir.videos) {
-            if (v.name.equals(video.name, ignoreCase = true)) {
+        for (v in videodir.videoListItems) {
+            if (v is Video && v.name.equals(video.name, ignoreCase = true)) {
                 if (v.path.equals(videoPath, ignoreCase = true))
                     return false
 
@@ -144,10 +172,12 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
                 outer@
                 while (true) {
                     videoName = vTitle + '-' + i + v.suffix
-                    for (v2 in videodir.videos) {
-                        if (v2.name.equals(videoName, ignoreCase = true)) {
-                            i++
-                            continue@outer
+                    for (v2 in videodir.videoListItems) {
+                        if (v2 is Video) {
+                            if (v2.name.equals(videoName, ignoreCase = true)) {
+                                i++
+                                continue@outer
+                            }
                         }
                     }
                     break
@@ -157,11 +187,10 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
                 break
             }
         }
-        videodir.videos.add(video)
+        videodir.videoListItems.add(video)
         video.isTopped = false
         video.path = video.path.replaceBeforeLast(File.separatorChar, videodir.path)
-        return File(videoPath).renameTo(File(video.path))
-                && VideoListItemDao.getSingleton(mContext).updateVideo(video)
+        return File(videoPath).renameTo(File(video.path)) && dao.updateVideo(video)
     }
 
     override fun isTargetDirChecked(index: Int): Boolean =
@@ -201,7 +230,7 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
         }
 
         override fun loadItemImages(holder: IVideoMoveView.TargetDirListViewHolder) {
-            holder.loadItemImages(mTargetDirs.get()[holder.bindingAdapterPosition].videos[0])
+            holder.loadItemImages(mTargetDirs.get()[holder.bindingAdapterPosition].firstVideoOrNull()!!)
         }
     }
 }

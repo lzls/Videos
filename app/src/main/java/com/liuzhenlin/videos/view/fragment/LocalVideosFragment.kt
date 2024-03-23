@@ -16,26 +16,33 @@ import com.liuzhenlin.common.view.SwipeRefreshLayout
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout
 import com.liuzhenlin.swipeback.SwipeBackLayout
 import com.liuzhenlin.videos.*
-import com.liuzhenlin.videos.presenter.LocalFoldedVideosPresenter
 import com.liuzhenlin.videos.presenter.LocalVideoListPresenter
+import java.util.LinkedList
 
 /**
  * @author 刘振林
  */
 class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecycleCallback,
-        LocalFoldedVideosFragment.InteractionCallback, LocalSearchedVideosFragment.InteractionCallback,
-        SwipeBackLayout.SwipeListener, SlidingDrawerLayout.OnDrawerScrollListener {
+        LocalSearchedVideosFragment.InteractionCallback, SwipeBackLayout.SwipeListener,
+        SlidingDrawerLayout.OnDrawerScrollListener {
 
     private lateinit var mInteractionCallback: InteractionCallback
 
     private lateinit var mLocalVideoListFragment: LocalVideoListFragment
-    private var mLocalFoldedVideosFragment: LocalFoldedVideosFragment? = null
+    private var mLocalVideoSubListFragments: MutableList<LocalVideoListFragment>? = null
     private var mLocalSearchedVideosFragment: LocalSearchedVideosFragment? = null
     private var mVideoMoveFragment: VideoMoveFragment? = null
 
     private lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
 
     private var mSwipeBackScrollPercent = 0.0f
+
+    private fun getOrCreateLocalVideoSubListFragments(): MutableList<LocalVideoListFragment> {
+        if (mLocalVideoSubListFragments == null) {
+            mLocalVideoSubListFragments = LinkedList()
+        }
+        return mLocalVideoSubListFragments!!
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -78,10 +85,11 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                     as LocalVideoListFragment
             onFragmentAttached(mLocalVideoListFragment)
 
-            mLocalFoldedVideosFragment = fm.findFragmentByTag(TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT)
-                    as LocalFoldedVideosFragment?
-            if (mLocalFoldedVideosFragment != null) {
-                onFragmentAttached(mLocalFoldedVideosFragment!!)
+            for (i in 1..savedInstanceState.getInt(KEY_LOCAL_VIDEO_SUBLIST_FRAGMENT_COUNT)) {
+                val f = fm.findFragmentByTag(PREFIX_LOCAL_VIDEO_SUBLIST_FRAGMENT_TAG + i)
+                        as LocalVideoListFragment
+                getOrCreateLocalVideoSubListFragments().add(f)
+                onFragmentAttached(f)
             }
 
             mLocalSearchedVideosFragment = fm.findFragmentByTag(TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT)
@@ -104,40 +112,46 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         if (!this::mLocalVideoListFragment.isInitialized) return
 
         when {
-            childFragment === mLocalVideoListFragment -> {
-                mSwipeRefreshLayout.setOnRefreshListener(childFragment)
-            }
-            childFragment === mLocalFoldedVideosFragment -> {
-                childFragment.setVideoOpCallback(mLocalVideoListFragment)
-                if (childFragment.presenter is LocalFoldedVideosPresenter) {
-                    val localVideoListPresenter = mLocalVideoListFragment.presenter
-                    if (localVideoListPresenter is LocalVideoListPresenter) {
-                        childFragment.presenter.setAllVideosModel(localVideoListPresenter.model)
-                    }
-                }
-                mLocalVideoListFragment.presenter.addOnVideosLoadListener(childFragment.presenter)
+            childFragment is LocalVideoListFragment -> {
                 mSwipeRefreshLayout.setOnRefreshListener(childFragment)
 
-                mInteractionCallback.setSideDrawerEnabled(false)
-                mInteractionCallback.onLocalFoldedVideosFragmentAttached()
-                mInteractionCallback.showTabItems(false)
-                mInteractionCallback.setTabItemsEnabled(false)
+                val sublistFragmentIndex = mLocalVideoSubListFragments?.indexOf(childFragment) ?: -1
+                if (sublistFragmentIndex >= 0) {
+                    mLocalVideoListFragment.presenter
+                            .addOnVideoItemsLoadListener(childFragment.presenter)
+                    if (childFragment.presenter is LocalVideoListPresenter) {
+                        val lastFragment =
+                                if (sublistFragmentIndex > 0)
+                                    mLocalVideoSubListFragments!![sublistFragmentIndex - 1]
+                                else
+                                    mLocalVideoListFragment
+                        val parentPresenter = lastFragment.presenter
+                        if (parentPresenter is LocalVideoListPresenter)
+                            childFragment.presenter.setParentPresenter(parentPresenter)
+                    }
+
+                    mInteractionCallback.setSideDrawerEnabled(false)
+                    mInteractionCallback.onLocalVideoSublistFragmentAttached(childFragment)
+                    mInteractionCallback.showTabItems(false)
+                    mInteractionCallback.setTabItemsEnabled(false)
+                }
             }
+
             childFragment === mLocalSearchedVideosFragment -> {
                 childFragment.setVideoOpCallback(mLocalVideoListFragment)
-                mLocalVideoListFragment.presenter.addOnVideosLoadListener(childFragment.presenter)
+                mLocalVideoListFragment.presenter.addOnVideoItemsLoadListener(childFragment.presenter)
                 mSwipeRefreshLayout.setOnRefreshListener(childFragment)
 
                 mInteractionCallback.setSideDrawerEnabled(false)
-                mInteractionCallback.onLocalSearchedVideosFragmentAttached()
+                mInteractionCallback.onLocalSearchedVideosFragmentAttached(childFragment)
                 mInteractionCallback.showTabItems(false)
             }
         }
     }
 
     override fun onFragmentViewCreated(childFragment: Fragment) {
-        if (childFragment === mLocalFoldedVideosFragment) {
-            childFragment.swipeBackLayout.addSwipeListener(this)
+        if (mLocalVideoSubListFragments?.contains(childFragment) == true) {
+            (childFragment as LocalVideoListFragment).swipeBackLayout.addSwipeListener(this)
         }
     }
 
@@ -145,25 +159,32 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
     override fun onFragmentDetached(childFragment: Fragment) {
         when {
-            childFragment === mLocalFoldedVideosFragment -> {
-                mLocalVideoListFragment.presenter
-                        .removeOnVideosLoadListener(childFragment.presenter)
-                mLocalFoldedVideosFragment = null
-                mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
+            childFragment is LocalVideoListFragment -> {
+                val sublistFragmentIndex = mLocalVideoSubListFragments?.indexOf(childFragment) ?: -1
+                if (sublistFragmentIndex >= 0) {
+                    mLocalVideoSubListFragments!!.removeAt(sublistFragmentIndex)
+                    mLocalVideoListFragment.presenter
+                            .removeOnVideoItemsLoadListener(childFragment.presenter)
+                    if (sublistFragmentIndex == 0) {
+                        mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
 
-                mInteractionCallback.setSideDrawerEnabled(true)
-                mInteractionCallback.onLocalFoldedVideosFragmentDetached()
-                mInteractionCallback.setTabItemsEnabled(true)
-//                mInteractionCallback.showTabItems(true)
+                        mInteractionCallback.setSideDrawerEnabled(true)
+                        mInteractionCallback.setTabItemsEnabled(true)
+                    } else {
+                        mSwipeRefreshLayout.setOnRefreshListener(
+                                mLocalVideoSubListFragments!![sublistFragmentIndex - 1])
+                    }
+                    mInteractionCallback.onLocalVideoSublistFragmentDetached(childFragment)
+                }
             }
             childFragment === mLocalSearchedVideosFragment -> {
                 mLocalVideoListFragment.presenter
-                        .removeOnVideosLoadListener(childFragment.presenter)
+                        .removeOnVideoItemsLoadListener(childFragment.presenter)
                 mLocalSearchedVideosFragment = null
                 mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
 
                 mInteractionCallback.setSideDrawerEnabled(true)
-                mInteractionCallback.onLocalSearchedVideosFragmentDetached()
+                mInteractionCallback.onLocalSearchedVideosFragmentDetached(childFragment)
                 mInteractionCallback.showTabItems(true)
             }
             childFragment === mVideoMoveFragment -> {
@@ -172,22 +193,25 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         }
     }
 
-    override fun goToLocalFoldedVideosFragment(args: Bundle) {
-        mLocalFoldedVideosFragment = LocalFoldedVideosFragment()
-        mLocalFoldedVideosFragment!!.arguments = args
-        mLocalFoldedVideosFragment!!.setTargetFragment(
-                mLocalVideoListFragment, REQUEST_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT)
+    override fun goToLocalVideoSubListFragment(args: Bundle) {
+        getOrCreateLocalVideoSubListFragments().let {
+            val fragment = LocalVideoListFragment()
+            val lastFragment = if (it.size > 0) it[it.size - 1] else mLocalVideoListFragment
+            fragment.arguments = args
+            fragment.setTargetFragment(lastFragment, RESULT_CODE_LOCAL_VIDEO_SUBLIST_FRAGMENT)
+            it.add(fragment)
 
-        childFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                        R.anim.anim_open_enter, R.anim.anim_open_exit,
-                        R.anim.anim_close_enter, R.anim.anim_close_exit)
-                .hide(mLocalVideoListFragment)
-                .add(R.id.container_child_fragments, mLocalFoldedVideosFragment!!,
-                        TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT)
-                .addToBackStack(TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT)
-                .commit()
-        childFragmentManager.executePendingTransactions()
+            childFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.anim_open_enter, R.anim.anim_open_exit,
+                            R.anim.anim_close_enter, R.anim.anim_close_exit)
+                    .hide(lastFragment)
+                    .add(R.id.container_child_fragments, fragment,
+                            PREFIX_LOCAL_VIDEO_SUBLIST_FRAGMENT_TAG + it.size)
+                    .addToBackStack(PREFIX_LOCAL_VIDEO_SUBLIST_FRAGMENT_TAG + it.size)
+                    .commit()
+            childFragmentManager.executePendingTransactions()
+        }
     }
 
     override fun goToLocalSearchedVideosFragment() {
@@ -206,31 +230,37 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
     }
 
     override fun goToVideoMoveFragment(args: Bundle) {
+        val it = mLocalVideoSubListFragments
+        val topVideoListFragment =
+                if (it != null && it.size > 0) {
+                    it[it.size - 1]
+                } else {
+                    mLocalVideoListFragment
+                }
         mVideoMoveFragment = VideoMoveFragment()
         mVideoMoveFragment!!.arguments = args
-        mVideoMoveFragment!!.setTargetFragment(mLocalFoldedVideosFragment ?: mLocalVideoListFragment,
-                REQUEST_CODE_VIDEO_MOVE_FRAGMENT)
+        mVideoMoveFragment!!.setTargetFragment(
+                topVideoListFragment, REQUEST_CODE_VIDEO_MOVE_FRAGMENT)
         mVideoMoveFragment!!.showNow(childFragmentManager, TAG_VIDEO_MOVE_FRAGMENT)
     }
 
     override fun onBackPressed(): Boolean {
-        if (mLocalFoldedVideosFragment != null) {
-            if (!mLocalFoldedVideosFragment!!.onBackPressed()) {
-                mLocalFoldedVideosFragment!!.swipeBackLayout.scrollToFinishActivityOrPopUpFragment()
-            }
+        if (mLocalSearchedVideosFragment != null) {
+            childFragmentManager.popBackStackImmediate()
             return true
         }
-        return if (mLocalSearchedVideosFragment != null) {
-            childFragmentManager.popBackStackImmediate()
-        } else {
-            mLocalVideoListFragment.onBackPressed()
+        mLocalVideoSubListFragments?.let {
+            if (it.isNotEmpty()) {
+                val last = it.last()
+                if (last.onBackPressed())
+                    return true
+            }
         }
+        return mLocalVideoListFragment.onBackPressed()
     }
 
-    override fun getActionBar(fragment: Fragment): ViewGroup =
-            mInteractionCallback.getActionBar(
-                    fragment === mLocalFoldedVideosFragment
-                            || fragment === mLocalSearchedVideosFragment)
+    override fun getActionBar(fragment: Fragment): View =
+            mInteractionCallback.getActionBar(fragment)
 
     override fun isRefreshLayoutEnabled() = mSwipeRefreshLayout.isEnabled
 
@@ -253,12 +283,14 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         when (state) {
             SwipeBackLayout.STATE_DRAGGING,
             SwipeBackLayout.STATE_SETTLING -> {
-                mInteractionCallback.showActionBar(true)
-                mInteractionCallback.showTabItems(true)
+                mInteractionCallback.showPreviousActionBar(true)
+                if (mLocalVideoSubListFragments?.size == 1) {
+                    mInteractionCallback.showTabItems(true)
+                }
             }
             SwipeBackLayout.STATE_IDLE ->
                 if (mSwipeBackScrollPercent == 0.0f) {
-                    mInteractionCallback.showActionBar(false)
+                    mInteractionCallback.showPreviousActionBar(false)
                     mInteractionCallback.showTabItems(false)
                 }
         }
@@ -266,8 +298,8 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
     override fun onScrollPercentChange(edge: Int, percent: Float) {
         mSwipeBackScrollPercent = percent
-        mInteractionCallback.setActionBarAlpha(percent)
-        mInteractionCallback.setTmpActionBarAlpha(1 - percent)
+        mInteractionCallback.setPreviousActionBarAlpha(percent)
+        mInteractionCallback.setActionBarAlpha(1 - percent)
     }
 
     override fun onDrawerOpened(parent: SlidingDrawerLayout, drawer: View) {
@@ -296,26 +328,33 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_LOCAL_VIDEO_SUBLIST_FRAGMENT_COUNT,
+                mLocalVideoSubListFragments?.size ?: 0)
+    }
+
     private companion object {
+        const val PREFIX_LOCAL_VIDEO_SUBLIST_FRAGMENT_TAG = "LocalVideoSublistFragment$"
         const val TAG_LOCAL_VIDEO_LIST_FRAGMENT = "LocalVideoListFragment"
-        const val TAG_LOCAL_FOLDED_VIDEOS_FRAGMENT = "LocalFoldedVideosFragment"
         const val TAG_LOCAL_SEARCHED_VIDEOS_FRAGMENT = "LocalSearchedVideosFragment"
         const val TAG_VIDEO_MOVE_FRAGMENT = "VideoMoveFragment"
+
+        const val KEY_LOCAL_VIDEO_SUBLIST_FRAGMENT_COUNT = "localVideoSublistFragmentCount"
     }
 
     interface InteractionCallback : LocalVideoListFragment.InteractionCallback {
-        fun getActionBar(tmp: Boolean): ViewGroup
-        fun showActionBar(show: Boolean)
+        fun showPreviousActionBar(show: Boolean)
+        fun setPreviousActionBarAlpha(alpha: Float)
         fun setActionBarAlpha(alpha: Float)
-        fun setTmpActionBarAlpha(alpha: Float)
 
         fun showTabItems(show: Boolean)
         fun setTabItemsEnabled(enabled: Boolean)
 
-        fun onLocalSearchedVideosFragmentAttached()
-        fun onLocalSearchedVideosFragmentDetached()
+        fun onLocalVideoSublistFragmentAttached(fragment: Fragment)
+        fun onLocalVideoSublistFragmentDetached(fragment: Fragment)
 
-        fun onLocalFoldedVideosFragmentAttached()
-        fun onLocalFoldedVideosFragmentDetached()
+        fun onLocalSearchedVideosFragmentAttached(fragment: Fragment)
+        fun onLocalSearchedVideosFragmentDetached(fragment: Fragment)
     }
 }

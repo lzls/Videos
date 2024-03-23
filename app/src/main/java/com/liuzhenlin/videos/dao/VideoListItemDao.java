@@ -269,18 +269,17 @@ public final class VideoListItemDao implements IVideoListItemDao {
 
     @Nullable
     @Override
-    public Cursor queryAllVideosInDirectory(@Nullable String directory) {
+    public Cursor queryAllVideosInDirectory(@Nullable String directory, boolean recursive) {
         if (directory == null) return null;
 
         final int strlength = directory.length();
-        return mContentResolver.query(
-                VIDEO_URI,
-                PROJECTION_VIDEO_URI,
-                "SUBSTR(" + VIDEO_PATH + ",1," + (strlength + 1) + ")='"
-                        + escapedComparisionString(directory) + File.separator + "' COLLATE NOCASE "
-                        + "AND SUBSTR(" + VIDEO_PATH + "," + (strlength + 2) + ") "
-                        + "NOT LIKE '%" + File.separator + "%'", null,
-                null);
+        String selection = "SUBSTR(" + VIDEO_PATH + ",1," + (strlength + 1) + ")='"
+                + escapedComparisionString(directory) + File.separator + "' COLLATE NOCASE";
+        if (!recursive) {
+            selection += " AND SUBSTR(" + VIDEO_PATH + "," + (strlength + 2) + ") "
+                    + "NOT LIKE '%" + File.separator + "%'";
+        }
+        return mContentResolver.query(VIDEO_URI, PROJECTION_VIDEO_URI, selection, null, null);
     }
 
     @Override

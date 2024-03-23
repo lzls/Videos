@@ -38,6 +38,7 @@ import com.liuzhenlin.videos.contextThemedFirst
 import com.liuzhenlin.videos.dao.AppPrefs
 import com.liuzhenlin.videos.presenter.IVideoMovePresenter
 import com.liuzhenlin.videos.utils.VideoUtils2
+import com.liuzhenlin.videos.videoCount
 import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.fragment.Payloads.PAYLOAD_REFRESH_CHECKBOX
 
@@ -233,7 +234,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 itemView.tag = position
                 checkBox.tag = position
 
-                val videoCount = videodir.videos.size
+                val videoCount = videodir.videoCount(includeDescendants = false)
                 if (checkBox.isChecked != videodir.isChecked) {
                     checkBox.isChecked = videodir.isChecked
                     onCheckedChange(position)

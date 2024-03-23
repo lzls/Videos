@@ -3,7 +3,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <include layout="@layout/actionbar_settings_activity" />
+    <include layout="@layout/actionbar_generic" />
 
     <FrameLayout
         android:layout_width="match_parent"
