@@ -84,6 +84,7 @@ import com.taobao.sophix.SophixManager;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.LinkedHashMap;
 
 import static com.liuzhenlin.common.Consts.EMPTY_STRING;
 import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_DARK;
@@ -120,8 +121,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     @Synthetic boolean mActionBarCollapsedInYoutube;
     private boolean mCollapseActionBarIgnoreYoutubePageScrollChanges;
 
-    // 临时缓存LocalSearchedVideosFragment或LocalFoldedVideosFragment的ActionBar
-    private ViewGroup mTmpActionBar;
+    // 临时缓存LocalSearchedVideosFragment和LocalVideoListFragments的ActionBars
+    private final LinkedHashMap<Fragment, ViewGroup> mActionBars = new LinkedHashMap<>();
 
     @Synthetic ScrollDisableListView mDrawerList;
     @Synthetic DrawerListAdapter mDrawerListAdapter;
@@ -189,6 +190,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     private void initViews() {
         final App app = App.getInstance(this);
+        final LocalVideosFragment localVideosFragment = getLocalVideosFragment();
 
         mSlidingDrawerLayout = findViewById(R.id.slidingDrawerLayout);
         mSlidingDrawerLayout.addOnLayoutChangeListener(
@@ -239,11 +241,12 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
                     }
                 });
         mSlidingDrawerLayout.addOnDrawerScrollListener(this);
-        mSlidingDrawerLayout.addOnDrawerScrollListener(getLocalVideosFragment());
+        mSlidingDrawerLayout.addOnDrawerScrollListener(localVideosFragment);
 //        mSlidingDrawerLayout.addOnDrawerScrollListener(mOnlineVideosFragment);
 
         mActionBarContainer = findViewById(R.id.container_actionbar);
         mActionBar = findViewById(R.id.actionbar);
+        mActionBars.put(localVideosFragment, mActionBar);
         UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mActionBar);
 
         mActionButton = mActionBar.findViewById(R.id.img_btn);
@@ -939,8 +942,8 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     @Override
-    public void goToLocalFoldedVideosFragment(@NonNull Bundle args) {
-        getLocalVideosFragment().goToLocalFoldedVideosFragment(args);
+    public void goToLocalVideoSubListFragment(@NonNull Bundle args) {
+        getLocalVideosFragment().goToLocalVideoSubListFragment(args);
     }
 
     @Override
@@ -976,23 +979,55 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
 
     @NonNull
     @Override
-    public ViewGroup getActionBar(boolean tmp) {
-        return tmp ? mTmpActionBar : mActionBar;
+    public ViewGroup getActionBar(@NonNull Fragment fragment) {
+        ViewGroup actionbar = mActionBars.get(fragment);
+        if (actionbar != null) {
+            return actionbar;
+        }
+        return mActionBar;
     }
 
     @Override
-    public void showActionBar(boolean show) {
-        mActionBar.setVisibility(show ? View.VISIBLE : View.GONE);
+    public void showPreviousActionBar(boolean show) {
+        ViewGroup[] actionbars = mActionBars.values().toArray(new ViewGroup[0]);
+        outer:
+        for (int i = actionbars.length - 1; i >= 0; i--) {
+            if (actionbars[i] != null) {
+                for (int j = i - 1; j >= 0; j--) {
+                    if (actionbars[j] != null) {
+                        actionbars[j].setVisibility(show ? View.VISIBLE : View.GONE);
+                        break outer;
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void setPreviousActionBarAlpha(float alpha) {
+        ViewGroup[] actionbars = mActionBars.values().toArray(new ViewGroup[0]);
+        outer:
+        for (int i = actionbars.length - 1; i >= 0; i--) {
+            if (actionbars[i] != null) {
+                for (int j = i - 1; j >= 0; j--) {
+                    if (actionbars[j] != null) {
+                        actionbars[j].setAlpha(alpha);
+                        break outer;
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public void setActionBarAlpha(float alpha) {
-        mActionBar.setAlpha(alpha);
-    }
-
-    @Override
-    public void setTmpActionBarAlpha(float alpha) {
-        mTmpActionBar.setAlpha(alpha);
+        ViewGroup[] actionbars = mActionBars.values().toArray(new ViewGroup[0]);
+        for (int i = actionbars.length - 1; i >= 0; i--) {
+            if (actionbars[i] != null) {
+                actionbars[i].setAlpha(alpha);
+                break;
+            }
+        }
     }
 
     @Override
@@ -1006,37 +1041,34 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     @Override
-    public void onLocalSearchedVideosFragmentAttached() {
-        mTmpActionBar = (ViewGroup)
-                LayoutInflater.from(this)
-                        .inflate(R.layout.actionbar_local_searched_videos_fragment,
-                                mActionBarContainer, false);
-        UiUtils.insertTopMarginToActionBarIfLayoutUnderStatus(mTmpActionBar);
-        mActionBarContainer.addView(mTmpActionBar);
+    public void onLocalVideoSublistFragmentAttached(@NonNull Fragment fragment) {
+        ViewGroup actionbar = (ViewGroup)
+                LayoutInflater.from(this).inflate(
+                        R.layout.actionbar_local_video_sublist_fragment, mActionBarContainer, false);
+        mActionBars.put(fragment, actionbar);
+        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(actionbar);
+        mActionBarContainer.addView(actionbar);
+        showPreviousActionBar(false);
     }
 
     @Override
-    public void onLocalSearchedVideosFragmentDetached() {
-        mActionBarContainer.removeView(mTmpActionBar);
-        mTmpActionBar = null;
+    public void onLocalVideoSublistFragmentDetached(@NonNull Fragment fragment) {
+        mActionBarContainer.removeView(mActionBars.remove(fragment));
     }
 
     @Override
-    public void onLocalFoldedVideosFragmentAttached() {
-        mActionBar.setVisibility(View.GONE);
-        mTmpActionBar = (ViewGroup)
-                LayoutInflater.from(this)
-                        .inflate(R.layout.actionbar_local_folded_videos_fragment,
-                                mActionBarContainer, false);
-        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(mTmpActionBar);
-        mActionBarContainer.addView(mTmpActionBar);
+    public void onLocalSearchedVideosFragmentAttached(@NonNull Fragment fragment) {
+        ViewGroup actionbar = (ViewGroup)
+                LayoutInflater.from(this).inflate(
+                        R.layout.actionbar_local_searched_videos_fragment, mActionBarContainer, false);
+        mActionBars.put(fragment, actionbar);
+        UiUtils.insertTopMarginToActionBarIfLayoutUnderStatus(actionbar);
+        mActionBarContainer.addView(actionbar);
     }
 
     @Override
-    public void onLocalFoldedVideosFragmentDetached() {
-//        mActionBar.setVisibility(View.VISIBLE)
-        mActionBarContainer.removeView(mTmpActionBar);
-        mTmpActionBar = null;
+    public void onLocalSearchedVideosFragmentDetached(@NonNull Fragment fragment) {
+        mActionBarContainer.removeView(mActionBars.remove(fragment));
     }
 
     private int getScaledTouchSlop() {

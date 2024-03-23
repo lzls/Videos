@@ -5,6 +5,7 @@
 
 package com.liuzhenlin.videos
 
+import android.os.Environment
 import android.view.ViewGroup
 import androidx.collection.ArrayMap
 import androidx.fragment.app.Fragment
@@ -102,6 +103,7 @@ fun <T : VideoListItem> MutableList<T>.deepCopy(src: List<T>) {
     }
 }
 
+@JvmName("insertVideoDirToDB")
 fun IVideoDirectoryDao.insertVideoDir(directory: String): VideoDirectory {
     val videodir = VideoDirectory()
     videodir.name = FileUtils.getFileNameFromFilePath(directory)
@@ -112,11 +114,20 @@ fun IVideoDirectoryDao.insertVideoDir(directory: String): VideoDirectory {
     return videodir
 }
 
-fun Collection<Video>?.toVideoListItems(): MutableList<VideoListItem>? {
+fun Collection<Video>?.toVideoListItems(baseVideoDir: String? = null): MutableList<VideoListItem>? {
     this ?: return null
     if (size == 0) return null
 
+    val dao = VideoListItemDao.getSingleton(App.getInstanceUnsafe()!!)
+    val sdcardRoot = Environment.getExternalStorageDirectory().absolutePath
+    val baseVideoDirIsSdcardRoot =
+            baseVideoDir == null || sdcardRoot.equals(baseVideoDir, ignoreCase = true)
     val videosMap = ArrayMap<String, Any>()
+    var videodirs: MutableList<VideoDirectory>? = null
+    var newVideoDirs: MutableList<String>? = null
+    var index = 0
+
+    // Classify videos by the directory they belong to
     for (video in this) {
         val path = video.path
         // Directory of the video file
@@ -136,42 +147,100 @@ fun Collection<Video>?.toVideoListItems(): MutableList<VideoListItem>? {
         }
         videos.add(video)
     }
-    var index = 0
     while (index < videosMap.size) {
         @Suppress("UNCHECKED_CAST")
-        val videos = videosMap.valueAt(index) as MutableList<Video>
-        if (videos.size == 1) {
-            videosMap.setValueAt(index, videos[0])
-        } else {
-            val dao = VideoListItemDao.getSingleton(App.getInstanceUnsafe()!!)
-
-            val dirPath = videosMap.keyAt(index)
-            var videodir = dao.queryVideoDirByPath(dirPath)
-            val videodirAlreadyExists = videodir != null
-            if (!videodirAlreadyExists) {
-                videodir = dao.insertVideoDir(dirPath)
-            }
-            videodir!!.size = videos.allVideoSize()
-            videodir.videos =
-                    if (videodirAlreadyExists && videos.any { it.isTopped }) {
-                        videos.reordered()
-                    } else {
-                        if (!videodirAlreadyExists) {
-                            for (video in videos)
-                                if (video.isTopped) {
-                                    video.isTopped = false
-                                    dao.setVideoListItemTopped(video, false)
-                                }
-                        }
-                        videos.sortByElementName()
-                        videos
-                    }
-
-            videosMap.setValueAt(index, videodir)
+        val videos = videosMap.valueAt(index) as MutableList<VideoListItem>
+        val dirPath = videosMap.keyAt(index)
+        val isSdcardRoot = baseVideoDirIsSdcardRoot && dirPath.equals(sdcardRoot, ignoreCase = true)
+        var videodir = dao.queryVideoDirByPath(dirPath)
+        val videodirAlreadyExists = videodir != null
+        if (!videodirAlreadyExists) {
+            videodir = dao.insertVideoDir(dirPath)
         }
+        if (!videodirAlreadyExists && !isSdcardRoot) {
+            if (newVideoDirs == null) newVideoDirs = LinkedList()
+            newVideoDirs.add(videodir!!.path)
+        }
+        videodir!!.videoListItems = videos
+
+        if (!isSdcardRoot) {
+            if (videodirs == null) videodirs = ArrayList()
+            videodirs.add(videodir)
+        }
+        videosMap.setValueAt(index, videodir)
+
         index++
     }
 
+    // Delete DB records for outdated video dirs descending from baseVideoDir
+    val videodirCursor = dao.queryAllVideoDirs()
+    if (videodirCursor != null) {
+        while (videodirCursor.moveToNext()) {
+            val videodir = dao.buildVideoDir(videodirCursor)
+            if ((baseVideoDir == null || videodir.path.startsWith("$baseVideoDir/", ignoreCase = true))
+                    && videodirs?.contains(videodir) == false) {
+                dao.deleteVideoDir(videodir.path)
+            }
+        }
+        videodirCursor.close()
+    }
+
+    // Structure the video dirs to be hierarchical, i.e., tree-structured
+    if (videodirs != null) {
+        var i = 0
+        var j = 0
+        outer@
+        while (i < videodirs.size) {
+            val videodir = videodirs[i]
+            j = i + 1
+            while (j < videodirs.size) {
+                val videodir1 = videodirs[j]
+                if (videodir.path.length < videodir1.path.length
+                        && videodir1.path.startsWith("${videodir.path}/", ignoreCase = true)) {
+                    videodir.videoListItems.add(videodir1)
+                    videodirs.removeAt(j)
+                    videosMap.remove(videodir1.path)
+                    j--
+                } else if (videodir1.path.length < videodir.path.length
+                        && videodir.path.startsWith("${videodir1.path}/", ignoreCase = true)) {
+                    videodir1.videoListItems.add(videodir)
+                    videodirs.removeAt(i)
+                    videosMap.remove(videodir.path)
+                    continue@outer
+                }
+                j++
+            }
+            i++
+        }
+        for (videodir in videodirs) {
+            videodir.hierarchize()
+            if (newVideoDirs != null) {
+                for (newVideoDir in newVideoDirs) {
+                    if (newVideoDir.equals(videodir.path, ignoreCase = true)) {
+                        videodir.setVideoItemsTopped(topped = false, recursive = true, dao)
+                        break
+                    }
+                }
+            }
+            videodir.reorderItems(recursive = true)
+            videodir.computeSize()
+        }
+    }
+
+    // If a top level dir only has one video, add the video to the set of list items instead.
+    if (baseVideoDirIsSdcardRoot) {
+        index = 0
+        while (index < videosMap.size) {
+            val item = videosMap.valueAt(index)
+            if (item is VideoDirectory && item.videoListItems.size == 1) {
+                videosMap.setValueAt(index, item.videoListItems[0])
+                dao.deleteVideoDir(item.path)
+            }
+            index++
+        }
+    }
+
+    // Reorder video list items
     var items: MutableList<VideoListItem>? = null
     var toppedItems: MutableList<VideoListItem>? = null
     index = 0
@@ -179,11 +248,23 @@ fun Collection<Video>?.toVideoListItems(): MutableList<VideoListItem>? {
         if (items == null) items = mutableListOf()
 
         val item = videosMap.valueAt(index) as VideoListItem
-        if (item.isTopped) {
-            if (toppedItems == null) toppedItems = LinkedList()
-            toppedItems.add(item)
+        if (item is VideoDirectory
+                && baseVideoDirIsSdcardRoot && item.path.equals(sdcardRoot, ignoreCase = true)) {
+            for (video in item.videoListItems) {
+                if (video.isTopped) {
+                    if (toppedItems == null) toppedItems = LinkedList()
+                    toppedItems.add(video)
+                } else {
+                    items.add(video)
+                }
+            }
         } else {
-            items.add(item)
+            if (item.isTopped) {
+                if (toppedItems == null) toppedItems = LinkedList()
+                toppedItems.add(item)
+            } else {
+                items.add(item)
+            }
         }
 
         index++
@@ -196,15 +277,166 @@ fun Collection<Video>?.toVideoListItems(): MutableList<VideoListItem>? {
         }
     }
 
+    if (!baseVideoDirIsSdcardRoot) {
+        val item0 = items?.get(0) as VideoDirectory
+        if (item0.path.equals(baseVideoDir, ignoreCase = true)) {
+            return item0.videoListItems
+        }
+    }
     return items
 }
 
-fun Collection<Video>?.allVideoSize(): Long {
+@JvmName("hierarchizeVideoDirs")
+fun VideoDirectory.hierarchize() {
+    val vds = videoListItems.filterIsInstanceTo(mutableListOf<VideoDirectory>())
+
+    var i = 0
+    var j = 0
+    outer@
+    while (i < vds.size) {
+        val vd = vds[i]
+        j = i + 1
+        while (j < vds.size) {
+            val vd1 = vds[j]
+            if (vd.path.length < vd1.path.length
+                    && vd1.path.startsWith("${vd.path}/", ignoreCase = true)) {
+                vd.videoListItems.add(vd1)
+                videoListItems.remove(vd1)
+                vds.removeAt(j)
+                if (j < i) i--
+                j--
+            } else if (vd1.path.length < vd.path.length
+                    && vd.path.startsWith("${vd1.path}/", ignoreCase = true)) {
+                vd1.videoListItems.add(vd)
+                videoListItems.remove(vd)
+                vds.removeAt(i)
+                continue@outer
+            }
+            j++
+        }
+        i++
+    }
+
+    for (vd in vds) {
+        vd.hierarchize()
+    }
+}
+
+@JvmName("setVideoItemsInDirTopped")
+fun VideoDirectory.setVideoItemsTopped(topped: Boolean, recursive: Boolean, dao: VideoListItemDao) {
+    for (item in videoListItems) {
+        if (item.isTopped != topped) {
+            item.isTopped = topped
+            dao.setVideoListItemTopped(item, topped)
+        }
+        if (recursive) {
+            if (item is VideoDirectory) {
+                item.setVideoItemsTopped(topped, true, dao)
+            }
+        }
+    }
+}
+
+@JvmName("reorderVideoDirItems")
+fun VideoDirectory.reorderItems(recursive: Boolean = false) {
+    videoListItems = videoListItems.reordered()
+    if (recursive) {
+        for (item in videoListItems) {
+            if (item is VideoDirectory) {
+                item.reorderItems(true)
+            }
+        }
+    }
+}
+
+@JvmName("firstDirectoryVideoOrNull")
+fun VideoDirectory.firstVideoOrNull(findRecursively: Boolean = true): Video? {
+    for (videoItem in videoListItems) {
+        if (videoItem is Video)
+            return videoItem
+    }
+    if (findRecursively) {
+        for (videoItem in videoListItems) {
+            if (videoItem is VideoDirectory) {
+                val video = videoItem.firstVideoOrNull(true)
+                if (video != null)
+                    return video
+            }
+        }
+    }
+    return null
+}
+
+@JvmName("searchVideoListItem")
+fun Collection<VideoListItem>?.search(
+        predicate: (VideoListItem) -> Boolean, recursive: Boolean = true): VideoListItem? {
+    for (item in this ?: return null) {
+        if (predicate(item)) {
+            return item
+        }
+        if (recursive && item is VideoDirectory) {
+            val ret = item.videoListItems.search(predicate, true)
+            if (ret != null)
+                return ret
+        }
+    }
+    return null
+}
+
+@JvmName("getDirectoryVideos")
+fun VideoDirectory.videos(includeDescendants: Boolean = true): MutableList<Video> {
+    val videos = mutableListOf<Video>()
+    for (videoItem in videoListItems) {
+        if (videoItem is Video) {
+            videos.add(videoItem)
+        } else if (includeDescendants && videoItem is VideoDirectory) {
+            videos.addAll(videoItem.videos(true))
+        }
+    }
+    return videos
+}
+
+@JvmName("getVideoCount")
+fun VideoDirectory.videoCount(includeDescendants: Boolean = true): Int {
+    var count = 0
+    for (videoItem in videoListItems) {
+        if (videoItem is Video) {
+            count++
+        } else if (includeDescendants && videoItem is VideoDirectory) {
+            count += videoItem.videoCount(true)
+        }
+    }
+    return count
+}
+
+@JvmName("computeVideoDirSize")
+fun VideoDirectory.computeSize(recursive: Boolean = true): Long {
     var size = 0L
-    for (video in this ?: return size) {
-        size += video.size
+    for (item in videoListItems) {
+        if (item is Video) {
+            size += item.size
+        } else if (recursive && item is VideoDirectory) {
+            size += item.computeSize(true)
+        }
+    }
+    if (recursive) {
+        this.size = size
     }
     return size
+}
+
+fun VideoDirectory.hasUnwrittableVideo(checkRecursively: Boolean = true): Boolean {
+    for (videoItem in videoListItems) {
+        if (videoItem is Video) {
+            if (!videoItem.isWritable)
+                return true
+        }
+        if (checkRecursively && videoItem is VideoDirectory) {
+            if (videoItem.hasUnwrittableVideo(true))
+                return true
+        }
+    }
+    return false
 }
 
 @get:JvmName("getVideoTitle")
