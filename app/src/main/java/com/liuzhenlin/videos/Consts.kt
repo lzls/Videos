@@ -16,7 +16,6 @@ import com.liuzhenlin.common.Consts
 internal const val PROCESS_NAME_MAIN = Consts.APPLICATION_ID
 internal const val PROCESS_NAME_WEB = Consts.APPLICATION_ID + ":web"
 
-internal const val KEY_DIRECTORY_PATH = "directoryPath"
 internal const val KEY_VIDEODIR = "videodir"
 internal const val KEY_VIDEODIRS = "videodirs"
 internal const val KEY_VIDEO = "video"
@@ -36,8 +35,8 @@ internal const val RESULT_CODE_PLAY_VIDEOS = 2
 internal const val REQUEST_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT = 3
 internal const val RESULT_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT = 3
 
-internal const val REQUEST_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT = 4
-internal const val RESULT_CODE_LOCAL_FOLDED_VIDEOS_FRAGMENT = 4
+internal const val REQUEST_CODE_LOCAL_VIDEO_SUBLIST_FRAGMENT = 4
+internal const val RESULT_CODE_LOCAL_VIDEO_SUBLIST_FRAGMENT = 4
 
 internal const val REQUEST_CODE_VIDEO_MOVE_FRAGMENT = 5
 internal const val RESULT_CODE_VIDEO_MOVE_FRAGMENT = 5

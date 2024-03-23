@@ -34,21 +34,21 @@ private fun deleteItemsInternal(items: Array<out VideoListItem>) {
     if (items.isEmpty()) return
 
     val dao = VideoListItemDao.getSingleton(App.getInstanceUnsafe()!!)
+    deleteItemsRecursively(listOf(*items), dao)
+}
+
+private fun deleteItemsRecursively(items: List<VideoListItem>, dao: VideoListItemDao) {
     for (item in items)
         when (item) {
-            is Video -> deleteVideo(item, dao)
+            is Video -> {
+                File(item.path).delete()
+                dao.deleteVideo(item.id)
+            }
             is VideoDirectory -> {
-                for (video in item.videos) {
-                    deleteVideo(video, dao)
-                }
+                deleteItemsRecursively(item.videoListItems, dao)
                 dao.deleteVideoDir(item.path)
             }
         }
-}
-
-private fun deleteVideo(video: Video, dao: VideoListItemDao) {
-    File(video.path).delete()
-    dao.deleteVideo(video.id)
 }
 
 interface VideoListItemOpCallback<in T : VideoListItem> {
