@@ -16,9 +16,6 @@ import com.taobao.sophix.SophixEntry;
 import com.taobao.sophix.SophixManager;
 import com.taobao.sophix.listener.PatchLoadStatusListener;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class SophixAppStub extends SophixApplication {
 
     private static final boolean DEBUG = false;
@@ -45,19 +42,12 @@ public class SophixAppStub extends SophixApplication {
     }
 
     private void initSophix() {
-        List<String> tags = new ArrayList<>();
-        if (DEBUG) {
-            tags.add("test");
-        }
-        tags.add("production");
         SophixManager.getInstance()
                 .setContext(this)
                 .setAppVersion(Utils.getAppVersionName(this))
-                .setTags(tags)
                 .setSecretMetaData(nGetIdSecret(this), nGetAppSecret(this), nGetRsaSecret(this))
                 .setEnableDebug(DEBUG)
-                .setPatchLoadStatusStub(new PatchLoadListener())
-                .initialize();
+                .setPatchLoadStatusStub(new PatchLoadListener());
     }
 
     private static final class PatchLoadListener implements PatchLoadStatusListener {
