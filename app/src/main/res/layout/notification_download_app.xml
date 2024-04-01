@@ -8,7 +8,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="5dp"
-        android:text="@string/downloadingUpdates"
+        android:text="@string/downloadingUpdates_title"
         android:textSize="@dimen/notification_title_text_size"
         android:textAppearance="@style/TextAppearance.Compat.Notification.Title" />
 

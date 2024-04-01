@@ -9,6 +9,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.database.ContentObserver
 import android.os.AsyncTask
+import android.os.Environment
 import android.os.Handler
 import com.liuzhenlin.common.Consts
 import com.liuzhenlin.common.utils.Executors
@@ -28,6 +29,7 @@ import java.util.*
 
 interface ILocalVideoListModel {
 
+    public val parentVideoDir: VideoDirectory?
     public val videoListItems: List<VideoListItem>
     public val checkedItems: List<VideoListItem>?
     public val videoDirs: List<VideoDirectory>?
@@ -35,7 +37,7 @@ interface ILocalVideoListModel {
 
     fun setVideoListItems(items: List<VideoListItem>?)
     fun updateVideoProgress(video: Video)
-    fun updateVideoDirectory(dirPath: String, videos: List<Video>)
+    fun updateVideoDirectory(videodir: VideoDirectory)
     fun setItemChecked(index: Int, checked: Boolean)
     fun setItemTopped(index: Int, topped: Boolean)
     fun deleteItem(item: VideoListItem)
@@ -62,11 +64,12 @@ interface ILocalVideoListModel {
     }
 }
 
-class LocalVideoListModel(context: Context)
+class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDirectory? = null)
     : BaseModel<Nothing, MutableList<VideoListItem>?, ILocalVideoListModel.Callback>(context),
         ILocalVideoListModel {
 
-    private val mVideoListItems = mutableListOf<VideoListItem>()
+    private val mVideoListItems: MutableList<VideoListItem> =
+            parentVideoDir?.videoListItems ?: mutableListOf()
 
     override val videoListItems: List<VideoListItem> get() = mVideoListItems
 
@@ -85,26 +88,57 @@ class LocalVideoListModel(context: Context)
         }
 
     override val videoDirs: List<VideoDirectory>?
-        get() {
-            var dirs: MutableList<VideoDirectory>? = null
-            for (item in mVideoListItems) {
-                if (dirs == null) {
-                    dirs = mutableListOf()
-                }
-                if (item is VideoDirectory) {
-                    dirs.add(item)
-                } else {
-                    val video = item as Video
-                    val dir = VideoDirectory()
-                    dir.path = video.path.substring(0, video.path.lastIndexOf(File.separatorChar))
-                    dir.name = FileUtils.getFileNameFromFilePath(dir.path)
-                    dir.videos = mutableListOf(video)
-                    dir.size = video.size
-                    dirs.add(dir)
-                }
+        get() = collectVideoDirectoryRecursively(mVideoListItems, true)
+
+    private fun collectVideoDirectoryRecursively(items: List<VideoListItem>, inBaseDir: Boolean)
+            : MutableList<VideoDirectory>? {
+        var baseDir: VideoDirectory? = null
+        var dirs: MutableList<VideoDirectory>? = null
+        var createdNonbaseDirs: MutableList<VideoDirectory>? = null
+        for (item in items) {
+            if (dirs == null) {
+                dirs = mutableListOf()
             }
-            return dirs
+            if (item is VideoDirectory) {
+                if (inBaseDir) {
+                    if (baseDir == null) {
+                        baseDir = VideoDirectory()
+                        baseDir.path =
+                            parentVideoDir?.path ?: Environment.getExternalStorageDirectory().path
+                        baseDir.name = FileUtils.getFileNameFromFilePath(baseDir.path)
+                    }
+                    baseDir.videoListItems.add(item)
+                }
+                dirs.addAll(collectVideoDirectoryRecursively(item.videoListItems, false) ?: continue)
+                dirs.add(item)
+            } else if (inBaseDir) {
+                val itemPath = item.path.substring(0, item.path.lastIndexOf(File.separatorChar))
+                var dir = createdNonbaseDirs?.find { it.path == itemPath }
+                if (dir == null) {
+                    if (itemPath == baseDir?.path) {
+                        dir = baseDir
+                    } else {
+                        dir = VideoDirectory()
+                        dir.path = itemPath
+                        dir.name = FileUtils.getFileNameFromFilePath(dir.path)
+                        dirs.add(dir)
+                        if (createdNonbaseDirs == null)
+                            createdNonbaseDirs = mutableListOf()
+                        createdNonbaseDirs.add(dir)
+                    }
+                }
+                dir.videoListItems.add(item)
+            }
         }
+        if (baseDir != null) {
+            baseDir.computeSize()
+            dirs!!.add(baseDir)
+        }
+        if (createdNonbaseDirs != null) {
+            for (dir in createdNonbaseDirs) dir.computeSize()
+        }
+        return dirs
+    }
 
     override val videos: ArrayList<Video>?
         get() {
@@ -113,42 +147,69 @@ class LocalVideoListModel(context: Context)
                 if (videos == null) videos = ArrayList()
                 when (item) {
                     is Video -> videos.add(item)
-                    is VideoDirectory -> videos.addAll(item.videos)
+                    is VideoDirectory -> videos.addAll(item.videos())
                 }
             }
-            return videos?.apply {
-                deepCopy(videos)
-                sortByElementName()
-            }
+            return videos?.apply { sortByElementName() }
         }
 
     private var mNeedReloadVideos = false
     private var mVideoObserver: VideoObserver? = null
 
-    private var mOnReloadVideosListeners: MutableList<OnReloadVideosListener>? = null
+    private var mOnVideoItemsLoadListeners: MutableList<OnVideoItemsLoadListener<*>>? = null
 
-    fun addOnReloadVideosListener(listener: OnReloadVideosListener) {
-        if (mOnReloadVideosListeners == null)
-            mOnReloadVideosListeners = mutableListOf()
-        if (!mOnReloadVideosListeners!!.contains(listener))
-            mOnReloadVideosListeners!!.add(listener)
+    fun addOnVideoItemsLoadListener(listener: OnVideoItemsLoadListener<*>) {
+        if (mOnVideoItemsLoadListeners == null)
+            mOnVideoItemsLoadListeners = mutableListOf()
+        if (!mOnVideoItemsLoadListeners!!.contains(listener))
+            mOnVideoItemsLoadListeners!!.add(listener)
     }
 
-    fun removeOnReloadVideosListener(listener: OnReloadVideosListener) {
-        mOnReloadVideosListeners?.remove(listener)
+    fun removeOnVideoItemsLoadListener(listener: OnVideoItemsLoadListener<*>) {
+        mOnVideoItemsLoadListeners?.remove(listener)
     }
 
-    private fun notifyListenersOnReloadVideos(videos: ArrayList<Video>?) =
-            mOnReloadVideosListeners?.let {
+    private fun notifyOnVideoItemsLoadListeners(items: List<VideoListItem>?, videos: List<Video>?) =
+            mOnVideoItemsLoadListeners?.let {
                 if (it.isEmpty()) return@let
 
                 for (i in it.size - 1 downTo 0) {
-                    @Suppress("UNCHECKED_CAST")
-                    val copy = videos?.clone() as? MutableList<Video>
-                    copy?.deepCopy(videos)
-                    it[i].onReloadVideos(copy)
+                    when (it[i]) {
+                        is OnVideoListItemsLoadListener -> {
+                            notifyOnVideoItemsLoadListener(
+                                    it[i] as OnVideoListItemsLoadListener, items)
+                        }
+                        is OnVideosLoadListener -> {
+                            notifyOnVideoItemsLoadListener(it[i] as OnVideosLoadListener, videos)
+                        }
+                    }
                 }
             }
+
+    private inline fun <reified T : VideoListItem> notifyOnVideoItemsLoadListener(
+            listener: OnVideoItemsLoadListener<T>, items: List<T>?) {
+        val copy = if (items == null) null else ArrayList(items)
+        copy?.deepCopy(items!!)
+        listener.onVideoItemsLoadFinish(copy)
+    }
+
+    override fun onLoadStart() {
+        super.onLoadStart()
+        mOnVideoItemsLoadListeners?.let {
+            for (i in it.size - 1 downTo 0) {
+                it[i].onVideoItemsLoadStart()
+            }
+        }
+    }
+
+    override fun onLoadCanceled() {
+        super.onLoadCanceled()
+        mOnVideoItemsLoadListeners?.let {
+            for (i in it.size - 1 downTo 0) {
+                it[i].onVideoItemsLoadCanceled()
+            }
+        }
+    }
 
     override fun createAndStartLoader(): AsyncTask<*, *, *> {
         val loader = LoadVideosTask()
@@ -162,11 +223,13 @@ class LocalVideoListModel(context: Context)
         override fun onPreExecute() = onLoadStart()
 
         override fun doInBackground(vararg voids: Void): Array<*>? {
-            val dao = VideoListItemDao.getSingleton(mContext)
-
             var videos: MutableList<Video>? = null
+            val vdir = parentVideoDir?.path
 
-            val videoCursor = dao.queryAllVideos() ?: return null
+            val dao = VideoListItemDao.getSingleton(mContext)
+            val videoCursor =
+                (if (vdir == null) dao.queryAllVideos() else dao.queryAllVideosInDirectory(vdir, true))
+                    ?: return null
             while (!isCancelled && videoCursor.moveToNext()) {
                 val video = dao.buildVideo(videoCursor)
                 if (video != null) {
@@ -175,32 +238,20 @@ class LocalVideoListModel(context: Context)
                     videos.add(video)
                 }
             }
+            videos.sortByElementName()
             videoCursor.close()
 
-            videos.sortByElementName()
-            val items = videos.toVideoListItems() ?: return null
-
-            val videodirCursor = dao.queryAllVideoDirs()
-            if (videodirCursor != null) {
-                while (!isCancelled && videodirCursor.moveToNext()) {
-                    val videodir = dao.buildVideoDir(videodirCursor)
-                    if (!items.contains(videodir)) {
-                        dao.deleteVideoDir(videodir.path)
-                    }
-                }
-                videodirCursor.close()
-            }
-
-            return arrayOf(items, arrayListOf(*videos!!.toTypedArray()))
+            val items = videos.toVideoListItems(vdir) ?: return null
+            return arrayOf(items, videos)
         }
 
+        @Suppress("UNCHECKED_CAST")
         override fun onPostExecute(result: Array<*>?) {
             mNeedReloadVideos = false
-            @Suppress("UNCHECKED_CAST")
-            onLoadFinish(result?.get(0) as MutableList<VideoListItem>?)
-
-            @Suppress("UNCHECKED_CAST")
-            notifyListenersOnReloadVideos(result?.get(1) as ArrayList<Video>?)
+            val videoItems = result?.get(0) as MutableList<VideoListItem>?
+            val videos = result?.get(1) as List<Video>?
+            onLoadFinish(videoItems)
+            notifyOnVideoItemsLoadListeners(videoItems, videos)
         }
     }
 
@@ -208,17 +259,24 @@ class LocalVideoListModel(context: Context)
         if (items == null || items.isEmpty()) {
             if (mVideoListItems.isNotEmpty()) {
                 mVideoListItems.clear()
+                parentVideoDir?.computeSize()
                 mCallback?.onAllItemsRemoved()
             }
         } else if (items.size == mVideoListItems.size) {
+            var changed = false
             for (index in items.indices) {
                 if (!items[index].allEqual(mVideoListItems[index])) {
+                    changed = true
                     mVideoListItems[index] = items[index]
                     mCallback?.onItemUpdated(index)
                 }
             }
+            if (changed) {
+                parentVideoDir?.computeSize()
+            }
         } else {
             mVideoListItems.set(items)
+            parentVideoDir?.computeSize()
             mCallback?.onAllItemsChanged()
         }
     }
@@ -238,26 +296,29 @@ class LocalVideoListModel(context: Context)
         }
     }
 
-    override fun updateVideoDirectory(dirPath: String, videos: List<Video>) {
+    override fun updateVideoDirectory(videodir: VideoDirectory) {
         loop@ for ((i, item) in mVideoListItems.withIndex()) {
-            if (item.path != dirPath) continue@loop
+            if (item.path != videodir.path) continue@loop
 
             val dao = VideoListItemDao.getSingleton(mContext)
-            when (videos.size) {
-                0 -> {
+            val videoCount = videodir.videoCount()
+            when {
+                videoCount == 0 -> {
                     if (item is VideoDirectory) {
                         dao.deleteVideoDir(item.path)
                     }
 
                     mVideoListItems.removeAt(i)
+                    parentVideoDir?.computeSize()
                     mCallback?.onItemRemoved(i)
                 }
-                1 -> {
+
+                videoCount == 1 && parentVideoDir == null -> {
                     if (item is VideoDirectory) {
                         dao.deleteVideoDir(item.path)
                     }
 
-                    val video = videos[0]
+                    val video = videodir.firstVideoOrNull()!!
                     if (video.isTopped) {
                         video.isTopped = false
                         dao.setVideoListItemTopped(video, false)
@@ -272,21 +333,29 @@ class LocalVideoListModel(context: Context)
                         mCallback?.onItemMoved(i, newIndex)
                     }
                 }
+
                 else -> {
-                    if (item is Video) {
-                        var videodir = dao.queryVideoDirByPath(dirPath)
-                        if (videodir == null) {
-                            videodir = dao.insertVideoDir(dirPath)
-                        } else
+                    val compactVideoDir = videodir.videoListItems.size == 1
+                            && videodir.videoListItems[0] is VideoDirectory
+                    if (item is Video || compactVideoDir) {
+                        if (compactVideoDir) {
+                            val vd = videodir.videoListItems[0]
+                            if (vd.isTopped) {
+                                vd.isTopped = false
+                                dao.setVideoListItemTopped(vd, false)
+                            }
+                            dao.deleteVideoDir(videodir.path)
+                        } else {
                             if (videodir.isTopped) {
                                 videodir.isTopped = false
                                 dao.setVideoListItemTopped(videodir, false)
                             }
-                        videodir.videos = videos as? MutableList<Video>? ?: videos.toMutableList()
-                        videodir.size = videos.allVideoSize()
+                        }
 
-                        mVideoListItems[i] = videodir
-                        val newIndex = mVideoListItems.reordered().indexOf(videodir)
+                        val newItem = if (compactVideoDir) videodir.videoListItems[0] else videodir
+                        mVideoListItems[i] = newItem
+                        parentVideoDir?.computeSize()
+                        val newIndex = mVideoListItems.reordered().indexOf(newItem)
                         if (newIndex == i) {
                             mCallback?.onItemUpdated(i)
                         } else {
@@ -294,24 +363,22 @@ class LocalVideoListModel(context: Context)
                             mCallback?.onItemMoved(i, newIndex)
                         }
                     } else if (item is VideoDirectory) {
-                        val oldVideos = item.videos
+                        val oldFirstVideo = item.firstVideoOrNull()
                         val oldSize = item.size
-                        val oldVideoCount = oldVideos.size
-                        if (!oldVideos.allEqual(videos)) {
-                            item.videos = videos as? MutableList<Video>? ?: videos.toMutableList()
-                            item.size = videos.allVideoSize()
+                        val oldVideoCount = item.videoCount()
 
-                            if (!oldVideos[0].allEqual(videos[0])) {
-                                mCallback?.onVideoDirThumbChanged(i)
-                            }
-                            if (oldSize != item.size || oldVideoCount != videos.size) {
-                                mCallback?.onVideoDirVideoSizeOrCountChanged(i)
-                            }
+                        item.videoListItems = videodir.videoListItems
+                        item.size = videodir.size
+                        if (oldFirstVideo?.allEqual(videodir.firstVideoOrNull()) == false) {
+                            mCallback?.onVideoDirThumbChanged(i)
+                        }
+                        if (oldSize != videodir.size || oldVideoCount != videodir.videoCount()) {
+                            parentVideoDir?.computeSize()
+                            mCallback?.onVideoDirVideoSizeOrCountChanged(i)
                         }
                     }
                 }
             }
-            break@loop
         }
     }
 
@@ -341,6 +408,7 @@ class LocalVideoListModel(context: Context)
         val index = mVideoListItems.indexOf(item)
         if (index >= 0) {
             mVideoListItems.removeAt(index)
+            parentVideoDir?.computeSize()
             mCallback?.onItemRemoved(index)
         }
     }
@@ -359,6 +427,9 @@ class LocalVideoListModel(context: Context)
                 index--
             }
             index++
+        }
+        if (start >= 0) {
+            parentVideoDir?.computeSize()
         }
     }
 

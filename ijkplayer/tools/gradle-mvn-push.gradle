@@ -89,7 +89,7 @@ afterEvaluate { project ->
     }
 
     android.libraryVariants.all { variant ->
-        if(variant.buildType.name.equals("release")) {
+        if (variant.buildType.name.equals("release")) {
             def jarTask = project.tasks.create(name: "jar${variant.name.capitalize()}", type: Jar) {
                 from variant.javaCompile.destinationDir
                 exclude "**/R.class"

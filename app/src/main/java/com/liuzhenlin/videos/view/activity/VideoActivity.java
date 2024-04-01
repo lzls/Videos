@@ -888,7 +888,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
     @Override
     public void onNotchChange(boolean hidden) {
-        mPrivateFlags = (mPrivateFlags &~ PFLAG_SCREEN_NOTCH_HIDDEN)
+        mPrivateFlags = (mPrivateFlags & ~PFLAG_SCREEN_NOTCH_HIDDEN)
                 | (hidden ? PFLAG_SCREEN_NOTCH_HIDDEN : 0);
         resizeVideoView();
     }

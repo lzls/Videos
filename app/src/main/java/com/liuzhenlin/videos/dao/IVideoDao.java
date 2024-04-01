@@ -47,5 +47,6 @@ public interface IVideoDao {
     Cursor queryAllVideos();
 
     @Nullable
-    Cursor queryAllVideosInDirectory(@Nullable String directory /* directory path */);
+    Cursor queryAllVideosInDirectory(
+            @Nullable String directory /* directory path */, boolean recursive);
 }

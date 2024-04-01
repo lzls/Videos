@@ -37,6 +37,22 @@ public class Regex {
         return mMatcher.pattern().flags();
     }
 
+    public int start() {
+        return mMatcher.start();
+    }
+
+    public int start(int group) {
+        return mMatcher.start(group);
+    }
+
+    public int end() {
+        return mMatcher.end();
+    }
+
+    public int end(int group) {
+        return mMatcher.end(group);
+    }
+
     public synchronized boolean matches(String input) {
         ensureMatcherInput(input);
         return mMatcher.matches();

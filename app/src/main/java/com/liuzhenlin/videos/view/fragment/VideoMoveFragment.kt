@@ -8,6 +8,7 @@ package com.liuzhenlin.videos.view.fragment
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
@@ -28,6 +29,7 @@ import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
 import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.common.windowhost.WaitingOverlayDialog
+import com.liuzhenlin.videos.KEY_MOVED
 import com.liuzhenlin.videos.R
 import com.liuzhenlin.videos.RESULT_CODE_VIDEO_MOVE_FRAGMENT
 import com.liuzhenlin.videos.bean.Video
@@ -36,6 +38,7 @@ import com.liuzhenlin.videos.contextThemedFirst
 import com.liuzhenlin.videos.dao.AppPrefs
 import com.liuzhenlin.videos.presenter.IVideoMovePresenter
 import com.liuzhenlin.videos.utils.VideoUtils2
+import com.liuzhenlin.videos.videoCount
 import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.fragment.Payloads.PAYLOAD_REFRESH_CHECKBOX
 
@@ -65,7 +68,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
     private val mPresenter = IVideoMovePresenter.newInstance()
 
     init {
-        lifecycle.addObserver(object: DefaultLifecycleObserver {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) =
                     mPresenter.onViewStart(this@VideoMoveFragment)
 
@@ -193,13 +196,12 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 resources.getQuantityText(R.plurals.movingVideosPleaseWait, mPresenter.videoQuantity)
         waitingDialog.show()
         Executors.THREAD_POOL_EXECUTOR.execute {
-            if (mPresenter.moveVideos()) {
-                Executors.MAIN_EXECUTOR.execute {
-                    targetFragment?.onActivityResult(
-                            targetRequestCode, RESULT_CODE_VIDEO_MOVE_FRAGMENT, null)
-                    dismiss()
-                    waitingDialog.dismiss()
-                }
+            val moved = mPresenter.moveVideos()
+            Executors.MAIN_EXECUTOR.execute {
+                targetFragment?.onActivityResult(targetRequestCode, RESULT_CODE_VIDEO_MOVE_FRAGMENT,
+                        Intent().putExtra(KEY_MOVED, moved))
+                dismiss()
+                waitingDialog.dismiss()
             }
         }
     }
@@ -232,7 +234,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 itemView.tag = position
                 checkBox.tag = position
 
-                val videoCount = videodir.videos.size
+                val videoCount = videodir.videoCount(includeDescendants = false)
                 if (checkBox.isChecked != videodir.isChecked) {
                     checkBox.isChecked = videodir.isChecked
                     onCheckedChange(position)

@@ -36,7 +36,7 @@ public class YoutubeActivity extends AppCompatActivity {
             mFragment = new YoutubeFragment();
             fm.beginTransaction()
                     .add(R.id.content, mFragment, TAG_YOUTUBE_FRAGMENT)
-                    .commit();
+                    .commitNow();
         } else {
             mFragment = (YoutubeFragment) fm.findFragmentByTag(TAG_YOUTUBE_FRAGMENT);
         }

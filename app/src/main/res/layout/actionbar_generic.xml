@@ -17,28 +17,13 @@
         style="@style/Widget.AppCompat.Toolbar.Button.Navigation"
         android:contentDescription="@string/back" />
 
-    <Button
-        android:id="@+id/btn_cancel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minWidth="0dp"
-        android:layout_marginLeft="@dimen/contentPreferredPaddingHorizontal"
-        android:layout_marginRight="@dimen/contentPreferredPaddingHorizontal"
-        android:text="@string/cancel"
-        android:textSize="@dimen/subtitle_text_size"
-        android:textColor="@android:color/white"
-        style="@style/Widget.AppCompat.Toolbar.Button.Navigation"
-        android:visibility="gone"
-        tools:ignore="ButtonOrder" />
-
     <TextView
         android:id="@+id/text_title"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:layout_marginRight="@dimen/contentPreferredPaddingHorizontal"
         android:layout_marginEnd="@dimen/contentPreferredPaddingHorizontal"
-        android:text="未命名"
+        android:text="标题"
         android:textSize="@dimen/title_text_size"
         android:textColor="@android:color/white"
         android:singleLine="true"
@@ -50,16 +35,4 @@
 
         <requestFocus />
     </TextView>
-
-    <Button
-        android:id="@+id/btn_selectAll"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="@dimen/contentPreferredPaddingHorizontal"
-        android:layout_marginEnd="@dimen/contentPreferredPaddingHorizontal"
-        android:text="@string/selectAll"
-        android:textSize="@dimen/subtitle_text_size"
-        android:textColor="@android:color/white"
-        style="@style/Widget.AppCompat.Toolbar.Button.Navigation"
-        android:visibility="gone" />
 </LinearLayout>

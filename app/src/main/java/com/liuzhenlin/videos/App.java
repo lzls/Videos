@@ -46,6 +46,8 @@ public class App extends Application {
 
     private static App sApp;
 
+    private boolean mSophixInitialized;
+
     private volatile int mRealScreenWidth = -1;
     private volatile int mRealScreenHeight = -1;
 
@@ -125,6 +127,14 @@ public class App extends Application {
     @Nullable
     public static App getInstanceUnsafe() {
         return sApp;
+    }
+
+    public boolean isSophixInitialized() {
+        return mSophixInitialized;
+    }
+
+    public void setSophixInitialized(boolean initialized) {
+        mSophixInitialized = initialized;
     }
 
     @SuppressLint("NewApi")

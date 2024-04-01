@@ -39,7 +39,7 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
 
     public val isLoading get() = mLoader != null
 
-    protected fun onLoadStart() {
+    protected open fun onLoadStart() {
         mOnLoadListeners?.let {
             for (i in it.size - 1 downTo 0) {
                 it[i].onLoadStart()
@@ -47,7 +47,7 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
         }
     }
 
-    protected fun onLoadFinish(result: Result) {
+    protected open fun onLoadFinish(result: Result) {
         mLoader = null
         mOnLoadListeners?.let {
             for (i in it.size - 1 downTo 0) {
@@ -56,7 +56,7 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
         }
     }
 
-    private fun onLoadCanceled() {
+    protected open fun onLoadCanceled() {
         mLoader = null
         mOnLoadListeners?.let {
             for (i in it.size - 1 downTo 0) {
@@ -65,7 +65,7 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
         }
     }
 
-    protected fun onLoadError(cause: Throwable) {
+    protected open fun onLoadError(cause: Throwable) {
         mLoader!!.cancel(true)
         mLoader = null
         mOnLoadListeners?.let {
@@ -75,7 +75,7 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
         }
     }
 
-    protected fun onLoadingProgressUpdate(progress: Progress) {
+    protected open fun onLoadingProgressUpdate(progress: Progress) {
         mOnLoadListeners?.let {
             for (i in it.size - 1 downTo 0) {
                 it[i].onLoadingProgressUpdate(progress)
