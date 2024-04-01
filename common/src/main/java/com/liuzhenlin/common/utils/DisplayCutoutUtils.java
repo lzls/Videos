@@ -233,6 +233,7 @@ public class DisplayCutoutUtils {
 
     /**
      * 判断搭载 Android P 以上版本系统的手机是否有刘海
+     *
      * @throws IllegalStateException 如果decorView尚未被附加到窗口
      */
     @RequiresApi(Build.VERSION_CODES.P)
@@ -246,6 +247,7 @@ public class DisplayCutoutUtils {
 
     /**
      * 获取搭载 Android P 以上版本系统手机的刘海高度
+     *
      * @throws IllegalStateException 如果decorView尚未被附加到窗口
      */
     @RequiresApi(Build.VERSION_CODES.P)

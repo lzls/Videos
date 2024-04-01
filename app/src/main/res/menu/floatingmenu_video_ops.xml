@@ -2,7 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="MenuTitle">
-    <item android:id="@+id/move"
+    <item
+        android:id="@+id/move"
         android:text="@string/move"
         android:icon="@drawable/ic_file_move_menu" />
     <item

@@ -16,14 +16,14 @@ import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.model.ILocalSearchedVideoListModel
 import com.liuzhenlin.videos.model.LocalSearchedVideoListModel
 import com.liuzhenlin.videos.model.OnLoadListener
-import com.liuzhenlin.videos.model.OnReloadVideosListener
+import com.liuzhenlin.videos.model.OnVideosLoadListener
 import com.liuzhenlin.videos.view.fragment.*
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
 
 interface ILocalSearchedVideosPresenter : IPresenter<ILocalSearchedVideosView>,
-        OnReloadVideosListener, ILocalSearchedVideoListModel.Callback {
+        OnVideosLoadListener, ILocalSearchedVideoListModel.Callback {
 
     fun startLoadVideos()
     fun stopLoadVideos()
@@ -64,14 +64,12 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         if (model == null) {
             model = LocalSearchedVideoListModel(mContext)
             model.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<Video>?> {
-                override fun onLoadFinish(result: MutableList<Video>?) {
-                    onReloadVideos(result)
-                    mView?.onVideosLoadFinish()
-                }
+                override fun onLoadStart() = onVideoItemsLoadStart()
 
-                override fun onLoadCanceled() {
-                    mView?.onVideosLoadCanceled()
-                }
+                override fun onLoadFinish(result: MutableList<Video>?) =
+                        onVideoItemsLoadFinish(result)
+
+                override fun onLoadCanceled() = onVideoItemsLoadCanceled()
             })
             mModel = model
         }
@@ -96,8 +94,17 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         mModel?.stopLoader()
     }
 
-    override fun onReloadVideos(videos: MutableList<Video>?) {
-        mModel?.setVideos(videos)
+    override fun onVideoItemsLoadStart() {
+        mView?.onVideosLoadStart()
+    }
+
+    override fun onVideoItemsLoadFinish(videoItems: MutableList<Video>?) {
+        mModel?.setVideos(videoItems)
+        mView?.onVideosLoadFinish()
+    }
+
+    override fun onVideoItemsLoadCanceled() {
+        mView?.onVideosLoadCanceled()
     }
 
     override fun onAllVideosChanged() = refreshList(false)

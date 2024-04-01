@@ -13,6 +13,7 @@ import com.liuzhenlin.videos.web.VideosJsInterface;
 import com.liuzhenlin.videos.web.bean.Playlist;
 import com.liuzhenlin.videos.web.bean.Video;
 import com.liuzhenlin.videos.web.player.Constants.Keys;
+import com.liuzhenlin.videos.web.player.WebPlayer;
 
 /*package*/ class YoutubeJsInterface extends VideosJsInterface {
 
@@ -21,6 +22,7 @@ import com.liuzhenlin.videos.web.player.Constants.Keys;
     public static final String JSI_ON_EVENT = "window.YouTube.onEvent";
     public static final String JSI_ON_PLAYER_READY = "window.YouTube.onPlayerReady";
     public static final String JSI_ON_PLAYER_STATE_CHANGE = "window.YouTube.onPlayerStateChange";
+    public static final String JSI_PLAY_VIDEO_AT = "window.YouTube.playVideoAt";
 
     public static final int JSE_VIDEO_SELECTOR_FOUND = JSE_LAST + 1;
 
@@ -113,5 +115,16 @@ import com.liuzhenlin.videos.web.player.Constants.Keys;
         Executors.MAIN_EXECUTOR.execute(
                 () -> YoutubePlaybackService.peekIfNonnullThenDo(
                         service -> service.onGetPlaylistInfo(playlist)));
+    }
+
+    @JavascriptInterface
+    public void playVideoAt(int idx) {
+        Executors.MAIN_EXECUTOR.execute(() ->
+                YoutubePlaybackService.peekIfNonnullThenDo(service -> {
+                    WebPlayer player = service.getWebPlayer();
+                    if (player != null) {
+                        player.playVideoAt(idx);
+                    }
+                }));
     }
 }
