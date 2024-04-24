@@ -1945,7 +1945,8 @@ public class SlidingDrawerLayout extends ViewGroup {
             mVelocityTracker = VelocityTracker.obtain();
         mVelocityTracker.addMovement(event);
 
-        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+        final int actionMasked = event.getAction() & MotionEvent.ACTION_MASK;
+        switch (actionMasked) {
             case MotionEvent.ACTION_POINTER_DOWN:
                 onPointerDown(event);
                 break;
@@ -1987,16 +1988,18 @@ public class SlidingDrawerLayout extends ViewGroup {
                             break;
                         }
 
-                        mVelocityTracker.computeCurrentVelocity(1000);
-                        final float vx = mVelocityTracker.getXVelocity(mActivePointerId);
-                        if (mShownDrawer == mLeftDrawer && vx >= mMinimumFlingVelocity
-                                || mShownDrawer == mRightDrawer && vx <= -mMinimumFlingVelocity) {
-                            openDrawerInternal(mShownDrawer, true);
-                            break;
-                        } else if (mShownDrawer == mLeftDrawer && vx <= -mMinimumFlingVelocity
-                                || mShownDrawer == mRightDrawer && vx >= mMinimumFlingVelocity) {
-                            closeDrawer(true);
-                            break;
+                        if (actionMasked == MotionEvent.ACTION_UP) {
+                            mVelocityTracker.computeCurrentVelocity(1000);
+                            final float vx = mVelocityTracker.getXVelocity(mActivePointerId);
+                            if (mShownDrawer == mLeftDrawer && vx >= mMinimumFlingVelocity
+                                    || mShownDrawer == mRightDrawer && vx <= -mMinimumFlingVelocity) {
+                                openDrawerInternal(mShownDrawer, true);
+                                break;
+                            } else if (mShownDrawer == mLeftDrawer && vx <= -mMinimumFlingVelocity
+                                    || mShownDrawer == mRightDrawer && vx >= mMinimumFlingVelocity) {
+                                closeDrawer(true);
+                                break;
+                            }
                         }
 
                         if (mScrollPercent >= 0.5f) {
