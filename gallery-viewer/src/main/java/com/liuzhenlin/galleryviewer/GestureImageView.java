@@ -517,18 +517,20 @@ public class GestureImageView extends AppCompatImageView {
                     }
 
                     // No scaling is needed below
-                    mVelocityTracker.computeCurrentVelocity(1000, mMaximumFlingVelocity);
-                    final float vx = mVelocityTracker.getXVelocity(mActivePointerId);
-                    final float vy = mVelocityTracker.getYVelocity(mActivePointerId);
-                    // If one of the velocities is not less than our minimum fling velocity,
-                    // treat it as fling as user raises up his/her last finger that is
-                    // touching the screen.
-                    if ((Math.abs(vx) >= mMinimumFlingVelocity
-                            || Math.abs(vy) >= mMinimumFlingVelocity)) {
-                        cancelImageTransformations();
-                        getImageTransformer().fling(translationX, translationY, vx, vy,
-                                width, height, mImageBounds.width(), mImageBounds.height());
-                        break;
+                    if (actionMasked == MotionEvent.ACTION_UP) {
+                        mVelocityTracker.computeCurrentVelocity(1000, mMaximumFlingVelocity);
+                        final float vx = mVelocityTracker.getXVelocity(mActivePointerId);
+                        final float vy = mVelocityTracker.getYVelocity(mActivePointerId);
+                        // If one of the velocities is not less than our minimum fling velocity,
+                        // treat it as fling as user raises up his/her last finger that is
+                        // touching the screen.
+                        if ((Math.abs(vx) >= mMinimumFlingVelocity
+                                || Math.abs(vy) >= mMinimumFlingVelocity)) {
+                            cancelImageTransformations();
+                            getImageTransformer().fling(translationX, translationY, vx, vy,
+                                    width, height, mImageBounds.width(), mImageBounds.height());
+                            break;
+                        }
                     }
                     // Not else!
                     // Here regard it as a normal scroll
