@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.liuzhenlin.galleryviewer;
+package com.liuzhenlin.common.utils;
 
 import android.content.Context;
 import android.hardware.SensorManager;

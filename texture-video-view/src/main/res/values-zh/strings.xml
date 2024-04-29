@@ -7,6 +7,7 @@
     <string name="brightnessProgress">亮度：%.0f%%</string>
     <string name="brightnessFollowsSystem">亮度：跟随系统</string>
     <string name="volumeProgress">音量：%.0f%%</string>
+    <string name="reset">还原</string>
     <string name="lock">锁定</string>
     <string name="unlock">不锁定</string>
     <string name="videoThumbnail">视频缩略图</string>
