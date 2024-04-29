@@ -12,4 +12,16 @@
         <enum name="fill" value="3" />
         <enum name="zoom" value="4" />
     </attr>
+
+    <declare-styleable name="RectangleIndicatorView">
+        <attr name="android:maxWidth" />
+        <attr name="android:maxHeight" />
+
+        <attr name="outerRectStrokeWidth" format="dimension" />
+        <attr name="innerRectStrokeWidth" format="dimension" />
+
+        <attr name="outerRectStrokeColor" format="color" />
+        <attr name="innerRectStrokeColor" format="color" />
+        <attr name="scrimDoubleRectColor" format="color" />
+    </declare-styleable>
 </resources>
