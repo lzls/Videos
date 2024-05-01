@@ -45,14 +45,18 @@ public class SophixAppStub extends SophixApplication {
     }
 
     private void initSophix() {
-        List<String> tags = new ArrayList<>();
-        if (DEBUG) {
-            tags.add("test");
+        String appVersionName = Utils.getAppVersionName(this);
+        List<String> tags = new ArrayList<>(3);
+        if (appVersionName.contains("-alpha")) {
+            tags.add(Prefs.UPDATE_CHANNEL_DEV);
         }
-        tags.add("production");
+        if (appVersionName.contains("-beta") || appVersionName.contains("-rc")) {
+            tags.add(Prefs.UPDATE_CHANNEL_BETA);
+        }
+        tags.add(Prefs.UPDATE_CHANNEL_STABLE);
         SophixManager.getInstance()
                 .setContext(this)
-                .setAppVersion(Utils.getAppVersionName(this))
+                .setAppVersion(appVersionName)
                 .setTags(tags)
                 .setSecretMetaData(nGetIdSecret(this), nGetAppSecret(this), nGetRsaSecret(this))
                 .setEnableDebug(DEBUG)
