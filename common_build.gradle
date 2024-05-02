@@ -3,6 +3,12 @@
  * Copyright © 2022 刘振林. All rights reserved.
  */
 
+final boolean appModule = plugins.hasPlugin('com.android.application')
+
+if (appModule) {
+    apply plugin: 'com.guardsquare.proguard'
+}
+
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
@@ -14,13 +20,21 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            if (plugins.hasPlugin('com.android.application')) {
-                shrinkResources true
-                proguardFiles getDefaultProguardFile('proguard-android.txt'),
-                        rootProject.ext.proguardRulesFileName
+            if (appModule) {
+                minifyEnabled false
             } else {
                 consumerProguardFiles rootProject.ext.proguardRulesFileName
+            }
+        }
+    }
+}
+
+if (appModule) {
+    proguard {
+        configurations {
+            release {
+                defaultConfiguration 'proguard-android.txt'
+                configuration rootProject.ext.proguardRulesFileName
             }
         }
     }
