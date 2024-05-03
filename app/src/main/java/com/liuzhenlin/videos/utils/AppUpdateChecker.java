@@ -43,6 +43,7 @@ import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -52,7 +53,6 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.liuzhenlin.common.compat.ContextCompatExt;
 import com.liuzhenlin.common.compat.FragmentManagerCompat;
 import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.Executors;
@@ -778,9 +778,9 @@ public final class AppUpdateChecker {
                             intent.getStringExtra(AppUpdateChecker.EXTRA_APP_SHA1));
 
             mReceiver = new CancelAppUpdateReceiver();
-            ContextCompatExt.registerReceiver(
+            ContextCompat.registerReceiver(
                     this, mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION),
-                    ContextCompatExt.RECEIVER_NOT_EXPORTED);
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
 
             return START_REDELIVER_INTENT;
         }

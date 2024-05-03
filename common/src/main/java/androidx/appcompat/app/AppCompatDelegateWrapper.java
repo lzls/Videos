@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -150,6 +151,13 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
     public void setHostCallback(@Nullable HostCallback callback) {
         mHostCallback = callback;
+    }
+
+    @SuppressLint("MissingSuperCall")
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    @Override
+    public void setOnBackInvokedDispatcher(@Nullable OnBackInvokedDispatcher dispatcher) {
+        mDelegate.setOnBackInvokedDispatcher(dispatcher);
     }
 
     @Nullable
@@ -807,6 +815,12 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
                 }
             }
         }
+    }
+
+    @Nullable
+    @Override
+    public Context getContextForDelegate() {
+        return mDelegate.getContextForDelegate();
     }
 
     @Override
