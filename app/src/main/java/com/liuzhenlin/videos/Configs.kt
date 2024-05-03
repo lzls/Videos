@@ -6,6 +6,8 @@
 
 package com.liuzhenlin.videos
 
+import android.os.Build
+
 /**
  * @author 刘振林
  */
@@ -17,3 +19,6 @@ internal val DEBUG_APP_UPDATE = BuildConfig.DEBUG && false
 internal const val TOLERANCE_VIDEO_DURATION = 100 // ms
 
 internal const val DELAY_SEND_NOTIFICATION_WITH_JUST_STOPPED_FOREGROUND_SERVICE_ID = 200 //ms
+
+internal inline val isSophixPatchSupported
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2

@@ -52,6 +52,7 @@ import com.bumptech.glide.util.Synthetic;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.liuzhenlin.common.compat.ContextCompatExt;
 import com.liuzhenlin.common.compat.FragmentManagerCompat;
 import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.Executors;
@@ -777,7 +778,9 @@ public final class AppUpdateChecker {
                             intent.getStringExtra(AppUpdateChecker.EXTRA_APP_SHA1));
 
             mReceiver = new CancelAppUpdateReceiver();
-            registerReceiver(mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION));
+            ContextCompatExt.registerReceiver(
+                    this, mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION),
+                    ContextCompatExt.RECEIVER_NOT_EXPORTED);
 
             return START_REDELIVER_INTENT;
         }

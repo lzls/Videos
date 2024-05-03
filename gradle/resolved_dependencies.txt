@@ -355,9 +355,6 @@ releaseRuntimeClasspath - Runtime classpath of /release.
 +--- com.sun.mail:android-mail:1.6.7
 |    \--- com.sun.mail:android-activation:1.6.7
 +--- com.sun.mail:android-activation:1.6.7
-+--- com.aliyun.ams:alicloud-android-hotfix:3.3.8
-|    +--- com.aliyun.ams:alicloud-android-sender:1.1.4
-|    |    +--- com.aliyun.ams:alicloud-android-logger:1.0.2
-|    |    \--- com.aliyun.ams:alicloud-android-rest:1.5.7-open
++--- com.aliyun.ams:alicloud-android-hotfix:3.4.1
 |    \--- com.aliyun.ams:alicloud-android-utdid:2.6.0
 \--- androidx.multidex:multidex:2.0.0 -> 2.0.1

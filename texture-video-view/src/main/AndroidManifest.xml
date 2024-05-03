@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <uses-sdk tools:overrideLibrary="
             com.google.android.exoplayer2.core,
@@ -22,7 +23,9 @@
             org.videolan" />
 
     <application>
-        <service android:name=".service.BackgroundPlaybackControllerService" />
+        <service
+            android:name=".service.BackgroundPlaybackControllerService"
+            android:foregroundServiceType="mediaPlayback" />
 
         <activity
             android:name=".sample.DemoActivity"

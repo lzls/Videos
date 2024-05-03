@@ -42,6 +42,7 @@ import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.util.Synthetic;
 import com.liuzhenlin.common.Consts;
+import com.liuzhenlin.common.compat.ContextCompatExt;
 import com.liuzhenlin.common.compat.RemoteViewsCompat;
 import com.liuzhenlin.common.notification.style.DecoratedMediaCustomViewStyle;
 import com.liuzhenlin.common.utils.BitmapUtils;
@@ -198,7 +199,9 @@ public class BackgroundPlaybackControllerService extends Service {
         startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
         mIsForeground = true;
 
-        registerReceiver(mReceiver, new IntentFilter(ControllerActionReceiver.ACTION));
+        ContextCompatExt.registerReceiver(
+                this, mReceiver, new IntentFilter(ControllerActionReceiver.ACTION),
+                ContextCompatExt.RECEIVER_NOT_EXPORTED);
 
         return new Proxy();
     }

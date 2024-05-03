@@ -61,5 +61,5 @@ dependencies {
 
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.11'
 
-    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.8'
+    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.4.1'
 }

@@ -73,6 +73,7 @@ import com.liuzhenlin.common.view.SwipeRefreshLayout;
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
+import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.AppUpdateChecker;
@@ -149,8 +150,10 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
-        // 有新的热更新补丁可用时，加载...
-        SophixManager.getInstance().queryAndLoadNewPatch();
+        if (Configs.isSophixPatchSupported()) {
+            // 有新的热更新补丁可用时，加载...
+            SophixManager.getInstance().queryAndLoadNewPatch();
+        }
 
         mAlreadyTheLatestVersion = getString(R.string.alreadyTheLatestVersion);
         mNewVersionFound = getString(R.string.newVersionFound);
