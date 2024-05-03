@@ -33,8 +33,10 @@ public class SophixAppStub extends SophixApplication {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         MultiDex.install(this);
-        SophixAppLibrary.throwIfNotAvailable();
-        initSophix();
+        if (Configs.isSophixPatchSupported()) {
+            SophixAppLibrary.throwIfNotAvailable();
+            initSophix();
+        }
     }
 
     private void initSophix() {

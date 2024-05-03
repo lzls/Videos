@@ -52,6 +52,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.liuzhenlin.common.compat.ContextCompatExt;
 import com.liuzhenlin.common.compat.FragmentManagerCompat;
 import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.Executors;
@@ -816,7 +817,9 @@ public final class MergeAppUpdateChecker {
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
 
             mReceiver = new CancelAppUpdateReceiver();
-            registerReceiver(mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION));
+            ContextCompatExt.registerReceiver(
+                    this, mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION),
+                    ContextCompatExt.RECEIVER_NOT_EXPORTED);
 
             Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                 //noinspection ConstantConditions
