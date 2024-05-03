@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
@@ -34,7 +35,6 @@ import androidx.lifecycle.LifecycleEventObserver;
 import com.liuzhenlin.common.BuildConfig;
 import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.R;
-import com.liuzhenlin.common.compat.ContextCompatExt;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -225,8 +225,8 @@ public class PictureInPictureHelper {
                     }
                 }
             };
-            ContextCompatExt.registerReceiver(mActivity, mReceiver,
-                    new IntentFilter(ACTION_MEDIA_CONTROL), ContextCompatExt.RECEIVER_NOT_EXPORTED);
+            ContextCompat.registerReceiver(mActivity, mReceiver,
+                    new IntentFilter(ACTION_MEDIA_CONTROL), ContextCompat.RECEIVER_NOT_EXPORTED);
 
             setOnPipLayoutChangeListener(mAdapter, mOnPipLayoutChangeListener);
         } else {

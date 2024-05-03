@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.8.21'
+    ext.kotlin_version = '1.9.23'
 
     repositories {
         google()
@@ -36,7 +36,7 @@ ext {
     compileSdkVersion = 34
     targetSdkVersion = 34
 
-    appcompatVersion = '1.4.2' // Avoid using 1.6.*, which rolls the night mode issue back
+    appcompatVersion = '1.6.1'
     exoplayer2Version = '2.18.7'
 
     testJunitVersion = '4.13.2'

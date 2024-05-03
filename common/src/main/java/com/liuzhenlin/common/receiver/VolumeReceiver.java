@@ -14,8 +14,7 @@ import android.media.AudioManager;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.liuzhenlin.common.compat.ContextCompatExt;
+import androidx.core.content.ContextCompat;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -102,7 +101,7 @@ public abstract class VolumeReceiver extends BroadcastReceiver {
     public void register() {
         IntentFilter filter = new IntentFilter(VolumeReceiver.VOLUME_CHANGED_ACTION);
         filter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION);
-        ContextCompatExt.registerReceiver(mContext, this, filter, ContextCompatExt.RECEIVER_EXPORTED);
+        ContextCompat.registerReceiver(mContext, this, filter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     public void register(@Nullable String... actions) {
@@ -117,7 +116,7 @@ public abstract class VolumeReceiver extends BroadcastReceiver {
                     || AudioManager.RINGER_MODE_CHANGED_ACTION.equals(action)) {
                 filter.addAction(action);
             }
-        ContextCompatExt.registerReceiver(mContext, this, filter, ContextCompatExt.RECEIVER_EXPORTED);
+        ContextCompat.registerReceiver(mContext, this, filter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     public void unregister() {

@@ -15,8 +15,7 @@ import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.liuzhenlin.common.compat.ContextCompatExt;
+import androidx.core.content.ContextCompat;
 
 /**
  * @author 刘振林
@@ -65,7 +64,7 @@ public abstract class HeadsetEventsReceiver extends BroadcastReceiver {
         IntentFilter filter = new IntentFilter(ACTION_HEADSET_PLUG);
         filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         filter.addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED);
-        ContextCompatExt.registerReceiver(mContext, this, filter, ContextCompatExt.RECEIVER_EXPORTED);
+        ContextCompat.registerReceiver(mContext, this, filter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     public void register(@Nullable String... actions) {
@@ -81,7 +80,7 @@ public abstract class HeadsetEventsReceiver extends BroadcastReceiver {
                     || BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED.equals(action)) {
                 filter.addAction(action);
             }
-        ContextCompatExt.registerReceiver(mContext, this, filter, ContextCompatExt.RECEIVER_EXPORTED);
+        ContextCompat.registerReceiver(mContext, this, filter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     public void unregister() {
