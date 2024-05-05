@@ -2,7 +2,7 @@
 
 # Set the following environment variables.
 trace cd "$EXO_PLAYER_ROOT" &&
-  AV1_MODULE_PATH="$(pwd)/extensions/av1/src/main"
+  AV1_MODULE_PATH="$(pwd)/libraries/decoder_av1/src/main"
 verifyLastOpSuccessed
 
 # Fetch cpu_features library.
