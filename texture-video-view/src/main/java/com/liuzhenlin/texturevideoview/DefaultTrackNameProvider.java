@@ -8,10 +8,10 @@ import android.content.res.Resources;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.media3.common.C;
+import androidx.media3.common.util.Assertions;
+import androidx.media3.common.util.Util;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.util.Assertions;
-import com.google.android.exoplayer2.util.Util;
 import com.liuzhenlin.common.utils.Utils;
 import com.liuzhenlin.texturevideoview.bean.AudioTrackInfo;
 import com.liuzhenlin.texturevideoview.bean.MediaTrackInfo;

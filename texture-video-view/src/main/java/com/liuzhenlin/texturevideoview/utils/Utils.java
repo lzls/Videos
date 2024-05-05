@@ -12,19 +12,21 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
+import androidx.media3.common.C;
+import androidx.media3.common.util.Clock;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.analytics.DefaultAnalyticsCollector;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+import androidx.media3.exoplayer.trackselection.TrackSelector;
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.DefaultLoadControl;
-import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.RenderersFactory;
-import com.google.android.exoplayer2.analytics.DefaultAnalyticsCollector;
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
-import com.google.android.exoplayer2.util.Clock;
 import com.liuzhenlin.texturevideoview.IVideoPlayer;
 import com.liuzhenlin.texturevideoview.bean.TrackInfo;
 
@@ -35,6 +37,7 @@ import tv.danmaku.ijk.media.player.misc.IjkTrackInfo;
 /**
  * @author 刘振林
  */
+@OptIn(markerClass = UnstableApi.class)
 public class Utils {
     private Utils() {
     }
@@ -162,7 +165,7 @@ public class Utils {
     }
 
     /**
-     * Gets the short name of {@link com.google.android.exoplayer2.Format#codecs}
+     * Gets the short name of {@link androidx.media3.common.Format#codecs}
      */
     @Nullable
     public static String getExoTrackShortCodec(@Nullable String codecs) {

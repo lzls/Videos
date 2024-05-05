@@ -25,6 +25,9 @@ allprojects {
             url "http://maven.aliyun.com/nexus/content/repositories/releases"
             allowInsecureProtocol true
         }
+        repositories {
+            maven { url 'https://jitpack.io' }
+        }
     }
 }
 
@@ -37,7 +40,11 @@ ext {
     targetSdkVersion = 34
 
     appcompatVersion = '1.6.1'
-    exoplayer2Version = '2.18.7'
+
+    // Limited by used AGP version 7.4.2. However, we cannot update it now because the
+    // 'android.registerTransform' API removed from AGP 8.0 is still relied on by the
+    // 'com.guardsquare.proguard' plugin.
+    androidxMedia3Version = '1.2.1'
 
     testJunitVersion = '4.13.2'
     androidTestJunitVersion = '1.1.5'

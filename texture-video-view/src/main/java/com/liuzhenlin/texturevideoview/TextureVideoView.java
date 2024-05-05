@@ -88,6 +88,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewPropertyAnimatorCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.util.Util;
+import androidx.media3.exoplayer.source.MediaSource;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -98,9 +101,6 @@ import androidx.transition.TransitionManager;
 import androidx.transition.TransitionSet;
 
 import com.bumptech.glide.util.Synthetic;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.util.Util;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.transition.MaterialSharedAxis;
 import com.liuzhenlin.common.Configs;
@@ -2163,19 +2163,17 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             final float viewportH = mTextureView.getHeight();
 
             if (textBounds == null || textBounds.isEmpty() || viewportW == 0 || viewportH == 0) {
-                //noinspection ConstantConditions,deprecation
-                cues.add(new Cue(text));
+                cues.add(new Cue.Builder().setText(text).build());
             } else {
-                //noinspection ConstantConditions,deprecation
-                cues.add(new Cue(
-                        text,
-                        /* textAlignment= */ null,
-                        /* line= */(float) textBounds.top / viewportH,
-                        /* lineType= */ Cue.LINE_TYPE_FRACTION,
-                        /* lineAnchor= */ Cue.ANCHOR_TYPE_START,
-                        /* position= */(float) textBounds.left / viewportW,
-                        /* positionAnchor= */ Cue.ANCHOR_TYPE_START,
-                        /* size= */  (float) textBounds.width() / viewportW));
+                cues.add(
+                        new Cue.Builder()
+                                .setText(text)
+                                .setLine((float) textBounds.top / viewportH, Cue.LINE_TYPE_FRACTION)
+                                .setLineAnchor(Cue.ANCHOR_TYPE_START)
+                                .setPosition((float) textBounds.left / viewportW)
+                                .setPositionAnchor(Cue.ANCHOR_TYPE_START)
+                                .setSize((float) textBounds.width() / viewportW)
+                                .build());
             }
         }
         mSubtitleView.setCues(cues);

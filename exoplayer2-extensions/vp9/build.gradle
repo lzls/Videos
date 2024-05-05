@@ -11,5 +11,5 @@ android {
 }
 
 dependencies {
-    implementation "com.google.android.exoplayer:exoplayer-core:$rootProject.ext.exoplayer2Version"
+    implementation "androidx.media3:media3-exoplayer:$rootProject.ext.androidxMedia3Version"
 }

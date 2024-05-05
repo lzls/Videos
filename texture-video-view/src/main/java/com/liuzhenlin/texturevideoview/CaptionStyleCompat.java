@@ -23,8 +23,7 @@ import android.view.accessibility.CaptioningManager.CaptionStyle;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-
-import com.google.android.exoplayer2.util.Util;
+import androidx.media3.common.util.Util;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
