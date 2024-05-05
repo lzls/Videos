@@ -2,7 +2,7 @@
 
 # Set the following environment variables.
 trace cd "$EXO_PLAYER_ROOT" &&
-  VP9_MODULE_PATH="$(pwd)/extensions/vp9/src/main"
+  VP9_MODULE_PATH="$(pwd)/libraries/decoder_vp9/src/main"
 verifyLastOpSuccessed
 
 # Fetch an appropriate branch of libvpx. We cannot guarantee compatibility with all versions

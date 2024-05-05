@@ -26,11 +26,10 @@ import android.view.accessibility.CaptioningManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.text.CueGroup;
-import com.google.android.exoplayer2.text.TextOutput;
-import com.google.android.exoplayer2.util.Util;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.text.CueGroup;
+import androidx.media3.common.util.Util;
+import androidx.media3.exoplayer.text.TextOutput;
 
 import java.util.ArrayList;
 import java.util.List;

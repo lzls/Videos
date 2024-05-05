@@ -20,37 +20,37 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
+import androidx.media3.common.C;
+import androidx.media3.common.Format;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
+import androidx.media3.common.Timeline;
+import androidx.media3.common.TrackGroup;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.text.CueGroup;
+import androidx.media3.common.util.Util;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.exoplayer.ExoPlaybackException;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.dash.DashMediaSource;
+import androidx.media3.exoplayer.hls.HlsMediaSource;
+import androidx.media3.exoplayer.rtsp.RtspMediaSource;
+import androidx.media3.exoplayer.smoothstreaming.SsMediaSource;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.MergingMediaSource;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.exoplayer.source.SingleSampleMediaSource;
+import androidx.media3.exoplayer.source.TrackGroupArray;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+import androidx.media3.exoplayer.trackselection.ExoTrackSelection;
+import androidx.media3.exoplayer.trackselection.MappingTrackSelector;
+import androidx.media3.exoplayer.trackselection.TrackSelectionArray;
 
 import com.bumptech.glide.util.Synthetic;
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.Format;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.MergingMediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.SingleSampleMediaSource;
-import com.google.android.exoplayer2.source.TrackGroup;
-import com.google.android.exoplayer2.source.TrackGroupArray;
-import com.google.android.exoplayer2.source.dash.DashMediaSource;
-import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.source.rtsp.RtspMediaSource;
-import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
-import com.google.android.exoplayer2.text.CueGroup;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
-import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
-import com.google.android.exoplayer2.util.Util;
-import com.google.android.exoplayer2.video.VideoSize;
 import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.compat.AudioManagerCompat;
 import com.liuzhenlin.common.receiver.HeadsetEventsReceiver;
@@ -68,7 +68,7 @@ import java.util.List;
 
 /**
  * A sub implementation class of {@link VideoPlayer} to deal with the audio/video playback logic
- * related to the media player component through an {@link com.google.android.exoplayer2.ExoPlayer}
+ * related to the media player component through an {@link androidx.media3.exoplayer.ExoPlayer}
  * object.
  *
  * @author 刘振林
@@ -158,7 +158,7 @@ public class ExoVideoPlayer extends VideoPlayer {
     }
 
     /**
-     * Sets a MediaSourceFactory for creating {@link com.google.android.exoplayer2.source.MediaSource}s
+     * Sets a MediaSourceFactory for creating {@link androidx.media3.exoplayer.source.MediaSource}s
      * to play the provided media stream content (if any), or `null`, the MediaSourceFactory
      * with {@link DefaultDataSource.Factory} will be created to read the media, based on
      * the corresponding media stream type.
@@ -221,7 +221,7 @@ public class ExoVideoPlayer extends VideoPlayer {
      * @return a user agent string based on the application name resolved from the context object
      *         of the view this player is bound to and the `exoplayer-core` library version,
      *         which can be used to create a
-     *         {@link com.google.android.exoplayer2.upstream.DataSource.Factory} instance for
+     *         {@link androidx.media3.datasource.DataSource.Factory} instance for
      *         the {@link MediaSource.Factory} subclasses.
      */
     @NonNull
@@ -498,8 +498,10 @@ public class ExoVideoPlayer extends VideoPlayer {
     }
 
     private void stopExoPlayer(boolean reset) {
-        //noinspection deprecation
-        mExoPlayer.stop(reset);
+        mExoPlayer.stop();
+        if (reset) {
+            mExoPlayer.clearMediaItems();
+        }
     }
 
     @Override

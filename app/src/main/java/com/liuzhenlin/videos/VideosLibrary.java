@@ -6,10 +6,12 @@
 package com.liuzhenlin.videos;
 
 import androidx.annotation.NonNull;
-
-import com.google.android.exoplayer2.util.LibraryLoader;
+import androidx.annotation.OptIn;
+import androidx.media3.common.util.LibraryLoader;
+import androidx.media3.common.util.UnstableApi;
 
 /** Configures and queries the underlying native library. */
+@OptIn(markerClass = UnstableApi.class)
 public final class VideosLibrary {
 
     private static final LibraryLoader LOADER =
