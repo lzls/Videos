@@ -15,6 +15,7 @@ import androidx.core.os.LocaleCompat;
 
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.compat.ConfigurationCompat;
+import com.liuzhenlin.common.compat.LocaleListCompat;
 
 import java.util.Locale;
 
@@ -30,8 +31,7 @@ public class LanguageUtils {
 
     public static void setDefaultLanguageMode(Context context, int mode) {
         sLanguageMode = mode;
-        AppCompatDelegateWrapper.applyLanguageToActiveDelegates();
-        updateResourcesConfigLocale(context.getApplicationContext(), getDefaultLanguageLocale());
+        setAppLocaleToDefault(context, true);
     }
 
     public static int getDefaultLanguageMode() {
@@ -56,6 +56,15 @@ public class LanguageUtils {
 
     public static Locale getSystemLocal() {
         return ConfigurationCompat.getLocales(Resources.getSystem().getConfiguration()).get(0);
+    }
+
+    public static void setAppLocaleToDefault(Context context, boolean reloadAppPages) {
+        if (reloadAppPages) {
+            AppCompatDelegateWrapper.applyLanguageToActiveDelegates();
+        }
+        Locale appLocale = getDefaultLanguageLocale();
+        updateResourcesConfigLocale(context.getApplicationContext(), appLocale);
+        LocaleListCompat.setDefault(androidx.core.os.LocaleListCompat.create(appLocale));
     }
 
     public static void updateResourcesConfigLocale(Context context, @Nullable Locale locale) {
