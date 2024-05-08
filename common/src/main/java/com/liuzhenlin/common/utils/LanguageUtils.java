@@ -41,7 +41,11 @@ public class LanguageUtils {
     public static String getDefaultLanguage() {
         switch (sLanguageMode) {
             case MODE_LANGUAGE_FOLLOWS_SYSTEM:
-                return LocaleCompat.toLanguageTag(getSystemLocal());
+                Locale sysLocale = getSystemLocal();
+                if (!Locale.CHINESE.getLanguage().equals(sysLocale.getLanguage())) {
+                    return LocaleCompat.toLanguageTag(sysLocale);
+                }
+                // fall through
             case MODE_LANGUAGE_SIMPLIFIED_CHINESE:
                 return "zh-CN";
             case MODE_LANGUAGE_ENGLISH:
