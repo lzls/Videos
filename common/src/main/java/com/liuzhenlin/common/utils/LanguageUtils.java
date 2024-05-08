@@ -41,7 +41,7 @@ public class LanguageUtils {
     public static String getDefaultLanguage() {
         switch (sLanguageMode) {
             case MODE_LANGUAGE_FOLLOWS_SYSTEM:
-                Locale sysLocale = getSystemLocal();
+                Locale sysLocale = getSystemLocale();
                 if (!Locale.CHINESE.getLanguage().equals(sysLocale.getLanguage())) {
                     return LocaleCompat.toLanguageTag(sysLocale);
                 }
@@ -58,7 +58,7 @@ public class LanguageUtils {
         return LocaleCompat.forLanguageTag(getDefaultLanguage());
     }
 
-    public static Locale getSystemLocal() {
+    public static Locale getSystemLocale() {
         return ConfigurationCompat.getLocales(Resources.getSystem().getConfiguration()).get(0);
     }
 
@@ -67,12 +67,11 @@ public class LanguageUtils {
             AppCompatDelegateWrapper.applyLanguageToActiveDelegates();
         }
         Locale appLocale = getDefaultLanguageLocale();
-        updateResourcesConfigLocale(context.getApplicationContext(), appLocale);
+        updateResourcesConfigLocale(context.getApplicationContext().getResources(), appLocale);
         LocaleListCompat.setDefault(androidx.core.os.LocaleListCompat.create(appLocale));
     }
 
-    public static void updateResourcesConfigLocale(Context context, @Nullable Locale locale) {
-        Resources res = context.getResources();
+    public static void updateResourcesConfigLocale(Resources res, @Nullable Locale locale) {
         Configuration config = res.getConfiguration();
         if (!Configs.LanguageDiff.areLocaleEqual(config.locale, locale)) {
             ConfigurationCompat.setLocale(config, locale);

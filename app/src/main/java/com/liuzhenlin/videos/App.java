@@ -231,7 +231,8 @@ public class App extends Application {
         mLocale = newConfig.locale;
 
         if (!Configs.LanguageDiff.areLocaleEqual(locale, newConfig.locale)) {
-            LanguageUtils.updateResourcesConfigLocale(this, LanguageUtils.getDefaultLanguageLocale());
+            LanguageUtils.updateResourcesConfigLocale(getResourcesNoConfigCheck(),
+                    LanguageUtils.getDefaultLanguageLocale());
         }
 
         boolean night = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK)
