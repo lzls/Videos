@@ -5,12 +5,15 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.app.LocaleManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatDelegateWrapper;
+import androidx.core.os.BuildCompat;
 import androidx.core.os.LocaleCompat;
 
 import com.liuzhenlin.common.Configs;
@@ -38,10 +41,10 @@ public class LanguageUtils {
         return sLanguageMode;
     }
 
-    public static String getDefaultLanguage() {
+    public static String getDefaultLanguage(Context context) {
         switch (sLanguageMode) {
             case MODE_LANGUAGE_FOLLOWS_SYSTEM:
-                Locale sysLocale = getSystemLocale();
+                Locale sysLocale = getSystemLocale(context);
                 if (!Locale.CHINESE.getLanguage().equals(sysLocale.getLanguage())) {
                     return LocaleCompat.toLanguageTag(sysLocale);
                 }
@@ -54,19 +57,25 @@ public class LanguageUtils {
         return "und";
     }
 
-    public static Locale getDefaultLanguageLocale() {
-        return LocaleCompat.forLanguageTag(getDefaultLanguage());
+    public static Locale getDefaultLanguageLocale(Context context) {
+        return LocaleCompat.forLanguageTag(getDefaultLanguage(context));
     }
 
-    public static Locale getSystemLocale() {
-        return ConfigurationCompat.getLocales(Resources.getSystem().getConfiguration()).get(0);
+    @OptIn(markerClass = BuildCompat.PrereleaseSdkCheck.class)
+    public static Locale getSystemLocale(Context context) {
+        if (BuildCompat.isAtLeastT()) {
+            LocaleManager localeManager = (LocaleManager)
+                    context.getApplicationContext().getSystemService(Context.LOCALE_SERVICE);
+            return localeManager.getSystemLocales().get(0);
+        }
+        return Resources.getSystem().getConfiguration().locale;
     }
 
     public static void setAppLocaleToDefault(Context context, boolean reloadAppPages) {
         if (reloadAppPages) {
             AppCompatDelegateWrapper.applyLanguageToActiveDelegates();
         }
-        Locale appLocale = getDefaultLanguageLocale();
+        Locale appLocale = getDefaultLanguageLocale(context);
         updateResourcesConfigLocale(context.getApplicationContext().getResources(), appLocale);
         LocaleListCompat.setDefault(androidx.core.os.LocaleListCompat.create(appLocale));
     }
