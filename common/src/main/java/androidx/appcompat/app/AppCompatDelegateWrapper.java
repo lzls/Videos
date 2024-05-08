@@ -200,7 +200,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
             // 4. Don't use applyOverrideConfiguration() unless you're able to retain the base context's
             //    configuration overrides (as distinct from the entire configuration).
 
-            final Locale locale = LanguageUtils.getDefaultLanguageLocale();
+            final Locale locale = LanguageUtils.getDefaultLanguageLocale(context);
 
             // If the base context is a ContextThemeWrapper (thus not an Application context)
             // and nobody's touched its Resources yet, we can shortcut and directly apply our
@@ -698,7 +698,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
         boolean[] handled = {false};
         doIfDelegateIsTheBase(baseDelegate -> {
-            Locale locale = LanguageUtils.getDefaultLanguageLocale();
+            Locale locale = LanguageUtils.getDefaultLanguageLocale(baseDelegate.mContext);
             handled[0] = updateForLanguage(locale, allowRecreation);
         });
         return handled[0];
