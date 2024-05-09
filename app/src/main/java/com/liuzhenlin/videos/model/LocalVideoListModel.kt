@@ -301,9 +301,8 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
             if (item.path != videodir.path) continue@loop
 
             val dao = VideoListItemDao.getSingleton(mContext)
-            val videoCount = videodir.videoCount()
-            when {
-                videoCount == 0 -> {
+            when (videodir.videoCount()) {
+                0 -> {
                     if (item is VideoDirectory) {
                         dao.deleteVideoDir(item.path)
                     }
@@ -311,27 +310,6 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
                     mVideoListItems.removeAt(i)
                     parentVideoDir?.computeSize()
                     mCallback?.onItemRemoved(i)
-                }
-
-                videoCount == 1 && parentVideoDir == null -> {
-                    if (item is VideoDirectory) {
-                        dao.deleteVideoDir(item.path)
-                    }
-
-                    val video = videodir.firstVideoOrNull()!!
-                    if (video.isTopped) {
-                        video.isTopped = false
-                        dao.setVideoListItemTopped(video, false)
-                    }
-
-                    mVideoListItems[i] = video
-                    val newIndex = mVideoListItems.reordered().indexOf(video)
-                    if (newIndex == i) {
-                        mCallback?.onItemUpdated(i)
-                    } else {
-                        mVideoListItems.add(newIndex, mVideoListItems.removeAt(i))
-                        mCallback?.onItemMoved(i, newIndex)
-                    }
                 }
 
                 else -> {
