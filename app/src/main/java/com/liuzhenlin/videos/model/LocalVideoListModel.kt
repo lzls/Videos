@@ -379,6 +379,9 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
                     }
                 }
             }
+            // Necessary. Used to prevent ConcurrentModificationException from occurring in
+            // the later element iteration of mVideoListItems after any its element is moved.
+            break@loop
         }
     }
 
