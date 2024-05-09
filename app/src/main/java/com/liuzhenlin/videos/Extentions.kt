@@ -227,19 +227,6 @@ fun Collection<Video>?.toVideoListItems(baseVideoDir: String? = null): MutableLi
         }
     }
 
-    // If a top level dir only has one video, add the video to the set of list items instead.
-    if (baseVideoDirIsSdcardRoot) {
-        index = 0
-        while (index < videosMap.size) {
-            val item = videosMap.valueAt(index)
-            if (item is VideoDirectory && item.videoListItems.size == 1) {
-                videosMap.setValueAt(index, item.videoListItems[0])
-                dao.deleteVideoDir(item.path)
-            }
-            index++
-        }
-    }
-
     // Reorder video list items
     var items: MutableList<VideoListItem>? = null
     var toppedItems: MutableList<VideoListItem>? = null
