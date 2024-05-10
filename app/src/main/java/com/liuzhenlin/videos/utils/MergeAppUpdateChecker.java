@@ -43,6 +43,7 @@ import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -816,7 +817,9 @@ public final class MergeAppUpdateChecker {
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
 
             mReceiver = new CancelAppUpdateReceiver();
-            registerReceiver(mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION));
+            ContextCompat.registerReceiver(
+                    this, mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION),
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
 
             Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                 //noinspection ConstantConditions

@@ -31,6 +31,7 @@ import androidx.core.util.Predicate;
 import androidx.customview.widget.ViewDragHelper;
 
 import com.liuzhenlin.common.compat.ViewCompatibility;
+import com.liuzhenlin.common.utils.OverScroller;
 
 /**
  * @author <a href="mailto:2233788867@qq.com">刘振林</a>
@@ -517,18 +518,20 @@ public class GestureImageView extends AppCompatImageView {
                     }
 
                     // No scaling is needed below
-                    mVelocityTracker.computeCurrentVelocity(1000, mMaximumFlingVelocity);
-                    final float vx = mVelocityTracker.getXVelocity(mActivePointerId);
-                    final float vy = mVelocityTracker.getYVelocity(mActivePointerId);
-                    // If one of the velocities is not less than our minimum fling velocity,
-                    // treat it as fling as user raises up his/her last finger that is
-                    // touching the screen.
-                    if ((Math.abs(vx) >= mMinimumFlingVelocity
-                            || Math.abs(vy) >= mMinimumFlingVelocity)) {
-                        cancelImageTransformations();
-                        getImageTransformer().fling(translationX, translationY, vx, vy,
-                                width, height, mImageBounds.width(), mImageBounds.height());
-                        break;
+                    if (actionMasked == MotionEvent.ACTION_UP) {
+                        mVelocityTracker.computeCurrentVelocity(1000, mMaximumFlingVelocity);
+                        final float vx = mVelocityTracker.getXVelocity(mActivePointerId);
+                        final float vy = mVelocityTracker.getYVelocity(mActivePointerId);
+                        // If one of the velocities is not less than our minimum fling velocity,
+                        // treat it as fling as user raises up his/her last finger that is
+                        // touching the screen.
+                        if ((Math.abs(vx) >= mMinimumFlingVelocity
+                                || Math.abs(vy) >= mMinimumFlingVelocity)) {
+                            cancelImageTransformations();
+                            getImageTransformer().fling(translationX, translationY, vx, vy,
+                                    width, height, mImageBounds.width(), mImageBounds.height());
+                            break;
+                        }
                     }
                     // Not else!
                     // Here regard it as a normal scroll
@@ -654,8 +657,8 @@ public class GestureImageView extends AppCompatImageView {
             else // else make it zoomed in
                 toScaleX = toScaleY = mDoubleTapMagnifiedImageScale;
 
-            final float pivotX = e.getX();
-            final float pivotY = e.getY();
+            final float pivotX = e.getX() - getPaddingLeft();
+            final float pivotY = e.getY() - getPaddingTop();
 
             mTmpMatrix.set(mImageMatrix);
             mTmpMatrix.postScale(toScaleX / scaleX, toScaleY / scaleY, pivotX, pivotY);
@@ -709,7 +712,8 @@ public class GestureImageView extends AppCompatImageView {
             else if (scale * scaleY < mImageMinScale) toScaleY = mImageMinScale / scaleY;
             else toScaleY = scale;
 
-            mImageMatrix.postScale(toScaleX, toScaleY, detector.getFocusX(), detector.getFocusY());
+            mImageMatrix.postScale(toScaleX, toScaleY, detector.getFocusX() - getPaddingLeft(),
+                    detector.getFocusY() - getPaddingTop());
             setImageMatrix(mImageMatrix);
             return true;
         }

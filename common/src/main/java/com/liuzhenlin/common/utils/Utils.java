@@ -33,7 +33,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.util.Consumer;
 import androidx.core.util.ObjectsCompat;
+import androidx.core.util.Supplier;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 
@@ -52,6 +54,13 @@ import java.util.List;
 
 public class Utils {
     private Utils() {
+    }
+
+    private static final class NoNumberFormatPreloadHolder {
+        static final NumberFormat sNumberFormat = NumberFormat.getNumberInstance();
+        static {
+            sNumberFormat.setRoundingMode(RoundingMode.HALF_UP);
+        }
     }
 
     /**
@@ -145,11 +154,10 @@ public class Utils {
      */
     public static String roundDecimalToString(
             double value, int minFractionDigits, int maxFractionDigits, boolean groupingUsed) {
-        NumberFormat nf = NumberFormat.getNumberInstance();
+        NumberFormat nf = NoNumberFormatPreloadHolder.sNumberFormat;
         nf.setGroupingUsed(groupingUsed);
         nf.setMinimumFractionDigits(minFractionDigits);
         nf.setMaximumFractionDigits(maxFractionDigits);
-        nf.setRoundingMode(RoundingMode.HALF_UP);
         return nf.format(value);
     }
 
@@ -536,5 +544,40 @@ public class Utils {
         } else {
             return String.valueOf(value);
         }
+    }
+
+    /**
+     * Creates a thread local variable. The initial value of the variable is
+     * determined by invoking the {@code get()} method on the {@code initializer} and
+     * the value can be reset upon each time invocation of the {@code accept()} method on
+     * the {@code resetter} before the value is returned from the {@code get()} method of
+     * the created ThreadLocal object.
+     *
+     * @param <T>         the type of the thread local's value
+     * @param initializer the supplier to be used to determine the initial value
+     * @param resetter    the consumer to be used to reset the value every time it is fetched
+     * @return a new thread local variable
+     * @throws NullPointerException if the specified value initialization supplier is null
+     */
+    @NonNull
+    public static <T> ThreadLocal<T> newThreadLocalWithValueInitializerAndResetter(
+            @NonNull Supplier<T> initializer, @Nullable Consumer<T> resetter) {
+        return new ThreadLocal<T>() {
+            @Nullable
+            @Override
+            protected T initialValue() {
+                return initializer.get();
+            }
+
+            @Nullable
+            @Override
+            public T get() {
+                T value = super.get();
+                if (resetter != null) {
+                    resetter.accept(value);
+                }
+                return value;
+            }
+        };
     }
 }

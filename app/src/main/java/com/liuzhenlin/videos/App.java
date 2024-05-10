@@ -46,8 +46,6 @@ public class App extends Application {
 
     private static App sApp;
 
-    private boolean mSophixInitialized;
-
     private volatile int mRealScreenWidth = -1;
     private volatile int mRealScreenHeight = -1;
 
@@ -127,14 +125,6 @@ public class App extends Application {
     @Nullable
     public static App getInstanceUnsafe() {
         return sApp;
-    }
-
-    public boolean isSophixInitialized() {
-        return mSophixInitialized;
-    }
-
-    public void setSophixInitialized(boolean initialized) {
-        mSophixInitialized = initialized;
     }
 
     @SuppressLint("NewApi")
@@ -241,10 +231,8 @@ public class App extends Application {
         mLocale = newConfig.locale;
 
         if (!Configs.LanguageDiff.areLocaleEqual(locale, newConfig.locale)) {
-            if (LanguageUtils.getDefaultLanguageMode() != LanguageUtils.MODE_LANGUAGE_FOLLOWS_SYSTEM) {
-                LanguageUtils.updateResourcesConfigLocale(
-                        this, LanguageUtils.getDefaultLanguageLocale());
-            }
+            LanguageUtils.updateResourcesConfigLocale(getResourcesNoConfigCheck(),
+                    LanguageUtils.getDefaultLanguageLocale(this));
         }
 
         boolean night = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK)
