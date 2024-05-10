@@ -8,7 +8,7 @@ android {
         applicationId gradle.ext.applicationId
         minSdkVersion 16
         versionCode 46 // 46 -> 47
-        versionName "2.4-beta01"
+        versionName "2.4-beta02"
 
         vectorDrawables.useSupportLibrary = true
 
@@ -17,14 +17,18 @@ android {
                 multiDexEnabled true
 //              multiDexKeepProguard file('multidex-config.pro')
             }
+            release {
+                multiDexEnabled true
+                multiDexKeepProguard file('multidex-config.pro')
+            }
         }
 
         ndk {
             abiFilters 'armeabi-v7a'/*, 'arm64-v8a'*/
         }
 
-        buildConfigField "int", 'DEV_VERSION_CODE', '64'
-        buildConfigField "int", 'BETA_VERSION_CODE', '64'
+        buildConfigField "int", 'DEV_VERSION_CODE', '65'
+        buildConfigField "int", 'BETA_VERSION_CODE', '65'
         buildConfigField "int", 'TARGET_SDK_VERSION', "$rootProject.ext.targetSdkVersion"
         buildConfigField 'String', 'RELEASE_SIGN_MD5', '"C739175007731374EA0A6CC1C706D5CD"'
     }
@@ -37,6 +41,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.core:core-splashscreen:1.0.1'
 
     implementation project(':common')
@@ -54,7 +59,8 @@ dependencies {
     implementation 'com.sun.mail:android-mail:1.6.7'
     implementation 'com.sun.mail:android-activation:1.6.7'
 
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.11'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.14'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android-process:2.14'
 
-    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.3.8'
+    implementation 'com.aliyun.ams:alicloud-android-hotfix:3.4.1'
 }

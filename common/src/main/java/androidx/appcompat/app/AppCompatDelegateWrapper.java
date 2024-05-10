@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,6 +37,7 @@ import androidx.lifecycle.LifecycleOwner;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.R;
 import com.liuzhenlin.common.compat.ConfigurationCompat;
+import com.liuzhenlin.common.compat.LocaleListCompat;
 import com.liuzhenlin.common.utils.ActivityUtils;
 import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.PictureInPictureHelper;
@@ -152,6 +154,13 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
         mHostCallback = callback;
     }
 
+    @SuppressLint("MissingSuperCall")
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    @Override
+    public void setOnBackInvokedDispatcher(@Nullable OnBackInvokedDispatcher dispatcher) {
+        mDelegate.setOnBackInvokedDispatcher(dispatcher);
+    }
+
     @Nullable
     @Override
     public ActionBar getSupportActionBar() {
@@ -191,7 +200,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
             // 4. Don't use applyOverrideConfiguration() unless you're able to retain the base context's
             //    configuration overrides (as distinct from the entire configuration).
 
-            final Locale locale = LanguageUtils.getDefaultLanguageLocale();
+            final Locale locale = LanguageUtils.getDefaultLanguageLocale(context);
 
             // If the base context is a ContextThemeWrapper (thus not an Application context)
             // and nobody's touched its Resources yet, we can shortcut and directly apply our
@@ -689,7 +698,7 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
 
         boolean[] handled = {false};
         doIfDelegateIsTheBase(baseDelegate -> {
-            Locale locale = LanguageUtils.getDefaultLanguageLocale();
+            Locale locale = LanguageUtils.getDefaultLanguageLocale(baseDelegate.mContext);
             handled[0] = updateForLanguage(locale, allowRecreation);
         });
         return handled[0];
@@ -752,10 +761,19 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
                     "updateForLanguage. Skipping. Language: " + newLanguage + " for host:" + mHost);
         }
 
-        // Notify the host of the language. We only notify if we handled the change,
-        // or the Activity is set to handle locale changes
-        if (handled && mHostCallback != null) {
-            mHostCallback.onLanguageChanged(/* oldLocale */ currentLocale, locale);
+        if (handled) {
+            // LocaleListCompat's default locales are updated here using the configuration
+            // locales to keep default locales in sync with application locales and also to cover
+            // the case where framework re-adjusts input locales by bringing forward the most
+            // suitable locale.
+            LocaleListCompat.setDefault(ConfigurationCompat.getLocales(
+                    mContext.getResources().getConfiguration()));
+
+            // Notify the host of the language. We only notify if we handled the change,
+            // or the Activity is set to handle locale changes
+            if (mHostCallback != null) {
+                mHostCallback.onLanguageChanged(/* oldLocale */ currentLocale, locale);
+            }
         }
 
         return handled;
@@ -807,6 +825,12 @@ public class AppCompatDelegateWrapper extends AppCompatDelegate implements AppCo
                 }
             }
         }
+    }
+
+    @Nullable
+    @Override
+    public Context getContextForDelegate() {
+        return mDelegate.getContextForDelegate();
     }
 
     @Override

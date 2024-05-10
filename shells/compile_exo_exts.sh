@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#sh ./shells/compile_exo_exts.sh --exoplayer-root=~/Android/projects/ExoPlayer \
+#sh ./shells/compile_exo_exts.sh --exoplayer-root=~/Android/projects/AndroidxMedia3 \
 #  --ndk-path=~/Android/SDK/ndk/android-ndk-r23c --host-platform=darwin-x86_64
 
 SHELLS_DIR=$(cd "$(dirname "$0")"; pwd)
@@ -70,7 +70,7 @@ function ensureRepoUpdateToDate() {
   fi
 }
 
-trace ensureRepoUpdateToDate https://github.com/google/ExoPlayer "$EXO_PLAYER_ROOT" release-v2
+trace ensureRepoUpdateToDate https://github.com/androidx/media.git "$EXO_PLAYER_ROOT" release
 verifyLastOpSuccessed; echo
 
 trace . "$SHELLS_DIR/compile_exo_ext_av1.sh"; verifyLastOpSuccessed --pause-only; echo

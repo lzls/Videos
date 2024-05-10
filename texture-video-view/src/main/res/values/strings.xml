@@ -9,6 +9,7 @@
     <string name="brightnessFollowsSystem">Brightness: follows the system</string>
     <string name="volumeProgress">Volume: %.0f%%</string>
     <string name="progress_duration" translatable="false">%s/%s</string>
+    <string name="reset">Reset</string>
     <string name="lock">Lock</string>
     <string name="unlock">Unlock</string>
     <string name="videoThumbnail">Video Thumbnail</string>

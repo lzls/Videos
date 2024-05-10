@@ -54,8 +54,7 @@ public class AndroidWebView extends WebView {
         // which might invalidate the user-preferred app language that was already set. So we need
         // ensure the locale of the Application Context's Resources Configuration to be the user
         // preferred value here.
-        LanguageUtils.updateResourcesConfigLocale(mContext.getApplicationContext(),
-                LanguageUtils.getDefaultLanguageLocale());
+        LanguageUtils.setAppLocaleToDefault(mContext, false);
 
         setup(getSettings());
 

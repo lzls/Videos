@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.HapticFeedbackConstants;
 
 public class Consts {
     private Consts() {
@@ -34,6 +35,10 @@ public class Consts {
     public static final String DIRECTORY_DOCUMENTS =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ?
                     Environment.DIRECTORY_DOCUMENTS : "Documents";
+
+    public static final int HAPTIC_FEEDBACK_GESTURE_START =
+            SDK_VERSION >= Build.VERSION_CODES.R ?
+                    HapticFeedbackConstants.GESTURE_START : HapticFeedbackConstants.VIRTUAL_KEY;
 
     public static Handler getMainThreadHandler() {
         return NoPreloadHolder.MAIN_THREAD_HANDLER;

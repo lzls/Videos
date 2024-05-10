@@ -66,6 +66,7 @@ public class Configs {
             if (locale1 == null || locale2 == null)
                 return false;
             return locale1.getLanguage().equals(locale2.getLanguage())
+                    && locale1.getCountry().equals(locale2.getCountry())
                     && TextUtilsCompat.getLayoutDirectionFromLocale(locale1)
                             == TextUtilsCompat.getLayoutDirectionFromLocale(locale2);
         }

@@ -45,7 +45,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.preference.PreferenceManager;
 import androidx.transition.ChangeBounds;
 import androidx.transition.TransitionManager;
 import androidx.viewpager.widget.ViewPager;
@@ -74,7 +73,7 @@ import com.liuzhenlin.common.view.SwipeRefreshLayout;
 import com.liuzhenlin.slidingdrawerlayout.SlidingDrawerLayout;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.BuildConfig;
-import com.liuzhenlin.videos.Prefs;
+import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.AppUpdateChecker;
@@ -86,9 +85,7 @@ import com.taobao.sophix.SophixManager;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import static com.liuzhenlin.common.Consts.EMPTY_STRING;
 import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_DARK;
@@ -153,21 +150,13 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
+        if (Configs.isSophixPatchSupported()) {
+            // 有新的热更新补丁可用时，加载...
+            SophixManager.getInstance().queryAndLoadNewPatch();
+        }
+
         mAlreadyTheLatestVersion = getString(R.string.alreadyTheLatestVersion);
         mNewVersionFound = getString(R.string.newVersionFound);
-
-        SophixManager sophix = SophixManager.getInstance();
-        App app = App.getInstance(this);
-        if (!app.isSophixInitialized()) {
-            List<String> tag = Collections.singletonList(
-                    PreferenceManager.getDefaultSharedPreferences(this)
-                            .getString(Prefs.KEY_UPDATE_CHANNEL, Prefs.UPDATE_CHANNEL_STABLE));
-            sophix.setTags(tag);
-            sophix.initialize();
-            app.setSophixInitialized(true);
-        }
-        // 有新的热更新补丁可用时，加载...
-        sophix.queryAndLoadNewPatch();
     }
 
     @Override
