@@ -198,7 +198,9 @@ public class BackgroundPlaybackControllerService extends Service {
         startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
         mIsForeground = true;
 
-        registerReceiver(mReceiver, new IntentFilter(ControllerActionReceiver.ACTION));
+        ContextCompat.registerReceiver(
+                this, mReceiver, new IntentFilter(ControllerActionReceiver.ACTION),
+                ContextCompat.RECEIVER_NOT_EXPORTED);
 
         return new Proxy();
     }

@@ -9,12 +9,16 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.Keep;
+import androidx.multidex.MultiDex;
 
 import com.liuzhenlin.common.utils.Utils;
 import com.taobao.sophix.SophixApplication;
 import com.taobao.sophix.SophixEntry;
 import com.taobao.sophix.SophixManager;
 import com.taobao.sophix.listener.PatchLoadStatusListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SophixAppStub extends SophixApplication {
 
@@ -28,26 +32,31 @@ public class SophixAppStub extends SophixApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        if (BuildConfig.DEBUG) {
-            try {
-                Class<?> multiDexCls = getClassLoader().loadClass("androidx.multidex.MultiDex");
-                multiDexCls.getMethod("install", Context.class)
-                        .invoke(multiDexCls, base);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        MultiDex.install(this);
+        if (Configs.isSophixPatchSupported()) {
+            SophixAppLibrary.throwIfNotAvailable();
+            initSophix();
         }
-        SophixAppLibrary.throwIfNotAvailable();
-        initSophix();
     }
 
     private void initSophix() {
+        String appVersionName = Utils.getAppVersionName(this);
+        List<String> tags = new ArrayList<>(3);
+        if (appVersionName.contains("-alpha")) {
+            tags.add(Prefs.UPDATE_CHANNEL_DEV);
+        }
+        if (appVersionName.contains("-beta") || appVersionName.contains("-rc")) {
+            tags.add(Prefs.UPDATE_CHANNEL_BETA);
+        }
+        tags.add(Prefs.UPDATE_CHANNEL_STABLE);
         SophixManager.getInstance()
                 .setContext(this)
-                .setAppVersion(Utils.getAppVersionName(this))
+                .setAppVersion(appVersionName)
+                .setTags(tags)
                 .setSecretMetaData(nGetIdSecret(this), nGetAppSecret(this), nGetRsaSecret(this))
                 .setEnableDebug(DEBUG)
-                .setPatchLoadStatusStub(new PatchLoadListener());
+                .setPatchLoadStatusStub(new PatchLoadListener())
+                .initialize();
     }
 
     private static final class PatchLoadListener implements PatchLoadStatusListener {

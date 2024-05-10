@@ -1,14 +1,15 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.8.21'
+    ext.kotlin_version = '1.9.23'
 
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.guardsquare:proguard-gradle:7.4.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -20,7 +21,13 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url "http://maven.aliyun.com/nexus/content/repositories/releases" }
+        maven {
+            url "http://maven.aliyun.com/nexus/content/repositories/releases"
+            allowInsecureProtocol true
+        }
+        repositories {
+            maven { url 'https://jitpack.io' }
+        }
     }
 }
 
@@ -29,11 +36,15 @@ task clean(type: Delete) {
 }
 
 ext {
-    compileSdkVersion = 33
-    targetSdkVersion = 33
+    compileSdkVersion = 34
+    targetSdkVersion = 34
 
-    appcompatVersion = '1.4.2' // Avoid using 1.6.*, which rolls the night mode issue back
-    exoplayer2Version = '2.18.7'
+    appcompatVersion = '1.6.1'
+
+    // Limited by used AGP version 7.4.2. However, we cannot update it now because the
+    // 'android.registerTransform' API removed from AGP 8.0 is still relied on by the
+    // 'com.guardsquare.proguard' plugin.
+    androidxMedia3Version = '1.2.1'
 
     testJunitVersion = '4.13.2'
     androidTestJunitVersion = '1.1.5'
