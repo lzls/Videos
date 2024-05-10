@@ -86,11 +86,11 @@
       "18.Support switching language only within this app without it following the system Settings."
     ],
     "beta": {
-      "versionCode": 64,
-      "versionName": "2.4-beta01",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.4-beta01.apk",
-      "appLength": 32155064,
-      "appSha1": "2f80cbdeeee6ff689ddab58b7e456e22183ccce2",
+      "versionCode": 65,
+      "versionName": "2.4-beta02",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.4-beta02.apk",
+      "appLength": 33215131,
+      "appSha1": "faef575f10ec3d0a148bcbe8a1e55bffccd33e7c",
       "updateLogs": [
         "1. 应用更新检查：显示检查时的即时状态并添加缺少的错误提示",
         "2. 使一些字词句的语义更加清晰",
@@ -100,7 +100,10 @@
         "6. 没有视频文件实际发生移动时不刷新列表",
         "7. 视频列表重新加载开始和结束时自动关闭视频操作有关的弹窗",
         "8. 树形分层结构的本地视频列表文件夹",
-        "9. 支持多渠道版本的代码热修复"
+        "9. 支持多渠道版本的代码热修复",
+        "10.本地视频播放支持手势缩放",
+        "11.修复切换的应用语言无法在在线视频页立即生效的问题",
+        "12.修复系统语言为繁体中文而应用语言为英文的问题"
       ],
       "updateLogs-en": [
         "1. App update check: display immediate states during check and add missing error prompts",
@@ -111,7 +114,10 @@
         "6. Not to refresh the list if no video has actually been moved",
         "7. Automatically close pop-up windows related to video operations at the beginning and the end of video list reloading",
         "8. Tree structured local video list folders",
-        "9. Support code hot fixes for multi-channel versions"
+        "9. Support code hot fixes for multi-channel versions",
+        "10.Local video playback supports gestural scaling",
+        "11.Fix the problem that the switched app language could not immediately take effect on the Online Videos page",
+        "12.Fix the bug that the system language was Traditional Chinese while the app language was English"
       ]
     },
     "dev": "beta",
