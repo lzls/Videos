@@ -872,7 +872,7 @@ public final class AppUpdateChecker {
                         PendingIntent.getBroadcast(
                                 mContext,
                                 0,
-                                new Intent(CancelAppUpdateReceiver.ACTION),
+                                new Intent(CancelAppUpdateReceiver.ACTION).setPackage(mPkgName),
                                 PENDING_INTENT_FLAG_IMMUTABLE));
                 return nv;
             }
