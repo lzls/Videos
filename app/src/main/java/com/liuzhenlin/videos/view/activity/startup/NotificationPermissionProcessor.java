@@ -30,13 +30,11 @@ public class NotificationPermissionProcessor<H extends Activity & LifecycleOwner
             }
 
             String permission = Manifest.permission.POST_NOTIFICATIONS;
-            if (ActivityCompat.shouldShowRequestPermissionRationale(chain.host, permission)) {
-                if (ActivityCompat.checkSelfPermission(chain.host, permission)
-                        == PackageManager.PERMISSION_DENIED) {
-                    ActivityCompat.requestPermissions(chain.host, new String[]{permission},
-                            REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION);
-                    return true;
-                }
+            if (ActivityCompat.checkSelfPermission(chain.host, permission)
+                    == PackageManager.PERMISSION_DENIED) {
+                ActivityCompat.requestPermissions(chain.host, new String[]{permission},
+                        REQUEST_CODE_POST_NOTIFICATIONS_PERMISSION);
+                return true;
             }
         }
 
