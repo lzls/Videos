@@ -3488,9 +3488,22 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         @Override
         public void onViewDragBegin(@NonNull View view) {
-            if (isVideoStretchedToFitFullscreenLayout()) {
+            if (isVideoStretchedToFitFullscreenLayout() || !needVideoBeStretchedBeforeScaling()) {
                 showVideoVisibleAreaIndicator(true);
             }
+        }
+
+        private boolean needVideoBeStretchedBeforeScaling() {
+            VideoPlayer vp = mVideoPlayer;
+            if (!isClipViewBounds() && vp != null && vp.mVideoWidth != 0 && vp.mVideoHeight != 0) {
+                int width = mContentView.getWidth();
+                int height = mContentView.getHeight();
+                // The video aspect ratio equal to the aspect ratio of the view means the video
+                // has already filled full the layout space of the view.
+                return !Utils.areEqualIgnorePrecisionError(
+                        (float) width / height, (float) vp.mVideoWidth / vp.mVideoHeight);
+            }
+            return true;
         }
 
         @Override
@@ -3498,7 +3511,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             // Make video stretched to occupy the fullscreen first if it is not already so. This
             // ensures no black area will be displayed while video is being scaled and scrolled.
             if (!isVideoStretchedToFitFullscreenLayout()) {
-                touchFlags |= TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN;
+                if (needVideoBeStretchedBeforeScaling()) {
+                    // Account for this flag only if the video needs be stretched.
+                    touchFlags |= TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN;
+                }
                 setVideoStretchedToFitFullscreenLayout(true);
                 performHapticFeedback(Consts.HAPTIC_FEEDBACK_GESTURE_START,
                         HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
