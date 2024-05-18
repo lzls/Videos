@@ -124,6 +124,10 @@
             android:process=":web"
             tools:replace="android:configChanges, android:taskAffinity" />
 
+        <activity
+            android:name="pub.devrel.easypermissions.AppSettingsDialogHolderActivity2"
+            android:theme="@style/EasyPermissions.Transparent" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

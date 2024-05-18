@@ -131,6 +131,7 @@
     <string name="setLightIcons">Set light icons</string>
     <string name="setLightStatus">Set light status</string>
     <string name="setLightTexts">Set light texts</string>
+    <string name="storagePermissionsNotGranted">Storage permissions not granted!</string>
     <string name="followsSystem">Follows system</string>
     <string name="turnOff">Turn off</string>
     <string name="turnOn">Turn on</string>
