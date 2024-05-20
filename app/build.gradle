@@ -8,7 +8,7 @@ android {
         applicationId gradle.ext.applicationId
         minSdkVersion 16
         versionCode 46 // 46 -> 47
-        versionName "2.4-beta02"
+        versionName "2.4-beta03"
 
         vectorDrawables.useSupportLibrary = true
 
@@ -27,8 +27,8 @@ android {
             abiFilters 'armeabi-v7a'/*, 'arm64-v8a'*/
         }
 
-        buildConfigField "int", 'DEV_VERSION_CODE', '65'
-        buildConfigField "int", 'BETA_VERSION_CODE', '65'
+        buildConfigField "int", 'DEV_VERSION_CODE', '66'
+        buildConfigField "int", 'BETA_VERSION_CODE', '66'
         buildConfigField "int", 'TARGET_SDK_VERSION', "$rootProject.ext.targetSdkVersion"
         buildConfigField 'String', 'RELEASE_SIGN_MD5', '"C739175007731374EA0A6CC1C706D5CD"'
     }
