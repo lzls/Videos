@@ -79,6 +79,7 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.SwitchCompat;
@@ -86,6 +87,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewPropertyAnimatorCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.media3.common.text.Cue;
@@ -94,6 +96,7 @@ import androidx.media3.exoplayer.source.MediaSource;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.ChangeBounds;
 import androidx.transition.Fade;
 import androidx.transition.Transition;
 import androidx.transition.TransitionListenerAdapter;
@@ -137,6 +140,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.liuzhenlin.common.utils.DensityUtils.dp2px;
 import static com.liuzhenlin.texturevideoview.utils.Utils.canUseExoPlayer;
 import static com.liuzhenlin.texturevideoview.utils.Utils.canUseVlcPlayer;
 import static com.liuzhenlin.texturevideoview.utils.Utils.isMediaPlayerPlaybackSpeedAdjustmentSupported;
@@ -1924,67 +1928,89 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
     /**
      * Sets this view to be locked or not. When it is locked, all option controls are hided
-     * except for the lock toggle button and a progress bar used for indicating where
-     * the current video is played and the invisible control related ops are disabled, too.
+     * except for the title text, the lock toggle button and a progress bar used for indicating
+     * where the current video is played and the invisible control related ops are disabled, too.
      *
      * @param locked  Whether to lock this view
      * @param animate Whether the locking or unlocking of this view should be animated.
      *                This only makes sense when this view is currently in fullscreen mode.
      */
     public void setLocked(boolean locked, boolean animate) {
-        if (locked != isLocked$()) {
-            final boolean fullscreen = isInFullscreenMode();
-            final boolean controlsShowing = isControlsShowing();
-            if (fullscreen) {
-                if (controlsShowing) {
-                    if (animate) {
-                        Transition topAndMiddle = new MaterialSharedAxis(MaterialSharedAxis.Y, locked);
-                        TransitionUtils.includeChildrenForTransition(topAndMiddle, mContentView,
-                                mTopControlsFrame,
-                                mLockUnlockButton, mCameraButton, mVideoCameraButton,
-                                mBottomControlsFrame);
+        if (locked == isLocked$())
+            return;
 
-                        Transition bottom = new MaterialSharedAxis(MaterialSharedAxis.Y, !locked);
-                        TransitionUtils.includeChildrenForTransition(bottom, mContentView,
-                                mBottomControlsFrame);
+        final boolean fullscreen = isInFullscreenMode();
+        final boolean controlsShowing = isControlsShowing();
 
-                        TransitionManager.beginDelayedTransition(mContentView,
-                                new TransitionSet().addTransition(topAndMiddle).addTransition(bottom));
-                    }
-                    showControls(false, false, false);
+        if (fullscreen) {
+            if (controlsShowing) {
+                if (animate) {
+                    Transition title = new ChangeBounds();
+                    TransitionUtils.includeChildrenForTransition(title, mContentView, mTitleText);
+
+                    Transition topAndMiddle = new MaterialSharedAxis(MaterialSharedAxis.Y, locked);
+                    TransitionUtils.includeChildrenForTransition(topAndMiddle, mContentView,
+                            mShareButton, mTrackButton, mMoreButton,
+                            mLockUnlockButton, mCameraButton, mVideoCameraButton,
+                            mBottomControlsFrame);
+
+                    Transition bottom = new MaterialSharedAxis(MaterialSharedAxis.Y, !locked);
+                    TransitionUtils.includeChildrenForTransition(bottom, mContentView,
+                            mBottomControlsFrame);
+
+                    TransitionManager.beginDelayedTransition(
+                            mContentView,
+                            new TransitionSet().addTransition(title).addTransition(topAndMiddle)
+                                    .addTransition(bottom));
                 }
-
-                mGestureTextureViewHelper.setGestureEnabled(!locked);
-                if (locked) {
-                    showVideoVisibleAreaIndicator(false);
-                }
+                showControls(false, false, false);
             }
+
+            mGestureTextureViewHelper.setGestureEnabled(!locked);
             if (locked) {
-                mPrivateFlags |= PFLAG_LOCKED;
-                mLockUnlockButton.setContentDescription(mStringLock);
-                mLockUnlockButton.setImageResource(R.drawable.ic_lock_white_24dp);
-            } else {
-                mPrivateFlags &= ~PFLAG_LOCKED;
-                mLockUnlockButton.setContentDescription(mStringUnlock);
-                mLockUnlockButton.setImageResource(R.drawable.ic_unlock_white_24dp);
+                showVideoVisibleAreaIndicator(false);
             }
-            if (fullscreen) {
-                inflateBottomControls();
-                if (controlsShowing) {
-                    showControls(true, false);
-                }
+        }
 
-                if (locked) {
-                    if (isVideoStretchedToFitFullscreenLayout()) {
-                        setViewMode(VIEW_MODE_VIDEO_STRETCHED_LOCKED_FULLSCREEN, true);
-                    } else {
-                        setViewMode(VIEW_MODE_LOCKED_FULLSCREEN, true);
-                    }
-                } else if (isVideoStretchedToFitFullscreenLayout()) {
-                    setViewMode(VIEW_MODE_VIDEO_STRETCHED_FULLSCREEN, true);
+        if (locked) {
+            mPrivateFlags |= PFLAG_LOCKED;
+            mLockUnlockButton.setContentDescription(mStringLock);
+            mLockUnlockButton.setImageResource(R.drawable.ic_lock_white_24dp);
+
+            int ph = dp2px(mContext, 16);
+            ViewCompat.setPaddingRelative(mTitleText, ph, dp2px(mContext, 6), ph, dp2px(mContext, 7));
+            mTitleText.setCompoundDrawables(null, null, null, null);
+        } else {
+            mPrivateFlags &= ~PFLAG_LOCKED;
+            mLockUnlockButton.setContentDescription(mStringUnlock);
+            mLockUnlockButton.setImageResource(R.drawable.ic_unlock_white_24dp);
+
+            ViewCompat.setPaddingRelative(mTitleText, dp2px(mContext, 5), 0, 0, 0);
+            Drawable chevronStartIcon = AppCompatResources.getDrawable(
+                    mContext, R.drawable.ic_navigate_before_white_38dp);
+            TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    mTitleText, chevronStartIcon, null, null, null);
+        }
+        mShareButton.setVisibility(locked ? GONE : VISIBLE);
+        mTrackButton.setVisibility(locked ? GONE : VISIBLE);
+        mMoreButton.setVisibility(locked ? GONE : VISIBLE);
+
+        if (fullscreen) {
+            inflateBottomControls();
+            if (controlsShowing) {
+                showControls(true, false);
+            }
+
+            if (locked) {
+                if (isVideoStretchedToFitFullscreenLayout()) {
+                    setViewMode(VIEW_MODE_VIDEO_STRETCHED_LOCKED_FULLSCREEN, true);
                 } else {
-                    setViewMode(VIEW_MODE_FULLSCREEN, true);
+                    setViewMode(VIEW_MODE_LOCKED_FULLSCREEN, true);
                 }
+            } else if (isVideoStretchedToFitFullscreenLayout()) {
+                setViewMode(VIEW_MODE_VIDEO_STRETCHED_FULLSCREEN, true);
+            } else {
+                setViewMode(VIEW_MODE_FULLSCREEN, true);
             }
         }
     }
@@ -2055,9 +2081,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 // the controls to be shown from still gradually being invisible.
                 endControlsRunningFadingTransition();
             }
-            if (unlocked) {
-                mTopControlsFrame.setVisibility(VISIBLE);
-            }
+            mTopControlsFrame.setVisibility(VISIBLE);
             if (isInFullscreenMode()) {
                 mLockUnlockButton.setVisibility(VISIBLE);
                 if (unlocked) {
@@ -2098,9 +2122,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 // the controls to be hidden from still gradually being visible.
                 endControlsRunningFadingTransition();
             }
-            if (unlocked) {
-                mTopControlsFrame.setVisibility(GONE);
-            }
+            mTopControlsFrame.setVisibility(GONE);
             if (isInFullscreenMode()) {
                 mLockUnlockButton.setVisibility(GONE);
                 if (unlocked) {
@@ -3466,9 +3488,22 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
         @Override
         public void onViewDragBegin(@NonNull View view) {
-            if (isVideoStretchedToFitFullscreenLayout()) {
+            if (isVideoStretchedToFitFullscreenLayout() || !needVideoBeStretchedBeforeScaling()) {
                 showVideoVisibleAreaIndicator(true);
             }
+        }
+
+        private boolean needVideoBeStretchedBeforeScaling() {
+            VideoPlayer vp = mVideoPlayer;
+            if (!isClipViewBounds() && vp != null && vp.mVideoWidth != 0 && vp.mVideoHeight != 0) {
+                int width = mContentView.getWidth();
+                int height = mContentView.getHeight();
+                // The video aspect ratio equal to the aspect ratio of the view means the video
+                // has already filled full the layout space of the view.
+                return !Utils.areEqualIgnorePrecisionError(
+                        (float) width / height, (float) vp.mVideoWidth / vp.mVideoHeight);
+            }
+            return true;
         }
 
         @Override
@@ -3476,7 +3511,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             // Make video stretched to occupy the fullscreen first if it is not already so. This
             // ensures no black area will be displayed while video is being scaled and scrolled.
             if (!isVideoStretchedToFitFullscreenLayout()) {
-                touchFlags |= TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN;
+                if (needVideoBeStretchedBeforeScaling()) {
+                    // Account for this flag only if the video needs be stretched.
+                    touchFlags |= TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN;
+                }
                 setVideoStretchedToFitFullscreenLayout(true);
                 performHapticFeedback(Consts.HAPTIC_FEEDBACK_GESTURE_START,
                         HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
