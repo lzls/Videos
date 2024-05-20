@@ -11,23 +11,26 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.videos.App;
+import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 
-import java.util.Arrays;
 import java.util.List;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.AppSettingsDialogHolderActivity2;
 import pub.devrel.easypermissions.EasyPermissions;
 import pub.devrel.easypermissions.PermissionRequest;
 
@@ -37,7 +40,7 @@ public class StoragePermissionsInterceptor<H extends Activity & LifecycleOwner>
     private static final int REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION = 6;
     private static final int REQUEST_CODE_ALL_FILES_ACCESS_PERMISSION = 7;
 
-    private boolean mStoragePermissionAlreadyPermanentlyDenied;
+    private boolean mStoragePermissionRationaleShown;
 
     private AlertDialog mAskForAllFilesAccessDialog;
 
@@ -59,10 +62,14 @@ public class StoragePermissionsInterceptor<H extends Activity & LifecycleOwner>
             // Have storage permission, check whether we have All Files Access...
             onStoragePermissionGranted();
         } else {
-            mStoragePermissionAlreadyPermanentlyDenied =
-                    EasyPermissions.somePermissionPermanentlyDenied(
-                            mChain.host, Arrays.asList(App.STORAGE_PERMISSION));
-            // Ask for one permission
+            for (String perm : App.STORAGE_PERMISSION) {
+                boolean show = ActivityCompat.shouldShowRequestPermissionRationale(mChain.host, perm);
+                if (show) {
+                    mStoragePermissionRationaleShown = true;
+                    break;
+                }
+            }
+            // Ask for storage permissions
             EasyPermissions.requestPermissions(
                     new PermissionRequest.Builder( //@formatter:off
                                     mChain.host,
@@ -123,6 +130,7 @@ public class StoragePermissionsInterceptor<H extends Activity & LifecycleOwner>
     }
 
     private void onStoragePermissionDenied() {
+        Toast.makeText(mChain.host, R.string.storagePermissionsNotGranted, Toast.LENGTH_SHORT).show();
         mChain.finish();
     }
 
@@ -138,8 +146,13 @@ public class StoragePermissionsInterceptor<H extends Activity & LifecycleOwner>
                 break;
             case AppSettingsDialog.DEFAULT_SETTINGS_REQ_CODE:
                 // Do something after user returned from app settings screen.
-                if (app.hasStoragePermission()) {
-                    onStoragePermissionGranted();
+                if (data.getBooleanExtra(Consts.KEY_FROM_APP_DETAILS_SETTING_SCREEN, false)) {
+                    if (app.hasStoragePermission()) {
+                        onStoragePermissionGranted();
+                    } else {
+                        checkStoragePermission();
+                    }
+                    // User clicked the negative button on AppSettingsDialog
                 } else {
                     onStoragePermissionDenied();
                 }
@@ -158,18 +171,21 @@ public class StoragePermissionsInterceptor<H extends Activity & LifecycleOwner>
     public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
         if (requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION) {
             // (Optional) Check whether the user denied any permissions the LAST time
-            // the permission request dialog was shown and checked "NEVER ASK AGAIN".
-            // This will display a dialog directing them to enable the permission in app settings.
-            if (mStoragePermissionAlreadyPermanentlyDenied
+            // the permission request dialog was shown and checked "NEVER ASK AGAIN". This
+            // will display a dialog directing them to enable the permission in app settings.
+            if (!mStoragePermissionRationaleShown
                     && EasyPermissions.somePermissionPermanentlyDenied(mChain.host, perms)) {
-                new AppSettingsDialog.Builder(mChain.host)
+                AppSettingsDialog asd = new AppSettingsDialog.Builder(mChain.host)
                         .setThemeResId(R.style.DialogStyle_MinWidth)
                         .setTitle(R.string.permissionsRequired)
                         .setRationale(R.string.rationale_askExternalStoragePermissionAgain)
                         .setNegativeButton(R.string.cancel)
                         .setPositiveButton(R.string.ok)
-                        .build()
-                        .show();
+                        .build();
+                //noinspection RestrictedApi
+                mChain.host.startActivityForResult(
+                        AppSettingsDialogHolderActivity2.createShowDialogIntent(mChain.host, asd),
+                        AppSettingsDialog.DEFAULT_SETTINGS_REQ_CODE);
             } else {
                 onStoragePermissionDenied();
             }

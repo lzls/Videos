@@ -340,6 +340,7 @@ public class BackgroundPlaybackControllerService extends Service {
                 this,
                 requestCode,
                 new Intent(ControllerActionReceiver.ACTION)
+                        .setPackage(mPkgName)
                         .putExtra(EXTRA_CONTROLLER_ACTION, action),
                 Consts.PENDING_INTENT_FLAG_IMMUTABLE);
     }

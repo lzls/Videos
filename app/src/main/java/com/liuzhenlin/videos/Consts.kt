@@ -26,6 +26,8 @@ internal const val KEY_VIDEO_URIS = "videoURIs"
 internal const val KEY_SELECTION = "index"
 internal const val KEY_MOVED = "moved"
 
+internal const val KEY_FROM_APP_DETAILS_SETTING_SCREEN = "fromAppDetailsSettingsScreen"
+
 internal const val REQUEST_CODE_PLAY_VIDEO = 1
 internal const val RESULT_CODE_PLAY_VIDEO = 1
 
