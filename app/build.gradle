@@ -31,6 +31,7 @@ android {
         buildConfigField "int", 'BETA_VERSION_CODE', '66'
         buildConfigField "int", 'TARGET_SDK_VERSION', "$rootProject.ext.targetSdkVersion"
         buildConfigField 'String', 'RELEASE_SIGN_MD5', '"C739175007731374EA0A6CC1C706D5CD"'
+        buildConfigField 'int', 'SOPHIX_PATCH_NO', '-1'
     }
 
     packagingOptions {
