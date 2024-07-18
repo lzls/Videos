@@ -25,6 +25,7 @@ import com.liuzhenlin.common.utils.NetworkUtil;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.FeedbackSavedPrefs;
 import com.liuzhenlin.videos.utils.MailUtil;
+import com.liuzhenlin.videos.utils.Utils;
 import com.liuzhenlin.videos.view.activity.IFeedbackView;
 
 import java.io.File;
@@ -191,6 +192,11 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
     @Override
     public void sendFeedback(@NonNull String text, @NonNull String contactWay) {
         if (mThemedContext != null && NetworkUtil.isNetworkConnected(mContext)) {
+            String deviceInfo = Utils.collectAppAndDeviceInfo(mContext).toString();
+            if (!deviceInfo.isEmpty()) {
+                text += "\n\n----------------------------------------------------------------\n"
+                        + deviceInfo;
+            }
             MailUtil.sendMail(
                     mThemedContext,
                     PREFIX_MAIL_SUBJECT + contactWay,
