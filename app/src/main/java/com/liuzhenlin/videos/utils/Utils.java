@@ -18,6 +18,7 @@ import androidx.core.content.FileProvider;
 import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.videos.BuildConfig;
 import com.liuzhenlin.videos.Files;
+import com.liuzhenlin.videos.dao.AppPrefs;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +72,10 @@ public class Utils {
     public static StringBuilder collectAppAndDeviceInfoUncaught(@NonNull Context context)
             throws PackageManager.NameNotFoundException, IOException, NoSuchAlgorithmException,
             IllegalAccessException {
+        if (!AppPrefs.getSingleton(context).isUsageStatusSharingAgreed()) {
+            return new StringBuilder(0);
+        }
+
         context = context.getApplicationContext();
         StringBuilder sb = new StringBuilder();
 

@@ -25,4 +25,6 @@ public class Prefs {
 
     public static final String KEY_GENERAL_HEADER = "general_header";
     public static final String KEY_YOUTUBE_PLAYBACK_HEADER = "youtube_playback_header";
+
+    public static final String KEY_USAGE_STATUS_SHARING = "usage_status_sharing";
 }

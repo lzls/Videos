@@ -108,6 +108,7 @@
 
         <activity
             android:name=".view.activity.SettingsActivity"
+            android:theme="@style/ActivityStyle_Settings"
             android:screenOrientation="portrait"
             android:configChanges="keyboardHidden|screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection"
             android:launchMode="singleTop"
