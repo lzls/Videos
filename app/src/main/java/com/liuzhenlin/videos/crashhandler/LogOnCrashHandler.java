@@ -65,7 +65,9 @@ public class LogOnCrashHandler implements Thread.UncaughtExceptionHandler {
             throws PackageManager.NameNotFoundException, IOException, NoSuchAlgorithmException,
             IllegalAccessException {
         StringBuilder sb = Utils.collectAppAndDeviceInfoUncaught(mContext);
-        sb.append('\n');
+        if (sb.length() > 0) {
+            sb.append('\n');
+        }
         sb.append("FATAL EXCEPTION: ").append(t.getName()).append('\n');
         sb.append(Log.getStackTraceString(e));
         return sb.toString();

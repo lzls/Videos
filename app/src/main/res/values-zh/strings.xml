@@ -61,6 +61,7 @@
     <string name="notHaveEnoughStorage">存储卡空间不足</string>
     <string name="notOpenNow">暂不开启</string>
     <string name="notSave">不保存</string>
+    <string name="notShare">不共享</string>
     <string name="ok">确定</string>
     <string name="onlineVideos">在线视频</string>
     <string name="openOrCloseSideDrawer">打开或关闭侧边抽屉</string>
@@ -76,6 +77,7 @@
     <string name="pleaseInputVideoLinkFirst">请先输入视频链接！</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">请先插入SD卡</string>
     <string name="pressAgainToExitApp">再按一次退出视频</string>
+    <string name="privacy">隐私</string>
     <string name="prompt_enableNotificationsForAppDownload">
         请从系统设置中开启通知，否则应用下载结果将无法显示。</string>
     <string name="prompt_videoMove">
@@ -89,6 +91,10 @@
         没有读写存储卡的权限，此应用将无法正常工作。请先前往应用程序设置界面以允许该权限。
     </string>
     <string name="rationale_askFloatingWindowPermission">此应用还没有被授予悬浮窗权限，请开启后再试！</string>
+    <string name="rationale_usageStatusSharing">
+        这些信息包括应用基本信息、使用信息、错误日志，设备基本信息等。这些信息的共享将有助于App开发者及时修复用户在使用过程中遇到的问题，从而提高产品质量、优化用户体验。
+    </string>
+    <string name="title_usageStatusSharing">与App开发者共享应用和设备信息</string>
     <string name="readOfSthTimedOut">%s读取超时</string>
     <string name="readTimeout">读取超时</string>
     <string name="refreshError">刷新异常</string>
@@ -124,6 +130,7 @@
     <string name="turnOn">开启</string>
     <string name="severalItemsHaveBeenSelected">已选择%d项</string>
     <string name="share">分享</string>
+    <string name="share2">共享</string>
     <string name="size">大小：%s</string>
     <string name="someDirectory">“%s”目录</string>
     <string name="theInstallationPackageHasBeenDamaged">安装包已损坏</string>

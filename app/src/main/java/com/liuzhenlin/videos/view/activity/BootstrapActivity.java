@@ -20,6 +20,7 @@ import com.liuzhenlin.videos.view.activity.startup.LaunchChain;
 import com.liuzhenlin.videos.view.activity.startup.LaunchProcessor;
 import com.liuzhenlin.videos.view.activity.startup.NotificationPermissionProcessor;
 import com.liuzhenlin.videos.view.activity.startup.StoragePermissionsInterceptor;
+import com.liuzhenlin.videos.view.activity.startup.UsageStatusSharingProcessor;
 
 import java.util.List;
 
@@ -35,6 +36,7 @@ public class BootstrapActivity extends BaseActivity
             new LaunchChain.Builder<>(this)
                     .processor(new StoragePermissionsInterceptor<>())
                     .processor(new NotificationPermissionProcessor<>())
+                    .processor(new UsageStatusSharingProcessor<>())
                     .processor(new LaunchProcessor<>())
                     .build();
 
