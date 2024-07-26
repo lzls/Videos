@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.util.Synthetic;
 import com.liuzhenlin.common.Configs;
@@ -25,6 +26,7 @@ import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.Files;
+import com.liuzhenlin.videos.Prefs;
 import com.liuzhenlin.videos.VideosLibrary;
 
 import java.io.File;
@@ -67,6 +69,9 @@ public final class AppPrefs {
 
     private static final String HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN =
             "hasUserDeclinedVideoMovePromptDialogToBeShownAgain";
+
+    private static final String SHOULD_SHOW_USAGE_STATUS_SHARING_DIALOG =
+            "shouldShowUsageStatusSharingDialog";
 
     private static final Singleton<Context, AppPrefs> sAppPrefsSingleton =
             new Singleton<Context, AppPrefs>() {
@@ -214,6 +219,22 @@ public final class AppPrefs {
         return mSP.getBoolean(HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN, false);
     }
 
+    public boolean shouldShowUsageStatusSharingDialog() {
+        return mSP.getBoolean(SHOULD_SHOW_USAGE_STATUS_SHARING_DIALOG, true);
+    }
+
+    public boolean isUsageStatusSharingAgreed() {
+        return PreferenceManager.getDefaultSharedPreferences(mContext)
+                .getBoolean(Prefs.KEY_USAGE_STATUS_SHARING, false);
+    }
+
+    public void setUsageStatusSharingAgreed(boolean agreed) {
+        PreferenceManager.getDefaultSharedPreferences(mContext)
+                .edit()
+                .putBoolean(Prefs.KEY_USAGE_STATUS_SHARING, agreed)
+                .apply();
+    }
+
     @NonNull
     public Editor edit() {
         return new Editor(this);
@@ -294,6 +315,11 @@ public final class AppPrefs {
 
         public AppPrefs.Editor setUserDeclinedVideoMovePromptDialogToBeShownAgain(boolean declined) {
             mEditor.putBoolean(HAS_USER_DECLINED_VIDEO_MOVE_PROMPT_DIALOG_TO_BE_SHOWN_AGAIN, declined);
+            return this;
+        }
+
+        public AppPrefs.Editor setShowUsageStatusSharingDialog(boolean show) {
+            mEditor.putBoolean(SHOULD_SHOW_USAGE_STATUS_SHARING_DIALOG, show);
             return this;
         }
 

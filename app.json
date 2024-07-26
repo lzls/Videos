@@ -86,11 +86,11 @@
       "18.Support switching language only within this app without it following the system Settings."
     ],
     "beta": {
-      "versionCode": 66,
-      "versionName": "2.4-beta03",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.4-beta03.apk",
-      "appLength": 33429718,
-      "appSha1": "28c3d284d9a42a3c2e6fc8b5bb6cbce161200a66",
+      "versionCode": 67,
+      "versionName": "2.4-beta04",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.4-beta04.apk",
+      "appLength": 33431488,
+      "appSha1": "d511662ca00b0152a7fb32a09d50090da48329ff",
       "updateLogs": [
         "1. 应用更新检查：显示检查时的即时状态并添加缺少的错误提示",
         "2. 使一些字词句的语义更加清晰",
@@ -103,7 +103,9 @@
         "9. 本地视频播放支持手势缩放",
         "10.修复切换的应用语言无法在在线视频页立即生效的问题",
         "11.修复系统语言为繁体中文而应用语言为英文的问题",
-        "12.本地视频播放视图锁定时展示视频标题"
+        "12.本地视频播放视图锁定时展示视频标题",
+        "13.新增启动页弹窗和设置页开关供用户选择是否共享使用情况信息以协助开发者改善当前应用",
+        "14.启动页面展示应用名称，防止仅弹窗有内容而对用户造成困扰"
       ],
       "updateLogs-en": [
         "1. App update check: display immediate states during check and add missing error prompts.",
@@ -117,7 +119,9 @@
         "9. Local video playback supports gestural scaling.",
         "10.Fix the problem that the switched app language could not immediately take effect on the Online Videos page.",
         "11.Fix the bug that the system language was Traditional Chinese while the app language was English.",
-        "12.Show video title when local video playback view is locked."
+        "12.Show video title when local video playback view is locked.",
+        "13.Newly added a pop-up window on the startup page and a switch preference on the settings page for users to choose whether to share usage status info to help developers improve the current application.",
+        "14.The startup page displays the app name to prevent users from being confused by only pop-up windows with content."
       ]
     },
     "dev": "beta",

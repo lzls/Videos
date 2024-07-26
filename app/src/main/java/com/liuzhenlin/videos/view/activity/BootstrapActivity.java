@@ -9,17 +9,20 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.splashscreen.SplashScreen;
 
-import com.liuzhenlin.common.utils.ThemeUtils;
+import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.view.activity.startup.LaunchChain;
 import com.liuzhenlin.videos.view.activity.startup.LaunchProcessor;
 import com.liuzhenlin.videos.view.activity.startup.NotificationPermissionProcessor;
 import com.liuzhenlin.videos.view.activity.startup.StoragePermissionsInterceptor;
+import com.liuzhenlin.videos.view.activity.startup.UsageStatusSharingProcessor;
 
 import java.util.List;
 
@@ -28,13 +31,14 @@ import pub.devrel.easypermissions.EasyPermissions;
 /**
  * @author 刘振林
  */
-public class BootstrapActivity extends BaseActivity
+public class BootstrapActivity extends StatusBarTransparentActivity
         implements EasyPermissions.PermissionCallbacks, EasyPermissions.RationaleCallbacks {
 
     private final LaunchChain<BootstrapActivity> mLaunchChain =
             new LaunchChain.Builder<>(this)
                     .processor(new StoragePermissionsInterceptor<>())
                     .processor(new NotificationPermissionProcessor<>())
+                    .processor(new UsageStatusSharingProcessor<>())
                     .processor(new LaunchProcessor<>())
                     .build();
 
@@ -51,7 +55,11 @@ public class BootstrapActivity extends BaseActivity
         }
         super.onCreate(savedInstanceState);
         setAsNonSwipeBackActivity();
-        setLightStatus(!ThemeUtils.isNightMode(this));
+        setContentView(R.layout.activity_bootstrap);
+        UiUtils.insertTopPaddingToActionBarIfLayoutUnderStatus(findViewById(R.id.actionbar));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            findViewById(R.id.shadow_actionbar).setVisibility(View.VISIBLE);
+        }
 
         mLaunchChain.start();
     }
