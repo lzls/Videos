@@ -62,6 +62,7 @@
     <string name="notHaveEnoughStorage">Device does not have enough storage.</string>
     <string name="notOpenNow">Not Open</string>
     <string name="notSave">Not Save</string>
+    <string name="notShare">Not Share</string>
     <string name="ok">OK</string>
     <string name="onlineVideos">Online Videos</string>
     <string name="openOrCloseSideDrawer">Open or close the side drawer</string>
@@ -78,6 +79,7 @@
     <string name="pleaseInputVideoLinkFirst">Please input video link first!</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">Please insert SD card on your device first.</string>
     <string name="pressAgainToExitApp">Press again to exit app</string>
+    <string name="privacy">Privacy</string>
     <string name="prompt_enableNotificationsForAppDownload">
         Please enable notifications from Settings, or app download result will not show.</string>
     <string name="prompt_videoMove">
@@ -100,6 +102,13 @@
         This app has not been granted the floating window permission.
         Please try it again after opening!
     </string>
+    <string name="rationale_usageStatusSharing">
+        The information includes basic application information, app usage information, error logs,
+        basic device information, etc. Sharing this information will help application developers
+        promptly fix problems encountered by users during use, thereby improving product quality
+        and optimizing user experience.
+    </string>
+    <string name="title_usageStatusSharing">Share App and Device Info with The App Developer</string>
     <string name="readOfSthTimedOut">Read of %s timed out</string>
     <string name="readTimeout">Read timeout</string>
     <string name="refreshError">Refresh Error</string>
@@ -137,6 +146,7 @@
     <string name="turnOn">Turn on</string>
     <string name="severalItemsHaveBeenSelected" tools:ignore="PluralsCandidate">%d items selected</string>
     <string name="share">Share</string>
+    <string name="share2">@string/share</string>
     <string name="size">Size: %s</string>
     <string name="someDirectory">\"%s\" directory</string>
     <string name="theInstallationPackageHasBeenDamaged">The installation package has been Damaged.</string>
@@ -157,7 +167,7 @@
     <string name="youHaveNotCommitted">You Have Not Committed</string>
 
     <string name="appName_chinese" translatable="false">视频</string>
-    <string name="version" translatable="false">2.4-beta03</string>
+    <string name="version" translatable="false">2.4-beta04</string>
     <string name="copyright" translatable="false">
         Copyright © 2017–present 刘振林.\nAll rights reserved.</string>
     <string name="projectLink" translatable="false">https://github.com/lzls/Videos</string>

@@ -20,6 +20,12 @@
 
     <style name="ActivityStyle_Bootstrap" parent="AppTheme" />
 
+    <style name="ActivityStyle_Settings" parent="AppTheme">
+        <item name="android:listPreferredItemPaddingStart" tools:targetApi="jelly_bean_mr1">25dp</item>
+        <item name="android:listPreferredItemPaddingEnd" tools:targetApi="jelly_bean_mr1">17dp</item>
+        <item name="singleLineTitle">false</item>
+    </style>
+
     <style name="Theme.AppCompat.DayNight.Dialog.ThemeColored">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
