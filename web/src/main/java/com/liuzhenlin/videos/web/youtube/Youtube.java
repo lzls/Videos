@@ -262,11 +262,23 @@ public final class Youtube {
                     "function attachVideoListeners(v) {\n" +
                     "  if (v.getAttribute('listenersAttached') === 'true') return;\n" +
                     "  v.setAttribute('listenersAttached', 'true');\n" +
+                    "\n" +
+                    "  function setPlaybackQuality(e) {\n" +
+                    "    if (v.getAttribute('qualitySet') === 'true') return;\n" +
+                    "    v.setAttribute('qualitySet', 'true');\n" +
+                    "    " + setPlaybackQuality(Prefs.get(context).getVideoQuality())
+                                    .replace("javascript:", "") + "\n" +
+                    "  }\n" +
+                    "\n" +
                     "  " + JSI_ON_EVENT + "(" + JSE_VIDEO_SELECTOR_FOUND + ", null);\n" +
-                    "  if (v.currentTime > 0 && !v.paused && !v.ended) " + JSI_ON_EVENT
-                    + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);\n" +
-                    "  v.addEventListener('playing', function(e) {" + JSI_ON_EVENT
-                    + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);});\n" +
+                    "  if (v.currentTime > 0 && !v.paused && !v.ended) {\n" +
+                    "    " + JSI_ON_EVENT + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);\n" +
+                    "    setPlaybackQuality();\n" +
+                    "  }\n" +
+                    "  v.addEventListener('playing', function(e) {\n" +
+                    "      " + JSI_ON_EVENT + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);\n" +
+                    "      setPlaybackQuality();\n" +
+                    "  });\n" +
                     "  v.addEventListener('pause', function(e) {" + JSI_ON_EVENT
                     + "(" + JSE_VIDEO_PAUSED + ", v.currentSrc);});\n" +
                     "  v.addEventListener('ended', function(e) {" + JSI_ON_EVENT
@@ -275,13 +287,10 @@ public final class Youtube {
                     + "(" + JSE_VIDEO_BUFFERING + ", null);});\n" +
                     "  v.addEventListener('loadstart', function(e) {" + JSI_ON_EVENT
                     + "(" + JSE_VIDEO_UNSTARTED + ", null);});\n" +
-                    "  v.addEventListener('loadedmetadata', function(e) {\n" +
-                    "    if (v.getAttribute('qualitySet') === 'true') return;\n" +
-                    "    v.setAttribute('qualitySet', 'true');\n" +
-                    "    " + setPlaybackQuality(Prefs.get(context).getVideoQuality())
-                                    .replace("javascript:", "") + "\n" +
-                    "  });\n" +
+                    "  v.addEventListener('loadedmetadata', setPlaybackQuality);\n" +
+                    "  v.addEventListener('canplay', setPlaybackQuality);\n" +
                     "}\n" +
+                    "\n" +
                     "function findVideo() {\n" +
                     "  var video = document.querySelectorAll('video');\n" +
                     "  video.forEach(attachVideoListeners);\n" +
@@ -397,7 +406,10 @@ public final class Youtube {
         }
 
         public static String setPlaybackQuality(String quality) {
+            quality = quality.trim().toLowerCase();
             return "javascript:\n" +
+                    "if ('" + quality + "'.match(/^" + VideoQuality.AUTO + "$/i)) return;\n" +
+                    "\n" +
                     "function retrySetVideoQuality(quality, attempt, openMenu) {\n" +
                     "  if (attempt < 10)\n" +
                     "   setTimeout(setVideoQuality, 100, quality, attempt + 1, openMenu);\n" +
@@ -405,27 +417,51 @@ public final class Youtube {
                     + ", 'Failed to set playback quality to " + quality + "');\n" +
                     "  return false;\n" +
                     "}\n" +
+                    "\n" +
                     "function setVideoQuality(quality, attempt, openMenu) {\n" +
                     "  if (openMenu) {\n" +
                     "    var b = document.querySelector('.player-settings-icon');\n" +
                     "    if (b == null) return retrySetVideoQuality(quality, attempt, true);\n" +
                     "    b.click();\n" +
                     "  }\n" +
-                    "  var settings = document.querySelector('.player-quality-settings');\n" +
+                    "\n" +
+                    "  var settings = document.getElementsByClassName("
+                    + "'yt-list-item-view-model-wiz__container--tappable');\n" +
+                    "  if (settings.length > 0) {\n" +
+                    "    var qualityRegex = /^[0-9]+p$/i;\n" +
+                    "    for (let i = 0; i < settings.length; i++) {\n" +
+                    "      var setting = settings[i].querySelector("
+                    + "'.yt-list-item-view-model-wiz__selection-text');\n" +
+                    "      if (setting != null && setting.innerText.match(qualityRegex)) {\n" +
+                    "        setting.click();\n" +
+                    "        return retrySetVideoQuality(quality, attempt, false);\n" +
+                    "      } else {\n" +
+                    "        setting = settings[i].querySelector('.yt-list-item-view-model-wiz__title');\n" +
+                    "        if (setting != null && setting.innerText.match(qualityRegex)) {\n" +
+                    "          var option = setting.innerText.toLowerCase();\n" +
+                    "          if (parseInt(option.substring(0, option.indexOf('p')))\n" +
+                    "              <= parseInt(quality.substring(0, quality.indexOf('p')))) {\n" +
+                    "            setting.click();\n" +
+                    "            return true;\n" +
+                    "          }\n" +
+                    "        }\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "    return retrySetVideoQuality(quality, attempt, false);\n" +
+                    "  }\n" +
+                    "\n" +
+                    "  settings = document.querySelector('.player-quality-settings');\n" +
                     "  if (settings == null) return retrySetVideoQuality(quality, attempt, false);\n" +
                     "  var select = settings.querySelector('.select');\n" +
                     "  if (select == null) return retrySetVideoQuality(quality, attempt, false);\n" +
                     "  var options = select.getElementsByClassName('option');\n" +
                     "  var idx = options.length - 1;\n" +
-                    "  quality = quality.trim().toLowerCase();\n" +
-                    "  if (!quality.match(/^" + VideoQuality.AUTO + "$/i)) {\n" +
-                    "    for (let i = 0; i < options.length - 1; i++) {\n" +
-                    "      var option = options[i].innerText.toLowerCase();\n" +
-                    "      if (parseInt(option.substring(0, option.indexOf('p')))\n" +
-                    "          <= parseInt(quality.substring(0, quality.indexOf('p')))) {\n" +
-                    "        idx = i;\n" +
-                    "        break;\n" +
-                    "      }\n" +
+                    "  for (let i = 0; i < options.length - 1; i++) {\n" +
+                    "    var option = options[i].innerText.toLowerCase();\n" +
+                    "    if (parseInt(option.substring(0, option.indexOf('p')))\n" +
+                    "        <= parseInt(quality.substring(0, quality.indexOf('p')))) {\n" +
+                    "      idx = i;\n" +
+                    "      break;\n" +
                     "    }\n" +
                     "  }\n" +
                     "  if (idx != select.selectedIndex) {\n" +
@@ -439,6 +475,7 @@ public final class Youtube {
                     + "'.c3-material-button-button').click();}, 100);\n" +
                     "  return true;\n" +
                     "}\n" +
+                    "\n" +
                     "setVideoQuality('" + quality + "', 0, true);";
         }
 
