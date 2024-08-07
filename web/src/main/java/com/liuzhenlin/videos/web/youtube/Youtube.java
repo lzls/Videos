@@ -307,9 +307,12 @@ public final class Youtube {
                     "    btn.click();\n" +
                     "    return true;\n" +
                     "  }\n" +
-                    "  if (attempt < 10) {\n" +
-                    "    console.debug('Retry skipping AD poster...');\n" +
-                    "    setTimeout(skipAdPoster, 100, attempt + 1);\n" +
+                    "  if (attempt < 20) {\n" +
+                    "    console.debug('Retry skipping AD poster... attempt=' + (attempt + 1));\n" +
+                    "    let delayMs = 100;\n" +
+                    "    if (attempt >= 15) delayMs = 266.6;\n" +
+                    "    else if (attempt >= 10) delayMs = 200;\n" +
+                    "    setTimeout(skipAdPoster, delayMs, attempt + 1);\n" +
                     "    return false;\n" +
                     "  }\n" +
                     "  if (document.querySelector('.ad-showing') != null) {\n" +
@@ -410,9 +413,13 @@ public final class Youtube {
                     "if ('" + quality + "'.match(/^" + VideoQuality.AUTO + "$/i)) return;\n" +
                     "\n" +
                     "function retrySetVideoQuality(quality, attempt, openMenu) {\n" +
-                    "  if (attempt < 10)\n" +
-                    "    setTimeout(setVideoQuality, 100, quality, attempt + 1, openMenu);\n" +
-                    "  else " + JSI_ON_EVENT + "(" + JSE_ERR
+                    "  if (attempt < 20) {\n" +
+                    "    var delayMs = 100;\n" +
+                    "    if (attempt >= 15) delayMs = 266.6;\n" +
+                    "    else if (attempt >= 10) delayMs = 200;\n" +
+                    "    setTimeout(setVideoQuality, delayMs, quality, attempt + 1, openMenu);\n" +
+                    "  } else\n" +
+                    "    " + JSI_ON_EVENT + "(" + JSE_ERR
                             + ", 'Failed to set playback quality to " + quality + "');\n" +
                     "  return false;\n" +
                     "}\n" +
@@ -684,8 +691,13 @@ public final class Youtube {
                     "  return true;\n" +
                     "}\n" +
                     "function retryRequestFullscreen(attempt) {\n" +
-                    "  if (attempt < 10) setTimeout(requestFullscreen, 100, attempt);\n" +
-                    "  else " + JSI_ON_EVENT + "(" + JSE_ERR
+                    "  if (attempt < 20) {\n" +
+                    "    var delayMs = 100;\n" +
+                    "    if (attempt >= 15) delayMs = 266.6;\n" +
+                    "    else if (attempt >= 10) delayMs = 200;\n" +
+                    "    setTimeout(requestFullscreen, delayMs, attempt);\n" +
+                    "  } else\n" +
+                    "    " + JSI_ON_EVENT + "(" + JSE_ERR
                             + ", 'Failed to request video to be fullscreen');\n" +
                     "  return false;\n" +
                     "}\n" +
