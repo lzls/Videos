@@ -149,11 +149,11 @@ public final class Youtube {
         private IFrameJsInterface() {}
 
         public static String loadVideo(String vId, long startMs) {
-            String js = "javascript:player.loadVideoById({videoId:\"" + vId + "\"";
+            String js = "javascript:player.loadVideoById({ videoId:\" " + vId + "\"";
             if (startMs != Constants.TIME_UNSET) {
-                js += ", startSeconds:" + (startMs / 1000d);
+                js += ", startSeconds: " + (startMs / 1000d);
             }
-            js += "});";
+            js += " });";
             return js;
         }
 
@@ -182,12 +182,11 @@ public final class Youtube {
         }
 
         public static String seekTo(long positionMs) {
-            return "javascript:"
-                    + "player.seekTo(" + roundDouble(positionMs / 1000d) + ", true);";
+            return "javascript:player.seekTo(" + roundDouble(positionMs / 1000d) + ", true);";
         }
 
         public static String fastRewind() {
-            return "javascript:player.seekTo(player.getCurrentTime() -15, true);";
+            return "javascript:player.seekTo(player.getCurrentTime() - 15, true);";
         }
 
         public static String fastForward() {
@@ -206,11 +205,11 @@ public final class Youtube {
         }
 
         public static String loadPlaylist(String pId, int index, long startMs) {
-            String js = "javascript:player.loadPlaylist({list:\"" + pId + "\", index:" + index;
+            String js = "javascript:player.loadPlaylist({ list: \"" + pId + "\", index: " + index;
             if (startMs != Constants.TIME_UNSET) {
-                js += ", startSeconds:" + (startMs / 1000d);
+                js += ", startSeconds: " + (startMs / 1000d);
             }
-            js += "});";
+            js += " });";
             return js;
         }
 
@@ -249,7 +248,7 @@ public final class Youtube {
                     "infoObj['" + Keys.BUFFERED_POSITION + "'] = bufferedPosition;\n" +
                     "infoObj['" + Keys.CURRENT_POSITION + "'] = currentPosition;\n" +
                     "infoObj['" + Keys.REFRESH_NOTIFICATION + "'] = "
-                    + refreshNotificationOnInfoRetrieved + ";\n" +
+                            + refreshNotificationOnInfoRetrieved + ";\n" +
                     JSI_ON_EVENT + "(" + JSE_VIDEO_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
         }
     }
@@ -279,14 +278,14 @@ public final class Youtube {
                     "      " + JSI_ON_EVENT + "(" + JSE_VIDEO_PLAYING + ", v.currentSrc);\n" +
                     "      setPlaybackQuality();\n" +
                     "  });\n" +
-                    "  v.addEventListener('pause', function(e) {" + JSI_ON_EVENT
-                    + "(" + JSE_VIDEO_PAUSED + ", v.currentSrc);});\n" +
-                    "  v.addEventListener('ended', function(e) {" + JSI_ON_EVENT
-                    + "(" + JSE_VIDEO_ENDED + ", v.currentSrc);});\n" +
-                    "  v.addEventListener('waiting', function(e) {" + JSI_ON_EVENT
-                    + "(" + JSE_VIDEO_BUFFERING + ", null);});\n" +
-                    "  v.addEventListener('loadstart', function(e) {" + JSI_ON_EVENT
-                    + "(" + JSE_VIDEO_UNSTARTED + ", null);});\n" +
+                    "  v.addEventListener('pause', function(e) { " + JSI_ON_EVENT
+                            + "(" + JSE_VIDEO_PAUSED + ", v.currentSrc); });\n" +
+                    "  v.addEventListener('ended', function(e) { " + JSI_ON_EVENT
+                            + "(" + JSE_VIDEO_ENDED + ", v.currentSrc); });\n" +
+                    "  v.addEventListener('waiting', function(e) { " + JSI_ON_EVENT
+                            + "(" + JSE_VIDEO_BUFFERING + ", null); });\n" +
+                    "  v.addEventListener('loadstart', function(e) { " + JSI_ON_EVENT
+                            + "(" + JSE_VIDEO_UNSTARTED + ", null); });\n" +
                     "  v.addEventListener('loadedmetadata', setPlaybackQuality);\n" +
                     "  v.addEventListener('canplay', setPlaybackQuality);\n" +
                     "}\n" +
@@ -332,7 +331,7 @@ public final class Youtube {
 
         public static String setMuted(boolean muted) {
             return "javascript:var v = document.querySelector('video');\n" +
-                    "if (v != null) v.muted=" + muted + ";";
+                    "if (v != null) v.muted = " + muted + ";";
         }
 
         public static String loadVideo(String vId, long startMs) {
@@ -412,9 +411,9 @@ public final class Youtube {
                     "\n" +
                     "function retrySetVideoQuality(quality, attempt, openMenu) {\n" +
                     "  if (attempt < 10)\n" +
-                    "   setTimeout(setVideoQuality, 100, quality, attempt + 1, openMenu);\n" +
+                    "    setTimeout(setVideoQuality, 100, quality, attempt + 1, openMenu);\n" +
                     "  else " + JSI_ON_EVENT + "(" + JSE_ERR
-                    + ", 'Failed to set playback quality to " + quality + "');\n" +
+                            + ", 'Failed to set playback quality to " + quality + "');\n" +
                     "  return false;\n" +
                     "}\n" +
                     "\n" +
@@ -426,12 +425,12 @@ public final class Youtube {
                     "  }\n" +
                     "\n" +
                     "  var settings = document.getElementsByClassName("
-                    + "'yt-list-item-view-model-wiz__container--tappable');\n" +
+                            + "'yt-list-item-view-model-wiz__container--tappable');\n" +
                     "  if (settings.length > 0) {\n" +
                     "    var qualityRegex = /^[0-9]+p$/i;\n" +
                     "    for (let i = 0; i < settings.length; i++) {\n" +
                     "      var setting = settings[i].querySelector("
-                    + "'.yt-list-item-view-model-wiz__selection-text');\n" +
+                                + "'.yt-list-item-view-model-wiz__selection-text');\n" +
                     "      if (setting != null && setting.innerText.match(qualityRegex)) {\n" +
                     "        setting.click();\n" +
                     "        return retrySetVideoQuality(quality, attempt, false);\n" +
@@ -471,8 +470,8 @@ public final class Youtube {
                     "    options[idx].selected = true;\n" +
                     "    select.dispatchEvent(evt);\n" +
                     "  }\n" +
-                    "  setTimeout(()=> {settings.parentNode.parentNode.querySelector("
-                    + "'.c3-material-button-button').click();}, 100);\n" +
+                    "  setTimeout(() => { settings.parentNode.parentNode.querySelector("
+                                    + "'.c3-material-button-button').click(); }, 100);\n" +
                     "  return true;\n" +
                     "}\n" +
                     "\n" +
@@ -511,14 +510,15 @@ public final class Youtube {
                     "    if (e != null) e.click();\n" +
                     "  } else {\n" +
                     "    " + JSI_ON_EVENT + "(" + JSE_ERR
-                    + ", 'Expected maximum index for video to be played ' + e.length + "
-                    + "', but got ' + " + index + ");\n" +
+                            + ", 'Expected maximum index for video to be played ' + e.length + "
+                            + "', but got ' + " + index + ");\n" +
                     "  }\n" +
                     "} else if (" + index + " == 0) {\n" +
                     "  " + playVideo().replace("javascript:", "") + "\n" +
                     "} else {\n" +
                     "  " + JSI_ON_EVENT + "(" + JSE_ERR
-                    + ", 'Expected maximum index for video to be played 0, but got ' + " + index + ");\n" +
+                            + ", 'Expected maximum index for video to be played 0, "
+                            + "but got ' + " + index + ");\n" +
                     "}";
         }
 
@@ -604,7 +604,7 @@ public final class Youtube {
                     "    let embedUrl = json.embedUrl;\n" +
                     "    let embedUrlInfix = 'youtube.com/embed/';\n" +
                     "    let vid = embedUrl.substring(embedUrl.indexOf(embedUrlInfix)"
-                    + " + embedUrlInfix.length).split('?', 2)[0];\n" +
+                                + " + embedUrlInfix.length).split('?', 2)[0];\n" +
                     "    return vid;\n" +
                     "  }\n" +
                     "  return null;\n" +
@@ -669,7 +669,7 @@ public final class Youtube {
                     "infoObj['" + Keys.BUFFERED_POSITION + "'] = bufferedPosition;\n" +
                     "infoObj['" + Keys.CURRENT_POSITION + "'] = currentPosition;\n" +
                     "infoObj['" + Keys.REFRESH_NOTIFICATION + "'] = "
-                    + refreshNotificationOnInfoRetrieved + ";\n" +
+                            + refreshNotificationOnInfoRetrieved + ";\n" +
                     JSI_ON_EVENT + "(" + JSE_VIDEO_INFO_RETRIEVED + ", JSON.stringify(infoObj));";
         }
 
@@ -686,7 +686,7 @@ public final class Youtube {
                     "function retryRequestFullscreen(attempt) {\n" +
                     "  if (attempt < 10) setTimeout(requestFullscreen, 100, attempt);\n" +
                     "  else " + JSI_ON_EVENT + "(" + JSE_ERR
-                    + ", 'Failed to request video to be fullscreen');\n" +
+                            + ", 'Failed to request video to be fullscreen');\n" +
                     "  return false;\n" +
                     "}\n" +
                     "requestFullscreen(0);";
@@ -789,25 +789,25 @@ public final class Youtube {
             "  <body>\n" +
             PLACEHOLDER_IFRAME_ELEMENT +
             "    <script type=\"text/javascript\">\n" +
-            "      var tag = document.createElement('script');\n" +
-            "      tag.src = \"https://www.youtube.com/iframe_api\";\n" +
-            "      var firstScriptTag = document.getElementsByTagName('script')[0];\n" +
-            "      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);\n" +
-            "      var player;\n" +
-            "      function onYouTubeIframeAPIReady() {\n" +
-            "          player = new YT.Player('player', {\n" +
-            "              events: {\n" +
-            "                  'onReady': onPlayerReady,\n" +
-            "                  'onStateChange': onPlayerStateChange\n" +
-            "              }\n" +
-            "          });\n" +
-            "      }\n" +
-            "      function onPlayerReady(event) {\n" +
-            "          " + JSI_ON_PLAYER_READY + "();\n" +
-            "      }\n" +
-            "      function onPlayerStateChange(event) {\n" +
-            "          " + JSI_ON_PLAYER_STATE_CHANGE + "(player.getPlayerState());\n" +
-            "      }\n" +
+            "        var tag = document.createElement('script');\n" +
+            "        tag.src = \"https://www.youtube.com/iframe_api\";\n" +
+            "        var firstScriptTag = document.getElementsByTagName('script')[0];\n" +
+            "        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);\n" +
+            "        var player;\n" +
+            "        function onYouTubeIframeAPIReady() {\n" +
+            "            player = new YT.Player('player', {\n" +
+            "                events: {\n" +
+            "                    'onReady': onPlayerReady,\n" +
+            "                    'onStateChange': onPlayerStateChange\n" +
+            "                }\n" +
+            "            });\n" +
+            "        }\n" +
+            "        function onPlayerReady(event) {\n" +
+            "            " + JSI_ON_PLAYER_READY + "();\n" +
+            "        }\n" +
+            "        function onPlayerStateChange(event) {\n" +
+            "            " + JSI_ON_PLAYER_STATE_CHANGE + "(player.getPlayerState());\n" +
+            "        }\n" +
             "    </script>\n" +
             "\n" +
             "  </body>\n" +
