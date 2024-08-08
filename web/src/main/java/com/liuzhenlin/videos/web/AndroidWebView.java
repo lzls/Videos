@@ -9,8 +9,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -93,6 +95,18 @@ public class AndroidWebView extends WebView {
             setScrollY(1);
         }
         return consumed;
+    }
+
+    @Override
+    public void reload() {
+        String originalUrl = getOriginalUrl();
+        if (originalUrl != null && !TextUtils.equals(originalUrl, getUrl())
+                && URLUtil.isNetworkUrl(originalUrl)) {
+            // Prefer reloading the original network url over the redirected one.
+            loadUrl(originalUrl);
+        } else {
+            super.reload();
+        }
     }
 
     protected void setup(WebSettings settings) {
