@@ -8,8 +8,8 @@ package com.liuzhenlin.texturevideoview.utils;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.media3.common.util.Util;
 
-import com.google.android.exoplayer2.util.Util;
 import com.googlecode.mp4parser.authoring.Movie;
 import com.googlecode.mp4parser.authoring.Track;
 import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
@@ -181,6 +181,6 @@ public class VideoUtils {
             videoW = Utils.roundFloat(videoW * pixelWidthHeightRatio);
         }
 
-        return new int[] {videoW, videoH};
+        return new int[]{videoW, videoH};
     }
 }

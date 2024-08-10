@@ -6,15 +6,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
-import java.util.Map;
-import java.util.Set;
-
 import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 
 import com.liuzhenlin.common.utils.NonNullApi;
 import com.liuzhenlin.common.utils.Regex;
+
+import java.util.Map;
+import java.util.Set;
 
 import static com.liuzhenlin.common.utils.prefs.Constants.ACTION_CLEAR;
 import static com.liuzhenlin.common.utils.prefs.Constants.ACTION_CONTAINS;

@@ -311,27 +311,49 @@ public class FileUtils {
             @NonNull Uri mediaUri,
             @NonNull File file,
             @Nullable String mimeType) {
-        context = context.getApplicationContext();
-        final String fileName = file.getName();
-        final String filePath = file.getAbsolutePath();
-        if (mimeType == null) {
-            mimeType = getMimeTypeFromPath(filePath, null);
-            if (mimeType == null) {
-                throw new NullPointerException("Failed to infer mimeType from the file extension");
-            }
+        String[] mimeTypes = mimeType == null ? null : new String[]{mimeType};
+        recordMediaFilesToDatabaseAndScan(context, mediaUri, new File[]{file}, mimeTypes);
+    }
+
+    public static void recordMediaFilesToDatabaseAndScan(
+            @NonNull Context context,
+            @NonNull Uri mediaUri,
+            @NonNull File[] files,
+            @Nullable String[] mimeTypes) {
+        if (mimeTypes != null && mimeTypes.length != files.length) {
+            throw new IllegalArgumentException(
+                    "Length of array 'mimeTypes' is not equal to the length of array 'files'.");
         }
 
-        ContentValues values = new ContentValues(6);
-        values.put(MediaStore.MediaColumns.TITLE, getFileTitleFromFileName(fileName));
-        values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-        values.put(MediaStore.MediaColumns.DATA, filePath);
-        values.put(MediaStore.MediaColumns.SIZE, file.length());
-        values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-        values.put(MediaStore.MediaColumns.DATE_ADDED,
-                Utils.roundDouble(System.currentTimeMillis() / 1000.0));
-        context.getContentResolver().insert(mediaUri, values);
+        context = context.getApplicationContext();
+        String[] filePaths = new String[files.length];
+        if (mimeTypes == null) {
+            mimeTypes = new String[files.length];
+        }
 
-        MediaScannerConnection.scanFile(context, new String[]{filePath}, new String[]{mimeType}, null);
+        for (int i = 0; i < files.length; i++) {
+            final String fileName = files[i].getName();
+            filePaths[i] = files[i].getAbsolutePath();
+            if (mimeTypes[i] == null) {
+                mimeTypes[i] = getMimeTypeFromPath(filePaths[i], null);
+                if (mimeTypes[i] == null) {
+                    throw new NullPointerException(
+                            "Failed to infer mimeType from the extension of file: " + files[i]);
+                }
+            }
+
+            ContentValues values = new ContentValues(6);
+            values.put(MediaStore.MediaColumns.TITLE, getFileTitleFromFileName(fileName));
+            values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+            values.put(MediaStore.MediaColumns.DATA, filePaths[i]);
+            values.put(MediaStore.MediaColumns.SIZE, files[i].length());
+            values.put(MediaStore.MediaColumns.MIME_TYPE, mimeTypes[i]);
+            values.put(MediaStore.MediaColumns.DATE_ADDED,
+                    Utils.roundDouble(System.currentTimeMillis() / 1000.0));
+            context.getContentResolver().insert(mediaUri, values);
+        }
+
+        MediaScannerConnection.scanFile(context, filePaths, mimeTypes, null);
     }
 
     @NonNull

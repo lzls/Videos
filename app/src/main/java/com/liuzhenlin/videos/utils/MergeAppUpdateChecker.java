@@ -32,6 +32,7 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,6 +43,7 @@ import androidx.appcompat.app.AppCompatDialogFragment;
 import androidx.collection.ArrayMap;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -60,8 +62,8 @@ import com.liuzhenlin.common.utils.NotificationChannelManager;
 import com.liuzhenlin.common.utils.Singleton;
 import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.videos.BuildConfig;
-import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Configs;
+import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.ExtentionsKt;
 import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
@@ -73,6 +75,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -95,8 +99,19 @@ import static com.liuzhenlin.common.utils.Utils.runOnConditionMet;
 @MainThread
 public final class MergeAppUpdateChecker {
 
-    public interface OnResultListener {
-        void onResult(boolean newVersionFound);
+    public interface Listener {
+        void onCheckResult(boolean newVersionFound);
+        void onStateChange(@State int oldState, @State int newState);
+    }
+
+    @IntDef({State.ERROR, State.IDLE, State.CHECKING, State.INTERACTING_WITH_USER, State.DOWNLOADING})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface State {
+        int ERROR = -1;
+        int IDLE = 0;
+        int CHECKING = 1;
+        int INTERACTING_WITH_USER = 2;
+        int DOWNLOADING = 3;
     }
 
     private static final String TAG = "AppUpdateChecker";
@@ -114,14 +129,14 @@ public final class MergeAppUpdateChecker {
     @Synthetic String mAppSha1;
     @Synthetic StringBuilder mUpdateLog;
     @Synthetic String mPromptDialogAnchorActivityClsName;
-    @Synthetic boolean mNewVersionFound;
+    @Synthetic volatile boolean mNewVersionFound;
 
     @Synthetic final Context mContext;
     @Synthetic final H mH;
     @Synthetic boolean mToastResult;
-    private boolean mCheckInProgress;
+    private @State int mState;
 
-    @Synthetic List<OnResultListener> mListeners;
+    @Synthetic List<Listener> mListeners;
 
     private static final String EXTRA_APP_NAME = "appName";
     private static final String EXTRA_VERSION_NAME = "versionName";
@@ -150,12 +165,29 @@ public final class MergeAppUpdateChecker {
         mH = new H(Looper.getMainLooper());
     }
 
-    @Synthetic boolean hasOnResultListener() {
+    @State
+    public int getState() {
+        return mState;
+    }
+
+    @Synthetic void setState(@State int state) {
+        int oldState = mState;
+        if (oldState != state) {
+            mState = state;
+            if (hasListener()) {
+                for (int i = mListeners.size() - 1; i >= 0; i--) {
+                    mListeners.get(i).onStateChange(oldState, state);
+                }
+            }
+        }
+    }
+
+    @Synthetic boolean hasListener() {
         return mListeners != null && !mListeners.isEmpty();
     }
 
     // 注：添加后请记得移除，以免引起内存泄漏
-    public void addOnResultListener(@Nullable OnResultListener listener) {
+    public void addListener(@Nullable Listener listener) {
         if (listener != null) {
             if (mListeners == null) {
                 mListeners = new ArrayList<>(1);
@@ -166,8 +198,8 @@ public final class MergeAppUpdateChecker {
         }
     }
 
-    public void removeOnResultListener(@Nullable OnResultListener listener) {
-        if (listener != null && hasOnResultListener()) {
+    public void removeListener(@Nullable Listener listener) {
+        if (listener != null && hasListener()) {
             mListeners.remove(listener);
         }
     }
@@ -180,8 +212,9 @@ public final class MergeAppUpdateChecker {
     public void checkUpdate(boolean toastResult) {
         mToastResult = toastResult;
 
-        if (mCheckInProgress) return;
-        mCheckInProgress = true;
+        if (mState != State.IDLE && mState != State.ERROR)
+            return;
+        setState(State.CHECKING);
 
         final boolean chinese =
                 "zh".equals(mContext.getResources().getConfiguration().locale.getLanguage());
@@ -270,25 +303,33 @@ public final class MergeAppUpdateChecker {
                     case RESULT_NO_NEW_VERSION:
                         mH.sendEmptyMessage(H.MSG_NO_NEW_VERSION);
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.isTheLatestVersion, Toast.LENGTH_SHORT)
-                                    .show();
+                            Toast.makeText(mContext, R.string.alreadyTheLatestVersion,
+                                    Toast.LENGTH_SHORT).show();
                         }
-                        reset();
+                        reset(false);
                         break;
                     case RESULT_CONNECTION_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
-                                    .show();
+                            String text = mContext.getString(R.string.connectionForSthTimedOut,
+                                    mContext.getString(R.string.appUpdateCheck));
+                            Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                         }
-                        reset();
+                        reset(true);
                         break;
                     case RESULT_READ_TIMEOUT:
                         if (mToastResult) {
-                            Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
+                            String text = mContext.getString(R.string.readOfSthTimedOut,
+                                    mContext.getString(R.string.appUpdateCheck));
+                            Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
+                        }
+                        reset(true);
+                        break;
+                    default:
+                        if (mToastResult) {
+                            Toast.makeText(mContext, R.string.appUpdateCheckError, Toast.LENGTH_SHORT)
                                     .show();
                         }
-                    default:
-                        reset();
+                        reset(true);
                         break;
                 }
             }
@@ -299,18 +340,21 @@ public final class MergeAppUpdateChecker {
      * 弹出对话框，提醒用户更新
      */
     @Synthetic void showUpdatePromptDialog() {
+        setState(State.INTERACTING_WITH_USER);
+
         Activity anchorActivity = ActivityUtils.getActivityForName(mPromptDialogAnchorActivityClsName);
         if (anchorActivity == null || anchorActivity.isFinishing()) {
             Log.w(TAG, "The Activity in which the dialog should run doesn't exist, " +
                     "so it will not be showed at all and this check finishes.");
-            reset();
+            // TODO: prompt user, but this should rarely happen and can be ignored.
+            reset(true);
             return;
         }
 
         UpdatePromptDialogFragmentHelper.showFragmentOn(anchorActivity);
     }
 
-    @Synthetic void reset() {
+    @Synthetic void reset(boolean error) {
         mAppName = null;
         mVersionName = null;
         mAppPartLinks = null;
@@ -319,7 +363,7 @@ public final class MergeAppUpdateChecker {
         mUpdateLog = null;
         mPromptDialogAnchorActivityClsName = null;
         mNewVersionFound = false;
-        mCheckInProgress = false;
+        setState(error ? State.ERROR : State.IDLE);
         mServiceIntent = null;
     }
 
@@ -342,14 +386,14 @@ public final class MergeAppUpdateChecker {
                 case MSG_STOP_UPDATE_APP_SERVICE:
                     if (mServiceIntent != null) {
                         mContext.stopService(mServiceIntent);
-                        reset();
+                        reset(msg.obj != null && (Boolean) msg.obj);
                     }
                     break;
                 case MSG_NO_NEW_VERSION:
                 case MSG_NEW_VERSION_FOUND:
-                    if (hasOnResultListener()) {
+                    if (hasListener()) {
                         for (int i = mListeners.size() - 1; i >= 0; i--) {
-                            mListeners.get(i).onResult(what != MSG_NO_NEW_VERSION);
+                            mListeners.get(i).onCheckResult(what != MSG_NO_NEW_VERSION);
                         }
                     }
                     break;
@@ -407,6 +451,7 @@ public final class MergeAppUpdateChecker {
                     case R.id.btn_confirm:
                         if (FileUtils.isExternalStorageMounted()) {
                             if (FileUtils.hasEnoughStorageOnDisk(auc.mAppLength)) {
+                                auc.setState(State.DOWNLOADING);
                                 auc.mServiceIntent = new Intent(auc.mContext, UpdateAppService.class)
                                         .putExtra(EXTRA_APP_NAME, auc.mAppName)
                                         .putExtra(EXTRA_VERSION_NAME, auc.mVersionName)
@@ -415,12 +460,12 @@ public final class MergeAppUpdateChecker {
                                         .putExtra(EXTRA_APP_SHA1, auc.mAppSha1);
                                 auc.mContext.startService(auc.mServiceIntent);
                             } else {
-                                auc.reset();
+                                auc.reset(true);
                                 Toast.makeText(auc.mContext, R.string.notHaveEnoughStorage,
                                         Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            auc.reset();
+                            auc.reset(true);
                             Toast.makeText(auc.mContext, R.string.pleaseInsertSdCardOnYourDeviceFirst,
                                     Toast.LENGTH_SHORT).show();
                         }
@@ -428,7 +473,7 @@ public final class MergeAppUpdateChecker {
                         break;
                     // 当点取消按钮时不做任何举动
                     case R.id.btn_cancel:
-                        auc.reset();
+                        auc.reset(false);
                         dismissAllowingStateLoss();
                         break;
                 }
@@ -460,8 +505,8 @@ public final class MergeAppUpdateChecker {
             // Activity recreation, so as not to block the next update check request and causing
             // serious unresponsiveness issue.
             MergeAppUpdateChecker auc = MergeAppUpdateChecker.getSingleton(getThemedContext());
-            if (auc.mServiceIntent == null) {
-                auc.reset();
+            if (auc.mServiceIntent == null && auc.getState() != State.CHECKING) {
+                auc.reset(false /* ignore */);
             }
         }
     }
@@ -752,7 +797,7 @@ public final class MergeAppUpdateChecker {
             RemoteViews nv = createNotificationView();
             mNotificationBuilder = new NotificationCompat.Builder(mContext, channelId)
                     .setSmallIcon(R.drawable.ic_media_app_notification)
-                    .setTicker(mContext.getString(R.string.downloadingUpdates))
+                    .setTicker(mContext.getString(R.string.downloadingUpdates_title))
                     .setCustomContentView(nv)
                     .setCustomBigContentView(nv)
                     .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
@@ -772,7 +817,9 @@ public final class MergeAppUpdateChecker {
             startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
 
             mReceiver = new CancelAppUpdateReceiver();
-            registerReceiver(mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION));
+            ContextCompat.registerReceiver(
+                    this, mReceiver, new IntentFilter(CancelAppUpdateReceiver.ACTION),
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
 
             Executors.THREAD_POOL_EXECUTOR.execute(() -> {
                 //noinspection ConstantConditions
@@ -844,7 +891,7 @@ public final class MergeAppUpdateChecker {
                     PendingIntent.getBroadcast(
                             mContext,
                             0,
-                            new Intent(CancelAppUpdateReceiver.ACTION),
+                            new Intent(CancelAppUpdateReceiver.ACTION).setPackage(mPkgName),
                             PENDING_INTENT_FLAG_IMMUTABLE));
             return nv;
         }
@@ -858,7 +905,7 @@ public final class MergeAppUpdateChecker {
 
             if (!mCanceled.getAndSet(true)) {
                 if (mRunning) {
-                    cancel(true);
+                    cancel(true, false);
                 }
             }
 
@@ -866,7 +913,7 @@ public final class MergeAppUpdateChecker {
             mReceiver = null;
         }
 
-        void cancel(boolean removeNotificationNow) {
+        void cancel(boolean removeNotificationNow, boolean errorOccurred) {
             if (Configs.DEBUG_APP_UPDATE) {
                 Log.d(TAG, "Cancel tasks that are still active.");
             }
@@ -876,7 +923,7 @@ public final class MergeAppUpdateChecker {
 
             deleteApkParts();
 
-            stopService(removeNotificationNow);
+            stopService(removeNotificationNow, errorOccurred);
         }
 
         private void deleteApkParts() {
@@ -890,7 +937,7 @@ public final class MergeAppUpdateChecker {
             }
         }
 
-        @Synthetic void stopService(boolean removeNotificationNow) {
+        @Synthetic void stopService(boolean removeNotificationNow, boolean errorOccurred) {
             mRunning = false;
             if (Configs.DEBUG_APP_UPDATE) {
                 Log.d(TAG, "Waiting for any progress notification to complete to be sent. "
@@ -904,11 +951,12 @@ public final class MergeAppUpdateChecker {
                     mNotificationManager.cancel(ID_NOTIFICATION);
                 }
             }
-            getHandler().sendEmptyMessage(H.MSG_STOP_UPDATE_APP_SERVICE);
+            getHandler().obtainMessage(H.MSG_STOP_UPDATE_APP_SERVICE, errorOccurred)
+                    .sendToTarget();
         }
 
         @Synthetic void stopServiceAndShowInstallAppPrompt() {
-            stopService(false);
+            stopService(false, false);
 
             // Postpone showing a notification to remind the user to install the downloaded app,
             // because the Context's stopService method will asynchronously cancel
@@ -991,9 +1039,10 @@ public final class MergeAppUpdateChecker {
         @Synthetic void onConnectionTimeout() {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
-                    cancel(false);
-                    Toast.makeText(mContext, R.string.connectionTimeout, Toast.LENGTH_SHORT)
-                            .show();
+                    cancel(false, true);
+                    String text = mContext.getString(R.string.connectionForSthTimedOut,
+                            mContext.getString(R.string.appDownload));
+                    Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                 });
             }
         }
@@ -1001,9 +1050,10 @@ public final class MergeAppUpdateChecker {
         @Synthetic void onReadTimeout() {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
-                    cancel(false);
-                    Toast.makeText(mContext, R.string.readTimeout, Toast.LENGTH_SHORT)
-                            .show();
+                    cancel(false, true);
+                    String text = mContext.getString(R.string.readOfSthTimedOut,
+                            mContext.getString(R.string.appDownload));
+                    Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
                 });
             }
         }
@@ -1011,8 +1061,8 @@ public final class MergeAppUpdateChecker {
         @Synthetic void onDownloadError() {
             if (!mCanceled.getAndSet(true)) {
                 getHandler().post(() -> {
-                    cancel(false);
-                    Toast.makeText(mContext, R.string.downloadError, Toast.LENGTH_SHORT)
+                    cancel(false, true);
+                    Toast.makeText(mContext, R.string.appDownloadError, Toast.LENGTH_SHORT)
                             .show();
                 });
             }

@@ -21,19 +21,19 @@ dependencies {
     //       TextureVideoView's resizing.
     api 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    api "com.google.android.exoplayer:exoplayer-core:$rootProject.ext.exoplayer2Version"
-    api "com.google.android.exoplayer:exoplayer-dash:$rootProject.ext.exoplayer2Version"
-    api "com.google.android.exoplayer:exoplayer-hls:$rootProject.ext.exoplayer2Version"
-    api "com.google.android.exoplayer:exoplayer-smoothstreaming:$rootProject.ext.exoplayer2Version"
-    api "com.google.android.exoplayer:exoplayer-rtsp:$rootProject.ext.exoplayer2Version"
-    api "com.google.android.exoplayer:extension-rtmp:$rootProject.ext.exoplayer2Version"
+    api "androidx.media3:media3-exoplayer:$rootProject.ext.androidxMedia3Version"
+    api "androidx.media3:media3-exoplayer-dash:$rootProject.ext.androidxMedia3Version"
+    api "androidx.media3:media3-exoplayer-hls:$rootProject.ext.androidxMedia3Version"
+    api "androidx.media3:media3-exoplayer-smoothstreaming:$rootProject.ext.androidxMedia3Version"
+    api "androidx.media3:media3-exoplayer-rtsp:$rootProject.ext.androidxMedia3Version"
+    api "androidx.media3:media3-datasource-rtmp:$rootProject.ext.androidxMedia3Version"
     api project(exoplayer2ExtensionModulesPrefix + 'av1')
     api project(exoplayer2ExtensionModulesPrefix + 'ffmpeg')
     api project(exoplayer2ExtensionModulesPrefix + 'vp9')
 
     api project(':ijkplayer')
 
-    api 'org.videolan.android:libvlc-all:3.4.9'
+    api 'org.videolan.android:libvlc-all:3.5.1'
 
 //    api 'com.danikula:videocache:2.7.1'
 

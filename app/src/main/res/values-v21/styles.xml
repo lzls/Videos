@@ -2,11 +2,7 @@
 <resources>
 
     <style name="ActivityStyle_Bootstrap" parent="Theme.SplashScreen">
-        <item name="postSplashScreenTheme">@style/_ActivityStyle_Bootstrap</item>
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
-    </style>
-    <style name="_ActivityStyle_Bootstrap" parent="AppTheme">
-        <!--状态栏透明-->
-        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>

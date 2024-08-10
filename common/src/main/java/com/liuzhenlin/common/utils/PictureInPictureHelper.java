@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
@@ -180,16 +181,19 @@ public class PictureInPictureHelper {
     @RequiresApi(Build.VERSION_CODES.O)
     private RemoteAction createPipAction(
             @DrawableRes int iconId, String title, int pipAction, int requestCode) {
+        // For apps targeting Android 14 (API level 34) or higher, Android restricts apps from
+        // sending implicit intents to internal app components.
+        Intent explictIntent = new Intent().setPackage(mActivity.getPackageName());
         // This is the PendingIntent that is invoked when a user clicks on the action item.
         // You need to use distinct request codes for play, pause, fast forward, and fast rewind,
         // or the PendingIntent won't be properly updated.
-        PendingIntent intent = PendingIntent.getBroadcast(
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 mActivity,
                 requestCode,
-                new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_PIP_ACTION, pipAction),
+                explictIntent.setAction(ACTION_MEDIA_CONTROL).putExtra(EXTRA_PIP_ACTION, pipAction),
                 Consts.PENDING_INTENT_FLAG_IMMUTABLE);
         Icon icon = IconCompat.createWithResource(mActivity, iconId).toIcon(mActivity);
-        return new RemoteAction(icon, title, title, intent);
+        return new RemoteAction(icon, title, title, pendingIntent);
     }
 
     @RequiresApi(SDK_VERSION_SUPPORTS_PIP)
@@ -224,7 +228,8 @@ public class PictureInPictureHelper {
                     }
                 }
             };
-            mActivity.registerReceiver(mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL));
+            ContextCompat.registerReceiver(mActivity, mReceiver,
+                    new IntentFilter(ACTION_MEDIA_CONTROL), ContextCompat.RECEIVER_NOT_EXPORTED);
 
             setOnPipLayoutChangeListener(mAdapter, mOnPipLayoutChangeListener);
         } else {

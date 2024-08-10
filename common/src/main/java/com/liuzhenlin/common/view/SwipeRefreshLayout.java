@@ -822,8 +822,8 @@ public class SwipeRefreshLayout extends ViewGroup
      *
      * @param enabled {@code true} to enable the legacy behavior, {@code false} for default behavior
      * @deprecated Only use this method if the changes introduced in
-     *         {@link #requestDisallowInterceptTouchEvent} in version 1.1.0-alpha03 are breaking
-     *         your application.
+     * {@link #requestDisallowInterceptTouchEvent} in version 1.1.0-alpha03 are breaking
+     * your application.
      */
     @Deprecated
     public void setLegacyRequestDisallowInterceptTouchEventEnabled(boolean enabled) {

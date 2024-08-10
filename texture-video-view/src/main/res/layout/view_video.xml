@@ -40,6 +40,62 @@
             android:background="@color/videoScrimColor"
             android:visibility="gone" />
 
+        <RelativeLayout
+            android:id="@+id/frame_videoVisibleAreaIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_bias="0.25"
+            app:layout_constraintVertical_bias="0.5"
+            android:background="@color/bg_popup"
+            android:visibility="gone">
+
+            <com.liuzhenlin.common.view.RectangleIndicatorView
+                android:id="@+id/indicator_videoVisibleArea"
+                android:layout_width="160dp"
+                android:layout_height="90dp"
+                app:outerRectStrokeWidth="0dp"
+                app:outerRectStrokeColor="@android:color/transparent"
+                app:innerRectStrokeWidth="1dp"
+                app:innerRectStrokeColor="@color/colorAccent" />
+
+            <TextView
+                android:id="@+id/text_videoScale"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/indicator_videoVisibleArea"
+                android:layout_alignStart="@id/indicator_videoVisibleArea"
+                android:layout_alignLeft="@id/indicator_videoVisibleArea"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/widget_middle_text_size" />
+
+            <TextView
+                android:id="@+id/btn_resetVideoTransformations"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@id/text_videoScale"
+                android:layout_alignEnd="@id/indicator_videoVisibleArea"
+                android:layout_alignRight="@id/indicator_videoVisibleArea"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical"
+                app:drawableStartCompat="@drawable/ic_revert_white_14dp"
+                app:drawableLeftCompat="@drawable/ic_revert_white_14dp"
+                app:drawableTint="@color/color_selector_white_color_accent"
+                android:drawablePadding="6dp"
+                android:text="@string/reset"
+                android:textColor="@color/color_selector_white_color_accent"
+                android:textSize="@dimen/widget_small_text_size" />
+        </RelativeLayout>
+
         <TextView
             android:id="@+id/text_seekingVideoThumb"
             android:layout_width="wrap_content"

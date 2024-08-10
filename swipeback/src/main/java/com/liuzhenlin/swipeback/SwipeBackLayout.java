@@ -27,7 +27,7 @@ import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.graphics.drawable.DrawableWrapper;
+import androidx.appcompat.graphics.drawable.DrawableWrapperCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.ViewCompat;
@@ -259,10 +259,10 @@ public class SwipeBackLayout extends FrameLayout {
 
         final WeakReference<SwipeBackLayout> mSwipeBackLayoutRef;
 
-        DrawableWrapper mWindowBackground = INVALID_DRAWABLE;
-        static final DrawableWrapper INVALID_DRAWABLE = new DrawableWrapper(null) {
+        DrawableWrapperCompat mWindowBackground = INVALID_DRAWABLE;
+        static final DrawableWrapperCompat INVALID_DRAWABLE = new DrawableWrapperCompat(null) {
             @Override
-            public void setWrappedDrawable(Drawable drawable) {
+            public void setDrawable(Drawable drawable) {
             }
         };
 
@@ -329,7 +329,7 @@ public class SwipeBackLayout extends FrameLayout {
                     // decorView.setBackground() so long as it is the old drawable background.
                     window.setBackgroundDrawableResource(android.R.color.transparent);
                     if (mWindowBackground == null || mWindowBackground == INVALID_DRAWABLE) {
-                        mWindowBackground = new DrawableWrapper(windowBackground) {
+                        mWindowBackground = new DrawableWrapperCompat(windowBackground) {
                             @Override
                             public void draw(Canvas canvas) {
                                 SwipeBackLayout swipeBackLayout = mSwipeBackLayoutRef.get();
@@ -350,7 +350,7 @@ public class SwipeBackLayout extends FrameLayout {
                             }
                         };
                     } else {
-                        mWindowBackground.setWrappedDrawable(windowBackground);
+                        mWindowBackground.setDrawable(windowBackground);
                     }
                 }
                 window.setBackgroundDrawable(mWindowBackground);
