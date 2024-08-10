@@ -19,9 +19,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.util.Util;
 
-import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.util.Util;
 import com.liuzhenlin.common.utils.Utils;
 
 import java.util.List;

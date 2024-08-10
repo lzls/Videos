@@ -18,8 +18,10 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
@@ -45,9 +47,11 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -67,6 +71,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -74,6 +79,7 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.SwitchCompat;
@@ -81,11 +87,16 @@ import androidx.core.content.ContextCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewPropertyAnimatorCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.util.Util;
+import androidx.media3.exoplayer.source.MediaSource;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.ChangeBounds;
 import androidx.transition.Fade;
 import androidx.transition.Transition;
 import androidx.transition.TransitionListenerAdapter;
@@ -93,19 +104,18 @@ import androidx.transition.TransitionManager;
 import androidx.transition.TransitionSet;
 
 import com.bumptech.glide.util.Synthetic;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.util.Util;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.transition.MaterialSharedAxis;
 import com.liuzhenlin.common.Configs;
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel;
+import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter;
 import com.liuzhenlin.common.compat.MediaMetadataRetrieverCompat;
 import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnSystemUiNightModeChangedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.FileUtils;
+import com.liuzhenlin.common.utils.GestureViewHelper;
 import com.liuzhenlin.common.utils.ParallelThreadExecutor;
 import com.liuzhenlin.common.utils.ScreenUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
@@ -114,6 +124,7 @@ import com.liuzhenlin.common.utils.TransitionUtils;
 import com.liuzhenlin.common.utils.URLUtils;
 import com.liuzhenlin.common.utils.UiUtils;
 import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.common.view.RectangleIndicatorView;
 import com.liuzhenlin.common.windowhost.WaitingOverlayDialog;
 import com.liuzhenlin.texturevideoview.drawable.CircularProgressDrawable;
 import com.liuzhenlin.texturevideoview.service.BackgroundPlaybackControllerService;
@@ -129,6 +140,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.liuzhenlin.common.utils.DensityUtils.dp2px;
 import static com.liuzhenlin.texturevideoview.utils.Utils.canUseExoPlayer;
 import static com.liuzhenlin.texturevideoview.utils.Utils.canUseVlcPlayer;
 import static com.liuzhenlin.texturevideoview.utils.Utils.isMediaPlayerPlaybackSpeedAdjustmentSupported;
@@ -413,6 +425,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     private static final int TIMEOUT_SHOW_CONTROLS = 5000; // ms
     /** The amount of time till we fade out the brightness or volume frame. */
     private static final int TIMEOUT_SHOW_BRIGHTNESS_OR_VOLUME = 1000; // ms
+    /** The amount of time till we fade out the frame indicating where the area of the video
+        is visible to the user. */
+    private static final int TIMEOUT_SHOW_VIDEO_VISIBLE_AREA_INDICATOR_FRAME = 1500; // ms
     /** The amount of time till we fade out the view displaying the captured photo of the video. */
     private static final int TIMEOUT_SHOW_CAPTURED_PHOTO = 3000; // ms
 
@@ -480,6 +495,11 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     @Synthetic View mChooseEpisodeButton;
     // END fields: Bottom controls only in fullscreen mode
 
+    @Synthetic final ViewGroup mVideoVisibleAreaIndicatorFrame;
+    private final RectangleIndicatorView mVideoVisibleAreaIndicator;
+    private final TextView mVideoScaleText;
+    @Synthetic final TextView mResetVideoTransformationsButton;
+
     /**
      * Scrim view with a 33.3% black background shows on our TextureView to obscure primary
      * video frames while the video thumb text is visible to the user.
@@ -533,6 +553,21 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
      * Distance in pixels a touch can wander before we think the user is scrolling.
      */
     protected final int mTouchSlop;
+
+    /**
+     * Holds the 4 corner coordinates of the user-visible rectangle area of the transformed video.
+     */
+    private final RectF mVideoVisibleBounds = new RectF();
+    /**
+     * Holds the 4 corner coordinates of the full rectangle area of the transformed video.
+     */
+    private final RectF mVideoBounds = new RectF();
+
+    /**
+     * A utility used to recognize generic scale, scroll and fling gesture events and call back
+     * to OnChildTouchListener for transforming the video content.
+     */
+    @Synthetic final GestureViewHelper mGestureTextureViewHelper;
 
     /**
      * Time interpolator used for the animator of stretching or shrinking the texture view that
@@ -686,6 +721,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         mTextureView = findViewById(R.id.textureView);
         mSubtitleView = findViewById(R.id.subtitleView);
         mScrimView = findViewById(R.id.scrim);
+        mVideoVisibleAreaIndicatorFrame = findViewById(R.id.frame_videoVisibleAreaIndicator);
+        mVideoVisibleAreaIndicator = findViewById(R.id.indicator_videoVisibleArea);
+        mVideoScaleText = findViewById(R.id.text_videoScale);
+        mResetVideoTransformationsButton = findViewById(R.id.btn_resetVideoTransformations);
         mSeekingVideoThumbText = findViewById(R.id.text_seekingVideoThumb);
         mSeekingTextProgressFrame = findViewById(R.id.frame_seekingTextProgress);
         mSeekingProgressDurationText = findViewById(R.id.text_seeking_progress_duration);
@@ -723,9 +762,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         }
                     } else if (slideOffset > 0.5f && slideOffset > this.slideOffset) {
                         if (isControlsShowing()) {
-                            showControls(false);
+                            showControls(false, true, false);
                             mPrivateFlags |= PFLAG_IGNORE_SHOW_CONTROLS_METHOD_CALLS;
                         }
+                        showVideoVisibleAreaIndicator(false);
                     }
                 }
                 this.slideOffset = slideOffset;
@@ -782,6 +822,49 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         mLockUnlockButton.setOnClickListener(mOnChildClickListener);
         mCameraButton.setOnClickListener(mOnChildClickListener);
         mVideoCameraButton.setOnClickListener(mOnChildClickListener);
+        mResetVideoTransformationsButton.setOnClickListener(mOnChildClickListener);
+
+        mGestureTextureViewHelper =
+                new GestureViewHelper(mTextureView, new GestureViewHelper.Callback() {
+                    @Override
+                    public boolean supportsViewTransform() {
+                        return true;
+                    }
+
+                    @Override
+                    public void getViewTransform(@NonNull View view, @NonNull Matrix outMatrix) {
+                        mTextureView.getTransform(outMatrix);
+                    }
+
+                    @Override
+                    public void setViewTransform(@NonNull View view, @Nullable Matrix transform) {
+                        mTextureView.setTransform(transform);
+                    }
+
+                    @Override
+                    public boolean shouldTransformPreConcatViewMatrix() {
+                        return false;
+                    }
+                });
+        mGestureTextureViewHelper.setOnViewTransformedListener(
+                new GestureViewHelper.OnViewTransformedListener() {
+                    @Override
+                    public void onViewScaled(@NonNull View view, float oldScaleX, float oldScaleY,
+                                             float scaleX, float scaleY, float pivotX, float pivotY) {
+                        if (mVideoVisibleAreaIndicatorFrame.getVisibility() == VISIBLE) {
+                            refreshVideoVisibleAreaIndicator();
+                        }
+                    }
+
+                    @Override
+                    public void onViewScrolled(@NonNull View view, float oldScrollX, float oldScrollY,
+                                               float scrollX, float scrollY) {
+                        if (mVideoVisibleAreaIndicatorFrame.getVisibility() == VISIBLE) {
+                            refreshVideoVisibleAreaIndicator();
+                        }
+                    }
+                });
+        mGestureTextureViewHelper.setOnGestureListener(mOnChildTouchListener);
 
         // Prepare video playback
         mTextureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
@@ -823,6 +906,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         mMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
         Typeface tf = Typeface.createFromAsset(mResources.getAssets(), "fonts/avenirnext-medium.ttf");
+        mVideoScaleText.setTypeface(tf);
         mSeekingVideoThumbText.setTypeface(tf);
         mSeekingProgressDurationText.setTypeface(tf);
 
@@ -831,6 +915,79 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         mLoadingDrawable.setStrokeWidth(mResources.getDimension(R.dimen.circular_progress_stroke_width));
         mLoadingDrawable.setStrokeCap(Paint.Cap.ROUND);
         mLoadingImage.setImageDrawable(mLoadingDrawable);
+
+        mVideoVisibleAreaIndicator.setCallback(new RectangleIndicatorView.Callback() {
+            @Nullable
+            @Override
+            public Bitmap getDrawingBitmap(int width, int height) {
+                return mTextureView.getBitmap(width, height);
+            }
+
+            @Override
+            public boolean continueDrawingBitmap() {
+                return mVideoPlayer != null && mVideoPlayer.isPlaying();
+            }
+        });
+        mVideoVisibleAreaIndicatorFrame.setTag(GONE);
+        mVideoVisibleAreaIndicatorFrame.addOnLayoutChangeListener(
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    int vWidth = right - left;
+                    if (vWidth == 0 || bottom - top == 0)
+                        return;
+
+                    View vst = mVideoScaleText;
+                    RelativeLayout.LayoutParams vstLP = (RelativeLayout.LayoutParams)
+                            vst.getLayoutParams();
+                    int vstW = vst.getWidth() + vstLP.leftMargin + vstLP.rightMargin;
+
+                    View rvtb = mResetVideoTransformationsButton;
+                    RelativeLayout.LayoutParams rvtbLP = (RelativeLayout.LayoutParams)
+                            rvtb.getLayoutParams();
+                    int rvtbW = rvtb.getWidth() + rvtbLP.leftMargin + rvtbLP.rightMargin;
+
+                    RectangleIndicatorView vvai = mVideoVisibleAreaIndicator;
+                    ViewGroup.LayoutParams vvaiLP = vvai.getLayoutParams();
+                    float vvaiAspectRatio = (float) vvaiLP.width / vvaiLP.height;
+                    int vvaiMinWidth = Math.max(vstW, rvtbW);
+                    int vvaiMinHeight = Utils.roundFloat(vvaiMinWidth / vvaiAspectRatio);
+                    if (vvaiMinWidth != ViewCompat.getMinimumWidth(vvai)) {
+                        vvai.setMinimumWidth(vvaiMinWidth);
+                    }
+                    if (vvaiMinHeight != ViewCompat.getMinimumHeight(vvai)) {
+                        vvai.setMinimumHeight(vvaiMinHeight);
+                    }
+
+                    vWidth = Math.max(vvaiLP.width, vvaiMinWidth);
+                    if (vWidth - vstW - rvtbW >= 0) {
+                        if (rvtbLP.getRules()[RelativeLayout.BELOW] != 0) {
+                            rvtbLP.addRule(RelativeLayout.BELOW, 0);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+                                rvtbLP.addRule(RelativeLayout.ALIGN_PARENT_START, 0);
+                            rvtbLP.addRule(RelativeLayout.ALIGN_PARENT_LEFT, 0);
+
+                            int vvaiId = vvai.getId();
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+                                rvtbLP.addRule(RelativeLayout.ALIGN_END, vvaiId);
+                            rvtbLP.addRule(RelativeLayout.ALIGN_RIGHT, vvaiId);
+                            rvtbLP.addRule(RelativeLayout.ALIGN_BASELINE, vst.getId());
+
+                            rvtb.setLayoutParams(rvtbLP);
+                        }
+                    } else if (rvtbLP.getRules()[RelativeLayout.ALIGN_BASELINE] != 0) {
+                        rvtbLP.addRule(RelativeLayout.ALIGN_BASELINE, 0);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+                            rvtbLP.addRule(RelativeLayout.ALIGN_END, 0);
+                        rvtbLP.addRule(RelativeLayout.ALIGN_RIGHT, 0);
+
+                        int vstId = vst.getId();
+                        rvtbLP.addRule(RelativeLayout.BELOW, vstId);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1)
+                            rvtbLP.addRule(RelativeLayout.ALIGN_PARENT_START, RelativeLayout.TRUE);
+                        rvtbLP.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+
+                        rvtb.setLayoutParams(rvtbLP);
+                    }
+                });
     }
 
     @SuppressLint("RestrictedApi")
@@ -1387,6 +1544,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     mCameraButton.setVisibility(VISIBLE);
                     mVideoCameraButton.setVisibility(VISIBLE);
                 }
+                mGestureTextureViewHelper.setGestureEnabled(true);
             } else {
                 mTitleText.setText(null);
                 if (isLocked$()) {
@@ -1402,6 +1560,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     mLockUnlockButton.setVisibility(GONE);
                     mCameraButton.setVisibility(GONE);
                     mVideoCameraButton.setVisibility(GONE);
+                    showVideoVisibleAreaIndicator(false);
                     cancelVideoPhotoCapture();
                     // Hope this will never happen while video clipping is really going on
                     // as this view is going to be non-fullscreen and we are forcibly hiding
@@ -1412,6 +1571,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                         closeDrawer(mDrawerView);
                     }
                 }
+                mGestureTextureViewHelper.setGestureEnabled(false);
+                mGestureTextureViewHelper.resetViewTransform();
             }
             inflateBottomControls();
 
@@ -1455,6 +1616,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }
         }
         if (isInFullscreenMode()) {
+            if (!stretched) {
+                mGestureTextureViewHelper.resetViewTransform();
+                showVideoVisibleAreaIndicator(false);
+            }
             if (!isClipViewBounds() && mVideoPlayer != null) {
                 final int videoWidth = mVideoPlayer.getVideoWidth();
                 final int videoHeight = mVideoPlayer.getVideoHeight();
@@ -1545,6 +1710,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 tvlp.width = tvw;
                 tvlp.height = tvh;
 //                mTextureView.setLayoutParams(tvlp);
+
+                ViewGroup.LayoutParams vvaiLP = mVideoVisibleAreaIndicator.getLayoutParams();
+                float ASPECT_RATIO = 0.2f;
+                vvaiLP.width = Utils.roundFloat(tvw * ASPECT_RATIO);
+                vvaiLP.height = Utils.roundFloat(tvh * ASPECT_RATIO);
+//                mVideoVisibleAreaIndicator.setLayoutParams(vvaiLP);
             }
         }
 
@@ -1612,6 +1783,17 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 closeDrawer(mDrawerView);
             }
         }
+
+        ViewGroup tvParent = mContentView;
+        int tvParentPaddingLeft = tvParent.getPaddingLeft();
+        int tvParentPaddingTop = tvParent.getPaddingTop();
+        int tvParentPaddingHorizontal = tvParentPaddingLeft + tvParent.getPaddingRight();
+        int tvParentPaddingVertical = tvParentPaddingTop + tvParent.getPaddingBottom();
+        int visibleLeft = -mTextureView.getLeft() + tvParentPaddingLeft;
+        int visibleTop = -mTextureView.getTop() + tvParentPaddingTop;
+        int visibleRight = visibleLeft + tvParent.getWidth() - tvParentPaddingHorizontal;
+        int visibleBottom = visibleTop + tvParent.getHeight() - tvParentPaddingVertical;
+        mVideoVisibleBounds.set(visibleLeft, visibleTop, visibleRight, visibleBottom);
 
         // Postponing checking over the visibilities of the camera buttons ensures that we can
         // correctly get the widget locations on screen so that we can decide whether or not
@@ -1746,22 +1928,29 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
     /**
      * Sets this view to be locked or not. When it is locked, all option controls are hided
-     * except for the lock toggle button and a progress bar used for indicating where
-     * the current video is played and the invisible control related ops are disabled, too.
+     * except for the title text, the lock toggle button and a progress bar used for indicating
+     * where the current video is played and the invisible control related ops are disabled, too.
      *
      * @param locked  Whether to lock this view
      * @param animate Whether the locking or unlocking of this view should be animated.
      *                This only makes sense when this view is currently in fullscreen mode.
      */
     public void setLocked(boolean locked, boolean animate) {
-        if (locked != isLocked$()) {
-            final boolean fullscreen = isInFullscreenMode();
-            final boolean showing = isControlsShowing();
-            if (fullscreen && showing) {
+        if (locked == isLocked$())
+            return;
+
+        final boolean fullscreen = isInFullscreenMode();
+        final boolean controlsShowing = isControlsShowing();
+
+        if (fullscreen) {
+            if (controlsShowing) {
                 if (animate) {
+                    Transition title = new ChangeBounds();
+                    TransitionUtils.includeChildrenForTransition(title, mContentView, mTitleText);
+
                     Transition topAndMiddle = new MaterialSharedAxis(MaterialSharedAxis.Y, locked);
                     TransitionUtils.includeChildrenForTransition(topAndMiddle, mContentView,
-                            mTopControlsFrame,
+                            mShareButton, mTrackButton, mMoreButton,
                             mLockUnlockButton, mCameraButton, mVideoCameraButton,
                             mBottomControlsFrame);
 
@@ -1769,37 +1958,59 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     TransitionUtils.includeChildrenForTransition(bottom, mContentView,
                             mBottomControlsFrame);
 
-                    TransitionManager.beginDelayedTransition(mContentView,
-                            new TransitionSet().addTransition(topAndMiddle).addTransition(bottom));
+                    TransitionManager.beginDelayedTransition(
+                            mContentView,
+                            new TransitionSet().addTransition(title).addTransition(topAndMiddle)
+                                    .addTransition(bottom));
                 }
-                showControls(false, false);
+                showControls(false, false, false);
             }
-            if (locked) {
-                mPrivateFlags |= PFLAG_LOCKED;
-                mLockUnlockButton.setContentDescription(mStringLock);
-                mLockUnlockButton.setImageResource(R.drawable.ic_lock_white_24dp);
-            } else {
-                mPrivateFlags &= ~PFLAG_LOCKED;
-                mLockUnlockButton.setContentDescription(mStringUnlock);
-                mLockUnlockButton.setImageResource(R.drawable.ic_unlock_white_24dp);
-            }
-            if (fullscreen) {
-                inflateBottomControls();
-                if (showing) {
-                    showControls(true, false);
-                }
 
-                if (locked) {
-                    if (isVideoStretchedToFitFullscreenLayout()) {
-                        setViewMode(VIEW_MODE_VIDEO_STRETCHED_LOCKED_FULLSCREEN, true);
-                    } else {
-                        setViewMode(VIEW_MODE_LOCKED_FULLSCREEN, true);
-                    }
-                } else if (isVideoStretchedToFitFullscreenLayout()) {
-                    setViewMode(VIEW_MODE_VIDEO_STRETCHED_FULLSCREEN, true);
+            mGestureTextureViewHelper.setGestureEnabled(!locked);
+            if (locked) {
+                showVideoVisibleAreaIndicator(false);
+            }
+        }
+
+        if (locked) {
+            mPrivateFlags |= PFLAG_LOCKED;
+            mLockUnlockButton.setContentDescription(mStringLock);
+            mLockUnlockButton.setImageResource(R.drawable.ic_lock_white_24dp);
+
+            int ph = dp2px(mContext, 16);
+            ViewCompat.setPaddingRelative(mTitleText, ph, dp2px(mContext, 6), ph, dp2px(mContext, 7));
+            mTitleText.setCompoundDrawables(null, null, null, null);
+        } else {
+            mPrivateFlags &= ~PFLAG_LOCKED;
+            mLockUnlockButton.setContentDescription(mStringUnlock);
+            mLockUnlockButton.setImageResource(R.drawable.ic_unlock_white_24dp);
+
+            ViewCompat.setPaddingRelative(mTitleText, dp2px(mContext, 5), 0, 0, 0);
+            Drawable chevronStartIcon = AppCompatResources.getDrawable(
+                    mContext, R.drawable.ic_navigate_before_white_38dp);
+            TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    mTitleText, chevronStartIcon, null, null, null);
+        }
+        mShareButton.setVisibility(locked ? GONE : VISIBLE);
+        mTrackButton.setVisibility(locked ? GONE : VISIBLE);
+        mMoreButton.setVisibility(locked ? GONE : VISIBLE);
+
+        if (fullscreen) {
+            inflateBottomControls();
+            if (controlsShowing) {
+                showControls(true, false);
+            }
+
+            if (locked) {
+                if (isVideoStretchedToFitFullscreenLayout()) {
+                    setViewMode(VIEW_MODE_VIDEO_STRETCHED_LOCKED_FULLSCREEN, true);
                 } else {
-                    setViewMode(VIEW_MODE_FULLSCREEN, true);
+                    setViewMode(VIEW_MODE_LOCKED_FULLSCREEN, true);
                 }
+            } else if (isVideoStretchedToFitFullscreenLayout()) {
+                setViewMode(VIEW_MODE_VIDEO_STRETCHED_FULLSCREEN, true);
+            } else {
+                setViewMode(VIEW_MODE_FULLSCREEN, true);
             }
         }
     }
@@ -1813,7 +2024,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
     /** See {@link #showControls(boolean, boolean) showControls(show, true)} */
     public void showControls(boolean show) {
-        showControls(show, true);
+        showControls(show, true, true);
     }
 
     /**
@@ -1822,9 +2033,15 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
      * If the controls are already showing, Calling this method also makes sense, as it will keep
      * the controls showing till a new {@value #TIMEOUT_SHOW_CONTROLS} ms delay is past.
      *
+     * @param show    whether to show the controls on the video content
      * @param animate whether to fade in/out the controls smoothly or not
      */
     public void showControls(boolean show, boolean animate) {
+        showControls(show, animate, true);
+    }
+
+    @Synthetic void showControls(
+            boolean show, boolean animate, boolean affectVideoVisibleAreaIndicator) {
         if ((mPrivateFlags & PFLAG_IGNORE_SHOW_CONTROLS_METHOD_CALLS) != 0) {
             return;
         }
@@ -1837,6 +2054,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }
         } else {
             hideControls(animate);
+            if (affectVideoVisibleAreaIndicator) {
+                showVideoVisibleAreaIndicator(false);
+            }
         }
     }
 
@@ -1861,9 +2081,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 // the controls to be shown from still gradually being invisible.
                 endControlsRunningFadingTransition();
             }
-            if (unlocked) {
-                mTopControlsFrame.setVisibility(VISIBLE);
-            }
+            mTopControlsFrame.setVisibility(VISIBLE);
             if (isInFullscreenMode()) {
                 mLockUnlockButton.setVisibility(VISIBLE);
                 if (unlocked) {
@@ -1904,9 +2122,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 // the controls to be hidden from still gradually being visible.
                 endControlsRunningFadingTransition();
             }
-            if (unlocked) {
-                mTopControlsFrame.setVisibility(GONE);
-            }
+            mTopControlsFrame.setVisibility(GONE);
             if (isInFullscreenMode()) {
                 mLockUnlockButton.setVisibility(GONE);
                 if (unlocked) {
@@ -1969,19 +2185,17 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             final float viewportH = mTextureView.getHeight();
 
             if (textBounds == null || textBounds.isEmpty() || viewportW == 0 || viewportH == 0) {
-                //noinspection ConstantConditions,deprecation
-                cues.add(new Cue(text));
+                cues.add(new Cue.Builder().setText(text).build());
             } else {
-                //noinspection ConstantConditions,deprecation
-                cues.add(new Cue(
-                        text,
-                        /* textAlignment= */ null,
-                        /* line= */(float) textBounds.top / viewportH,
-                        /* lineType= */ Cue.LINE_TYPE_FRACTION,
-                        /* lineAnchor= */ Cue.ANCHOR_TYPE_START,
-                        /* position= */(float) textBounds.left / viewportW,
-                        /* positionAnchor= */ Cue.ANCHOR_TYPE_START,
-                        /* size= */  (float) textBounds.width() / viewportW));
+                cues.add(
+                        new Cue.Builder()
+                                .setText(text)
+                                .setLine((float) textBounds.top / viewportH, Cue.LINE_TYPE_FRACTION)
+                                .setLineAnchor(Cue.ANCHOR_TYPE_START)
+                                .setPosition((float) textBounds.left / viewportW)
+                                .setPositionAnchor(Cue.ANCHOR_TYPE_START)
+                                .setSize((float) textBounds.width() / viewportW)
+                                .build());
             }
         }
         mSubtitleView.setCues(cues);
@@ -2044,6 +2258,30 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             }
         } else {
             mMinimizeButton.setEnabled(vp != null && vp.mVideoWidth != 0 && vp.mVideoHeight != 0);
+        }
+    }
+
+    @Synthetic void showVideoVisibleAreaIndicator(boolean show) {
+        mMsgHandler.removeMessages(MsgHandler.MSG_HIDE_VIDEO_VISIBLE_AREA_INDICATOR_FRAME);
+
+        final int visibility = show ? VISIBLE : GONE;
+        // We can not check for the real visibility of mVideoVisibleAreaIndicatorFrame by
+        // comparing its current visibility value with the one to be set, because the
+        // mVideoVisibleAreaIndicatorFrame will be temporarily visible while being fade out.
+        if (!ObjectsCompat.equals(mVideoVisibleAreaIndicatorFrame.getTag(), visibility)) {
+            mVideoVisibleAreaIndicatorFrame.setTag(visibility);
+
+            Transition fade = new Fade(show ? Fade.IN : Fade.OUT);
+            TransitionUtils.includeChildrenForTransition(
+                    fade, mContentView, mVideoVisibleAreaIndicatorFrame);
+            TransitionManager.beginDelayedTransition(mContentView, fade);
+            mVideoVisibleAreaIndicatorFrame.setVisibility(visibility);
+            if (show) {
+                refreshVideoVisibleAreaIndicator();
+            } else {
+                mVideoVisibleAreaIndicator.setMinimumWidth(0);
+                mVideoVisibleAreaIndicator.setMinimumHeight(0);
+            }
         }
     }
 
@@ -2703,6 +2941,14 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         }
     }
 
+    @Synthetic void refreshVideoVisibleAreaIndicator() {
+        mGestureTextureViewHelper.getViewBounds(mVideoBounds);
+        mVideoVisibleAreaIndicator.setRectangles(mVideoBounds, mVideoVisibleBounds);
+        //noinspection SetTextI18n
+        mVideoScaleText.setText(
+                Utils.roundDecimalToString(mGestureTextureViewHelper.getViewScale(), 1) + "x");
+    }
+
     @Synthetic void refreshBrightnessProgress(int progress) {
         if ((mOnChildTouchListener.touchFlags & OnChildTouchListener.TFLAG_ADJUSTING_BRIGHTNESS)
                 == OnChildTouchListener.TFLAG_ADJUSTING_BRIGHTNESS) {
@@ -2809,7 +3055,8 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         }
     }
 
-    private final class OnChildTouchListener implements OnTouchListener, ConstraintLayout.TouchInterceptor {
+    private final class OnChildTouchListener implements OnTouchListener,
+            ConstraintLayout.TouchInterceptor, GestureViewHelper.OnGestureListener {
         OnChildTouchListener() {
         }
 
@@ -2823,6 +3070,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         static final int TFLAG_ADJUSTING_VIDEO_PROGRESS = 1 << 4;
         static final int MASK_ADJUSTING_PROGRESS_FLAGS =
                 TFLAG_ADJUSTING_BRIGHTNESS_OR_VOLUME | TFLAG_ADJUSTING_VIDEO_PROGRESS;
+        static final int TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN = 1 << 5;
 
         // for SpeedSpinner
         float popupDownX, popupDownY;
@@ -2857,7 +3105,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     dismissSpinnerPopup();
 
                 } else if (!isDrawerVisible(mDrawerView)) {
-                    showControls(!isControlsShowing());
+                    showControls(!isControlsShowing(), true, false);
                 }
                 return true;
             }
@@ -3073,6 +3321,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                 if ((touchFlags & TFLAG_DOWN_ON_STATUS_BAR_AREA) != 0) return true;
             }
 
+            // Handles scale gestures for the video content
+            if ((touchFlags & MASK_ADJUSTING_PROGRESS_FLAGS) == 0
+                    && mGestureTextureViewHelper.handleTouchEvent(event)) {
+                return true;
+            }
+
             switch (action & MotionEvent.ACTION_MASK) {
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_POINTER_DOWN:
@@ -3231,6 +3485,78 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     + Utils.roundFloat(maxProgress / touchRange * deltaDist * sensitivity);
             return Util.constrainValue(progress, 0, maxProgress);
         }
+
+        @Override
+        public void onViewDragBegin(@NonNull View view) {
+            if (isVideoStretchedToFitFullscreenLayout() || !needVideoBeStretchedBeforeScaling()) {
+                showVideoVisibleAreaIndicator(true);
+            }
+        }
+
+        private boolean needVideoBeStretchedBeforeScaling() {
+            VideoPlayer vp = mVideoPlayer;
+            if (!isClipViewBounds() && vp != null && vp.mVideoWidth != 0 && vp.mVideoHeight != 0) {
+                int width = mContentView.getWidth();
+                int height = mContentView.getHeight();
+                // The video aspect ratio equal to the aspect ratio of the view means the video
+                // has already filled full the layout space of the view.
+                return !Utils.areEqualIgnorePrecisionError(
+                        (float) width / height, (float) vp.mVideoWidth / vp.mVideoHeight);
+            }
+            return true;
+        }
+
+        @Override
+        public void onViewScaleBegin(@NonNull View view, @NonNull ScaleGestureDetector detector) {
+            // Make video stretched to occupy the fullscreen first if it is not already so. This
+            // ensures no black area will be displayed while video is being scaled and scrolled.
+            if (!isVideoStretchedToFitFullscreenLayout()) {
+                if (needVideoBeStretchedBeforeScaling()) {
+                    // Account for this flag only if the video needs be stretched.
+                    touchFlags |= TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN;
+                }
+                setVideoStretchedToFitFullscreenLayout(true);
+                performHapticFeedback(Consts.HAPTIC_FEEDBACK_GESTURE_START,
+                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
+            }
+        }
+
+        @Override
+        public boolean onViewScale(@NonNull View view, @NonNull ScaleGestureDetector detector) {
+            // Allow video to be scaled only if it was already stretched (before onViewDragBegin())
+            if ((touchFlags & TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN) == 0) {
+                // We need correct the coordinates of the current gesture's focal point, since they
+                // are computed based on the touch events from mContentView, not the mTextureView's.
+                mGestureTextureViewHelper.trackMotionScale(detector.getScaleFactor(),
+                        detector.getFocusX() - view.getLeft(), detector.getFocusY() - view.getTop());
+            }
+            return true;
+        }
+
+        @Override
+        public void onViewScaleEnd(@NonNull View view, @NonNull ScaleGestureDetector detector) {
+        }
+
+        @Override
+        public boolean onViewScroll(@NonNull View view, float deltaX, float deltaY) {
+            // Disallow video to be scrolled if it was not already stretched (before onViewDragBegin())
+            return (touchFlags & TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN) != 0
+                    || !isVideoStretchedToFitFullscreenLayout();
+        }
+
+        public boolean onViewFling(@NonNull View view, float velocitryX, float velocityY) {
+            // Disallow video to be scrolled if it was not already stretched (before onViewDragBegin())
+            return (touchFlags & TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN) != 0
+                    || !isVideoStretchedToFitFullscreenLayout();
+        }
+
+        @Override
+        public void onViewDragEnd(@NonNull View view) {
+            touchFlags &= ~TFLAG_VIDEO_NOT_STRETCHED_WHEN_VIDEO_SCALE_BEGIN;
+            mMsgHandler.sendEmptyMessageDelayed(
+                    MsgHandler.MSG_HIDE_VIDEO_VISIBLE_AREA_INDICATOR_FRAME,
+                    TIMEOUT_SHOW_VIDEO_VISIBLE_AREA_INDICATOR_FRAME);
+        }
     }
 
     private final class OnChildClickListener implements View.OnClickListener {
@@ -3263,6 +3589,13 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
             } else if (mLockUnlockButton == v) {
                 setLocked(mStringUnlock.contentEquals(v.getContentDescription()));
+
+            } else if (mResetVideoTransformationsButton == v) {
+                mGestureTextureViewHelper.resetViewTransform();
+                showVideoVisibleAreaIndicator(true);
+                mMsgHandler.sendEmptyMessageDelayed(
+                        MsgHandler.MSG_HIDE_VIDEO_VISIBLE_AREA_INDICATOR_FRAME,
+                        TIMEOUT_SHOW_VIDEO_VISIBLE_AREA_INDICATOR_FRAME);
 
             } else if (mCameraButton == v) {
                 showControls(true, false);
@@ -3897,6 +4230,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         static final int MSG_CHECK_CAMERA_BUTTONS_VISIBILITIES = 4;
         static final int MSG_REFRESH_VIDEO_PROGRESS = 5;
         static final int MSG_SHOW_VIDEO_CLIPPING_RESULT = 6;
+        static final int MSG_HIDE_VIDEO_VISIBLE_AREA_INDICATOR_FRAME = 7;
 
         final WeakReference<TextureVideoView> videoViewRef;
 
@@ -3913,7 +4247,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
             switch (msg.what) {
                 case MSG_HIDE_CONTROLS:
-                    videoView.showControls(false);
+                    videoView.showControls(false, true, false);
                     break;
                 case MSG_HIDE_BRIGHTNESS_OR_VOLUME_FRAME:
                     videoView.mBrightnessOrVolumeFrame.setVisibility(GONE);
@@ -3955,6 +4289,9 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                     }
                     break;
                 }
+                case MSG_HIDE_VIDEO_VISIBLE_AREA_INDICATOR_FRAME:
+                    videoView.showVideoVisibleAreaIndicator(false);
+                    break;
                 case BackgroundPlaybackControllerService.MSG_PLAY:
                     if (videoPlayer != null) {
                         videoPlayer.play(true);
@@ -4166,6 +4503,7 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
         checkButtonsAbilities();
         if (width != 0 && height != 0) {
             requestLayout();
+            mGestureTextureViewHelper.resetViewTransform();
         }
     }
 
@@ -4187,6 +4525,10 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
             } else {
                 showControls(true);
             }
+        }
+        // Resume stopped video playback in mVideoVisibleAreaIndicator as needed.
+        if (mVideoVisibleAreaIndicatorFrame.getVisibility() == VISIBLE) {
+            ViewCompat.postInvalidateOnAnimation(mVideoVisibleAreaIndicator);
         }
 
         if (canAccessBackgroundPlaybackControllerService()) {

@@ -198,7 +198,9 @@ public class BackgroundPlaybackControllerService extends Service {
         startForeground(ID_NOTIFICATION, mNotificationBuilder.build());
         mIsForeground = true;
 
-        registerReceiver(mReceiver, new IntentFilter(ControllerActionReceiver.ACTION));
+        ContextCompat.registerReceiver(
+                this, mReceiver, new IntentFilter(ControllerActionReceiver.ACTION),
+                ContextCompat.RECEIVER_NOT_EXPORTED);
 
         return new Proxy();
     }
@@ -338,6 +340,7 @@ public class BackgroundPlaybackControllerService extends Service {
                 this,
                 requestCode,
                 new Intent(ControllerActionReceiver.ACTION)
+                        .setPackage(mPkgName)
                         .putExtra(EXTRA_CONTROLLER_ACTION, action),
                 Consts.PENDING_INTENT_FLAG_IMMUTABLE);
     }

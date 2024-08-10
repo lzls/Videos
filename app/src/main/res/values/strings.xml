@@ -3,8 +3,13 @@
     <string name="aboutApp">About App</string>
     <string name="adviceAndFeedback">Advice &amp; Feedback</string>
     <string name="alias">Alias: %s</string>
+    <string name="alreadyTheLatestVersion">Already the latest version</string>
+    <string name="appDownload">app download</string>
+    <string name="appDownloadError">App download error</string>
     <string name="appIcon" tools:keep="@string/appIcon">App icon</string>
     <string name="appName">Videos</string>
+    <string name="appUpdateCheck">app update check</string>
+    <string name="appUpdateCheckError">App update check error</string>
     <string name="areYouSureToDelete">Are you sure to delete?</string>
     <string name="areYouSureToDeleteSomeVideoDir">
         Are you sure to delete all the videos under \"%s\" directory?</string>
@@ -15,12 +20,14 @@
     <string name="cancelTop">Cancel Top</string>
     <string name="cannotPlayThisVideo">Cannot play this video</string>
     <string name="checkForUpdates">Check for Updates</string>
+    <string name="checking">Checking…</string>
     <string name="clearBackground">Clear background</string>
     <string name="clickToInstallIt">Click to install it</string>
     <string name="colon">:</string>
     <string name="commit">Commit</string>
     <string name="complete">OK</string>
     <string name="confirm">@string/ok</string>
+    <string name="connectionForSthTimedOut">Connection for %s timed out</string>
     <string name="connectionTimeout">Connection timeout</string>
     <string name="contactWay">Contact way</string>
     <string name="copyURL">Copy URL</string>
@@ -32,16 +39,18 @@
     <string name="dontPromptAgain">Don\'t prompt again</string>
     <string name="doYouNeedToSaveTheEditedContents">Do you need to save the edited contents?</string>
     <string name="doYouNeedToUpdateItSoon">Do you need to update it soon?</string>
-    <string name="downloadError">Download error</string>
     <string name="downloading" tools:keep="@string/downloading">Downloading…</string>
-    <string name="downloadingUpdates">Downloading Updates…</string>
+    <string name="downloadingUpdates">Downloading updates…</string>
+    <string name="downloadingUpdates_title">Downloading Updates…</string>
     <string name="drawerBackground">Drawer background</string>
     <string name="drawerSettings">Drawer Settings</string>
     <string name="darkTheme">Dark Theme</string>
+    <string name="feedbackCanceled" tools:keep="@string/sendCanceled">Feedback canceled</string>
+    <string name="feedbackFailed">Feedback failed</string>
+    <string name="feedbackSuccessful">Feedback successful</string>
     <string name="goNow">Go Now</string>
     <string name="hasBeenPlacedInTheBackground">Has been placed in the background</string>
     <string name="illegalInputLink">Illegal input link!</string>
-    <string name="isTheLatestVersion">Is the latest version</string>
     <string name="loadingVideos" tools:keep="@string/loadingVideos">Loading videos, please wait…</string>
     <string name="localVideos">Local Videos</string>
     <string name="move">Move</string>
@@ -53,6 +62,7 @@
     <string name="notHaveEnoughStorage">Device does not have enough storage.</string>
     <string name="notOpenNow">Not Open</string>
     <string name="notSave">Not Save</string>
+    <string name="notShare">Not Share</string>
     <string name="ok">OK</string>
     <string name="onlineVideos">Online Videos</string>
     <string name="openOrCloseSideDrawer">Open or close the side drawer</string>
@@ -69,6 +79,7 @@
     <string name="pleaseInputVideoLinkFirst">Please input video link first!</string>
     <string name="pleaseInsertSdCardOnYourDeviceFirst">Please insert SD card on your device first.</string>
     <string name="pressAgainToExitApp">Press again to exit app</string>
+    <string name="privacy">Privacy</string>
     <string name="prompt_enableNotificationsForAppDownload">
         Please enable notifications from Settings, or app download result will not show.</string>
     <string name="prompt_videoMove">
@@ -91,6 +102,14 @@
         This app has not been granted the floating window permission.
         Please try it again after opening!
     </string>
+    <string name="rationale_usageStatusSharing">
+        The information includes basic application information, app usage information, error logs,
+        basic device information, etc. Sharing this information will help application developers
+        promptly fix problems encountered by users during use, thereby improving product quality
+        and optimizing user experience.
+    </string>
+    <string name="title_usageStatusSharing">Share App and Device Info with The App Developer</string>
+    <string name="readOfSthTimedOut">Read of %s timed out</string>
     <string name="readTimeout">Read timeout</string>
     <string name="refreshError">Refresh Error</string>
     <string name="refreshingVideos" tools:keep="@string/refreshingVideos">
@@ -112,9 +131,6 @@
     <string name="searchVideos">Search videos</string>
     <string name="selectAll">Select All</string>
     <string name="selectNone">Select None</string>
-    <string name="sendCanceled" tools:keep="@string/sendCanceled">Send canceled</string>
-    <string name="sendFailed">Send failed</string>
-    <string name="sendSuccessful">Send successful</string>
     <string name="sending">Sending…</string>
     <string name="setBackground">Set background</string>
     <string name="setDarkIcons">Set dark icons</string>
@@ -124,11 +140,13 @@
     <string name="setLightIcons">Set light icons</string>
     <string name="setLightStatus">Set light status</string>
     <string name="setLightTexts">Set light texts</string>
+    <string name="storagePermissionsNotGranted">Storage permissions not granted!</string>
     <string name="followsSystem">Follows system</string>
     <string name="turnOff">Turn off</string>
     <string name="turnOn">Turn on</string>
     <string name="severalItemsHaveBeenSelected" tools:ignore="PluralsCandidate">%d items selected</string>
     <string name="share">Share</string>
+    <string name="share2">@string/share</string>
     <string name="size">Size: %s</string>
     <string name="someDirectory">\"%s\" directory</string>
     <string name="theInstallationPackageHasBeenDamaged">The installation package has been Damaged.</string>
@@ -149,7 +167,7 @@
     <string name="youHaveNotCommitted">You Have Not Committed</string>
 
     <string name="appName_chinese" translatable="false">视频</string>
-    <string name="version" translatable="false">2.3</string>
+    <string name="version" translatable="false">2.4</string>
     <string name="copyright" translatable="false">
         Copyright © 2017–present 刘振林.\nAll rights reserved.</string>
     <string name="projectLink" translatable="false">https://github.com/lzls/Videos</string>

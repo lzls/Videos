@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <style name="ActivityStyle_Bootstrap" parent="AppTheme">
-        <!--状态栏透明-->
-        <item name="colorPrimaryDark">@android:color/transparent</item>
-    </style>
-</resources>

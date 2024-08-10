@@ -24,7 +24,7 @@ data class VideoDirectory(override var name: String = "",
                           override var path: String = "",
                           override var size: Long = 0L,
                           override var isTopped: Boolean = false,
-                          var videos: MutableList<Video> = mutableListOf())
+                          var videoListItems: MutableList<VideoListItem> = mutableListOf())
     : VideoListItem(name, path, size, isTopped) {
 
     override fun equals(other: Any?): Boolean {
@@ -50,11 +50,11 @@ data class VideoDirectory(override var name: String = "",
                 && size == other.size && isTopped == other.isTopped)) {
             return false
         }
-        if (videos.size != other.videos.size) {
+        if (videoListItems.size != other.videoListItems.size) {
             return false
         }
-        for (i in videos.indices) {
-            if (!videos[i].allEqual(other.videos[i])) return false
+        for (i in videoListItems.indices) {
+            if (!videoListItems[i].allEqual(other.videoListItems[i])) return false
         }
 
         return true
@@ -62,14 +62,16 @@ data class VideoDirectory(override var name: String = "",
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : VideoListItem> deepCopy(): T =
-            copy(videos = videos.toMutableList()).apply { videos.deepCopy(videos) } as T
+            copy(videoListItems = videoListItems.toMutableList())
+                    .apply { videoListItems.deepCopy(videoListItems) } as T
 
     constructor(source: Parcel) : this(
             source.readString()!!,
             source.readString()!!,
             source.readLong(),
             1.toByte() == source.readByte(),
-            ArrayList<Video>().apply { source.readList(this as List<*>, Video::class.java.classLoader) }
+            ArrayList<VideoListItem>().apply {
+                    source.readList(this as List<*>, VideoListItem::class.java.classLoader) }
     )
 
     override fun describeContents() = 0
@@ -79,7 +81,7 @@ data class VideoDirectory(override var name: String = "",
         writeString(path)
         writeLong(size)
         writeByte((if (isTopped) 1.toByte() else 0.toByte()))
-        writeList(videos as List<*>)
+        writeList(videoListItems as List<*>)
     }
 
     companion object {

@@ -17,4 +17,12 @@
         app:fragment="com.liuzhenlin.videos.view.activity.SettingsActivity$YoutubePlaybackFragment"
         app:key="youtube_playback_header"
         app:title="@string/youtube_playback_header" />
+
+    <PreferenceCategory app:title="@string/privacy" app:allowDividerAbove="false">
+        <SwitchPreferenceCompat
+            app:key="usage_status_sharing"
+            app:title="@string/title_usageStatusSharing"
+            app:summary="@string/rationale_usageStatusSharing"
+            app:defaultValue="false" />
+    </PreferenceCategory>
 </PreferenceScreen>

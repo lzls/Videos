@@ -34,10 +34,10 @@ import androidx.core.os.ParcelableCompat;
 import androidx.core.os.ParcelableCompatCreatorCallbacks;
 import androidx.core.view.ViewCompat;
 import androidx.customview.view.AbsSavedState;
+import androidx.media3.common.util.Util;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.util.Synthetic;
-import com.google.android.exoplayer2.util.Util;
 import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.Utils;

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.Keep;
+import androidx.multidex.MultiDex;
 
 import com.liuzhenlin.common.utils.Utils;
 import com.taobao.sophix.SophixApplication;
@@ -31,17 +32,11 @@ public class SophixAppStub extends SophixApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        if (BuildConfig.DEBUG) {
-            try {
-                Class<?> multiDexCls = getClassLoader().loadClass("androidx.multidex.MultiDex");
-                multiDexCls.getMethod("install", Context.class)
-                        .invoke(multiDexCls, base);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        MultiDex.install(this);
+        if (Configs.isSophixPatchSupported()) {
+            SophixAppLibrary.throwIfNotAvailable();
+            initSophix();
         }
-        SophixAppLibrary.throwIfNotAvailable();
-        initSophix();
     }
 
     private void initSophix() {

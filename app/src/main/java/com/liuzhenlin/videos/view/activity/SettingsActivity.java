@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.PreferenceScreen;
+import androidx.preference.PreferenceGroup;
 
 import com.liuzhenlin.common.utils.LanguageUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
@@ -31,7 +31,6 @@ import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.dao.AppPrefs;
 import com.liuzhenlin.videos.utils.AppUpdateChecker;
 import com.liuzhenlin.videos.web.youtube.WebService;
-import com.liuzhenlin.videos.web.youtube.Youtube;
 
 public class SettingsActivity extends StatusBarTransparentActivity implements
         PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
@@ -194,14 +193,8 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
             case Prefs.KEY_UPDATE_CHANNEL:
                 AppUpdateChecker.getSingleton(this).checkUpdate();
                 return true;
-
-            case Youtube.Prefs.KEY_PLAYBACK_PAGE_STYLE:
-            case Youtube.Prefs.KEY_PIP:
-            case Youtube.Prefs.KEY_VIDEO_QUALITY:
-            case Youtube.Prefs.KEY_RETAIN_HISTORY_VIDEO_PAGES:
-                return true;
         }
-        return false;
+        return true;
     }
 
     public static class HeaderFragment extends PreferenceFragment {
@@ -253,10 +246,19 @@ public class SettingsActivity extends StatusBarTransparentActivity implements
 
     public abstract static class PreferenceFragment extends SwipeBackPreferenceFragment {
         void setOnChangeListenerForPreferences() {
-            PreferenceScreen ps = getPreferenceScreen();
-            for (int i = ps.getPreferenceCount() - 1; i >= 0; i--) {
-                ps.getPreference(i).setOnPreferenceChangeListener(
-                        (Preference.OnPreferenceChangeListener) getContext() /* SettingsActivity.this */);
+            setOnChangeListenerForPreferenceGroup(getPreferenceScreen());
+        }
+
+        void setOnChangeListenerForPreferenceGroup(PreferenceGroup pg) {
+            for (int i = pg.getPreferenceCount() - 1; i >= 0; i--) {
+                Preference pref = pg.getPreference(i);
+                pref.setIconSpaceReserved(false);
+                if (pref instanceof PreferenceGroup) {
+                    setOnChangeListenerForPreferenceGroup((PreferenceGroup) pref);
+                } else {
+                    pref.setOnPreferenceChangeListener(
+                            (Preference.OnPreferenceChangeListener) getContext() /* SettingsActivity.this */);
+                }
             }
         }
     }

@@ -6,23 +6,27 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <uses-sdk tools:overrideLibrary="
-            com.google.android.exoplayer2.core,
-            com.google.android.exoplayer2.common,
-            com.google.android.exoplayer2.extractor,
-            com.google.android.exoplayer2.source.dash,
-            com.google.android.exoplayer2.source.hls,
-            com.google.android.exoplayer2.source.smoothstreaming,
-            com.google.android.exoplayer2.source.rtsp,
-            com.google.android.exoplayer2.ext.rtmp, net.butterflytv.rtmp_client,
-            com.google.android.exoplayer2.ext.av1,
-            com.google.android.exoplayer2.ext.vp9,
-            com.google.android.exoplayer2.ext.ffmpeg,
+            androidx.media3.exoplayer,
+            androidx.media3.common,
+            androidx.media3.container,
+            androidx.media3.extractor,
+            androidx.media3.decoder,
+            androidx.media3.database,
+            androidx.media3.datasource,
+            androidx.media3.exoplayer.dash,
+            androidx.media3.exoplayer.hls,
+            androidx.media3.exoplayer.smoothstreaming,
+            androidx.media3.exoplayer.rtsp,
+            androidx.media3.datasource.rtmp,
             org.videolan" />
 
     <application>
-        <service android:name=".service.BackgroundPlaybackControllerService" />
+        <service
+            android:name=".service.BackgroundPlaybackControllerService"
+            android:foregroundServiceType="mediaPlayback" />
 
         <activity
             android:name=".sample.DemoActivity"
