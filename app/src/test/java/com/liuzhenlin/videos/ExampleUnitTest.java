@@ -21,7 +21,7 @@ public class ExampleUnitTest {
 
     @Test
     public void splitAndMergeFile() {
-        String directory = "/Users/liuzhenlin/Android/projects/Videos/app/release";
+        String directory = "./release";
         String fileName = "app-release";
         String extension = ".apk";
         File file = new File(directory, fileName + extension);
