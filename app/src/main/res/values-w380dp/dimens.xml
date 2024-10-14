@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="videoThumbWidth">105dp</dimen>
+    <dimen name="videoThumbWidth">108dp</dimen>
 </resources>
