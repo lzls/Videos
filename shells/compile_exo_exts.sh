@@ -12,7 +12,7 @@ if [ $exitCode -ne 0 ]; then
 fi
 
 int START_TIME="$(date +%s)"
-echo_e "start time: $(date -r $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')\n"
+echo_e "start time: $(datef $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')\n"
 
 function __echo_release_sh_usage___() {
   if [ "$1" ]; then
@@ -82,4 +82,4 @@ trace . "$SHELLS_DIR/compile_exo_ext_vp9.sh"; verifyLastOpSuccessed --pause-only
 #  trace ./gradlew assembleRelease
 
 # shellcheck disable=SC2046,SC2003
-echo_e "cost time: $(date -r $(expr $(date +%s) - $START_TIME) +%M:%S)"
+echo_e "cost time: $(datef $(expr $(date +%s) - $START_TIME) +%M:%S)"

@@ -15,7 +15,7 @@ if [ $exitCode -ne 0 ]; then
 fi
 
 const_int START_TIME=$(date +%s)
-echo "start time: $(date -r $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')"
+echo "start time: $(datef $START_TIME '+%a %Y-%m-%d %H:%M:%S %z')"
 
 PROJECTS_ROOT='/Users/liuzhenlin/Android/projects'
 APK_PARTS_COUNT=
@@ -279,4 +279,4 @@ fcp "$PROJECTS_ROOT"/Videos/app.json ./ &&
 
 
 # shellcheck disable=SC2046,SC2003
-echo_e "\ncost time: $(date -r $(expr $(date +%s) - $START_TIME) +%M:%S)"
+echo_e "\ncost time: $(datef $(expr $(date +%s) - $START_TIME) +%M:%S)"
