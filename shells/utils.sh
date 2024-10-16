@@ -37,6 +37,16 @@ if ! [ "$SHELL_TYPE" ]; then
   echo "shell type: $SHELL_TYPE"
 fi
 
+function datef() {
+  local _date=$1
+  local format=$2
+  if [ $isDarwin -eq $true ]; then
+    date -r "$_date" "$format"
+  else
+    date -d @"$_date" "$format"
+  fi
+}
+
 # shellcheck disable=SC2139
 alias echo_e="$(
   if [ $isDarwin -eq $true ] && [ "$SHELL_TYPE" = "$SHELL_TYPE_SH" ]; then
