@@ -184,6 +184,7 @@ function parsePath() {
   case $path in
     /*) echo "$path";;
     \~/*) echo "$(echo ~)/${path:2}";;
-    ./*|../*) echo "$_pwd/$path";;
+    .|..|./*|../*) echo "$_pwd/$path";;
+    *) echo $path;; # Most likely an illegal path
   esac
 }
