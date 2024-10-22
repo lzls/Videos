@@ -697,7 +697,6 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
     @SuppressLint("ClickableViewAccessibility")
     public TextureVideoView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        setBackgroundColor(Configs.VIDEO_VIEW_BACKGROUND_COLOR);
         setScrimColor(ContextCompat.getColor(context, R.color.videoScrimColor));
 
         mStringPlay = mResources.getString(R.string.play);
@@ -1485,22 +1484,13 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
 
     /**
      * Sets whether this view should crop its border to fit the aspect ratio of the video.
-     * <p>
-     * <strong>NOTE:</strong> After invoking this method, you may need to directly call
-     * {@link #requestLayout()} to refresh the layout or do that via an implicit invocation
-     * which will call it internally (such as {@link #setLayoutParams(ViewGroup.LayoutParams)}).
      *
-     * @param clip If true, the bounds of this view will be clipped;
-     *             otherwise, black bars will be filled to the view's remaining area.
+     * @param clip If true, the bounds of this view will be clipped.
      */
     public void setClipViewBounds(boolean clip) {
         if (clip != isClipViewBounds()) {
             mPrivateFlags ^= PFLAG_CLIP_VIEW_BOUNDS;
-            if (clip) {
-                ViewCompat.setBackground(this, null);
-            } else {
-                setBackgroundColor(Configs.VIDEO_VIEW_BACKGROUND_COLOR);
-            }
+            requestLayout();
         }
     }
 
