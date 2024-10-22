@@ -327,6 +327,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
 
         mVideoViewContainer = findViewById(R.id.container_videoview);
+        mVideoViewContainer.setBackgroundColor(Configs.VIDEO_VIEW_BACKGROUND_COLOR);
 
         mVideoView = findViewById(R.id.videoview);
         VideoPlayer videoPlayer = canUseExoPlayer() ?
@@ -914,28 +915,16 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                     mVideoViewContainer.setAspectRatio(0);
                     if (displayCutoutManager.isNotchSupport()) {
                         if (isInMultiWindowMode()) {
-                            for (int i = mVideoView.getChildCount() - 1; i >= 0; i--) {
-                                UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
-                            }
+                            mVideoViewContainer.setPadding(0, 0, 0, 0);
                         } else {
-                            for (int i = mVideoView.getChildCount() - 1; i >= 0; i--) {
-                                /*
-                                 * setPadding () has no effect on DrawerLayout, such as:
-                                 *
-                                 * mVideoView.setPadding(0, mNotchHeight, 0, 0);
-                                 */
-                                UiUtils.setViewMargins(mVideoView.getChildAt(i),
-                                        0, displayCutoutManager.getNotchHeight(), 0, 0);
-                            }
+                            mVideoViewContainer.setPadding(
+                                    0, displayCutoutManager.getNotchHeight(), 0, 0);
                         }
                     }
                 } else {
                     mVideoViewContainer.setAspectRatio(16f / 9f);
                     if (displayCutoutManager.isNotchSupport()) {
-//                        mVideoView.setPadding(0, 0, 0, 0);
-                        for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                            UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
-                        }
+                        mVideoViewContainer.setPadding(0, 0, 0, 0);
                     }
                 }
                 break;
@@ -946,22 +935,15 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                     if (isInMultiWindowMode()
                             || displayCutoutManager.isNotchSupportOnEMUI()
                                     && displayCutoutManager.isNotchHidden()) {
-//                        mVideoView.setPadding(0, 0, 0, 0);
-                        for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                            UiUtils.setViewMargins(mVideoView.getChildAt(i), 0, 0, 0, 0);
-                        }
+                        mVideoViewContainer.setPadding(0, 0, 0, 0);
                     } else {
                         final boolean landscape = mScreenOrientation == SCREEN_ORIENTATION_LANDSCAPE;
-                        for (int i = 0, childCount = mVideoView.getChildCount(); i < childCount; i++) {
-                            if (landscape) {
-//                                mVideoView.setPadding(mNotchHeight, 0, 0, 0);
-                                UiUtils.setViewMargins(mVideoView.getChildAt(i),
-                                        displayCutoutManager.getNotchHeight(), 0, 0, 0);
-                            } else {
-//                                mVideoView.setPadding(0, 0, mNotchHeight, 0);
-                                UiUtils.setViewMargins(mVideoView.getChildAt(i),
-                                        0, 0, displayCutoutManager.getNotchHeight(), 0);
-                            }
+                        if (landscape) {
+                            mVideoViewContainer.setPadding(
+                                    displayCutoutManager.getNotchHeight(), 0, 0, 0);
+                        } else {
+                            mVideoViewContainer.setPadding(
+                                    0, 0, displayCutoutManager.getNotchHeight(), 0);
                         }
                     }
                 }
