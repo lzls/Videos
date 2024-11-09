@@ -28,6 +28,7 @@
 
 # Application classes that will be serialized/deserialized over Gson
 -keep public class com.liuzhenlin.videos.bean.TVGroup { <fields>; }
+-keep public class com.liuzhenlin.videos.bean.TV { <fields>; }
 
 # hotfix
 -dontoptimize
