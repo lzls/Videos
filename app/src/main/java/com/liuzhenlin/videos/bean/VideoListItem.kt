@@ -2,7 +2,6 @@ package com.liuzhenlin.videos.bean
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.Keep
 import com.liuzhenlin.videos.deepCopy
 
 /**
@@ -85,7 +84,6 @@ data class VideoDirectory(override var name: String = "",
     }
 
     companion object {
-        @Keep
         @JvmField
         val CREATOR: Parcelable.Creator<VideoDirectory> = object : Parcelable.Creator<VideoDirectory> {
             override fun createFromParcel(source: Parcel): VideoDirectory = VideoDirectory(source)
@@ -169,7 +167,6 @@ data class Video(var id: Long = 0L,
     }
 
     companion object {
-        @Keep
         @JvmField
         val CREATOR: Parcelable.Creator<Video> = object : Parcelable.Creator<Video> {
             override fun createFromParcel(source: Parcel): Video = Video(source)

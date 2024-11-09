@@ -37,7 +37,6 @@ import android.view.animation.Interpolator;
 import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -2801,7 +2800,6 @@ public class SlidingDrawerLayout extends ViewGroup {
             dest.writeInt(openDrawerGravity);
         }
 
-        @Keep
         public static final Creator<SavedState> CREATOR = ParcelableCompat.newCreator(
                 new ParcelableCompatCreatorCallbacks<SavedState>() {
                     @Override
