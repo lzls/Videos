@@ -16,6 +16,7 @@ import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
@@ -26,6 +27,7 @@ import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.compat.MediaMetadataRetrieverCompat;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.Singleton;
+import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.bean.VideoDirectory;
 import com.liuzhenlin.videos.bean.VideoListItem;
@@ -48,6 +50,7 @@ import static com.liuzhenlin.videos.dao.DbOpenHelper.VIDEOS_COL_PROGRESS;
  */
 public final class VideoListItemDao implements IVideoListItemDao {
 
+    private final Context mContext;
     private final ContentResolver mContentResolver;
     private final SQLiteDatabase mDB;
 
@@ -92,9 +95,9 @@ public final class VideoListItemDao implements IVideoListItemDao {
     }
 
     private VideoListItemDao(Context context) {
-        context = context.getApplicationContext();
-        mContentResolver = context.getContentResolver();
-        mDB = new DbOpenHelper(context).getWritableDatabase();
+        mContext = context.getApplicationContext();
+        mContentResolver = mContext.getContentResolver();
+        mDB = new DbOpenHelper(mContext).getWritableDatabase();
     }
 
     @Override
@@ -103,7 +106,7 @@ public final class VideoListItemDao implements IVideoListItemDao {
 
         ContentValues values = new ContentValues(5);
         values.put(VIDEO_NAME, video.getName());
-        values.put(VIDEO_PATH, video.getPath());
+        putVideoPathToRowValues(values, video);
         values.put(VIDEO_SIZE, video.getSize());
         values.put(VIDEO_DURATION, video.getDuration());
         values.put(VIDEO_RESOLUTION,
@@ -119,6 +122,18 @@ public final class VideoListItemDao implements IVideoListItemDao {
             return mDB.insert(TABLE_VIDEOS, null, values) != Consts.NO_ID;
         }
         return false;
+    }
+
+    // From Android 11 onwards, the _data column is readonly for apps that target R and higher
+    private void putVideoPathToRowValues(ContentValues values, Video video) {
+        if (App.getInstance(mContext).hasAllFilesAccess()) {
+            values.put(VIDEO_PATH, video.getPath());
+        } else {
+            File sdcardRoot = Environment.getExternalStorageDirectory();
+            String rp = video.getPath().replace(sdcardRoot.getAbsolutePath() + File.separator, "");
+            rp = rp.substring(0, rp.lastIndexOf(File.separatorChar) + 1);
+            values.put(VIDEO_RELATIVE_PATH, rp);
+        }
     }
 
     @Override
@@ -151,14 +166,14 @@ public final class VideoListItemDao implements IVideoListItemDao {
         if (sdkAtLeastQ) {
             // On Android R and above, video record of a video that is renamed or moved
             // (its path changes) will be deleted by the framework.
-            vNowInQDB = queryVideoById(id);
+            vNowInQDB = queryVideoById(id, false);
         }
 
         mDB.beginTransaction();
         try {
             final long oldId = id;
             if (sdkAtLeastQ && vNowInQDB == null) {
-                vNowInQDB = queryVideoByPath(video.getPath());
+                vNowInQDB = queryVideoByPath(video.getPath(), false);
                 if (vNowInQDB == null) {
                     mDB.delete(TABLE_VIDEOS, VIDEOS_COL_ID + "=" + id, null);
                 } else {
@@ -178,30 +193,29 @@ public final class VideoListItemDao implements IVideoListItemDao {
                 }
             }
 
+            if (sdkAtLeastQ && vNowInQDB == null) {
+                boolean inserted = insertVideo(video);
+                mDB.setTransactionSuccessful();
+                return inserted;
+            }
+
             values.clear();
             values.put(VIDEO_NAME, video.getName());
-            values.put(VIDEO_PATH, video.getPath());
+            putVideoPathToRowValues(values, video);
             values.put(VIDEO_SIZE, video.getSize());
             values.put(VIDEO_DURATION, video.getDuration());
             values.put(VIDEO_RESOLUTION,
                     video.getWidth() + DEFAULT_RESOLUTION_SEPARATOR + video.getHeight());
             // Storage usages for this app may be restricted to several scopes.
             if (sdkAtLeastQ) {
-                if (vNowInQDB == null) {
-                    if (insertVideo(video)) {
-                        mDB.setTransactionSuccessful();
-                        return true;
-                    }
-                } else {
-                    // We need to update the remote MediaProvider through an exact Uri for
-                    // the given video or IllegalArgumentException might be raised.
-                    Uri videoUri = ContentUris.withAppendedId(
-                            MediaStore.Video.Media.getContentUri(MediaStore.getVolumeName(VIDEO_URI)),
-                            id);
-                    if (mContentResolver.update(videoUri, values, null, null) == 1) {
-                        mDB.setTransactionSuccessful();
-                        return true;
-                    }
+                // We need to update the remote MediaProvider through an exact Uri for
+                // the given video or IllegalArgumentException might be raised.
+                Uri videoUri = ContentUris.withAppendedId(
+                        MediaStore.Video.Media.getContentUri(MediaStore.getVolumeName(VIDEO_URI)),
+                        id);
+                if (mContentResolver.update(videoUri, values, null, null) == 1) {
+                    mDB.setTransactionSuccessful();
+                    return true;
                 }
             } else {
                 if (mContentResolver.update(VIDEO_URI, values, VIDEO_ID + "=" + id, null) == 1) {
@@ -218,6 +232,11 @@ public final class VideoListItemDao implements IVideoListItemDao {
     @Nullable
     @Override
     public Video queryVideoById(long id) {
+        return queryVideoById(id, true);
+    }
+
+    @Nullable
+    private Video queryVideoById(long id, boolean verifyVideoMetadata) {
         Cursor cursor = mContentResolver.query(
                 VIDEO_URI,
                 PROJECTION_VIDEO_URI,
@@ -226,7 +245,7 @@ public final class VideoListItemDao implements IVideoListItemDao {
         if (cursor != null) {
             try {
                 if (cursor.moveToFirst()) {
-                    return buildVideo(cursor);
+                    return buildVideo(cursor, verifyVideoMetadata);
                 }
             } finally {
                 cursor.close();
@@ -238,6 +257,11 @@ public final class VideoListItemDao implements IVideoListItemDao {
     @Nullable
     @Override
     public Video queryVideoByPath(@Nullable String path) {
+        return queryVideoByPath(path, true);
+    }
+
+    @Nullable
+    private Video queryVideoByPath(@Nullable String path, boolean verifyVideoMetadata) {
         if (path == null) return null;
 
         Cursor cursor = mContentResolver.query(
@@ -248,7 +272,7 @@ public final class VideoListItemDao implements IVideoListItemDao {
         if (cursor != null) {
             try {
                 if (cursor.moveToFirst()) {
-                    return buildVideo(cursor);
+                    return buildVideo(cursor, verifyVideoMetadata);
                 }
             } finally {
                 cursor.close();
@@ -352,6 +376,10 @@ public final class VideoListItemDao implements IVideoListItemDao {
 //    @RecentlyNonNull
     @SuppressLint("NewApi")
     public Video buildVideo(@NonNull Cursor cursor) {
+        return buildVideo(cursor, true);
+    }
+
+    private Video buildVideo(@NonNull Cursor cursor, boolean verifyVideoMetadata) {
         Video video = new Video();
 
         final String[] columnNames = cursor.getColumnNames();
@@ -411,8 +439,9 @@ public final class VideoListItemDao implements IVideoListItemDao {
             return null;
         }
 
-        if (video.getDuration() <= 0 || video.getWidth() <= 0 || video.getHeight() <= 0) {
-            if (invalidateVideoDurationAndResolution(video)) {
+        if (verifyVideoMetadata
+                && (video.getDuration() <= 0 || video.getWidth() <= 0 || video.getHeight() <= 0)) {
+            if (extractVideoDurationAndResolution(video)) {
                 updateVideo(video);
             } /*else {
                 return null;
@@ -434,7 +463,7 @@ public final class VideoListItemDao implements IVideoListItemDao {
         return video;
     }
 
-    public boolean invalidateVideoDurationAndResolution(@NonNull Video video) {
+    public boolean extractVideoDurationAndResolution(@NonNull Video video) {
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();
         try {
             mmr.setDataSource(video.getPath());
