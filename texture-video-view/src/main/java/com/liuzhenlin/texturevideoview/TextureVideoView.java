@@ -37,7 +37,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
-import android.provider.MediaStore;
 import android.text.ParcelableSpan;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -2641,18 +2640,12 @@ public class TextureVideoView extends AbsTextureVideoView implements ViewHostEve
                             //noinspection ConstantConditions
                             if (cutoutShortVideo) {
                                 FileUtils.recordMediaFileToDatabaseAndScan(
-                                        mContext,
-                                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                        destFile,
-                                        "video/mp4");
+                                        mContext, destFile, "video/mp4");
                                 result = mResources.getString(
                                         R.string.shortVideoHasBeenSavedTo, destName, destDirectory);
                             } else {
                                 FileUtils.recordMediaFileToDatabaseAndScan(
-                                        mContext,
-                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                        destFile,
-                                        "image/gif");
+                                        mContext, destFile, "image/gif");
                                 result = mResources.getString(
                                         R.string.gifHasBeenSavedTo, destName, destDirectory);
                             }

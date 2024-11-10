@@ -5,16 +5,17 @@
 
 package com.liuzhenlin.videos.dao;
 
-import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.liuzhenlin.videos.bean.Video;
+
+import static android.os.Build.VERSION_CODES.Q;
+import static android.os.Build.VERSION_CODES.R;
 
 /**
  * @author 刘振林
@@ -24,12 +25,11 @@ public interface IVideoDao {
     String VIDEO_ID = MediaStore.Video.Media._ID;
     String VIDEO_NAME = MediaStore.Video.Media.DISPLAY_NAME;
     String VIDEO_PATH = MediaStore.Video.Media.DATA;
+    @RequiresApi(R) String VIDEO_RELATIVE_PATH = MediaStore.Video.Media.RELATIVE_PATH;
     String VIDEO_SIZE = MediaStore.Video.Media.SIZE;
-    @SuppressLint("InlinedApi")
     String VIDEO_DURATION = MediaStore.Video.Media.DURATION;
     String VIDEO_RESOLUTION = MediaStore.Video.Media.RESOLUTION;
-    @RequiresApi(Build.VERSION_CODES.Q)
-    String VIDEO_ORIENTATION = MediaStore.Video.Media.ORIENTATION;
+    @RequiresApi(Q) String VIDEO_ORIENTATION = MediaStore.Video.Media.ORIENTATION;
 
     boolean insertVideo(@Nullable Video video);
 

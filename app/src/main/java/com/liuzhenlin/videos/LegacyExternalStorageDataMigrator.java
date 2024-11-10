@@ -85,8 +85,7 @@ public class LegacyExternalStorageDataMigrator {
                     videoDao.deleteVideo(video.getId());
                 }
             }
-            FileUtils.recordMediaFilesToDatabaseAndScan(
-                    mContext, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, shortVideos, mimeTypes);
+            FileUtils.recordMediaFilesToDatabaseAndScan(mContext, shortVideos, mimeTypes);
         }
 
         File[] screenshots = legacyAppScreenshotsDir.listFiles(File::isFile);
@@ -106,8 +105,7 @@ public class LegacyExternalStorageDataMigrator {
                                 + "' COLLATE NOCASE",
                         null);
             }
-            FileUtils.recordMediaFilesToDatabaseAndScan(
-                    mContext, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, screenshots, mimeTypes);
+            FileUtils.recordMediaFilesToDatabaseAndScan(mContext, screenshots, mimeTypes);
         }
 
         if (suceessful) {
