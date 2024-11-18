@@ -123,7 +123,7 @@ public class MultiMailSender {
             mMessage.setSubject(mMailInfo.getTitle());
             // 设置邮件正文，为了避免邮件正文中文乱码问题，指定字符集为UTF-8
             MimeBodyPart text = new MimeBodyPart();
-            text.setContent(mMailInfo.getText(), "text/html;charset=" + CHARSET);
+            text.setText(mMailInfo.getText(), CHARSET);
 
             // 设置邮件的图片
             MimeBodyPart image = new MimeBodyPart();
@@ -155,7 +155,7 @@ public class MultiMailSender {
             mMessage.setSubject(mMailInfo.getTitle());
             // 正文
             MimeBodyPart text = new MimeBodyPart();
-            text.setContent(mMailInfo.getText(), "text/html;charset=" + CHARSET);
+            text.setText(mMailInfo.getText(), CHARSET);
 
             final String[] paths = mMailInfo.getAttachmentPaths();
             MimeBodyPart[] attaches = new MimeBodyPart[paths.length];
@@ -192,7 +192,7 @@ public class MultiMailSender {
             mMessage.setSubject(mMailInfo.getTitle());
             // 正文
             MimeBodyPart text = new MimeBodyPart();
-            text.setContent(mMailInfo.getText(), "text/html;charset=" + CHARSET);
+            text.setText(mMailInfo.getText(), CHARSET);
 
             // 图片
             MimeBodyPart image = new MimeBodyPart();
