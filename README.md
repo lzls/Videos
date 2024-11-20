@@ -1,25 +1,27 @@
 Videos
 ======================
 
-An app lists all the videos from the sdcard (except for the ones not recorded to the system db.),
-where you can perform such ops as topping, deleting and playing. Also, there are lots of videos
-from [YouTube](https://m.youtube.com) that you can find to play in the `Online Videos` plate of
-the application homepage.
+An app lists all the videos from the sdcard (except for the ones not recorded to the system db.)
+in various order, where you can perform such ops as topping, deleting and playing. Also, there are
+lots of videos from [YouTube](https://m.youtube.com) that you can find to play in the `Online Videos`
+plate of the application homepage.
 
-_NOTE: if you are satisfied with this application and **only planed to be a user**, it is
-recommended you download one of the [officially signed installation packages](
-https://github.com/lzls/Videos/blob/release/app.json) in order to get support for code hotfix and
-help me collect crash usages of this app from your device._
+_NOTE:_
+- _Starting from version **2.5-beta01**, the subsequent major code of the project (including
+  new features and security enhancements, etc.) will no longer be open source to prevent the project
+  from being further stolen and simply packaged then put on Google Play for profit purpose. It is
+  also for consideration of the possible commercial development of the project in the future._
+- _If you are satisfied with this application and **only planed to be a user**,
+  it is recommended you download one of the [officially signed installation packages](
+  https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app.json) in order to get support
+  for code hotfix and help me collect crash usages of this app from your device._
 
 ## Features
-- Videos are listed and classified by each item for the videos under the same directory or just
-  a standalone file.
+- Videos are listed and classified by each item for the videos under the same directory, all of
+  which can be sorted by their name/date/size in the asc/desc order.
 - Top a recently viewed or favourite video directory or video from the list.
-- Delete all the videos within a directory or a single video file.
-- Rename a video file or make an alias for a video directory.
-- Share a video file to another app.
-- View the details of a video file/directory.
-- Search the videos matching all of the search key words.
+- Search for videos matching all of the search key words，which will be sorted by their relevancy
+  by default.
 - Play a local video from the app list or across from an other app (such as a file manager/explorer).
   Audio files are also permitted in the latter case.
 - Play an online audio/video stream by entering a direct URL or choosing a publicly shared
