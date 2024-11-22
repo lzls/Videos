@@ -94,18 +94,24 @@
       "2. Optimized the display size of the video list thumbnails on different screens."
     ],
     "beta": {
-      "versionCode": 69,
-      "versionName": "2.4.1",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.4.1.apk",
-      "appLength": 72471989,
-      "appSha1": "3716135731d1b496fd336d36eea74cafb807c022",
+      "versionCode": 70,
+      "versionName": "2.5-beta01",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.5-beta01.apk",
+      "appLength": 71693832,
+      "appSha1": "43f25c2612581fadeabfe6f3b4739693d9a5cf22",
       "updateLogs": [
-        "1. 修复应用无法在仅支持64位的设备上安装的问题",
-        "2. 优化不同屏幕上的视频列表缩略图显示大小"
+        "1. 修复挖孔屏同比例本地视频在全屏下无法完整显示的问题",
+        "2. 增加用户可选择是否将媒体内容扩展显示至屏幕挖孔区域的设置开关",
+        "3. 本地视频列表支持多种排序方式",
+        "4. 修复未提前授予所有文件访问权限导致视频剪辑结束时，应用崩溃，之后首页不显示任何视频，并不断刷新的问题",
+        "5. 修复在 Android 4.1 上开始剪辑视频时，应用崩溃的问题"
       ],
       "updateLogs-en": [
-        "1. Fixed the issue where the app could not be installed on devices with only 64-bit support.",
-        "2. Optimized the display size of the video list thumbnails on different screens."
+        "1. Fixed the issue where local videos with the same ratio as the punch hole screen could not be fully displayed in fullscreen.",
+        "2. Added a settings switch for user to choose whether to extend the media content display to the screen cutout area.",
+        "3. Various sorting support for local video lists.",
+        "4. Fixed the issue where the home page would not display any videos and would keep refreshing after the app crashed due to video clip finished without the All Files Access permission granted in advance.",
+        "5. Fixed an app crash occurred on Android 4.1 when video clip started."
       ]
     },
     "dev": "beta",
