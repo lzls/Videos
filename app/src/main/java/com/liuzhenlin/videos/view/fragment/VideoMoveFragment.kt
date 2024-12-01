@@ -46,6 +46,7 @@ interface IVideoMoveView : IView<IVideoMovePresenter> {
     fun getArguments(): Bundle?
 
     fun setTargetDirListItemChecked(position: Int, checked: Boolean)
+    fun onCheckedTargetDirListItemCountChanged(checkedItemCount: Int)
 
     fun newTargetDirListViewHolder(parent: ViewGroup): TargetDirListViewHolder
 
@@ -123,13 +124,6 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         super.onRestoreInstanceState(savedInstanceState)
         mPresenter.restoreData(savedInstanceState)
-        // Selected dir might not be loaded till user scrolls the list
-        for (index in 0 until mVideoDirList!!.adapter!!.itemCount) {
-            if (mPresenter.isTargetDirChecked(index)) {
-                mOkayButton!!.isEnabled = true
-                break
-            }
-        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -210,6 +204,10 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         mVideoDirList?.adapter?.notifyItemChanged(position, PAYLOAD_REFRESH_CHECKBOX)
     }
 
+    override fun onCheckedTargetDirListItemCountChanged(checkedItemCount: Int) {
+        mOkayButton?.isEnabled = checkedItemCount == 1
+    }
+
     override fun newTargetDirListViewHolder(parent: ViewGroup): IVideoMoveView.TargetDirListViewHolder {
         return TargetDirListViewHolder(
                 LayoutInflater.from(parent.context)
@@ -235,10 +233,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 checkBox.tag = position
 
                 val videoCount = videodir.videoCount(includeDescendants = false)
-                if (checkBox.isChecked != videodir.isChecked) {
-                    checkBox.isChecked = videodir.isChecked
-                    onCheckedChange(position)
-                }
+                checkBox.isChecked = videodir.isChecked
                 videodirNameText.text = videodir.name
                 videodirPathText.text = videodir.path
                 videoCountText.text =
@@ -248,10 +243,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 for (payload in payloads) {
                     when (payload) {
                         PAYLOAD_REFRESH_CHECKBOX ->
-                            if (checkBox.isChecked != videodir.isChecked) {
-                                checkBox.isChecked = videodir.isChecked
-                                onCheckedChange(position)
-                            }
+                            checkBox.isChecked = videodir.isChecked
                         PAYLOAD_REFRESH_VIDEODIR_THUMB ->
                             @Suppress("UNCHECKED_CAST")
                             (bindingAdapter as ImageLoadingListAdapter<TargetDirListViewHolder>)
@@ -271,42 +263,8 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         }
 
         override fun onClick(v: View) {
-            when (v.id) {
-                R.id.checkbox -> {
-                    val position = v.tag as Int
-                    onCheckedChange(position)
-                }
-                else -> { // itemView
-                    val position = v.tag as Int
-                    checkBox.toggle(true)
-                    onCheckedChange(position)
-                }
-            }
-        }
-
-        fun onCheckedChange(position: Int) {
-            val itemCount = bindingAdapter!!.itemCount
-            if (checkBox.isChecked) {
-                for (index in 0 until itemCount) {
-                    if (index != position && mPresenter.isTargetDirChecked(index)) {
-                        mPresenter.setTargetDirChecked(index, false)
-                        break
-                    }
-                }
-                mOkayButton!!.isEnabled = true
-            } else {
-                var hasCheckedDir = false
-                for (index in 0 until itemCount) {
-                    if (index != position && mPresenter.isTargetDirChecked(index)) {
-                        hasCheckedDir = true
-                        break
-                    }
-                }
-                if (!hasCheckedDir) {
-                    mOkayButton!!.isEnabled = false
-                }
-            }
-            mPresenter.setTargetDirChecked(position, checkBox.isChecked)
+            val position = v.tag as Int
+            mPresenter.setTargetDirChecked(position, !mPresenter.isTargetDirChecked(position))
         }
     }
 }

@@ -199,8 +199,30 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter {
     override fun setTargetDirChecked(index: Int, checked: Boolean) {
         val targetDirs = mTargetDirs.get()
         if (targetDirs[index].isChecked != checked) {
-            targetDirs[index].isChecked = checked
-            mView?.setTargetDirListItemChecked(index, checked)
+            var oldCheckedCount = 0
+            var checkedCount = 0
+            for (i in targetDirs.indices) {
+                if (i == index) {
+                    if (checked) {
+                        ++checkedCount
+                    } else {
+                        ++oldCheckedCount
+                    }
+                    targetDirs[i].isChecked = checked
+                    mView?.setTargetDirListItemChecked(i, checked)
+                } else {
+                    if (targetDirs[i].isChecked) {
+                        ++oldCheckedCount
+                        if (checked) {
+                            targetDirs[i].isChecked = false
+                            mView?.setTargetDirListItemChecked(i, false)
+                        }
+                    }
+                }
+            }
+            if (checkedCount != oldCheckedCount) {
+                mView?.onCheckedTargetDirListItemCountChanged(checkedCount)
+            }
         }
     }
 

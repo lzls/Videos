@@ -450,8 +450,8 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         var observer = mVideoObserver
         if (observer == null) {
             observer = VideoObserver(Consts.getMainThreadHandler())
+            observer.startWatching()
         }
-        observer.startWatching()
     }
 
     override fun stopWatchingVideos(reloadVideosIfNeeded: Boolean) {
