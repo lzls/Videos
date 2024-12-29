@@ -23,7 +23,13 @@ import java.util.List;
  */
 public interface IVideoView extends IView<IVideoPresenter> {
 
+    boolean isFinishing();
+
     void setResult(int resultCode, Intent data);
+
+    void onPlaylistInitialized(@NonNull Video[] playlist, int playlistIndex);
+
+    void onPlaylistInitializationFail();
 
     void setVideoToPlay(@NonNull Video video);
 
@@ -45,8 +51,6 @@ public interface IVideoView extends IView<IVideoPresenter> {
         public abstract void cancelLoadingVideoThumb();
 
         public abstract void bindData(
-                @NonNull Video video, int position, @NonNull List<Object> payloads);
-
-        public abstract void onItemViewClick(int position);
+                @NonNull Video video, int position, boolean selected, @NonNull List<Object> payloads);
     }
 }

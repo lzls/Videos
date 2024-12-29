@@ -39,6 +39,8 @@ abstract class FullscreenDialogFragment<P : IPresenter<*>>(
 
     private var mScreenWidthDp = 0
 
+    private var mTmpBundle: Bundle? = null
+
     init {
         @Suppress("LeakingThis")
         setStyle(STYLE_NORMAL, R.style.Theme_AppCompat_DayNight_Dialog_Fullscreen)
@@ -82,6 +84,7 @@ abstract class FullscreenDialogFragment<P : IPresenter<*>>(
         val dialog: Dialog = AppCompatDialog(context, theme)
         dialog.setCanceledOnTouchOutside(false)
         dialog.setCancelable(true)
+        mTmpBundle = savedInstanceState
         return dialog
     }
 
@@ -89,7 +92,8 @@ abstract class FullscreenDialogFragment<P : IPresenter<*>>(
     override fun setupDialog(dialog: Dialog, style: Int) {
         super.setupDialog(dialog, style)
         setupContentView(dialog)
-        onDialogCreated(dialog)
+        onDialogCreated(dialog, mTmpBundle)
+        mTmpBundle = null
         mLifecycleCallback?.onFragmentViewCreated(this)
     }
 
@@ -121,7 +125,7 @@ abstract class FullscreenDialogFragment<P : IPresenter<*>>(
     protected open val isStatusBarBackgroundLight: Boolean
             get() = !ThemeUtils.isNightMode(contextThemedFirst)
 
-    protected open fun onDialogCreated(dialog: Dialog) {}
+    protected open fun onDialogCreated(dialog: Dialog, savedInstanceState: Bundle?) {}
 
     @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
     override fun onActivityCreated(savedInstanceState: Bundle?) {

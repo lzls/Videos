@@ -22,18 +22,15 @@ import java.io.File;
  */
 public interface IVideoPresenter extends IPresenter<IVideoView> {
 
-    boolean initPlaylist(@Nullable Bundle savedInstanceState, @NonNull Intent intent);
-    boolean initPlaylistAndRecordCurrentVideoProgress(
+    void initPlaylist(@Nullable Bundle savedInstanceState, @NonNull Intent intent);
+    void initPlaylistAndRecordCurrentVideoProgress(
             @Nullable Bundle savedInstanceState, @NonNull Intent intent);
-    void saveData(@NonNull Bundle outState);
+    void saveInstanceState(@NonNull Bundle outState);
+
+    void finish(Runnable finisher);
 
     void playCurrentVideo();
     void playVideoAt(int position);
-    int getCurrentVideoPositionInList();
-    int getPlaylistSize();
-
-    void recordCurrVideoProgress();
-    void recordCurrVideoProgressAndSetResult();
 
     void skipToPreviousVideo();
     void skipToNextVideo();

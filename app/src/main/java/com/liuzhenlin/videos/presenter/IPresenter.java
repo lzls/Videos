@@ -5,7 +5,10 @@
 
 package com.liuzhenlin.videos.presenter;
 
+import android.os.Bundle;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.liuzhenlin.videos.view.IView;
 
@@ -18,6 +21,9 @@ public interface IPresenter<V extends IView> {
     void attachToView(@NonNull V view);
     void detachFromView(@NonNull V view);
 
+    default void onViewCreated(@NonNull V view, @Nullable Bundle savedInstanceState) {
+        onViewCreated(view);
+    }
     void onViewCreated(@NonNull V view);
     void onViewStart(@NonNull V view);
     void onViewResume(@NonNull V view);

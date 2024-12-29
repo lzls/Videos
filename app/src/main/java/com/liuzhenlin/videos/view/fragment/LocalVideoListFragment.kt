@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
+import com.google.android.material.snackbar.Snackbar
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.Consts.EMPTY_STRING
@@ -55,7 +56,6 @@ import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.fragment.Payloads.*
-import java.util.*
 
 /**
  * @author 刘振林
@@ -67,6 +67,9 @@ interface ILocalVideoListView : IView<ILocalVideoListPresenter>, VideoListItemOp
 
     fun getArguments(): Bundle?
     fun onReturnResult(resultCode: Int, data: Intent?)
+
+    fun init(isSublist: Boolean, listTitle: String?, listTitleDesc: String?,
+             listAdapter: ImageLoadingListAdapter<out VideoListViewHolder>)
 
     fun goToLocalVideoSubListFragment(args: Bundle)
     fun goToVideoMoveFragment(args: Bundle)
@@ -97,13 +100,17 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     private var mLifecycleCallback: FragmentPartLifecycleCallback? = null
 
     private lateinit var mRecyclerView: SlidingItemMenuRecyclerView
-    private val mAdapter by lazy(LazyThreadSafetyMode.NONE) { presenter.getVideoListAdapter() }
+    private lateinit var mAdapter
+            : ImageLoadingListAdapter<out ILocalVideoListView.VideoListViewHolder>
+    private var mSublist: Boolean = false
+    private var mListTitle: String? = null
 
     private var mItemOptionsWindow: PopupWindow? = null
     private var mDeleteItemsWindow: PopupWindow? = null
     private var mDeleteItemDialog: Dialog? = null
     private var mRenameItemDialog: Dialog? = null
     private var mItemDetailsDialog: Dialog? = null
+    private var mItemsDeletingDialog: Dialog? = null
 
     private var mTitleWindowFrame: FrameLayout? = null
     private var mSelectAllButton: TextView? = null
@@ -185,26 +192,36 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        if (presenter.isSublist) {
+        val contentView = inflater.inflate(R.layout.fragment_local_video_list, container, false)
+        return attachViewToSwipeBackLayout(contentView)
+    }
+
+    override fun init(
+            isSublist: Boolean, listTitle: String?, listTitleDesc: String?,
+            listAdapter: ImageLoadingListAdapter<out ILocalVideoListView.VideoListViewHolder>) {
+        mSublist = isSublist
+        mListTitle = listTitle
+        mAdapter = listAdapter
+
+        if (isSublist) {
             val actionbar = mInteractionCallback.getActionBar(this)
             actionbar.findViewById<View>(R.id.btn_back).setOnClickListener(this)
-            actionbar.findViewById<TextView>(R.id.text_title).text = presenter.listTitle
-            actionbar.findViewById<TextView>(R.id.text_titleDesc).text = presenter.listTitleDesc
+            actionbar.findViewById<TextView>(R.id.text_title).text = listTitle
+            actionbar.findViewById<TextView>(R.id.text_titleDesc).text = listTitleDesc
             actionbar.findViewById<HorizontalScrollView>(R.id.hsv_titleDescText).let {
                 Utils.runOnLayoutValid(it) { it.fullScroll(View.FOCUS_RIGHT) }
             }
         }
 
-        val contentView = inflater.inflate(R.layout.fragment_local_video_list, container, false)
+        val contentView = requireView()
         mRecyclerView = contentView.findViewById(R.id.simrv_videoList)
         mRecyclerView.layoutManager = LinearLayoutManager(contentView.context)
-        mRecyclerView.adapter = mAdapter
+        mRecyclerView.adapter = listAdapter
         mRecyclerView.addItemDecoration(
                 DividerItemDecoration(contentView.context, DividerItemDecoration.VERTICAL))
         mRecyclerView.setHasFixedSize(true)
 
-        isSwipeBackEnabled = presenter.isSublist
-        return attachViewToSwipeBackLayout(contentView)
+        isSwipeBackEnabled = isSublist
     }
 
     override fun onScreenWidthDpLevelChanged(
@@ -216,7 +233,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mLifecycleCallback?.onFragmentViewCreated(this)
-        presenter.onViewCreated(this)
+        presenter.onViewCreated(this, savedInstanceState)
     }
 
     override fun onStart() {
@@ -260,7 +277,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun onBackPressed(): Boolean {
         mItemOptionsWindow?.dismiss()
-                ?: if (presenter.isSublist) {
+                ?: if (mSublist) {
                     swipeBackLayout.scrollToFinishActivityOrPopUpFragment()
                     return true
                 } else return false
@@ -293,6 +310,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         mDeleteItemDialog?.dismiss()
         mRenameItemDialog?.dismiss()
         mItemDetailsDialog?.dismiss()
+        mItemsDeletingDialog?.dismiss()
     }
 
     override fun onVideosLoadStart() {
@@ -349,7 +367,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 topButton.tag = position
                 deleteButton.tag = position
 
-                separateToppedItemsFromUntoppedOnes(position)
+                separateToppedItemsFromUntoppedOnes(item.isTopped)
 
                 if (mItemOptionsWindow == null) {
                     UiUtils.setViewVisibilityAndVerify(checkBox, View.GONE)
@@ -388,7 +406,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 for (payload in payloads) {
                     if (payload !is Int) continue
                     if (payload and PAYLOAD_CHANGE_ITEM_LPS_AND_BG != 0) {
-                        separateToppedItemsFromUntoppedOnes(position)
+                        separateToppedItemsFromUntoppedOnes(item.isTopped)
                     }
                     if (payload and PAYLOAD_CHANGE_CHECKBOX_VISIBILITY != 0) {
                         if (mItemOptionsWindow == null) {
@@ -452,9 +470,9 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
             }
         }
 
-        fun separateToppedItemsFromUntoppedOnes(position: Int) {
+        fun separateToppedItemsFromUntoppedOnes(topped: Boolean) {
             val context = contextThemedFirst
-            if (presenter.isItemTopped(position)) {
+            if (topped) {
                 ViewCompat.setBackground(itemVisibleFrame,
                         ContextCompat.getDrawable(context, R.drawable.selector_topped_recycler_item))
                 topButton.text = CANCEL_TOP
@@ -495,19 +513,19 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                         }
                     }
                 } else {
-                    presenter.setItemChecked(position, !presenter.isItemChecked(position))
+                    presenter.toggleItemChecked(position)
                 }
             }
 
             R.id.checkbox -> {
                 val position = v.tag as Int
-                presenter.setItemChecked(position, !presenter.isItemChecked(position))
+                presenter.toggleItemChecked(position)
             }
 
             // 置顶或取消置顶视频（目录）
             R.id.btn_top -> {
                 val position = v.tag as Int
-                presenter.setItemTopped(position, !presenter.isItemTopped(position))
+                presenter.toggleItemTopped(position)
             }
 
             // 删除视频
@@ -520,8 +538,6 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 val onDeleteAction = decorView[0].tag as (() -> Unit)?
 
                 mDeleteItemDialog!!.cancel()
-
-                deleteItems(item)
 
                 if (onDeleteAction != null) {
                     onDeleteAction()
@@ -546,21 +562,11 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 mDeleteItemsWindow!!.dismiss()
                 mItemOptionsWindow?.dismiss()
 
-                if (items.size == 1) {
-                    val item = items[0]
-
-                    deleteItems(item)
-
-                    if (onDeleteAction != null) {
-                        onDeleteAction()
-                    } else {
-                        presenter.deleteItem(item, false)
-                    }
+                if (onDeleteAction != null) {
+                    onDeleteAction()
                 } else {
-                    deleteItems(*items)
-
-                    if (onDeleteAction != null) {
-                        onDeleteAction()
+                    if (items.size == 1) {
+                        presenter.deleteItem(items[0], false)
                     } else {
                         presenter.deleteItems(*items, needUserConfirm = false)
                     }
@@ -582,18 +588,17 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
                 val window = mRenameItemDialog!!.window!!
                 val decorView = window.decorView as ViewGroup
-                val item = decorView.tag as VideoListItem
+                val item = (decorView.tag as VideoListItem).shallowCopy<VideoListItem>()
                 @Suppress("UNCHECKED_CAST")
-                val onRenameAction = decorView[0].tag as (() -> Unit)?
+                val onRenameAction = decorView[0].tag as ((String) -> Unit)?
 
                 mRenameItemDialog!!.cancel()
 
-                if (renameItem(item, newName, view)) {
-                    if (onRenameAction != null) {
-                        onRenameAction()
-                    } else {
-                        presenter.renameItemTo(item)
-                    }
+                if (onRenameAction != null) {
+                    onRenameAction(newName)
+                } else {
+                    item.name = newName
+                    presenter.renameItemTo(item)
                 }
             }
             R.id.btn_cancel_renameVideoListItemDialog -> mRenameItemDialog!!.cancel()
@@ -634,9 +639,8 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
                 mTitleWindowFrame = View.inflate(
                         v.context, R.layout.popup_window_main_title, null) as FrameLayout
-                if (presenter.isSublist) {
-                    mTitleWindowFrame!!.findViewById<TextView>(R.id.text_title).text =
-                            presenter.listTitle
+                if (mSublist) {
+                    mTitleWindowFrame!!.findViewById<TextView>(R.id.text_title).text = mListTitle
                 }
                 mTitleWindowFrame!!.findViewById<View>(R.id.btn_cancel_vlow)
                         .setOnClickListener(this)
@@ -764,7 +768,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                     mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
                             PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
 
-                    val sublist = presenter.isSublist
+                    val sublist = mSublist
                     mInteractionCallback.setLightStatus(false)
                     isSwipeBackEnabled = sublist
                     mInteractionCallback.setSideDrawerEnabled(!sublist)
@@ -901,7 +905,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         fadedContentView.foregroundGravity = Gravity.FILL
     }
 
-    override fun showRenameItemDialog(item: VideoListItem, onRenameAction: (() -> Unit)?) {
+    override fun showRenameItemDialog(item: VideoListItem, onRenameAction: ((String) -> Unit)?) {
         val name = item.name
         val postfix: String = when (item) {
             is Video -> {
@@ -1086,20 +1090,53 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun showVideosMovePage(vararg items: VideoListItem) = presenter.moveItems(*items)
 
-    override fun deleteItems(vararg items: VideoListItem) {
-        val dialog = WaitingOverlayDialog(contextThemedFirst)
-        dialog.message = resources.getQuantityText(R.plurals.deletingVideosPleaseWait,
-                if (items.size == 1
-                        && (items[0] is Video || (items[0] as VideoDirectory).videoCount() == 1))
-                    1
-                else 1.inv())
-        dialog.show()
-        Executors.THREAD_POOL_EXECUTOR.execute {
-            super.deleteItems(*items)
-            Executors.MAIN_EXECUTOR.execute {
-                dialog.dismiss()
+    override fun onItemsDeleteStart(vararg items: VideoListItem) {
+        if (mItemsDeletingDialog == null) {
+            val dialog = WaitingOverlayDialog(contextThemedFirst)
+            dialog.message = resources.getQuantityText(R.plurals.deletingVideosPleaseWait,
+                    if (items.size == 1
+                            && (items[0] is Video || (items[0] as VideoDirectory).videoCount() == 1))
+                        1
+                    else 1.inv())
+            dialog.show()
+            dialog.setOnDismissListener {
+                mItemsDeletingDialog = null
+            }
+            mItemsDeletingDialog = dialog
+        }
+    }
+
+    override fun onItemsDeleteFinish(vararg items: VideoListItem) {
+        val dialog = mItemsDeletingDialog
+        if (dialog != null) {
+            dialog.dismiss()
+            mItemsDeletingDialog = null
+        }
+    }
+
+    override fun onItemRenameFail(item: VideoListItem, reason: Int) {
+        when (reason) {
+            FAIL_REASON_FILE_NOT_EXIST -> {
+                showUserCancelableSnackbar(
+                        R.string.renameFailedForThisVideoDoesNotExist, Snackbar.LENGTH_SHORT)
+            }
+            FAIL_REASON_FILE_NAME_CLASHED -> {
+                showUserCancelableSnackbar(
+                        R.string.renameFailedForThatDirectoryHasSomeFileWithTheSameName,
+                        Snackbar.LENGTH_SHORT)
+            }
+            FAIL_REASON_UNKNOWN -> {
+                showUserCancelableSnackbar(R.string.renameFailed, Snackbar.LENGTH_SHORT)
             }
         }
+    }
+
+    override fun onItemRenameSuccess(item: VideoListItem) {
+        showUserCancelableSnackbar(R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
+    }
+
+    override fun showUserCancelableSnackbar(text: CharSequence, duration: Int) {
+        UiUtils.showUserCancelableSnackbar(requireView(), text, duration)
     }
 
     interface InteractionCallback : ActionBarCallback, RefreshLayoutCallback {

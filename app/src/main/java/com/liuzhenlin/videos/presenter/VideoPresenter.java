@@ -15,15 +15,16 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.bumptech.glide.util.Synthetic;
-import com.liuzhenlin.common.utils.FileUtils;
+import com.google.android.material.snackbar.Snackbar;
 import com.liuzhenlin.common.utils.ShareUtils;
+import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.texturevideoview.TextureVideoView;
 import com.liuzhenlin.videos.Configs;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.Files;
+import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
-import com.liuzhenlin.videos.dao.VideoListItemDao;
+import com.liuzhenlin.videos.model.VideoRepository;
 import com.liuzhenlin.videos.view.activity.IVideoView;
 import com.liuzhenlin.videos.view.fragment.VideoListItemOpsKt;
 
@@ -36,258 +37,278 @@ import static com.liuzhenlin.common.Consts.NO_ID;
 /**
  * @author 刘振林
  */
-class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
+class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter,
+        VideoRepository.Callback {
+
+    @Synthetic VideoRepository mVideoRepository;
 
     private static final String KEY_VIDEO_INDEX = "kvi";
 
-    @Synthetic Video[] mVideos;
-    @Synthetic int mVideoIndex = -1;
-
     @Override
-    public boolean initPlaylistAndRecordCurrentVideoProgress(
-            @Nullable Bundle savedInstanceState, @NonNull Intent intent) {
-        Video video = mVideos == null ? null : mVideos[mVideoIndex];
-        boolean initialized = initPlaylist(savedInstanceState, intent);
-        if (video != null) {
-            recordVideoProgress(video);
-        }
-        return initialized;
+    public void attachToView(@NonNull IVideoView view) {
+        super.attachToView(view);
+        mVideoRepository = VideoRepository.create(mContext);
+        mVideoRepository.setCallback(this);
     }
 
     @Override
-    public boolean initPlaylist(@Nullable Bundle savedInstanceState, @NonNull Intent intent) {
+    public void detachFromView(@NonNull IVideoView view) {
+        super.detachFromView(view);
+        mVideoRepository.setCallback(null);
+        mVideoRepository = null;
+    }
+
+    @Override
+    public void initPlaylistAndRecordCurrentVideoProgress(
+            @Nullable Bundle savedInstanceState, @NonNull Intent intent) {
+        Video video = mVideoRepository == null ? null : mVideoRepository.getCurrentVideo();
+        initPlaylist(savedInstanceState, intent,
+                () -> {
+                    if (video != null) {
+                        recordVideoProgress(video);
+                    }
+                });
+    }
+
+    @Override
+    public void initPlaylist(@Nullable Bundle savedInstanceState, @NonNull Intent intent) {
+        initPlaylist(savedInstanceState, intent, null);
+    }
+
+    private void initPlaylist(
+            Bundle savedInstanceState, Intent intent, Runnable runOnInitialized) {
+        VideoRepository repository = mVideoRepository;
+        if (repository == null) return;
+
         final boolean stateRestore = savedInstanceState != null;
+        Video[] videos = null;
+        int videoIndex = -1;
         Video video;
+        boolean initSuceess = false;
 
         Parcelable[] parcelables = intent.getParcelableArrayExtra(Consts.KEY_VIDEOS);
         if (parcelables != null) {
             final int length = parcelables.length;
             if (length > 0) {
-                mVideos = new Video[length];
+                videos = new Video[length];
                 for (int i = 0; i < length; i++) {
                     video = (Video) parcelables[i];
                     if (stateRestore) {
-                        video.setProgress(
-                                VideoListItemDao.getSingleton(mContext).getVideoProgress(video.getId()));
+                        video.setProgress(repository.getVideoProgressFromDB(video));
                     }
-                    mVideos[i] = video;
+                    videos[i] = video;
                 }
                 if (stateRestore) {
-                    mVideoIndex = savedInstanceState.getInt(KEY_VIDEO_INDEX);
+                    videoIndex = savedInstanceState.getInt(KEY_VIDEO_INDEX);
                 } else {
-                    mVideoIndex = intent.getIntExtra(Consts.KEY_SELECTION, 0);
-                    if (mVideoIndex < 0 || mVideoIndex >= length) {
-                        mVideoIndex = 0;
+                    videoIndex = intent.getIntExtra(Consts.KEY_SELECTION, 0);
+                    if (videoIndex < 0 || videoIndex >= length) {
+                        videoIndex = 0;
                     }
                 }
-                return true;
+                initSuceess = true;
             }
-            return false;
         }
 
-        video = intent.getParcelableExtra(Consts.KEY_VIDEO);
-        if (video != null) {
-            if (stateRestore) {
-                video.setProgress(
-                        VideoListItemDao.getSingleton(mContext).getVideoProgress(video.getId()));
-            }
-            mVideos = new Video[]{video};
-            mVideoIndex = 0;
-            return true;
-        }
-
-        Parcelable[] videoUriParcels = (Parcelable[])
-                intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
-        Serializable[] videoTitleSerials = (Serializable[])
-                intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
-        if (videoUriParcels != null) {
-            final int length = videoUriParcels.length;
-            if (length > 0) {
-                mVideos = new Video[length];
-                for (int i = 0; i < length; i++) {
-                    video = buildVideoForUri((Uri) videoUriParcels[i],
-                            (String) (videoTitleSerials != null ? videoTitleSerials[i] : null));
-                    if (stateRestore && video.getId() != NO_ID) {
-                        video.setProgress(
-                                VideoListItemDao.getSingleton(mContext).getVideoProgress(video.getId()));
-                    }
-                    mVideos[i] = video;
-                }
+        if (!initSuceess) {
+            video = intent.getParcelableExtra(Consts.KEY_VIDEO);
+            if (video != null) {
                 if (stateRestore) {
-                    mVideoIndex = savedInstanceState.getInt(KEY_VIDEO_INDEX);
-                } else {
-                    mVideoIndex = intent.getIntExtra(Consts.KEY_SELECTION, 0);
-                    if (mVideoIndex < 0 || mVideoIndex >= length) {
-                        mVideoIndex = 0;
-                    }
+                    video.setProgress(repository.getVideoProgressFromDB(video));
                 }
-                return true;
+                videos = new Video[]{video};
+                videoIndex = 0;
+                initSuceess = true;
             }
-            return false;
         }
 
-        Uri uri = intent.getData();
-        if (uri == null) {
-            uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if (!initSuceess) {
+            Parcelable[] videoUriParcels = (Parcelable[])
+                    intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
+            Serializable[] videoTitleSerials = (Serializable[])
+                    intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
+            if (videoUriParcels != null) {
+                final int length = videoUriParcels.length;
+                if (length > 0) {
+                    videos = new Video[length];
+                    for (int i = 0; i < length; i++) {
+                        video = repository.getVideoForUri((Uri) videoUriParcels[i],
+                                (String) (videoTitleSerials != null ? videoTitleSerials[i] : null));
+                        if (stateRestore && video.getId() != NO_ID) {
+                            video.setProgress(repository.getVideoProgressFromDB(video));
+                        }
+                        videos[i] = video;
+                    }
+                    if (stateRestore) {
+                        videoIndex = savedInstanceState.getInt(KEY_VIDEO_INDEX);
+                    } else {
+                        videoIndex = intent.getIntExtra(Consts.KEY_SELECTION, 0);
+                        if (videoIndex < 0 || videoIndex >= length) {
+                            videoIndex = 0;
+                        }
+                    }
+                    initSuceess = true;
+                }
+            }
+        }
+
+        if (!initSuceess) {
+            Uri uri = intent.getData();
             if (uri == null) {
-                CharSequence uriCharSequence = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
-                if (uriCharSequence != null) {
-                    uri = Uri.parse(uriCharSequence.toString());
+                uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+                if (uri == null) {
+                    CharSequence uriCharSequence = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+                    if (uriCharSequence != null) {
+                        uri = Uri.parse(uriCharSequence.toString());
+                    }
                 }
             }
-        }
-        if (uri != null) {
-            video = buildVideoForUri(uri, intent.getStringExtra(Consts.KEY_VIDEO_TITLE));
-            if (stateRestore && video.getId() != NO_ID) {
-                video.setProgress(
-                        VideoListItemDao.getSingleton(mContext).getVideoProgress(video.getId()));
-            }
-            mVideos = new Video[]{video};
-            mVideoIndex = 0;
-            return true;
-        }
-
-        return false;
-    }
-
-    private Video buildVideoForUri(Uri uri, String videoTitle) {
-        String videoUrl = FileUtils.UriResolver.getPath(mContext, uri);
-        if (videoUrl == null) {
-            videoUrl = uri.toString();
-        }
-
-        Video video = VideoListItemDao.getSingleton(mContext).queryVideoByPath(videoUrl);
-        if (video == null) {
-            video = new Video();
-            video.setId(NO_ID);
-            video.setPath(videoUrl);
-            if (videoTitle != null) {
-                video.setName(videoTitle);
-            } else {
-                video.setName(FileUtils.getFileNameFromFilePath(videoUrl));
+            if (uri != null) {
+                video = repository.getVideoForUri(uri, intent.getStringExtra(Consts.KEY_VIDEO_TITLE));
+                if (stateRestore && video.getId() != NO_ID) {
+                    video.setProgress(repository.getVideoProgressFromDB(video));
+                }
+                videos = new Video[]{video};
+                videoIndex = 0;
+                initSuceess = true;
             }
         }
-        return video;
+
+        if (initSuceess) {
+            if (runOnInitialized != null) {
+                runOnInitialized.run();
+            }
+            repository.setVideos(videos, videoIndex);
+        } else {
+            if (mView != null) {
+                mView.onPlaylistInitializationFail();
+            }
+        }
     }
 
     @Override
-    public void saveData(@NonNull Bundle outState) {
-        outState.putInt(KEY_VIDEO_INDEX, mVideoIndex);
+    public void saveInstanceState(@NonNull Bundle outState) {
+        if (mVideoRepository != null) {
+            outState.putInt(KEY_VIDEO_INDEX, mVideoRepository.getVideoIndex());
+        }
+    }
+
+    @Override
+    public void onViewStopped(@NonNull IVideoView view) {
+        super.onViewStopped(view);
+        // Saves the video progress when current Activity is put into background
+        if (!view.isFinishing()) {
+            recordCurrVideoProgress();
+        }
+    }
+
+    @Override
+    public void finish(Runnable finisher) {
+        recordCurrVideoProgressAndSetResult();
+        finisher.run();
+    }
+
+    private void recordCurrVideoProgressAndSetResult() {
+        Video[] videos = mVideoRepository == null ? null : mVideoRepository.getVideos();
+        if (videos != null) {
+            recordCurrVideoProgress();
+            if (mView != null) {
+                if (videos.length == 1) {
+                    mView.setResult(Consts.RESULT_CODE_PLAY_VIDEO,
+                            new Intent().putExtra(Consts.KEY_VIDEO, videos[0]));
+                } else {
+                    mView.setResult(Consts.RESULT_CODE_PLAY_VIDEOS,
+                            new Intent().putExtra(Consts.KEY_VIDEOS, videos));
+                }
+            }
+        }
+    }
+
+    private void recordCurrVideoProgress() {
+        Video video = mVideoRepository == null ? null : mVideoRepository.getCurrentVideo();
+        if (video != null) {
+            recordVideoProgress(video);
+        }
+    }
+
+    @Synthetic void recordVideoProgress(Video video) {
+        if (mVideoRepository != null && mView != null) {
+            mVideoRepository.setVideoProgress(video, mView.getPlayingVideoProgress(), true);
+        }
     }
 
     @Override
     public void playCurrentVideo() {
-        if (mView != null && mVideos != null) {
-            mView.setVideoToPlay(mVideos[mVideoIndex]);
+        Video video = mVideoRepository == null ? null : mVideoRepository.getCurrentVideo();
+        if (mView != null && video != null) {
+            mView.setVideoToPlay(video);
         }
     }
 
     @Override
     public void playVideoAt(int position) {
-        if (mVideoIndex == position) {
-            playCurrentVideo();
-        } else {
-            if (mView != null && mVideos != null) {
-                int oldPosition = mVideoIndex;
-                mVideoIndex = position;
-                mView.setVideoToPlay(mVideos[position]);
-                mView.notifyPlaylistSelectionChanged(oldPosition, position, true);
+        recordCurrVideoProgress();
+
+        VideoRepository repository = mVideoRepository;
+        if (repository != null) {
+            if (repository.getVideoIndex() == position) {
+                playCurrentVideo();
+            } else {
+                repository.setVideoIndex(position);
             }
         }
     }
 
     @Override
-    public int getCurrentVideoPositionInList() {
-        return mVideoIndex;
-    }
-
-    @Override
-    public int getPlaylistSize() {
-        return mVideos == null ? 0 : mVideos.length;
-    }
-
-    @Override
-    public void recordCurrVideoProgress() {
-        if (mVideos != null) {
-            recordVideoProgress(mVideos[mVideoIndex]);
-        }
-    }
-
-    private void recordVideoProgress(Video video) {
+    public void onVideosChanged(@Nullable Video[] videos, int index) {
         if (mView != null) {
-            video.setProgress(mView.getPlayingVideoProgress());
-
-            final long id = video.getId();
-            if (id != NO_ID) {
-                VideoListItemDao.getSingleton(mContext).setVideoProgress(id, video.getProgress());
-            }
+            mView.onPlaylistInitialized(videos == null ? new Video[0] : videos, index);
         }
     }
 
     @Override
-    public void recordCurrVideoProgressAndSetResult() {
-        if (mVideos != null) {
-            recordCurrVideoProgress();
-            if (mView != null) {
-                if (mVideos.length == 1) {
-                    mView.setResult(Consts.RESULT_CODE_PLAY_VIDEO,
-                            new Intent().putExtra(Consts.KEY_VIDEO, mVideos[0]));
-                } else {
-                    mView.setResult(Consts.RESULT_CODE_PLAY_VIDEOS,
-                            new Intent().putExtra(Consts.KEY_VIDEOS, mVideos));
-                }
-            }
+    public void onVideoIndexChanged(int oldIndex, int index) {
+        if (mView != null && mVideoRepository != null) {
+            mView.setVideoToPlay(mVideoRepository.getVideos()[index]);
+            mView.notifyPlaylistSelectionChanged(oldIndex, index, true);
         }
     }
 
     @Override
     public void skipToPreviousVideo() {
-        if (mVideos != null) {
-            final int oldVideoIndex = mVideoIndex;
-            if (oldVideoIndex == 0) {
-                mVideoIndex = mVideos.length - 1;
-            } else {
-                --mVideoIndex;
-            }
-            if (mView != null) {
-                mView.setVideoToPlay(mVideos[mVideoIndex]);
-                mView.notifyPlaylistSelectionChanged(oldVideoIndex, mVideoIndex, true);
-            }
+        recordCurrVideoProgress();
+        if (mVideoRepository != null) {
+            mVideoRepository.rewindVideoIndex();
         }
     }
 
     @Override
     public void skipToNextVideo() {
-        if (mVideos != null) {
-            final int oldVideoIndex = mVideoIndex;
-            if (oldVideoIndex == mVideos.length - 1) {
-                mVideoIndex = 0;
-            } else {
-                ++mVideoIndex;
-            }
-            if (mView != null) {
-                mView.setVideoToPlay(mVideos[mVideoIndex]);
-                mView.notifyPlaylistSelectionChanged(oldVideoIndex, mVideoIndex, true);
-            }
+        recordCurrVideoProgress();
+        if (mVideoRepository != null) {
+            mVideoRepository.forwardVideoIndex();
         }
     }
 
     @Override
     public void onCurrentVideoStarted() {
-        Video video = mVideos[mVideoIndex];
-        int progress = video.getProgress();
-        if (progress > 0 && progress < video.getDuration() - Configs.TOLERANCE_VIDEO_DURATION) {
-            if (mView != null) {
-                mView.seekPositionOnVideoStarted(progress);
+        Video video = mVideoRepository == null ? null : mVideoRepository.getCurrentVideo();
+        if (video != null) {
+            int progress = video.getProgress();
+            if (progress > 0 && progress < video.getDuration() - Configs.TOLERANCE_VIDEO_DURATION) {
+                if (mView != null) {
+                    mView.seekPositionOnVideoStarted(progress);
+                }
+                mVideoRepository.setVideoProgress(video, 0, false);
             }
-            video.setProgress(0);
         }
     }
 
     @Override
     public void shareCurrentVideo(@NonNull Context context) {
-        if (mVideos != null) {
-            VideoListItemOpsKt.shareVideo(context, mVideos[mVideoIndex]);
+        Video video = mVideoRepository == null ? null : mVideoRepository.getCurrentVideo();
+        if (video != null) {
+            VideoListItemOpsKt.shareVideo(context, video);
         }
     }
 
@@ -317,12 +338,13 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
         public void onBindViewHolder(@NonNull IVideoView.PlaylistViewHolder holder,
                                      int position, @NonNull List<Object> payloads) {
             super.onBindViewHolder(holder, position, payloads);
-            holder.bindData(mVideos[position], position, payloads);
+            holder.bindData(mVideoRepository.getVideos()[position], position,
+                    position == mVideoRepository.getVideoIndex(), payloads);
         }
 
         @Override
         public void loadItemImages(@NonNull IVideoView.PlaylistViewHolder holder) {
-            Video video = mVideos[holder.getBindingAdapterPosition()];
+            Video video = mVideoRepository.getVideos()[holder.getBindingAdapterPosition()];
             holder.loadVideoThumb(video);
         }
 
@@ -333,12 +355,17 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter {
 
         @Override
         public int getItemCount() {
-            return mVideos.length;
+            Video[] videos = mVideoRepository == null ? null : mVideoRepository.getVideos();
+            return videos == null ? 0 : videos.length;
         }
 
         @Override
         public void onItemClick(@NonNull IVideoView.PlaylistViewHolder holder, int position) {
-            holder.onItemViewClick(position);
+            if (position == mVideoRepository.getVideoIndex()) {
+                mView.showUserCancelableSnackbar(R.string.theVideoIsPlaying, Snackbar.LENGTH_SHORT);
+            } else {
+                playVideoAt(position);
+            }
         }
     }
 }

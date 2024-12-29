@@ -19,24 +19,28 @@ import com.liuzhenlin.videos.view.activity.IFeedbackView;
  */
 public interface IFeedbackPresenter extends IPresenter<IFeedbackView> {
 
-    void restoreData(@Nullable Bundle savedInstanceState);
-    void saveData(@NonNull Bundle outState, @NonNull String text, @NonNull String contactWay);
+    @NonNull
+    static IFeedbackPresenter newInstance() {
+        return new FeedbackPresenter();
+    }
 
-    void sendFeedback(@NonNull String text, @NonNull String contactWay);
-    void persistentlySaveUserFilledData(
-            @NonNull String text, @NonNull String contactWay, boolean toastResultIfSaved);
+    void restoreInstanceState(@NonNull Bundle savedInstanceState);
+    void saveInstanceState(@NonNull Bundle outState);
 
-    boolean hasDataChanged(@NonNull String text, @NonNull String contactWay);
+    void persistentlySaveUserFilledData(boolean toastResultIfSaved);
+
+    void onBackPressed(@NonNull OnBackPressedCallback callback);
+
+    void sendFeedback();
 
     void addPicture(@Nullable String path);
     void removePictureAt(int index);
-    void recyclePictures();
 
     @NonNull
     <T extends BaseAdapter & AdapterView.OnItemClickListener> T getPictureGridAdapter();
 
-    @NonNull
-    static IFeedbackPresenter newInstance() {
-        return new FeedbackPresenter();
+    public interface OnBackPressedCallback {
+        void showConfirmSaveDataDialog();
+        void back();
     }
 }

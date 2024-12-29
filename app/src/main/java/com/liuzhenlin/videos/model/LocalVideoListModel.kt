@@ -20,6 +20,10 @@ import com.liuzhenlin.videos.bean.VideoDirectory
 import com.liuzhenlin.videos.bean.VideoListItem
 import com.liuzhenlin.videos.dao.IVideoDao
 import com.liuzhenlin.videos.dao.VideoListItemDao
+import com.liuzhenlin.videos.view.fragment.VideoListItemDeleteOnDiskListener
+import com.liuzhenlin.videos.view.fragment.VideoListItemRenameResultCallback
+import com.liuzhenlin.videos.view.fragment.deleteOnDisk
+import com.liuzhenlin.videos.view.fragment.renameTo
 import java.io.File
 import java.util.*
 
@@ -40,9 +44,10 @@ interface ILocalVideoListModel {
     fun updateVideoDirectory(videodir: VideoDirectory)
     fun setItemChecked(index: Int, checked: Boolean)
     fun setItemTopped(index: Int, topped: Boolean)
-    fun deleteItem(item: VideoListItem)
-    fun deleteItems(vararg items: VideoListItem)
-    fun renameItemTo(item: VideoListItem)
+    fun deleteItem(item: VideoListItem, listener: VideoListItemDeleteOnDiskListener<VideoListItem>?)
+    fun deleteItems(
+            vararg items: VideoListItem, listener: VideoListItemDeleteOnDiskListener<VideoListItem>?)
+    fun renameItemTo(item: VideoListItem, callback: VideoListItemRenameResultCallback<VideoListItem>?)
     fun setAllItemsChecked()
     fun setAllItemsUnchecked()
 
@@ -385,7 +390,10 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         }
     }
 
-    override fun deleteItem(item: VideoListItem) {
+    override fun deleteItem(
+            item: VideoListItem, listener: VideoListItemDeleteOnDiskListener<VideoListItem>?) {
+        deleteItemsOnDisk(item, listener = listener)
+
         val index = mVideoListItems.indexOf(item)
         if (index >= 0) {
             mVideoListItems.removeAt(index)
@@ -394,7 +402,21 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         }
     }
 
-    override fun deleteItems(vararg items: VideoListItem) {
+    private fun deleteItemsOnDisk(vararg items: VideoListItem,
+                                  listener: VideoListItemDeleteOnDiskListener<VideoListItem>?) {
+        listener?.onItemsDeleteStart(*items)
+        Executors.THREAD_POOL_EXECUTOR.execute {
+            items.deleteOnDisk()
+            Executors.MAIN_EXECUTOR.execute {
+                listener?.onItemsDeleteFinish(*items)
+            }
+        }
+    }
+
+    override fun deleteItems(vararg items: VideoListItem,
+                             listener: VideoListItemDeleteOnDiskListener<VideoListItem>?) {
+        deleteItemsOnDisk(*items, listener = listener)
+
         var start = -1
         var index = 0
         val it = mVideoListItems.iterator()
@@ -414,11 +436,18 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         }
     }
 
-    override fun renameItemTo(item: VideoListItem) {
+    override fun renameItemTo(
+            item: VideoListItem, callback: VideoListItemRenameResultCallback<VideoListItem>?) {
         val index = mVideoListItems.indexOf(item)
         if (index >= 0) {
-            mVideoListItems[index].name = item.name
-            val newIndex = mVideoListItems.reordered().indexOf(item)
+            val i = mVideoListItems[index]
+
+            if (!i.renameTo(item.name, callback))
+                return
+
+            // Use i for index search because its id/path might have been updated in the above
+            // i.renameTo() method invocation
+            val newIndex = mVideoListItems.reordered().indexOf(i)
             if (newIndex != index) {
                 mVideoListItems.add(newIndex, mVideoListItems.removeAt(index))
             }
@@ -450,8 +479,8 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         var observer = mVideoObserver
         if (observer == null) {
             observer = VideoObserver(Consts.getMainThreadHandler())
+            observer.startWatching()
         }
-        observer.startWatching()
     }
 
     override fun stopWatchingVideos(reloadVideosIfNeeded: Boolean) {

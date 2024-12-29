@@ -29,12 +29,8 @@ import java.util.LinkedList
 import kotlin.math.abs
 import kotlin.math.min
 
-interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVideoListModel.Callback,
+interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>,
         OnVideoListItemsLoadListener {
-
-    public val isSublist: Boolean
-    public val listTitle: String?
-    public val listTitleDesc: String?
 
     fun setArgsForLocalSearchedVideosFragment(localSearchedVideosFragment: Fragment)
 
@@ -46,11 +42,10 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVide
     fun startLoadVideos()
     fun stopLoadVideos()
 
-    fun isItemChecked(index: Int): Boolean
     fun setItemChecked(index: Int, checked: Boolean)
+    fun toggleItemChecked(index: Int)
 
-    fun isItemTopped(index: Int): Boolean
-    fun setItemTopped(index: Int, topped: Boolean)
+    fun toggleItemTopped(index: Int)
 
     fun playVideoAt(index: Int)
     fun openVideoDirectoryAt(index: Int)
@@ -68,8 +63,6 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVide
 
     fun selectAllItems()
     fun unselectAllItems()
-
-    fun getVideoListAdapter(): VideoListAdapter<out ILocalVideoListView.VideoListViewHolder>
 
     abstract class VideoListAdapter<VH : ILocalVideoListView.VideoListViewHolder>
         : ImageLoadingListAdapter<VH>() {
@@ -91,14 +84,11 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>, ILocalVide
     }
 }
 
-class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoListPresenter {
+class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoListPresenter,
+        ILocalVideoListModel.Callback {
 
-    override val isSublist: Boolean
+    private inline val mSublist: Boolean
         get() = mModel.parentVideoDir != null
-    override val listTitle: String?
-        get() = mModel.parentVideoDir?.name
-    override val listTitleDesc: String?
-        get() = mModel.parentVideoDir?.path
 
     private var mViewsCreated = false
 
@@ -111,17 +101,14 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
             return _mModel!!
         }
 
+    private var mVideosLoadListener: OnLoadListener<Nothing, MutableList<VideoListItem>?>? = null
+
     private val mAdapter = VideoListAdapter()
 
     private var mParent: LocalVideoListPresenter? = null
 
     internal fun setParentPresenter(parent: LocalVideoListPresenter?) {
         mParent = parent
-    }
-
-    override fun getVideoListAdapter()
-            : ILocalVideoListPresenter.VideoListAdapter<out ILocalVideoListView.VideoListViewHolder> {
-        return mAdapter
     }
 
     override fun attachToView(view: ILocalVideoListView) {
@@ -131,6 +118,10 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         }
         mModel.setCallback(this)
         mModel.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<VideoListItem>?> {
+            init {
+                mVideosLoadListener = this
+            }
+
             override fun onLoadStart() {
                 mView?.onVideosLoadStart()
             }
@@ -148,17 +139,26 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun detachFromView(view: ILocalVideoListView) {
         super.detachFromView(view)
-        if (isSublist) {
+        if (mSublist) {
             view.onReturnResult(
                     RESULT_CODE_LOCAL_VIDEO_SUBLIST_FRAGMENT,
                     Intent().putExtra(KEY_VIDEODIR, mModel.parentVideoDir))
         }
         mModel.setCallback(null)
+        mVideosLoadListener?.let {
+            mModel.removeOnLoadListener(it)
+            mVideosLoadListener = null
+        }
+    }
+
+    override fun onViewCreated(view: ILocalVideoListView) {
+        super<Presenter>.onViewCreated(view)
+        view.init(mSublist, mModel.parentVideoDir?.name, mModel.parentVideoDir?.path, mAdapter)
     }
 
     override fun onViewStart(view: ILocalVideoListView) {
         super.onViewStart(view)
-        if (!isSublist) {
+        if (!mSublist) {
             mModel.stopWatchingVideos(true)
             // Make sure to load the videos after all restored Fragments have created their views,
             // otherwise the application will crash when the video loading callback is sent to one
@@ -172,7 +172,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun onViewStopped(view: ILocalVideoListView) {
         super.onViewStopped(view)
-        if (!isSublist && !view.isDestroying) {
+        if (!mSublist && !view.isDestroying) {
             mModel.startWatchingVideos()
         }
     }
@@ -180,7 +180,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
     override fun onViewDestroyed(view: ILocalVideoListView) {
         super.onViewDestroyed(view)
         mViewsCreated = false
-        if (!isSublist)
+        if (!mSublist)
             mModel.stopWatchingVideos(false)
         stopLoadVideos()
     }
@@ -281,14 +281,14 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         }
     }
 
-    override fun isItemChecked(index: Int) = mModel.videoListItems[index].isChecked
-
     override fun setItemChecked(index: Int, checked: Boolean) =
             mModel.setItemChecked(index, checked)
 
-    override fun isItemTopped(index: Int) = mModel.videoListItems[index].isTopped
+    override fun toggleItemChecked(index: Int) =
+            mModel.setItemChecked(index, !mModel.videoListItems[index].isChecked)
 
-    override fun setItemTopped(index: Int, topped: Boolean) = mModel.setItemTopped(index, topped)
+    override fun toggleItemTopped(index: Int) =
+            mModel.setItemTopped(index, !mModel.videoListItems[index].isTopped)
 
     override fun playVideoAt(index: Int) {
         val videoListItems = mModel.videoListItems
@@ -300,16 +300,16 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
             if (i == index)
                 selection = videos.size
             if (item is Video) {
-                if (isSublist
+                if (mSublist
                         || dirPath == item.path.substring(0, item.path.lastIndexOf(File.separatorChar))) {
                     videos.add(item)
                 }
             }
         }
         if (videos.size == 1) {
-            mView.playVideo(videos[0])
+            mView?.playVideo(videos[0])
         } else {
-            mView.playVideos(*videos.toTypedArray(), selection = selection)
+            mView?.playVideos(*videos.toTypedArray(), selection = selection)
         }
     }
 
@@ -326,7 +326,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         if (needUserConfirm) {
             mView?.showDeleteItemDialog(item)
         } else {
-            mModel.deleteItem(item)
+            mModel.deleteItem(item, mView)
         }
     }
 
@@ -365,7 +365,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         if (needUserConfirm) {
             mView?.showDeleteItemsPopupWindow(*items)
         } else {
-            mModel.deleteItems(*items)
+            mModel.deleteItems(*items, listener = mView)
         }
     }
 
@@ -377,10 +377,10 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         mView?.showRenameItemDialog(item)
     }
 
-    override fun renameItemTo(item: VideoListItem) = mModel.renameItemTo(item)
+    override fun renameItemTo(item: VideoListItem) = mModel.renameItemTo(item, mView)
 
     override fun shareCheckedVideo() {
-        mView.shareVideo(mModel.checkedItems?.get(0) as? Video ?: return)
+        mView?.shareVideo(mModel.checkedItems?.get(0) as? Video ?: return)
     }
 
     override fun viewCheckedItemDetails() {

@@ -24,7 +24,11 @@ public interface IFeedbackView extends IView<IFeedbackPresenter> {
 
     void toastResultOnUserFilledDataSaved();
 
-    void refreshCurrTexts(@NonNull String text, @NonNull String contactWay);
+    @NonNull String getFeedbackText();
+    void setFeedbackText(@NonNull String text);
+
+    @NonNull String getContactWay();
+    void setContactWayText(@NonNull String contactWay);
 
     void pickPicture();
 

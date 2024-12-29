@@ -10,7 +10,6 @@ import android.content.Intent
 import android.view.ViewGroup
 import com.liuzhenlin.common.adapter.HeaderAndFooterWrapper
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
-import com.liuzhenlin.common.utils.AlgorithmUtil
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.model.ILocalSearchedVideoListModel
@@ -23,23 +22,20 @@ import kotlin.math.abs
 import kotlin.math.min
 
 interface ILocalSearchedVideosPresenter : IPresenter<ILocalSearchedVideosView>,
-        OnVideosLoadListener, ILocalSearchedVideoListModel.Callback {
+        OnVideosLoadListener {
 
     fun startLoadVideos()
     fun stopLoadVideos()
 
-    fun refreshList(searchTextChanged: Boolean)
+    fun refreshList(searchText: String)
 
-    fun isVideoWritable(index: Int): Boolean
+    fun showVideoOptionsMenu(index: Int, callback: ((Video) -> Unit)?)
     fun playVideoAt(index: Int)
     fun moveVideoAt(index: Int)
     fun deleteVideoAt(index: Int)
     fun renameVideoAt(index: Int)
     fun shareVideoAt(index: Int)
     fun viewDetailsOfVideoAt(index: Int)
-
-    fun getSearchedVideoListAdapter()
-            : HeaderAndFooterWrapper<out ILocalSearchedVideosView.SearchedVideoListViewHolder>
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
 
@@ -52,7 +48,7 @@ interface ILocalSearchedVideosPresenter : IPresenter<ILocalSearchedVideosView>,
 }
 
 class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
-        ILocalSearchedVideosPresenter {
+        ILocalSearchedVideosPresenter, ILocalSearchedVideoListModel.Callback {
 
     private val mAdapterWrapper = HeaderAndFooterWrapper(SearchedVideoListAdapter())
 
@@ -86,6 +82,11 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         mModel?.setCallback(null)
     }
 
+    override fun onViewCreated(view: ILocalSearchedVideosView) {
+        super<Presenter>.onViewCreated(view)
+        view.init(mAdapterWrapper)
+    }
+
     override fun startLoadVideos() {
         mModel?.startLoader()
     }
@@ -107,40 +108,8 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         mView?.onVideosLoadCanceled()
     }
 
-    override fun onAllVideosChanged() = refreshList(false)
-
-    override fun refreshList(searchTextChanged: Boolean) {
-        val model = mModel ?: return
-
-        var searchedVideos: MutableList<Video>? = null
-        if (mView?.searchText?.isNotEmpty() == true) {
-            for (video in model.videos) {
-                if (mView?.searchText?.length
-                        == AlgorithmUtil.lcs(video.name, mView?.searchText ?: "", true).length) {
-                    if (searchedVideos == null) searchedVideos = mutableListOf()
-                    searchedVideos.add(video)
-                }
-            }
-        }
-        if (searchedVideos == null || searchedVideos.isEmpty()) {
-            model.clearSearchedVideos()
-        } else if (searchedVideos.size == model.searchedVideos.size) {
-            if (searchTextChanged) {
-                val headersCount = mAdapterWrapper.headersCount
-                for (index in searchedVideos.indices) {
-                    if (!model.updateSearchedVideo(index, searchedVideos[index])) {
-                        mAdapterWrapper.notifyItemChanged(
-                                headersCount + index, Payloads.PAYLOAD_REFRESH_ITEM_NAME)
-                    }
-                }
-            } else {
-                for (index in searchedVideos.indices) {
-                    model.updateSearchedVideo(index, searchedVideos[index])
-                }
-            }
-        } else {
-            model.setSearchedVideos(searchedVideos)
-        }
+    override fun refreshList(searchText: String) {
+        mModel?.setSearchText(searchText)
     }
 
     override fun onAllSearchedVideosRemoved() = onAllSearchedVideosChanged()
@@ -192,11 +161,12 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         }
     }
 
-    override fun isVideoWritable(index: Int) =
-            mModel?.searchedVideos?.get(index)?.isWritable == true
+    override fun showVideoOptionsMenu(index: Int, callback: ((Video) -> Unit)?) {
+        callback?.invoke(mModel?.searchedVideos?.get(index) ?: return)
+    }
 
     override fun playVideoAt(index: Int) {
-        mView.playVideo(mModel?.searchedVideos?.get(index) ?: return)
+        mView?.playVideo(mModel?.searchedVideos?.get(index) ?: return)
     }
 
     override fun moveVideoAt(index: Int) {
@@ -205,29 +175,29 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
 
     override fun deleteVideoAt(index: Int) {
         val video = mModel?.searchedVideos?.get(index) ?: return
-        mView?.showDeleteItemDialog(video) {
-            mModel?.deleteVideo(video)
+        val view = mView
+        view?.showDeleteItemDialog(video) {
+            mModel?.deleteVideo(video, view)
         }
     }
 
     override fun renameVideoAt(index: Int) {
-        val video = mModel?.searchedVideos?.get(index) ?: return
-        mView?.showRenameItemDialog(video) {
-            mModel?.renameVideoTo(video,
-                    mView?.searchText?.length
-                            == AlgorithmUtil.lcs(video.name, mView?.searchText ?: "", true).length)
+        var video = mModel?.searchedVideos?.get(index) ?: return
+        val view = mView
+        view?.showRenameItemDialog(video) { newName ->
+            video = video.shallowCopy()
+            video.name = newName
+            mModel?.renameVideoTo(video, view)
         }
     }
 
     override fun shareVideoAt(index: Int) {
-        mView.shareVideo(mModel?.searchedVideos?.get(index) ?: return)
+        mView?.shareVideo(mModel?.searchedVideos?.get(index) ?: return)
     }
 
     override fun viewDetailsOfVideoAt(index: Int) {
         mView?.showItemDetailsDialog(mModel?.searchedVideos?.get(index) ?: return)
     }
-
-    override fun getSearchedVideoListAdapter() = mAdapterWrapper
 
     private inner class SearchedVideoListAdapter
         : ImageLoadingListAdapter<ILocalSearchedVideosView.SearchedVideoListViewHolder>() {

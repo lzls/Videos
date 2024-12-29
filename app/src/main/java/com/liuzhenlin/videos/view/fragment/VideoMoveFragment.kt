@@ -27,25 +27,31 @@ import com.bumptech.glide.Glide
 import com.liuzhenlin.circularcheckbox.CircularCheckBox
 import com.liuzhenlin.common.Configs.ScreenWidthDpLevel
 import com.liuzhenlin.common.adapter.ImageLoadingListAdapter
-import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.common.windowhost.WaitingOverlayDialog
-import com.liuzhenlin.videos.KEY_MOVED
 import com.liuzhenlin.videos.R
-import com.liuzhenlin.videos.RESULT_CODE_VIDEO_MOVE_FRAGMENT
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
 import com.liuzhenlin.videos.contextThemedFirst
-import com.liuzhenlin.videos.dao.AppPrefs
 import com.liuzhenlin.videos.presenter.IVideoMovePresenter
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.videoCount
 import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.fragment.Payloads.PAYLOAD_REFRESH_CHECKBOX
 
+typealias TargetDirListAdapter = ImageLoadingListAdapter<out IVideoMoveView.TargetDirListViewHolder>
+
 interface IVideoMoveView : IView<IVideoMovePresenter> {
     fun getArguments(): Bundle?
+    fun onReturnResult(resultCode: Int, data: Intent?)
+
+    fun init(adapter: TargetDirListAdapter, videoQuantity: Int)
+
+    fun showVideoMovePromptDialog()
+    fun onVideoMoveStart()
+    fun onVideoMoveFinish(moved: Boolean)
 
     fun setTargetDirListItemChecked(position: Int, checked: Boolean)
+    fun onCheckedTargetDirListItemCountChanged(checkedItemCount: Int)
 
     fun newTargetDirListViewHolder(parent: ViewGroup): TargetDirListViewHolder
 
@@ -64,6 +70,8 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
     private var mVideoDirList: RecyclerView? = null
     private var mTitleText: TextView? = null
     private var mOkayButton: View? = null
+
+    private var mVideoMovingDialog: Dialog? = null
 
     private val mPresenter = IVideoMovePresenter.newInstance()
 
@@ -93,22 +101,34 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         mPresenter.detachFromView(this)
     }
 
+    override fun onReturnResult(resultCode: Int, data: Intent?) {
+        targetFragment?.onActivityResult(targetRequestCode, resultCode, data)
+    }
+
     override fun onScreenWidthDpLevelChanged(
             oldLevel: ScreenWidthDpLevel, level: ScreenWidthDpLevel) {
         val adapter = mVideoDirList?.adapter
         adapter?.notifyItemRangeChanged(0, adapter.itemCount, PAYLOAD_REFRESH_VIDEODIR_THUMB)
     }
 
-    override fun onDialogCreated(dialog: Dialog) {
+    override fun onDialogCreated(dialog: Dialog, savedInstanceState: Bundle?) {
+        super.onDialogCreated(dialog, savedInstanceState)
+        mPresenter.onViewCreated(this, savedInstanceState)
+    }
+
+    override fun init(adapter: TargetDirListAdapter, videoQuantity: Int) {
+        val dialog = requireDialog()
+        val context = contextThemedFirst
+
         mTitleText = dialog.findViewById(R.id.text_title)
         mTitleText!!.text =
-                resources.getQuantityText(R.plurals.moveVideosTo, mPresenter.videoQuantity)
+                resources.getQuantityText(R.plurals.moveVideosTo, videoQuantity)
+        mTitleText!!.tag = videoQuantity
 
-        val context: Context = contextThemedFirst
         mVideoDirList = dialog.findViewById<RecyclerView?>(R.id.recycler_videoMoveTargetList)
                 .apply {
                     layoutManager = LinearLayoutManager(context)
-                    adapter = mPresenter.newTargetDirListAdapter()
+                    this.adapter = adapter
                     addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
                     setHasFixedSize(true)
                 }
@@ -116,29 +136,21 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         dialog.findViewById<View>(R.id.btn_cancel).setOnClickListener(this)
         mOkayButton = dialog.findViewById(R.id.btn_ok)
         mOkayButton!!.setOnClickListener(this)
-
-        mPresenter.onViewCreated(this)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         super.onRestoreInstanceState(savedInstanceState)
-        mPresenter.restoreData(savedInstanceState)
-        // Selected dir might not be loaded till user scrolls the list
-        for (index in 0 until mVideoDirList!!.adapter!!.itemCount) {
-            if (mPresenter.isTargetDirChecked(index)) {
-                mOkayButton!!.isEnabled = true
-                break
-            }
-        }
+        mPresenter.restoreInstanceState(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mPresenter.saveData(outState)
+        mPresenter.saveInstanceState(outState)
     }
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
+        mVideoMovingDialog?.dismiss()
         mPresenter.onViewDestroyed(this)
         mVideoDirList = null
         mTitleText = null
@@ -146,42 +158,16 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
     }
 
     override fun onClick(v: View) {
-        val context = v.context
-        val appPrefs = AppPrefs.getSingleton(context)
         when (v.id) {
-            R.id.btn_ok -> {
-                if (!appPrefs.hasUserDeclinedVideoMovePromptDialogToBeShownAgain()) {
-                    val promptDialog = AppCompatDialog(context, R.style.DialogStyle_MinWidth_NoTitle)
-                    val view = View.inflate(context, R.layout.dialog_video_move_prompt, null)
-                            .apply {
-                                findViewById<TextView>(R.id.text_message).movementMethod =
-                                        ScrollingMovementMethod.getInstance()
-                                val cancelButton = findViewById<View>(R.id.btn_cancel_vmpd)
-                                cancelButton.setOnClickListener(this@VideoMoveFragment)
-                                cancelButton.tag = promptDialog
-                                val okButton = findViewById<View>(R.id.btn_ok_vmpd)
-                                okButton.setOnClickListener(this@VideoMoveFragment)
-                                okButton.tag = promptDialog
-                            }
-                    promptDialog.setContentView(view)
-                    promptDialog.show()
-                } else {
-                    startToMoveVideos(context)
-                }
-            }
+            R.id.btn_ok -> mPresenter.moveVideosToCheckedDir()
             R.id.btn_cancel -> dismiss()
 
             R.id.btn_ok_vmpd -> {
                 val promptDialog = v.tag as AppCompatDialog
                 val checkbox = promptDialog.findViewById<CheckBox>(R.id.checkbox)
-                if (checkbox!!.isChecked) {
-                    appPrefs.edit()
-                            .setUserDeclinedVideoMovePromptDialogToBeShownAgain(true)
-                            .apply()
-                }
+                val neverPromptAgain = checkbox!!.isChecked
                 promptDialog.cancel()
-
-                startToMoveVideos(context)
+                mPresenter.onVideoMovePromptConfirmed(neverPromptAgain)
             }
             R.id.btn_cancel_vmpd -> {
                 val promptDialog = v.tag as AppCompatDialog
@@ -190,24 +176,52 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         }
     }
 
-    private fun startToMoveVideos(context: Context) {
-        val waitingDialog = WaitingOverlayDialog(context)
-        waitingDialog.message =
-                resources.getQuantityText(R.plurals.movingVideosPleaseWait, mPresenter.videoQuantity)
-        waitingDialog.show()
-        Executors.THREAD_POOL_EXECUTOR.execute {
-            val moved = mPresenter.moveVideos()
-            Executors.MAIN_EXECUTOR.execute {
-                targetFragment?.onActivityResult(targetRequestCode, RESULT_CODE_VIDEO_MOVE_FRAGMENT,
-                        Intent().putExtra(KEY_MOVED, moved))
-                dismiss()
-                waitingDialog.dismiss()
+    override fun showVideoMovePromptDialog() {
+        val context = contextThemedFirst
+        val promptDialog = AppCompatDialog(context, R.style.DialogStyle_MinWidth_NoTitle)
+        val view = View.inflate(context, R.layout.dialog_video_move_prompt, null)
+                .apply {
+                    findViewById<TextView>(R.id.text_message).movementMethod =
+                            ScrollingMovementMethod.getInstance()
+                    val cancelButton = findViewById<View>(R.id.btn_cancel_vmpd)
+                    cancelButton.setOnClickListener(this@VideoMoveFragment)
+                    cancelButton.tag = promptDialog
+                    val okButton = findViewById<View>(R.id.btn_ok_vmpd)
+                    okButton.setOnClickListener(this@VideoMoveFragment)
+                    okButton.tag = promptDialog
+                }
+        promptDialog.setContentView(view)
+        promptDialog.show()
+    }
+
+    override fun onVideoMoveStart() {
+        if (mVideoMovingDialog == null) {
+            val context = contextThemedFirst
+            val waitingDialog = WaitingOverlayDialog(context)
+            waitingDialog.message = resources.getQuantityText(R.plurals.movingVideosPleaseWait,
+                    mTitleText!!.tag as Int)
+            waitingDialog.show()
+            waitingDialog.setOnDismissListener {
+                mVideoMovingDialog = null
             }
+            mVideoMovingDialog = waitingDialog
+        }
+    }
+
+    override fun onVideoMoveFinish(moved: Boolean) {
+        val dialog = mVideoMovingDialog
+        if (dialog != null) {
+            dismiss()
+            dialog.dismiss()
         }
     }
 
     override fun setTargetDirListItemChecked(position: Int, checked: Boolean) {
         mVideoDirList?.adapter?.notifyItemChanged(position, PAYLOAD_REFRESH_CHECKBOX)
+    }
+
+    override fun onCheckedTargetDirListItemCountChanged(checkedItemCount: Int) {
+        mOkayButton?.isEnabled = checkedItemCount == 1
     }
 
     override fun newTargetDirListViewHolder(parent: ViewGroup): IVideoMoveView.TargetDirListViewHolder {
@@ -235,10 +249,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 checkBox.tag = position
 
                 val videoCount = videodir.videoCount(includeDescendants = false)
-                if (checkBox.isChecked != videodir.isChecked) {
-                    checkBox.isChecked = videodir.isChecked
-                    onCheckedChange(position)
-                }
+                checkBox.isChecked = videodir.isChecked
                 videodirNameText.text = videodir.name
                 videodirPathText.text = videodir.path
                 videoCountText.text =
@@ -248,10 +259,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 for (payload in payloads) {
                     when (payload) {
                         PAYLOAD_REFRESH_CHECKBOX ->
-                            if (checkBox.isChecked != videodir.isChecked) {
-                                checkBox.isChecked = videodir.isChecked
-                                onCheckedChange(position)
-                            }
+                            checkBox.isChecked = videodir.isChecked
                         PAYLOAD_REFRESH_VIDEODIR_THUMB ->
                             @Suppress("UNCHECKED_CAST")
                             (bindingAdapter as ImageLoadingListAdapter<TargetDirListViewHolder>)
@@ -271,42 +279,8 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
         }
 
         override fun onClick(v: View) {
-            when (v.id) {
-                R.id.checkbox -> {
-                    val position = v.tag as Int
-                    onCheckedChange(position)
-                }
-                else -> { // itemView
-                    val position = v.tag as Int
-                    checkBox.toggle(true)
-                    onCheckedChange(position)
-                }
-            }
-        }
-
-        fun onCheckedChange(position: Int) {
-            val itemCount = bindingAdapter!!.itemCount
-            if (checkBox.isChecked) {
-                for (index in 0 until itemCount) {
-                    if (index != position && mPresenter.isTargetDirChecked(index)) {
-                        mPresenter.setTargetDirChecked(index, false)
-                        break
-                    }
-                }
-                mOkayButton!!.isEnabled = true
-            } else {
-                var hasCheckedDir = false
-                for (index in 0 until itemCount) {
-                    if (index != position && mPresenter.isTargetDirChecked(index)) {
-                        hasCheckedDir = true
-                        break
-                    }
-                }
-                if (!hasCheckedDir) {
-                    mOkayButton!!.isEnabled = false
-                }
-            }
-            mPresenter.setTargetDirChecked(position, checkBox.isChecked)
+            val position = v.tag as Int
+            mPresenter.toggleTargetDirChecked(position)
         }
     }
 }
