@@ -5,7 +5,6 @@
 
 package com.liuzhenlin.videos.presenter;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
@@ -16,14 +15,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.content.res.AppCompatResources;
 
 import com.liuzhenlin.common.Consts;
-import com.liuzhenlin.common.utils.BitmapUtils;
-import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.NetworkUtil;
+import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.videos.R;
-import com.liuzhenlin.videos.dao.FeedbackSavedPrefs;
+import com.liuzhenlin.videos.bean.FeedbackInfo;
+import com.liuzhenlin.videos.model.FeedbackRepository;
 import com.liuzhenlin.videos.utils.MailUtil;
 import com.liuzhenlin.videos.utils.Utils;
 import com.liuzhenlin.videos.view.activity.IFeedbackView;
@@ -32,20 +30,24 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+
+import static com.liuzhenlin.common.Consts.EMPTY_STRING;
+import static com.liuzhenlin.common.Consts.EMPTY_STRING_ARRAY;
 
 /**
  * @author 刘振林
  */
-class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPresenter {
-
-    private FeedbackSavedPrefs mFeedbackSPs;
-    private String mSavedFeedbackText = Consts.EMPTY_STRING;
-    private String mSavedContactWay = Consts.EMPTY_STRING;
-    private List<String> mSavedPicturePaths;
+class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPresenter,
+        FeedbackRepository.Callback, FeedbackRepository.UserFilledTextsFetcher {
 
     private static final String PREFIX_MAIL_SUBJECT = "[视频反馈] ";
+    private static final int MAX_COUNT_UPLOAD_PICTURES = 3;
+    @Synthetic FeedbackRepository mFeedbackRepository;
+    private final PictureGridAdapter mGridAdapter = new PictureGridAdapter();
+
+    private boolean mSavedFeedbackInfoLoaded;
+    private static final String KEY_SAVED_FEEDBACK_INFO_LOADED = "ksfil";
 
     private static final String KEY_SAVED_FEEDBACK_TEXT = "ksft";
     private static final String KEY_SAVED_CONTACT_WAY = "kscw";
@@ -55,60 +57,83 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
     private static final String KEY_FILLED_CONTACT_WAY = "kfcw";
     private static final String KEY_FILLED_PICTURE_PATHS = "kfpp";
 
-    private PictureGridAdapter mGridAdapter;
-
     @Override
     public void attachToView(@NonNull IFeedbackView view) {
         super.attachToView(view);
-        mFeedbackSPs = new FeedbackSavedPrefs(mContext);
-        mGridAdapter = new PictureGridAdapter(mThemedContext);
+        mFeedbackRepository = FeedbackRepository.create(mContext, this, MAX_COUNT_UPLOAD_PICTURES);
+        mFeedbackRepository.setCallback(this);
     }
 
     @Override
-    public void restoreData(@Nullable Bundle savedInstanceState) {
+    public void detachFromView(@NonNull IFeedbackView view) {
+        mFeedbackRepository.clearPictures(true);
+        mFeedbackRepository.setCallback(null);
+        mFeedbackRepository = null;
+        super.detachFromView(view);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull IFeedbackView view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         if (savedInstanceState == null) {
-            cacheCurrData(mFeedbackSPs.getText(), mFeedbackSPs.getContactWay(),
-                    mFeedbackSPs.getPicturePaths());
-            if (mView != null) {
-                mView.refreshCurrTexts(mSavedFeedbackText, mSavedContactWay);
-            }
-            if (mSavedPicturePaths != null) {
-                List<String> invalidPaths = null;
-                for (String path : mSavedPicturePaths) {
-                    // 有可能该路径下的图片已被删除：如果删除了，从sp文件中移除该保存的路径
-                    if (!new File(path).exists()) {
-                        if (invalidPaths == null)
-                            invalidPaths = new LinkedList<>();
-                        invalidPaths.add(path);
-                        continue;
-                    }
-                    addPicture(path);
+            loadSavedFeedbackInfo();
+        }
+    }
+
+    private void loadSavedFeedbackInfo() {
+        FeedbackRepository repository = mFeedbackRepository;
+        if (repository == null) return;
+
+        repository.loadSavedFeedbackInfo(feedbackInfo -> {
+            String feedbackText = feedbackInfo.getText();
+            String contactWay = feedbackInfo.getContactWay();
+            List<String> picturePaths = feedbackInfo.getPicturePaths();
+
+            repository.setSavedFeedbackInfo(feedbackText, contactWay, picturePaths);
+            mSavedFeedbackInfoLoaded = true;
+
+            repository.setFeedbackText(feedbackText);
+            repository.setContactWay(contactWay);
+            if (picturePaths != null) {
+                for (String path: picturePaths) {
+                    repository.addPicture(path);
                 }
-                if (invalidPaths != null) {
-                    mSavedPicturePaths.removeAll(invalidPaths);
-                    mFeedbackSPs.edit().setPicturePaths(mSavedPicturePaths).apply();
-                }
             }
-        } else {
+        });
+    }
+
+    @Override
+    public void restoreInstanceState(@NonNull Bundle savedInstanceState) {
+        mSavedFeedbackInfoLoaded = savedInstanceState.containsKey(KEY_SAVED_FEEDBACK_INFO_LOADED);
+        if (!mSavedFeedbackInfoLoaded) {
+            loadSavedFeedbackInfo();
+            return;
+        }
+
+        FeedbackRepository repository = mFeedbackRepository;
+        if (repository != null) {
             String[] savedPicturePaths = (String[])
                     savedInstanceState.getSerializable(KEY_SAVED_PICTURE_PATHS);
-            cacheCurrData(savedInstanceState.getString(KEY_SAVED_FEEDBACK_TEXT, Consts.EMPTY_STRING),
-                    savedInstanceState.getString(KEY_SAVED_CONTACT_WAY, Consts.EMPTY_STRING),
-                    savedPicturePaths == null ? null : Arrays.asList(savedPicturePaths));
-            if (mSavedPicturePaths != null) {
-                Iterator<String> it = mSavedPicturePaths.iterator();
+            List<String> savedPicturePathList =
+                    savedPicturePaths == null
+                            ? null : new ArrayList<>(Arrays.asList(savedPicturePaths));
+            if (savedPicturePathList != null) {
+                Iterator<String> it = savedPicturePathList.iterator();
                 while (it.hasNext()) {
                     if (!new File(it.next()).exists()) {
                         it.remove();
                     }
                 }
             }
+            repository.setSavedFeedbackInfo(
+                    savedInstanceState.getString(KEY_SAVED_FEEDBACK_TEXT, EMPTY_STRING),
+                    savedInstanceState.getString(KEY_SAVED_CONTACT_WAY, EMPTY_STRING),
+                    savedPicturePathList);
 
-            if (mView != null) {
-                mView.refreshCurrTexts(
-                        savedInstanceState.getString(KEY_FILLED_FEEDBACK_TEXT, Consts.EMPTY_STRING),
-                        savedInstanceState.getString(KEY_FILLED_CONTACT_WAY, Consts.EMPTY_STRING));
-            }
+            repository.setFeedbackText(
+                    savedInstanceState.getString(KEY_FILLED_FEEDBACK_TEXT, EMPTY_STRING));
+            repository.setContactWay(
+                    savedInstanceState.getString(KEY_FILLED_CONTACT_WAY, EMPTY_STRING));
             String[] picturePaths = (String[])
                     savedInstanceState.getSerializable(KEY_FILLED_PICTURE_PATHS);
             if (picturePaths != null) {
@@ -116,181 +141,149 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
                     if (!new File(path).exists()) {
                         continue;
                     }
-                    addPicture(path);
+                    repository.addPicture(path);
                 }
             }
         }
     }
 
     @Override
-    public void saveData(@NonNull Bundle outState, @NonNull String text, @NonNull String contactWay) {
-        outState.putString(KEY_SAVED_FEEDBACK_TEXT, mSavedFeedbackText);
-        outState.putString(KEY_SAVED_CONTACT_WAY, mSavedContactWay);
-        if (mSavedPicturePaths != null) {
-            outState.putSerializable(KEY_SAVED_PICTURE_PATHS,
-                    mSavedPicturePaths.toArray(Consts.EMPTY_STRING_ARRAY));
-        }
+    public void saveInstanceState(@NonNull Bundle outState) {
+        FeedbackRepository repository = mFeedbackRepository;
+        if (repository != null && mSavedFeedbackInfoLoaded) {
+            outState.putString(KEY_SAVED_FEEDBACK_INFO_LOADED, null);
 
-        outState.putString(KEY_FILLED_FEEDBACK_TEXT, text);
-        outState.putString(KEY_FILLED_CONTACT_WAY, contactWay);
-        if (!mGridAdapter.mPicturePaths.isEmpty()) {
-            outState.putSerializable(KEY_FILLED_PICTURE_PATHS,
-                    mGridAdapter.mPicturePaths.toArray(Consts.EMPTY_STRING_ARRAY));
-        }
-    }
+            FeedbackInfo savedFeedbackInfo = repository.getSavedFeedbackInfo();
+            outState.putString(KEY_SAVED_FEEDBACK_TEXT, savedFeedbackInfo.getText());
+            outState.putString(KEY_SAVED_CONTACT_WAY, savedFeedbackInfo.getContactWay());
+            if (savedFeedbackInfo.getPicturePaths() != null) {
+                outState.putSerializable(KEY_SAVED_PICTURE_PATHS,
+                        savedFeedbackInfo.getPicturePaths().toArray(Consts.EMPTY_STRING_ARRAY));
+            }
 
-    @Override
-    public void persistentlySaveUserFilledData(
-            @NonNull String text, @NonNull String contactWay, boolean toastResultIfSaved) {
-        if (hasDataChanged(text, contactWay)) {
-            cacheCurrData(text, contactWay,
-                    mGridAdapter.mPicturePaths.isEmpty() ?
-                            null : new ArrayList<>(mGridAdapter.mPicturePaths));
-
-            mFeedbackSPs.edit()
-                    .setText(mSavedFeedbackText)
-                    .setContactWay(mSavedContactWay)
-                    .setPicturePaths(mSavedPicturePaths)
-                    .apply();
-
-            if (toastResultIfSaved && mView != null) {
-                mView.toastResultOnUserFilledDataSaved();
+            List<String> picturePaths = repository.getPicturePaths();
+            outState.putString(KEY_FILLED_FEEDBACK_TEXT, getFeedbackText());
+            outState.putString(KEY_FILLED_CONTACT_WAY, getContactWay());
+            if (!picturePaths.isEmpty()) {
+                outState.putSerializable(KEY_FILLED_PICTURE_PATHS,
+                        picturePaths.toArray(Consts.EMPTY_STRING_ARRAY));
             }
         }
     }
 
-    private void cacheCurrData(String text, String contactWay, List<String> picturePaths) {
-        mSavedFeedbackText = text;
-        mSavedContactWay = contactWay;
-        mSavedPicturePaths = picturePaths;
-    }
-
-    @SuppressWarnings("ConstantConditions")
     @Override
-    public boolean hasDataChanged(@NonNull String text, @NonNull String contactWay) {
-        if (!(text.equals(mSavedFeedbackText) && contactWay.equals(mSavedContactWay)))
-            return true;
-
-        boolean arraysAreNull =
-                mGridAdapter.mPicturePaths == null && mSavedPicturePaths == null;
-        if (arraysAreNull) return false;
-
-        boolean arraysAreNonnull =
-                !(mGridAdapter.mPicturePaths == null || mSavedPicturePaths == null);
-        if (arraysAreNonnull) {
-            //@formatter:off
-            return !(mGridAdapter.mPicturePaths.isEmpty() && mSavedPicturePaths.isEmpty()
-                    || Arrays.equals(
-                            mGridAdapter.mPicturePaths.toArray(Consts.EMPTY_STRING_ARRAY),
-                            mSavedPicturePaths.toArray(Consts.EMPTY_STRING_ARRAY))); //@formatter:on
-        } else {
-            return !(mGridAdapter.mPicturePaths != null && mGridAdapter.mPicturePaths.isEmpty()
-                    || mSavedPicturePaths != null && mSavedPicturePaths.isEmpty());
+    public void persistentlySaveUserFilledData(boolean toastResultIfSaved) {
+        if (mFeedbackRepository != null
+                && mFeedbackRepository.persistentlySaveUserFilledData()
+                && toastResultIfSaved && mView != null) {
+            mView.toastResultOnUserFilledDataSaved();
         }
     }
 
     @Override
-    public void sendFeedback(@NonNull String text, @NonNull String contactWay) {
+    public void onBackPressed(@NonNull OnBackPressedCallback callback) {
+        if (mFeedbackRepository != null
+                && mFeedbackRepository.hasUserFilledDataChanged()) {
+            callback.showConfirmSaveDataDialog();
+        } else {
+            callback.back();
+        }
+    }
+
+    @Override
+    public void sendFeedback() {
+        String text = getFeedbackText();
+        String contactWay = getContactWay();
         if (mThemedContext != null && NetworkUtil.isNetworkConnected(mContext)) {
             String deviceInfo = Utils.collectAppAndDeviceInfo(mContext).toString();
             if (!deviceInfo.isEmpty()) {
                 text += "\n\n----------------------------------------------------------------\n"
                         + deviceInfo;
             }
-            MailUtil.sendMail(
-                    mThemedContext,
-                    PREFIX_MAIL_SUBJECT + contactWay,
-                    text,
-                    null,
-                    mGridAdapter.mPicturePaths.isEmpty() ?
-                            null : mGridAdapter.mPicturePaths.toArray(Consts.EMPTY_STRING_ARRAY));
-
-            // 提交反馈后，清除sp文件保存的数据
-            mFeedbackSPs.edit().clear().apply();
-
-            // 重设临时缓存的数据
-            mSavedFeedbackText = Consts.EMPTY_STRING;
-            mSavedContactWay = Consts.EMPTY_STRING;
-            // 刷新TextView的显示
-            if (mView != null) {
-                mView.refreshCurrTexts(mSavedFeedbackText, mSavedContactWay);
+            String[] attachmentPaths = null;
+            if (mFeedbackRepository != null) {
+                List<String> picturePaths = mFeedbackRepository.getPicturePaths();
+                attachmentPaths =
+                        picturePaths.isEmpty() ? null : picturePaths.toArray(EMPTY_STRING_ARRAY);
             }
+            MailUtil.sendMail(
+                    mThemedContext, PREFIX_MAIL_SUBJECT + contactWay, text, null, attachmentPaths);
 
-            // 清空PictureGridAdapter的数据
-            if (!mGridAdapter.mPicturePaths.isEmpty()) {
-                if (mSavedPicturePaths != null) {
-                    mSavedPicturePaths.clear();
-                }
-
-                Bitmap temp = mGridAdapter.mPictures.get(mGridAdapter.mPictures.size() - 1);
-                Iterator<Bitmap> it = mGridAdapter.mPictures.iterator();
-                while (it.hasNext()) {
-                    Bitmap bitmap = it.next();
-                    if (temp == bitmap) continue;
-                    bitmap.recycle();
-                    it.remove();
-                }
-                mGridAdapter.mPicturePaths.clear();
-                mGridAdapter.mLoadedPicturePaths.clear();
-                // 刷新GridView
-                mGridAdapter.notifyDataSetChanged();
+            if (mFeedbackRepository != null) {
+                mFeedbackRepository.setFeedbackText(EMPTY_STRING);
+                mFeedbackRepository.setContactWay(EMPTY_STRING);
+                mFeedbackRepository.clearPictures(false);
+                mFeedbackRepository.persistentlySaveUserFilledData();
             }
         } else {
             if (mView != null) {
                 mView.showToast(mContext, R.string.noNetworkConnection, Toast.LENGTH_SHORT);
             }
-            persistentlySaveUserFilledData(text, contactWay, false);
+            persistentlySaveUserFilledData(false);
         }
     }
 
     @Override
-    public void addPicture(final String path) {
-        final PictureGridAdapter gridAdapter = mGridAdapter;
-        final List<String> picturePaths = gridAdapter.mPicturePaths;
-        if (path != null && !picturePaths.contains(path)) {
-            picturePaths.add(path);
-            Executors.SERIAL_EXECUTOR.execute(() -> {
-                if (mView == null) {
-                    return;
-                }
-                final Bitmap bitmap = BitmapUtils.decodeRotatedBitmapFormFile(path);
-                if (bitmap != null) {
-                    Executors.MAIN_EXECUTOR.post(() -> {
-                        if (mView != null && picturePaths.contains(path)) {
-                            List<String> loadedPicturePaths = gridAdapter.mLoadedPicturePaths;
-                            List<Bitmap> pictures = gridAdapter.mPictures;
-                            loadedPicturePaths.add(loadedPicturePaths.size(), path);
-                            pictures.add(pictures.size() - 1, bitmap);
-                            gridAdapter.notifyDataSetChanged();
-                        } else {
-                            if (!gridAdapter.mPictures.contains(bitmap)) {
-                                bitmap.recycle();
-                            }
-                        }
-                    });
-                }
-            });
+    public void onFeedbackTextChanged(@NonNull String feedbackText) {
+        if (mView != null) {
+            mView.setFeedbackText(feedbackText);
         }
     }
 
     @Override
-    public void removePictureAt(int index) {
-        // 图片全部被删除时，销毁对话框
-        if (mView != null && mGridAdapter.mPictures.size() == 2) {
-            mView.hidePicturePreviewDialog();
+    public void onContactWayChanged(@NonNull String contactWay) {
+        if (mView != null) {
+            mView.setContactWayText(contactWay);
         }
-        mGridAdapter.mPictures.get(index).recycle();
-        mGridAdapter.mPictures.remove(index);
-        mGridAdapter.mPicturePaths.remove(mGridAdapter.mLoadedPicturePaths.remove(index));
+    }
+
+    @NonNull
+    @Override
+    public String getFeedbackText() {
+        return mView == null ? EMPTY_STRING : mView.getFeedbackText();
+    }
+
+    @NonNull
+    @Override
+    public String getContactWay() {
+        return mView == null ? EMPTY_STRING : mView.getContactWay();
+    }
+
+    @Override
+    public void addPicture(@Nullable String path) {
+        if (mFeedbackRepository != null) {
+            mFeedbackRepository.addPicture(path);
+        }
+    }
+
+    @Override
+    public void onPictureAdded(@NonNull Bitmap picture) {
         mGridAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void recyclePictures() {
-        for (Bitmap bitmap : mGridAdapter.mPictures) {
-            bitmap.recycle();
+    public void removePictureAt(int index) {
+        if (mFeedbackRepository != null) {
+            mFeedbackRepository.removePictureAt(index);
         }
-        mGridAdapter.mPictures.clear();
+    }
+
+    @Override
+    public void onPictureRemoved(@NonNull Bitmap picture) {
+        // 图片全部被删除时，销毁对话框
+        if (mView != null && mFeedbackRepository != null
+                && mFeedbackRepository.getPictures().size() == 1) {
+            mView.hidePicturePreviewDialog();
+        }
+        mGridAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onPictureCleared() {
+        if (mView != null) {
+            mView.hidePicturePreviewDialog();
+        }
+        mGridAdapter.notifyDataSetChanged();
     }
 
     @NonNull
@@ -303,27 +296,18 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
     private final class PictureGridAdapter extends BaseAdapter
             implements AdapterView.OnItemClickListener {
 
-        final List<Bitmap> mPictures = new ArrayList<>(MAX_COUNT_UPLOAD_PICTURES + 1);
-        final List<String> mPicturePaths = new LinkedList<>();
-        final List<String> mLoadedPicturePaths = new LinkedList<>();
-
-        static final int MAX_COUNT_UPLOAD_PICTURES = 3;
-
-        PictureGridAdapter(@NonNull Context context) {
-            //noinspection ConstantConditions
-            mPictures.add(BitmapUtils.drawableToBitmap(
-                    AppCompatResources.getDrawable(context, R.drawable.ic_add_photo_gray_36dp)));
+        PictureGridAdapter() {
         }
 
         @Override
         public int getCount() {
-            int count = mPictures.size();
+            int count = mFeedbackRepository == null ? 0 : mFeedbackRepository.getPictures().size();
             return Math.min(count, MAX_COUNT_UPLOAD_PICTURES);
         }
 
         @Override
         public Object getItem(int position) {
-            return mPictures.get(position);
+            return mFeedbackRepository.getPictures().get(position);
         }
 
         @Override
@@ -334,18 +318,20 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             return mView.getPictureGridViewHolder(position, convertView, parent,
-                    mPictures.get(position), mPictures.size()).itemView;
+                    (Bitmap) getItem(position), mFeedbackRepository.getPictures().size()).itemView;
         }
 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            int pictureCount = mPictures.size();
+            List<Bitmap> pictures = mFeedbackRepository.getPictures();
+            int pictureCount = pictures.size();
             if (position == pictureCount - 1) {
-                if (mPicturePaths.size() < PictureGridAdapter.MAX_COUNT_UPLOAD_PICTURES) {
+                // 通过图片路径数判断，否则如果图片还未全部加载，会导致判断不准
+                if (mFeedbackRepository.getPicturePaths().size() < MAX_COUNT_UPLOAD_PICTURES) {
                     mView.pickPicture();
                 }
             } else {
-                mView.showPicturePreviewDialog(mPictures.subList(0, pictureCount - 1), position);
+                mView.showPicturePreviewDialog(pictures.subList(0, pictureCount - 1), position);
             }
         }
     }

@@ -90,6 +90,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
     private static WeakReference<VideoActivity> sActivityInPiP;
 
+    private Intent mIntent;
+
     private View mStatusBarView;
     private AspectRatioFrameLayout mVideoViewContainer;
     @Synthetic TextureVideoView mVideoView;
@@ -253,14 +255,54 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(mScreenOrientation);
+        setContentView(R.layout.activity_video);
+        initViews();
+        mPrivateFlags |= PFLAG_VIEW_CREATED;
         mPresenter.attachToView(this);
-        if (mPresenter.initPlaylist(savedInstanceState, getIntent())) {
-            setRequestedOrientation(mScreenOrientation);
-            setContentView(R.layout.activity_video);
-            initViews(savedInstanceState);
-            mPresenter.onViewCreated(this);
-            mPrivateFlags |= PFLAG_VIEW_CREATED;
+        mPresenter.onViewCreated(this, savedInstanceState);
+        mPresenter.initPlaylist(savedInstanceState, mIntent = getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        mIntent = intent;
+        mPresenter.initPlaylistAndRecordCurrentVideoProgress(null, intent);
+    }
+
+    @Override
+    public void onPlaylistInitialized(@NonNull Video[] playlist, int playlistIndex) {
+        // React to onNewIntent()
+        if (mIntent != getIntent()) {
+            setIntent(mIntent);
+        }
+
+        final boolean needPlaylist = playlist.length > 1;
+        //noinspection rawtypes
+        TextureVideoView.PlayListAdapter adapter = mVideoView.getPlayListAdapter();
+        if (needPlaylist) {
+            if (adapter != null) {
+                //noinspection NotifyDataSetChanged
+                adapter.notifyDataSetChanged();
+            } else {
+                mVideoView.setPlayListAdapter(mPresenter.newPlaylistAdapter());
+            }
+            // Ensures the list scrolls to the position of the video to be played
+            ensureSelectedItemVisibleInPlaylist(playlistIndex);
         } else {
+            mVideoView.setPlayListAdapter(null);
+        }
+        mVideoView.setCanSkipToPrevious(needPlaylist);
+        mVideoView.setCanSkipToNext(needPlaylist);
+
+        mPresenter.playCurrentVideo();
+    }
+
+    @Override
+    public void onPlaylistInitializationFail() {
+        // React to onCreate()
+        if (mIntent == getIntent()) {
             Activity preactivity = getPreviousActivity();
             if (preactivity == null) {
                 showToast(this, R.string.cannotPlayThisVideo, Toast.LENGTH_LONG);
@@ -272,31 +314,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        if (mPresenter.initPlaylistAndRecordCurrentVideoProgress(null, intent)) {
-            super.onNewIntent(intent);
-            setIntent(intent);
-
-            final boolean needPlaylist = mPresenter.getPlaylistSize() > 1;
-            //noinspection rawtypes
-            TextureVideoView.PlayListAdapter adapter = mVideoView.getPlayListAdapter();
-            if (needPlaylist && adapter != null) {
-                //noinspection NotifyDataSetChanged
-                adapter.notifyDataSetChanged();
-            }
-            //noinspection unchecked
-            mVideoView.setPlayListAdapter(
-                    needPlaylist
-                            ? adapter == null ? mPresenter.newPlaylistAdapter() : adapter
-                            : null);
-            mVideoView.setCanSkipToPrevious(needPlaylist);
-            mVideoView.setCanSkipToNext(needPlaylist);
-
-            mPresenter.playCurrentVideo();
-        }
-    }
-
     private void updateStatusBarViewHeight(int height) {
         ViewGroup.LayoutParams lp = mStatusBarView.getLayoutParams();
         if (lp.height != height) {
@@ -305,7 +322,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
     }
 
-    private void initViews(Bundle savedInstanceState) {
+    private void initViews() {
         mStatusHeight = SystemBarUtils.getStatusHeight(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             mStatusBarView = findViewById(R.id.view_statusBar);
@@ -340,17 +357,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         mLockUnlockOrientationButton.setOnClickListener(v ->
                 setScreenOrientationLocked((mPrivateFlags & PFLAG_SCREEN_ORIENTATION_LOCKED) == 0));
 
-        if (mPresenter.getPlaylistSize() > 1) {
-            mVideoView.setPlayListAdapter(mPresenter.newPlaylistAdapter());
-            mVideoView.setCanSkipToPrevious(true);
-            mVideoView.setCanSkipToNext(true);
-        }
-        // Ensures the list scrolls to the position of the video to be played
-        final int position = mPresenter.getCurrentVideoPositionInList();
-        if (savedInstanceState == null && position != 0) {
-            notifyPlaylistSelectionChanged(0, position, true);
-        }
-        mPresenter.playCurrentVideo();
         videoPlayer.addVideoListener(new IVideoPlayer.VideoListener() {
             @Override
             public void onVideoStarted() {
@@ -426,13 +432,11 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         videoPlayer.setOnSkipPrevNextListener(new VideoPlayer.OnSkipPrevNextListener() {
             @Override
             public void onSkipToPrevious() {
-                mPresenter.recordCurrVideoProgress();
                 mPresenter.skipToPreviousVideo();
             }
 
             @Override
             public void onSkipToNext() {
-                mPresenter.recordCurrVideoProgress();
                 mPresenter.skipToNextVideo();
             }
         });
@@ -673,11 +677,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     protected void onStop() {
         super.onStop();
         mPrivateFlags |= PFLAG_STOPPED;
-
-        // Saves the video progress when current Activity is put into background
-        if (!isFinishing()) {
-            mPresenter.recordCurrVideoProgress();
-        }
         mPresenter.onViewStopped(this);
 
         if (!isInMultiWindowMode()) {
@@ -692,8 +691,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
 
     @Override
     public void finish() {
-        mPresenter.recordCurrVideoProgressAndSetResult();
-        super.finish();
+        mPresenter.finish(super::finish);
     }
 
     @Override
@@ -1088,9 +1086,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     public void notifyPlaylistSelectionChanged(
             int oldPosition, int position, boolean checkNewItemVisibility) {
-        RecyclerView playlist = mVideoView.findViewById(R.id.rv_playlist);
         //noinspection rawtypes
-        RecyclerView.Adapter adapter = playlist.getAdapter();
+        RecyclerView.Adapter adapter = mVideoView.getPlayListAdapter();
         //noinspection ConstantConditions
         adapter.notifyItemChanged(oldPosition,
                 PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED
@@ -1099,32 +1096,37 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 PLAYLIST_ADAPTER_PAYLOAD_VIDEO_PROGRESS_CHANGED
                         | PLAYLIST_ADAPTER_PAYLOAD_HIGHLIGHT_ITEM_IF_SELECTED);
         if (checkNewItemVisibility) {
-            RecyclerView.LayoutManager lm = playlist.getLayoutManager();
-            if (lm instanceof LinearLayoutManager) {
-                LinearLayoutManager llm = (LinearLayoutManager) lm;
-                if (llm.findFirstCompletelyVisibleItemPosition() > position
-                        || llm.findLastCompletelyVisibleItemPosition() < position) {
-                    llm.scrollToPosition(position);
-                }
-            } else if (lm instanceof StaggeredGridLayoutManager) {
-                StaggeredGridLayoutManager sglm = (StaggeredGridLayoutManager) lm;
+            ensureSelectedItemVisibleInPlaylist(position);
+        }
+    }
 
-                int minFirstCompletelyVisiblePosition = 0;
-                for (int i : sglm.findFirstCompletelyVisibleItemPositions(null)) {
-                    minFirstCompletelyVisiblePosition = Math.min(minFirstCompletelyVisiblePosition, i);
-                }
-                if (minFirstCompletelyVisiblePosition > position) {
-                    sglm.scrollToPosition(position);
-                    return;
-                }
+    private void ensureSelectedItemVisibleInPlaylist(int selection) {
+        RecyclerView playlist = mVideoView.findViewById(R.id.rv_playlist);
+        RecyclerView.LayoutManager lm = playlist.getLayoutManager();
+        if (lm instanceof LinearLayoutManager) {
+            LinearLayoutManager llm = (LinearLayoutManager) lm;
+            if (llm.findFirstCompletelyVisibleItemPosition() > selection
+                    || llm.findLastCompletelyVisibleItemPosition() < selection) {
+                llm.scrollToPosition(selection);
+            }
+        } else if (lm instanceof StaggeredGridLayoutManager) {
+            StaggeredGridLayoutManager sglm = (StaggeredGridLayoutManager) lm;
 
-                int maxLastCompletelyVisiblePosition = 0;
-                for (int i : sglm.findLastCompletelyVisibleItemPositions(null)) {
-                    maxLastCompletelyVisiblePosition = Math.max(maxLastCompletelyVisiblePosition, i);
-                }
-                if (maxLastCompletelyVisiblePosition < position) {
-                    sglm.scrollToPosition(position);
-                }
+            int minFirstCompletelyVisiblePosition = 0;
+            for (int i : sglm.findFirstCompletelyVisibleItemPositions(null)) {
+                minFirstCompletelyVisiblePosition = Math.min(minFirstCompletelyVisiblePosition, i);
+            }
+            if (minFirstCompletelyVisiblePosition > selection) {
+                sglm.scrollToPosition(selection);
+                return;
+            }
+
+            int maxLastCompletelyVisiblePosition = 0;
+            for (int i : sglm.findLastCompletelyVisibleItemPositions(null)) {
+                maxLastCompletelyVisiblePosition = Math.max(maxLastCompletelyVisiblePosition, i);
+            }
+            if (maxLastCompletelyVisiblePosition < selection) {
+                sglm.scrollToPosition(selection);
             }
         }
     }
@@ -1160,8 +1162,8 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         }
 
         @Override
-        public void bindData(@NonNull Video video, int position, @NonNull List<Object> payloads) {
-            boolean selected = position == mPresenter.getCurrentVideoPositionInList();
+        public void bindData(
+                @NonNull Video video, int position, boolean selected, @NonNull List<Object> payloads) {
             if (payloads.isEmpty()) {
                 highlightItemIfSelected(selected);
                 videoNameText.setText(video.getName());
@@ -1207,17 +1209,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
                 }
             }
         }
-
-        @Override
-        public void onItemViewClick(int position) {
-            int videoIndex = mPresenter.getCurrentVideoPositionInList();
-            if (videoIndex == position) {
-                showUserCancelableSnackbar(R.string.theVideoIsPlaying, Snackbar.LENGTH_SHORT);
-            } else {
-                mPresenter.recordCurrVideoProgress();
-                mPresenter.playVideoAt(position);
-            }
-        }
     }
 
     // --------------- Saved Instance State ------------------------
@@ -1225,6 +1216,6 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        mPresenter.saveData(outState);
+        mPresenter.saveInstanceState(outState);
     }
 }

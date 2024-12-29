@@ -9,12 +9,18 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.AsyncTask
 import com.liuzhenlin.common.Consts
+import com.liuzhenlin.common.Consts.EMPTY_STRING
+import com.liuzhenlin.common.utils.AlgorithmUtil
 import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.videos.allEqual
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.dao.VideoListItemDao
 import com.liuzhenlin.videos.set
 import com.liuzhenlin.videos.sortByElementName
+import com.liuzhenlin.videos.view.fragment.VideoListItemDeleteOnDiskListener
+import com.liuzhenlin.videos.view.fragment.VideoListItemRenameResultCallback
+import com.liuzhenlin.videos.view.fragment.deleteOnDisk
+import com.liuzhenlin.videos.view.fragment.renameTo
 
 /**
  * @author 刘振林
@@ -23,18 +29,16 @@ import com.liuzhenlin.videos.sortByElementName
 interface ILocalSearchedVideoListModel {
 
     public val videos: List<Video>
+    public val searchText: String
     public val searchedVideos: List<Video>
 
     fun setVideos(videos: List<Video>?)
-    fun setSearchedVideos(videos: List<Video>)
-    fun clearSearchedVideos()
-    fun updateSearchedVideo(index: Int, video: Video): Boolean
+    fun setSearchText(searchText: String)
     fun updateSearchedVideoProgress(video: Video)
-    fun deleteVideo(video: Video)
-    fun renameVideoTo(video: Video, videoNameMatchesSearchKeywords: Boolean)
+    fun deleteVideo(video: Video, listener: VideoListItemDeleteOnDiskListener<Video>?)
+    fun renameVideoTo(video: Video, callback: VideoListItemRenameResultCallback<Video>?)
 
     interface Callback : BaseModel.Callback {
-        fun onAllVideosChanged()
         fun onAllSearchedVideosRemoved()
         fun onAllSearchedVideosChanged()
         fun onSearchedVideoUpdated(index: Int)
@@ -50,33 +54,76 @@ class LocalSearchedVideoListModel(context: Context)
         ILocalSearchedVideoListModel {
 
     private val mVideos = arrayListOf<Video>()
+    private var mSearchText = EMPTY_STRING
     private val mSearchedVideos = mutableListOf<Video>()
 
     override val videos: List<Video> get() = mVideos
+    override val searchText: String get() = mSearchText
     override val searchedVideos: List<Video> get() = mSearchedVideos
 
     override fun setVideos(videos: List<Video>?) {
         if (!mVideos.allEqual(videos)) {
             mVideos.set(videos)
-            mCallback?.onAllVideosChanged()
+            refreshSearchedVideos(false)
         }
     }
 
-    override fun setSearchedVideos(videos: List<Video>) {
+    override fun setSearchText(searchText: String) {
+        val st = mSearchText
+        mSearchText = searchText
+        if (!st.equals(searchText, ignoreCase = true)) {
+            refreshSearchedVideos(true)
+        }
+    }
+
+    private fun refreshSearchedVideos(searchTextChanged: Boolean) {
+        var searchedVideos: MutableList<Video>? = null
+        if (mSearchText.isNotEmpty()) {
+            for (video in mVideos) {
+                if (mSearchText.length
+                        == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
+                    if (searchedVideos == null) searchedVideos = mutableListOf()
+                    searchedVideos.add(video)
+                }
+            }
+        }
+        searchedVideos.sortByElementName()
+        if (searchedVideos == null || searchedVideos.isEmpty()) {
+            clearSearchedVideos()
+        } else if (searchedVideos.size == mSearchedVideos.size) {
+            if (searchTextChanged) {
+                for (index in searchedVideos.indices) {
+                    if (!updateSearchedVideo(index, searchedVideos[index])) {
+                        // Still Notifies the callback that the video name display need be updated
+                        // to follow the search text change.
+                        mCallback?.onSearchedVideoRenamed(index, index)
+                    }
+                }
+            } else {
+                for (index in searchedVideos.indices) {
+                    updateSearchedVideo(index, searchedVideos[index])
+                }
+            }
+        } else {
+            setSearchedVideos(searchedVideos)
+        }
+    }
+
+    private fun setSearchedVideos(videos: List<Video>) {
         if (!mSearchedVideos.allEqual(videos)) {
             mSearchedVideos.set(videos)
             mCallback?.onAllSearchedVideosChanged()
         }
     }
 
-    override fun clearSearchedVideos() {
+    private fun clearSearchedVideos() {
         if (mSearchedVideos.isNotEmpty()) {
             mSearchedVideos.clear()
             mCallback?.onAllSearchedVideosRemoved()
         }
     }
 
-    override fun updateSearchedVideo(index: Int, video: Video): Boolean {
+    private fun updateSearchedVideo(index: Int, video: Video): Boolean {
         if (!mSearchedVideos[index].allEqual(video)) {
             mSearchedVideos[index] = video
             mCallback?.onSearchedVideoUpdated(index)
@@ -98,7 +145,15 @@ class LocalSearchedVideoListModel(context: Context)
         }
     }
 
-    override fun deleteVideo(video: Video) {
+    override fun deleteVideo(video: Video, listener: VideoListItemDeleteOnDiskListener<Video>?) {
+        listener?.onItemsDeleteStart(video)
+        Executors.THREAD_POOL_EXECUTOR.execute {
+            arrayOf(video).deleteOnDisk()
+            Executors.MAIN_EXECUTOR.execute {
+                listener?.onItemsDeleteFinish(video)
+            }
+        }
+
         mVideos.remove(video)
 
         val index = mSearchedVideos.indexOf(video)
@@ -108,22 +163,29 @@ class LocalSearchedVideoListModel(context: Context)
         }
     }
 
-    override fun renameVideoTo(video: Video, videoNameMatchesSearchKeywords: Boolean) {
+    override fun renameVideoTo(video: Video, callback: VideoListItemRenameResultCallback<Video>?) {
         val idx = mVideos.indexOf(video)
         if (idx >= 0) {
-            mVideos[idx].name = video.name
-            mVideos.sortByElementName()
-        }
+            val v = mVideos[idx]
 
-        val index = mSearchedVideos.indexOf(video)
-        if (index >= 0) {
-            mSearchedVideos[index].name = video.name
-            if (videoNameMatchesSearchKeywords) {
-                mSearchedVideos.sortByElementName()
-                mCallback?.onSearchedVideoRenamed(index, mSearchedVideos.indexOf(video))
-            } else {
-                mSearchedVideos.removeAt(index)
-                mCallback?.onSearchedVideoDeleted(index)
+            if (!v.renameTo(video.name, callback))
+                return
+
+            v.name = video.name
+            mVideos.sortByElementName()
+
+            // Use v for index search because its id might have been updated in the above
+            // v.renameTo() method invocation
+            val index = mSearchedVideos.indexOf(v)
+            if (index >= 0) {
+                mSearchedVideos[index].name = video.name
+                if (mSearchText.length == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
+                    mSearchedVideos.sortByElementName()
+                    mCallback?.onSearchedVideoRenamed(index, mSearchedVideos.indexOf(v))
+                } else {
+                    mSearchedVideos.removeAt(index)
+                    mCallback?.onSearchedVideoDeleted(index)
+                }
             }
         }
     }

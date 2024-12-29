@@ -17,6 +17,8 @@ abstract class VideoListItem(open var name: String,
     abstract fun allEqual(other: Any?): Boolean
 
     abstract fun <T : VideoListItem> deepCopy(): T
+
+    abstract fun <T : VideoListItem> shallowCopy(): T
 }
 
 data class VideoDirectory(override var name: String = "",
@@ -63,6 +65,9 @@ data class VideoDirectory(override var name: String = "",
     override fun <T : VideoListItem> deepCopy(): T =
             copy(videoListItems = videoListItems.toMutableList())
                     .apply { videoListItems.deepCopy(videoListItems) } as T
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : VideoListItem> shallowCopy(): T = copy() as T
 
     constructor(source: Parcel) : this(
             source.readString()!!,
@@ -137,6 +142,9 @@ data class Video(var id: Long = 0L,
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : VideoListItem> deepCopy() = copy() as T
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : VideoListItem> shallowCopy() = copy() as T
 
     constructor(source: Parcel) : this(
             source.readLong(),

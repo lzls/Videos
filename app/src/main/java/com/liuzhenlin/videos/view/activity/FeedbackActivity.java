@@ -79,7 +79,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
     private EditText mEnterContactWayEditor;
     @Synthetic Button mCommitButton;
 
-    private Dialog mConfirmSaveDataDialog;
+    @Synthetic Dialog mConfirmSaveDataDialog;
     @Synthetic Dialog mPicturePreviewDialog;
 
     @Synthetic boolean mShouldSaveDataOnDestroy;
@@ -204,7 +204,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
 
         mCommitButton.setOnClickListener(this);
 
-        mPresenter.onViewCreated(this);
+        mPresenter.onViewCreated(this, savedInstanceState);
         getLifecycle().addObserver(new DefaultLifecycleObserver() {
             @Override
             public void onStart(@NonNull LifecycleOwner owner) {
@@ -226,63 +226,60 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                 mPresenter.onViewStopped((IFeedbackView) owner);
             }
         });
-
-        // 恢复上次退出此页面时保存的数据
-        if (savedInstanceState == null) {
-            mPresenter.restoreData(null);
-        }
     }
 
     @Override
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        mPresenter.restoreData(savedInstanceState);
+        mPresenter.restoreInstanceState(savedInstanceState);
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        mPresenter.saveData(
-                outState,
-                mEnterProblemsOrAdviceEditor.getText().toString(),
-                mEnterContactWayEditor.getText().toString().trim());
+        mPresenter.saveInstanceState(outState);
     }
 
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
-        final String text = mEnterProblemsOrAdviceEditor.getText().toString();
-        final String contactWay = mEnterContactWayEditor.getText().toString().trim();
-        if (mPresenter.hasDataChanged(text, contactWay)) {
-            View view = View.inflate(this, R.layout.dialog_confirm_save, null);
-            view.<TextView>findViewById(R.id.text_message)
-                    .setMovementMethod(ScrollingMovementMethod.getInstance());
-            view.findViewById(R.id.btn_notSave).setOnClickListener(this);
-            view.findViewById(R.id.btn_save).setOnClickListener(this);
+        final FeedbackActivity _this = this;
+        mPresenter.onBackPressed(new IFeedbackPresenter.OnBackPressedCallback() {
+            @Override
+            public void showConfirmSaveDataDialog() {
+                View view = View.inflate(_this, R.layout.dialog_confirm_save, null);
+                view.<TextView>findViewById(R.id.text_message)
+                        .setMovementMethod(ScrollingMovementMethod.getInstance());
+                view.findViewById(R.id.btn_notSave).setOnClickListener(_this);
+                view.findViewById(R.id.btn_save).setOnClickListener(_this);
 
-            mConfirmSaveDataDialog = new AppCompatDialog(this, R.style.DialogStyle_MinWidth_NoTitle);
-            mConfirmSaveDataDialog.setContentView(view);
-            mConfirmSaveDataDialog.setCancelable(false);
-            mConfirmSaveDataDialog.setCanceledOnTouchOutside(false);
-            mConfirmSaveDataDialog.show();
-        } else {
-            super.onBackPressed();
-        }
+                mConfirmSaveDataDialog =
+                        new AppCompatDialog(_this, R.style.DialogStyle_MinWidth_NoTitle);
+                mConfirmSaveDataDialog.setContentView(view);
+                mConfirmSaveDataDialog.setCancelable(false);
+                mConfirmSaveDataDialog.setCanceledOnTouchOutside(false);
+                mConfirmSaveDataDialog.show();
+            }
+
+            @Override
+            public void back() {
+                FeedbackActivity.super.onBackPressed();
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // 滑动返回时默认保存数据
-        if (mShouldSaveDataOnDestroy) {
-            saveUserFilledData(true);
-        }
         if (mPicturePreviewDialog != null) {
             // 当Activity被系统杀掉时，Dialog的onDismiss()不会被调用。
             // 在此手动调用以确保屏幕方向监听和观察刘海屏开关打开/关闭的ContentObserver能被暂停
             mPicturePreviewDialog.dismiss();
         }
-        // 回收Bitmaps
-        mPresenter.recyclePictures();
+        // 滑动返回时默认保存数据
+        if (mShouldSaveDataOnDestroy) {
+            mPresenter.persistentlySaveUserFilledData(true);
+        }
         mPresenter.onViewDestroyed(this);
         mPresenter.detachFromView(this);
     }
@@ -310,29 +307,21 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
                 onBackPressed();
                 break;
             case R.id.btn_saveFeedback:
-                saveUserFilledData(true);
+                mPresenter.persistentlySaveUserFilledData(true);
                 scrollToFinish();
                 break;
 
             case R.id.btn_commit:
-                final String text = mEnterProblemsOrAdviceEditor.getText().toString();
-                final String contactWay = mEnterContactWayEditor.getText().toString().trim();
-                mPresenter.sendFeedback(text, contactWay);
+                mPresenter.sendFeedback();
                 break;
 
             case R.id.btn_save:
-                saveUserFilledData(true);
+                mPresenter.persistentlySaveUserFilledData(true);
             case R.id.btn_notSave:
                 mConfirmSaveDataDialog.cancel();
                 scrollToFinish();
                 break;
         }
-    }
-
-    private void saveUserFilledData(@SuppressWarnings("SameParameterValue") boolean toastResultIfSaved) {
-        final String text = mEnterProblemsOrAdviceEditor.getText().toString();
-        final String contactWay = mEnterContactWayEditor.getText().toString().trim();
-        mPresenter.persistentlySaveUserFilledData(text, contactWay, toastResultIfSaved);
     }
 
     @Override
@@ -346,10 +335,26 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
         }
     }
 
+    @NonNull
     @Override
-    public void refreshCurrTexts(@NonNull String text, @NonNull String contactWay) {
+    public String getFeedbackText() {
+        return mEnterProblemsOrAdviceEditor.getText().toString();
+    }
+
+    @Override
+    public void setFeedbackText(@NonNull String text) {
         mEnterProblemsOrAdviceEditor.setText(text);
         mEnterProblemsOrAdviceEditor.setSelection(text.length());
+    }
+
+    @NonNull
+    @Override
+    public String getContactWay() {
+        return mEnterContactWayEditor.getText().toString().trim();
+    }
+
+    @Override
+    public void setContactWayText(@NonNull String contactWay) {
         mEnterContactWayEditor.setText(contactWay);
     }
 

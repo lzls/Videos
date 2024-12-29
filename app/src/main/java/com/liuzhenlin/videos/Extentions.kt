@@ -69,6 +69,20 @@ fun <T : VideoListItem> List<T>.reordered(): MutableList<T> {
     return items
 }
 
+fun <T : VideoListItem> Array<T>?.allEqual(other: Array<T>?): Boolean {
+    this ?: return other == null
+
+    if (other == null) return size == 0
+
+    if (other.size != size) return false
+
+    for (i in indices) {
+        if (!this[i].allEqual(other[i])) return false
+    }
+
+    return true
+}
+
 fun <T : VideoListItem> List<T>?.allEqual(other: List<T>?): Boolean {
     this ?: return other == null
 

@@ -9,15 +9,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.view.View
-import android.widget.Toast
+import androidx.annotation.IntDef
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.util.Preconditions
-import com.google.android.material.snackbar.Snackbar
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.ShareUtils
 import com.liuzhenlin.common.utils.URLUtils
-import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
@@ -30,11 +27,39 @@ import java.io.File
  * @author 刘振林
  */
 
-private fun deleteItemsInternal(items: Array<out VideoListItem>) {
-    if (items.isEmpty()) return
+const val FAIL_REASON_FILE_NOT_EXIST = 1     // 不存在该文件
+const val FAIL_REASON_FILE_NAME_CLASHED = 2  // 该路径下存在相同名称的文件
+const val FAIL_REASON_UNKNOWN = 3            // 未知原因
+
+@IntDef(FAIL_REASON_FILE_NOT_EXIST, FAIL_REASON_FILE_NAME_CLASHED, FAIL_REASON_UNKNOWN)
+@Retention(AnnotationRetention.SOURCE)
+annotation class RenameFailReason
+
+interface VideoListItemDeleteOnDiskListener<in T : VideoListItem> {
+    fun onItemsDeleteStart(vararg items: T)
+    fun onItemsDeleteFinish(vararg items: T)
+}
+
+interface VideoListItemRenameResultCallback<in T : VideoListItem> {
+    fun onItemRenameFail(item: T, @RenameFailReason reason: Int)
+    fun onItemRenameSuccess(item: T)
+}
+
+interface VideoListItemOpCallback<in T : VideoListItem> : VideoListItemDeleteOnDiskListener<T>,
+        VideoListItemRenameResultCallback<T> {
+
+    fun showDeleteItemDialog(item: T, onDeleteAction: (() -> Unit)? = null)
+    fun showDeleteItemsPopupWindow(vararg items: T, onDeleteAction: (() -> Unit)? = null)
+    fun showRenameItemDialog(item: T, onRenameAction: ((String) -> Unit)? = null)
+    fun showItemDetailsDialog(item: T)
+    fun showVideosMovePage(vararg items: T)
+}
+
+fun Array<out VideoListItem>.deleteOnDisk() {
+    if (isEmpty()) return
 
     val dao = VideoListItemDao.getSingleton(App.getInstanceUnsafe()!!)
-    deleteItemsRecursively(listOf(*items), dao)
+    deleteItemsRecursively(listOf(*this), dao)
 }
 
 private fun deleteItemsRecursively(items: List<VideoListItem>, dao: VideoListItemDao) {
@@ -51,106 +76,53 @@ private fun deleteItemsRecursively(items: List<VideoListItem>, dao: VideoListIte
         }
 }
 
-interface VideoListItemOpCallback<in T : VideoListItem> {
+fun <T : VideoListItem> T.renameTo(newName: String, callback: VideoListItemRenameResultCallback<T>?)
+        : Boolean {
+    if (newName == name) return false
 
-    fun showDeleteItemDialog(item: T, onDeleteAction: (() -> Unit)? = null)
-    fun showDeleteItemsPopupWindow(vararg items: T, onDeleteAction: (() -> Unit)? = null)
-    fun showRenameItemDialog(item: T, onRenameAction: (() -> Unit)? = null)
-    fun showItemDetailsDialog(item: T)
-    fun showVideosMovePage(vararg items: T)
+    val context: Context = App.getInstanceUnsafe()!!
 
-    fun deleteItems(vararg items: T) = deleteItemsInternal(items)
-
-    fun renameItem(item: T, newName: String, view: View? = null): Boolean {
-        // 如果名称没有变化
-        if (newName == item.name) return false
-
-        val context: Context = view?.context ?: App.getInstanceUnsafe()!!
-
-        if (item is Video) {
-            // 如果不存在该视频文件
-            val file = File(item.path)
+    when (this) {
+        is Video -> {
+            val file = File(path)
             if (!file.exists()) {
-                if (view == null) {
-                    Toast.makeText(context, R.string.renameFailedForThisVideoDoesNotExist,
-                            Toast.LENGTH_SHORT).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(view,
-                            R.string.renameFailedForThisVideoDoesNotExist, Snackbar.LENGTH_SHORT)
-                }
+                callback?.onItemRenameFail(this, FAIL_REASON_FILE_NOT_EXIST)
                 return false
             }
 
             val newFile = File(file.parent, newName)
-            // 该路径下存在相同名称的视频文件
-            if (!newName.equals(item.name, ignoreCase = true) && newFile.exists()) {
-                if (view == null) {
-                    Toast.makeText(
-                            context,
-                            R.string.renameFailedForThatDirectoryHasSomeFileWithTheSameName,
-                            Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(
-                            view,
-                            R.string.renameFailedForThatDirectoryHasSomeFileWithTheSameName,
-                            Snackbar.LENGTH_SHORT)
-                }
+            if (!newName.equals(name, ignoreCase = true) && newFile.exists()) {
+                callback?.onItemRenameFail(this, FAIL_REASON_FILE_NAME_CLASHED)
                 return false
             }
 
-            // 如果重命名失败
             if (!file.renameTo(newFile)) {
-                if (view == null) {
-                    Toast.makeText(context, R.string.renameFailed, Toast.LENGTH_SHORT).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(
-                            view, R.string.renameFailed, Snackbar.LENGTH_SHORT)
-                }
+                callback?.onItemRenameFail(this, FAIL_REASON_UNKNOWN)
                 return false
             }
 
-            item.name = newName
-            item.path = newFile.absolutePath
-            return if (VideoListItemDao.getSingleton(context).updateVideo(item)) {
-                if (view == null) {
-                    Toast.makeText(context, R.string.renameSuccessful, Toast.LENGTH_SHORT).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(
-                            view, R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
-                }
+            name = newName
+            path = newFile.absolutePath
+            return if (VideoListItemDao.getSingleton(context).updateVideo(this)) {
+                callback?.onItemRenameSuccess(this)
                 true
             } else {
-                if (view == null) {
-                    Toast.makeText(context, R.string.renameFailed, Toast.LENGTH_SHORT).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(
-                            view, R.string.renameFailed, Snackbar.LENGTH_SHORT)
-                }
-                false
-            }
-        } else if (item is VideoDirectory) {
-            item.name = newName
-            return if (VideoListItemDao.getSingleton(context).updateVideoDir(item)) {
-                if (view == null) {
-                    Toast.makeText(context, R.string.renameSuccessful, Toast.LENGTH_SHORT).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(
-                            view, R.string.renameSuccessful, Snackbar.LENGTH_SHORT)
-                }
-                true
-            } else {
-                if (view == null) {
-                    Toast.makeText(context, R.string.renameFailed, Toast.LENGTH_SHORT).show()
-                } else {
-                    UiUtils.showUserCancelableSnackbar(
-                            view, R.string.renameFailed, Snackbar.LENGTH_SHORT)
-                }
+                callback?.onItemRenameFail(this, FAIL_REASON_UNKNOWN)
                 false
             }
         }
-        return false
+        is VideoDirectory -> {
+            name = newName
+            return if (VideoListItemDao.getSingleton(context).updateVideoDir(this)) {
+                callback?.onItemRenameSuccess(this)
+                true
+            } else {
+                callback?.onItemRenameFail(this, FAIL_REASON_UNKNOWN)
+                false
+            }
+        }
     }
+    return false
 }
 
 fun Any?.shareVideo(video: Video) {
