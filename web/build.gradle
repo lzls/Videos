@@ -32,7 +32,7 @@ android {
 }
 
 dependencies {
-    api project(':common')
+    api project(libraryModulesPrefix + ':common')
     //noinspection GradleDependency (limited by the minimum SDK version (16) supported by this app)
     api 'androidx.webkit:webkit:1.8.0'
 }

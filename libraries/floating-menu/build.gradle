@@ -4,13 +4,13 @@ apply from: "$rootDir/common_build.gradle"
 
 android {
     defaultConfig {
-        minSdkVersion 14
+        //noinspection MinSdkTooLow
+        minSdkVersion 3
         versionCode 1
         versionName "1.0"
     }
 }
 
 dependencies {
-    api 'androidx.preference:preference:1.2.1'
-    api project(':common')
+    api project(libraryModulesPrefix + ':common')
 }

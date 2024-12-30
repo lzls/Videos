@@ -45,15 +45,15 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.core:core-splashscreen:1.0.1'
 
-    implementation project(':common')
-    implementation project(':slidingitemmenu-recyclerview')
-    implementation project(':sliding-drawer-layout')
-    implementation project(':texture-video-view')
-    implementation project(':gallery-viewer')
-    implementation project(':swipeback')
-    implementation project(':circular-checkbox')
-    implementation project(':floating-menu')
     implementation project(':web')
+    implementation project(libraryModulesPrefix + ':common')
+    implementation project(libraryModulesPrefix + ':slidingitemmenu-recyclerview')
+    implementation project(libraryModulesPrefix + ':sliding-drawer-layout')
+    implementation project(libraryModulesPrefix + ':texture-video-view')
+    implementation project(libraryModulesPrefix + ':gallery-viewer')
+    implementation project(libraryModulesPrefix + ':swipeback')
+    implementation project(libraryModulesPrefix + ':circular-checkbox')
+    implementation project(libraryModulesPrefix + ':floating-menu')
 
     implementation 'pub.devrel:easypermissions:3.0.0'
 

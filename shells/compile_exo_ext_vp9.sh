@@ -25,4 +25,5 @@ trace cd "${VP9_MODULE_PATH}/jni" &&
   trace "${NDK_PATH}/ndk-build" APP_ABI=all -j4 &&
   trace rm -rf ../jniLibs &&
   trace mv -f ../libs ../jniLibs &&
-  trace cp -rf ../jniLibs "$EXO_PLAYER_ROOT/../Videos/exoplayer2-extensions/vp9/src/main"
+  trace cp -rf \
+      ../jniLibs "$EXO_PLAYER_ROOT/../Videos/libraries/exoplayer2-extensions/vp9/src/main"
