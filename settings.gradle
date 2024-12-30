@@ -1,31 +1,21 @@
 include ':app',
-        ':common',
-        ':circular-checkbox',
-        ':floating-menu',
-        ':gallery-viewer',
-        ':swipeback',
-        ':sliding-drawer-layout',
-        ':slidingitemmenu-recyclerview',
-        ':texture-video-view',
-        ':ijkplayer',
-        ':web'
+        ':web',
+        libraryModulesPrefix,
+        libraryModulesPrefix + ':common',
+        libraryModulesPrefix + ':circular-checkbox',
+        libraryModulesPrefix + ':floating-menu',
+        libraryModulesPrefix + ':gallery-viewer',
+        libraryModulesPrefix + ':swipeback',
+        libraryModulesPrefix + ':sliding-drawer-layout',
+        libraryModulesPrefix + ':slidingitemmenu-recyclerview',
+        libraryModulesPrefix + ':texture-video-view',
+        libraryModulesPrefix + ':ijkplayer',
+        exoplayer2ExtensionModulesPrefix,
+        exoplayer2ExtensionModulesPrefix + ":av1",
+        exoplayer2ExtensionModulesPrefix + ":ffmpeg",
+        exoplayer2ExtensionModulesPrefix + ":vp9"
 
-def exoplayer2ExtensionModulesFolder = 'exoplayer2-extensions'
-def exoplayer2ExtensionModulesPrefix = ':' + exoplayer2ExtensionModulesFolder + '-'
 gradle.ext {
-    owner.exoplayer2ExtensionModulesPrefix = exoplayer2ExtensionModulesPrefix
     owner.applicationId = 'com.liuzhenlin.videos'
     owner.buildWebModuleAsApp = false
 }
-
-include(exoplayer2ExtensionModulesPrefix + 'av1')
-project(exoplayer2ExtensionModulesPrefix + 'av1').projectDir =
-        new File(rootDir, exoplayer2ExtensionModulesFolder + '/av1')
-
-include(exoplayer2ExtensionModulesPrefix + 'ffmpeg')
-project(exoplayer2ExtensionModulesPrefix + 'ffmpeg').projectDir =
-        new File(rootDir, exoplayer2ExtensionModulesFolder + '/ffmpeg')
-
-include(exoplayer2ExtensionModulesPrefix + 'vp9')
-project(exoplayer2ExtensionModulesPrefix + 'vp9').projectDir =
-        new File(rootDir, exoplayer2ExtensionModulesFolder + '/vp9')
