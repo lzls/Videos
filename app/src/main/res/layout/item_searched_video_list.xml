@@ -37,7 +37,8 @@
                 android:text="未命名"
                 android:textSize="@dimen/listitem_first_level_text_size"
                 android:textColor="@color/textColorPrimary"
-                android:singleLine="true"
+                android:maxLines="2"
+                android:ellipsize="end"
                 android:textAlignment="viewStart"
                 android:gravity="start"
                 tools:ignore="HardcodedText" />
