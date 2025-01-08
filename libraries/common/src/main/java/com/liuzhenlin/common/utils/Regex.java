@@ -53,37 +53,37 @@ public class Regex {
         return mMatcher.end(group);
     }
 
-    public synchronized boolean matches(String input) {
+    public boolean matches(String input) {
         ensureMatcherInput(input);
         return mMatcher.matches();
     }
 
-    public synchronized boolean find(String input) {
+    public boolean find(String input) {
         ensureMatcherInput(input);
         return mMatcher.find();
     }
 
-    public synchronized boolean find(String input, int start) {
+    public boolean find(String input, int start) {
         ensureMatcherInput(input);
         return mMatcher.find(start);
     }
 
-    public synchronized boolean lookingAt(String input) {
+    public boolean lookingAt(String input) {
         ensureMatcherInput(input);
         return mMatcher.lookingAt();
     }
 
     @Nullable
-    public synchronized String group() {
+    public String group() {
         return mMatcher.group();
     }
 
     @Nullable
-    public synchronized String group(int group) {
+    public String group(int group) {
         return mMatcher.group(group);
     }
 
-    public synchronized int groupCount() {
+    public int groupCount() {
         return mMatcher.groupCount();
     }
 
@@ -106,12 +106,12 @@ public class Regex {
         return list.toArray(Consts.EMPTY_STRING_ARRAY);
     }
 
-    public synchronized String replaceFirst(String input, String replacement) {
+    public String replaceFirst(String input, String replacement) {
         ensureMatcherInput(input);
         return mMatcher.replaceFirst(replacement);
     }
 
-    public synchronized String replaceAll(String input, String replacement) {
+    public String replaceAll(String input, String replacement) {
         ensureMatcherInput(input);
         return mMatcher.replaceAll(replacement);
     }
