@@ -50,14 +50,14 @@ public abstract class ImageLoadingListAdapter<VH extends RecyclerView.ViewHolder
     @Override
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
         mRecyclerView = recyclerView;
-        recyclerView.addOnScrollListener(mScrollListener);
+//        recyclerView.addOnScrollListener(mScrollListener);
     }
 
     @CallSuper
     @Override
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
         mRecyclerView = null;
-        recyclerView.removeOnScrollListener(mScrollListener);
+//        recyclerView.removeOnScrollListener(mScrollListener);
     }
 
     @CallSuper
@@ -68,7 +68,7 @@ public abstract class ImageLoadingListAdapter<VH extends RecyclerView.ViewHolder
 
     public void loadItemImagesIfNotScrolling(@NonNull VH holder) {
         RecyclerView parent = mRecyclerView;
-        if (parent != null && parent.getScrollState() == RecyclerView.SCROLL_STATE_IDLE) {
+        if (parent != null /*&& parent.getScrollState() == RecyclerView.SCROLL_STATE_IDLE*/) {
             loadItemImages(holder);
         }
     }
