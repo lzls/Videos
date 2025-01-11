@@ -58,10 +58,11 @@ import com.liuzhenlin.common.compat.ViewCompatibility;
 import com.liuzhenlin.common.listener.OnBackPressedListener;
 import com.liuzhenlin.common.utils.BitmapUtils;
 import com.liuzhenlin.common.utils.ColorUtils;
+import com.liuzhenlin.common.utils.Coroutines;
 import com.liuzhenlin.common.utils.DensityUtils;
-import com.liuzhenlin.common.utils.Executors;
 import com.liuzhenlin.common.utils.FileUtils;
 import com.liuzhenlin.common.utils.IOUtils;
+import com.liuzhenlin.common.utils.JCoroutine;
 import com.liuzhenlin.common.utils.TextViewUtils;
 import com.liuzhenlin.common.utils.ThemeUtils;
 import com.liuzhenlin.common.utils.TransitionUtils;
@@ -86,6 +87,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.LinkedHashMap;
+
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.Dispatchers;
 
 import static com.liuzhenlin.common.Consts.EMPTY_STRING;
 import static com.liuzhenlin.videos.Consts.TEXT_COLOR_PRIMARY_DARK;
@@ -370,7 +374,7 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
     }
 
     @Synthetic void setDrawerBackground(String path) {
-        Executors.SERIAL_EXECUTOR.execute(new LoadDrawerImageTask(this, path));
+        new LoadDrawerImageTask(this, path).execute();
     }
 
     private static final class LoadDrawerImageTask implements Runnable {
@@ -382,10 +386,30 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
             mImagePath = imagePath;
         }
 
+        void execute() {
+            CoroutineScope coroutineScope = getCoroutineScope();
+            if (coroutineScope != null) {
+                JCoroutine.launch(coroutineScope, JCoroutine.SingleDispatcher, this);
+            }
+        }
+
+        CoroutineScope getCoroutineScope() {
+            MainActivity activity = getActivity();
+            return activity == null ? null : Coroutines.getLifecycleScope(activity);
+        }
+
+        MainActivity getActivity() {
+            MainActivity activity = mActivityRef.get();
+            if (activity == null || activity.isFinishing()) {
+                return null;
+            }
+            return activity;
+        }
+
         @Override
         public void run() {
-            final MainActivity activity = mActivityRef.get();
-            if (activity == null || activity.isFinishing()) {
+            final MainActivity activity = getActivity();
+            if (activity == null) {
                 return;
             }
 
@@ -405,12 +429,15 @@ public class MainActivity extends StatusBarTransparentActivity implements View.O
         }
 
         void setDrawerBackground(Bitmap bmp) {
-            Executors.MAIN_EXECUTOR.post(() -> {
-                final MainActivity activity = mActivityRef.get();
-                if (activity != null && !activity.isFinishing()) {
-                    activity.setDrawerBackground(bmp, mImagePath);
-                }
-            });
+            final CoroutineScope coroutineScope = getCoroutineScope();
+            if (coroutineScope != null) {
+                JCoroutine.launch(coroutineScope, Dispatchers.getMain(), () -> {
+                    final MainActivity activity = getActivity();
+                    if (activity != null) {
+                        activity.setDrawerBackground(bmp, mImagePath);
+                    }
+                });
+            }
         }
     }
 

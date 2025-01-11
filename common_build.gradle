@@ -8,6 +8,7 @@ final boolean appModule = plugins.hasPlugin('com.android.application')
 if (appModule) {
     apply plugin: 'com.guardsquare.proguard'
 }
+apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -42,6 +43,7 @@ if (appModule) {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation "androidx.appcompat:appcompat:$rootProject.ext.appcompatVersion"
 
     testImplementation "junit:junit:$rootProject.ext.testJunitVersion"

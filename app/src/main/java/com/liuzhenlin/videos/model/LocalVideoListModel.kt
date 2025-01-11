@@ -12,6 +12,7 @@ import android.os.AsyncTask
 import android.os.Environment
 import android.os.Handler
 import com.liuzhenlin.common.Consts
+import com.liuzhenlin.common.utils.AppScope
 import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.videos.*
@@ -24,6 +25,10 @@ import com.liuzhenlin.videos.view.fragment.VideoListItemDeleteOnDiskListener
 import com.liuzhenlin.videos.view.fragment.VideoListItemRenameResultCallback
 import com.liuzhenlin.videos.view.fragment.deleteOnDisk
 import com.liuzhenlin.videos.view.fragment.renameTo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
 
@@ -302,14 +307,15 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
     }
 
     override fun updateVideoDirectory(videodir: VideoDirectory) {
+        val dirPath = videodir.path
         loop@ for ((i, item) in mVideoListItems.withIndex()) {
-            if (item.path != videodir.path) continue@loop
+            if (item.path != dirPath) continue@loop
 
             val dao = VideoListItemDao.getSingleton(mContext)
             when (videodir.videoCount()) {
                 0 -> {
                     if (item is VideoDirectory) {
-                        dao.deleteVideoDir(item.path)
+                        AppScope.launch(Dispatchers.IO) { dao.deleteVideoDir(dirPath) }
                     }
 
                     mVideoListItems.removeAt(i)
@@ -323,15 +329,25 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
                     if (item is Video || compactVideoDir) {
                         if (compactVideoDir) {
                             val vd = videodir.videoListItems[0]
-                            if (vd.isTopped) {
-                                vd.isTopped = false
-                                dao.setVideoListItemTopped(vd, false)
+                            AppScope.launch(Dispatchers.Main.immediate) {
+                                if (vd.isTopped) {
+                                    vd.isTopped = false
+                                    val vd1 = vd.shallowCopy<Video>()
+                                    launch(Dispatchers.IO) {
+                                        dao.setVideoListItemTopped(vd1, false)
+                                    }
+                                }
+                                withContext(Dispatchers.IO) {
+                                    dao.deleteVideoDir(dirPath)
+                                }
                             }
-                            dao.deleteVideoDir(videodir.path)
                         } else {
                             if (videodir.isTopped) {
                                 videodir.isTopped = false
-                                dao.setVideoListItemTopped(videodir, false)
+                                val videodir1 = videodir.shallowCopy<VideoDirectory>()
+                                AppScope.launch(Dispatchers.IO) {
+                                    dao.setVideoListItemTopped(videodir1, false)
+                                }
                             }
                         }
 
@@ -380,7 +396,10 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         val item = mVideoListItems[index]
         if (item.isTopped != topped) {
             item.isTopped = topped
-            VideoListItemDao.getSingleton(mContext).setVideoListItemTopped(item, topped)
+            val item1 = item.shallowCopy<VideoListItem>()
+            AppScope.launch(Dispatchers.IO) {
+                VideoListItemDao.getSingleton(mContext).setVideoListItemTopped(item1, topped)
+            }
 
             val newIndex = mVideoListItems.reordered().indexOf(item)
             if (newIndex != index) {
@@ -404,10 +423,13 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
 
     private fun deleteItemsOnDisk(vararg items: VideoListItem,
                                   listener: VideoListItemDeleteOnDiskListener<VideoListItem>?) {
+        val items1 = items.clone().onEach {
+            if (it is Video) it.shallowCopy<Video>() else it.deepCopy<VideoListItem>()
+        }
         listener?.onItemsDeleteStart(*items)
-        Executors.THREAD_POOL_EXECUTOR.execute {
-            items.deleteOnDisk()
-            Executors.MAIN_EXECUTOR.execute {
+        AppScope.launch(Dispatchers.IO) {
+            items1.deleteOnDisk()
+            withContext(Dispatchers.Main) {
                 listener?.onItemsDeleteFinish(*items)
             }
         }
@@ -438,20 +460,31 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
 
     override fun renameItemTo(
             item: VideoListItem, callback: VideoListItemRenameResultCallback<VideoListItem>?) {
-        val index = mVideoListItems.indexOf(item)
+        var index = mVideoListItems.indexOf(item)
         if (index >= 0) {
             val i = mVideoListItems[index]
 
-            if (!i.renameTo(item.name, callback))
-                return
+            val i1 = i.shallowCopy<VideoListItem>()
+            val newName = item.name
+            AppScope.launch(Dispatchers.IO) {
+                if (!i1.renameTo(newName, callback))
+                    return@launch
 
-            // Use i for index search because its id/path might have been updated in the above
-            // i.renameTo() method invocation
-            val newIndex = mVideoListItems.reordered().indexOf(i)
-            if (newIndex != index) {
-                mVideoListItems.add(newIndex, mVideoListItems.removeAt(index))
+                val i2 = i1.shallowCopy<VideoListItem>()
+                withContext(mCoroutineScope.coroutineContext[Job]!! + Dispatchers.Main) {
+                    // Use i for index search because its id/path might have been updated in
+                    // the above i1.renameTo() method invocation
+                    index = mVideoListItems.indexOf(i)
+                    if (index >= 0) {
+                        mVideoListItems[index] = i2
+                        val newIndex = mVideoListItems.reordered().indexOf(i2)
+                        if (newIndex != index) {
+                            mVideoListItems.add(newIndex, mVideoListItems.removeAt(index))
+                        }
+                        mCallback?.onItemRenamed(index, newIndex)
+                    }
+                }
             }
-            mCallback?.onItemRenamed(index, newIndex)
         }
     }
 
