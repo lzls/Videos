@@ -8,6 +8,10 @@ package com.liuzhenlin.videos.model
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.AsyncTask
+import com.liuzhenlin.common.utils.ModelScope
+import com.liuzhenlin.common.utils.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 
 /**
  * @author 刘振林
@@ -19,12 +23,21 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
     }
 
     protected val mContext: Context = context.applicationContext
+    protected val mCoroutineScope: CoroutineScope get() = _mCoroutineScope.get()
     private var mLoader: AsyncTask<*, *, *>? = null
     private var mOnLoadListeners: MutableList<OnLoadListener<Progress, Result>>? = null
     protected var mCallback: Callback? = null
 
+    private val _mCoroutineScope: Singleton<Void, CoroutineScope> =
+        object : Singleton<Void, CoroutineScope>() {
+            override fun onCreate(vararg voids: Void?): CoroutineScope {
+                return ModelScope()
+            }
+        }
+
     open fun dispose() {
         stopLoader()
+        _mCoroutineScope.getNoCreate()?.cancel()
         mCallback = null
         mOnLoadListeners?.clear()
     }

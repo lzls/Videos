@@ -11,6 +11,7 @@ import android.os.AsyncTask
 import com.liuzhenlin.common.Consts
 import com.liuzhenlin.common.Consts.EMPTY_STRING
 import com.liuzhenlin.common.utils.AlgorithmUtil
+import com.liuzhenlin.common.utils.AppScope
 import com.liuzhenlin.common.utils.Executors
 import com.liuzhenlin.videos.allEqual
 import com.liuzhenlin.videos.bean.Video
@@ -21,6 +22,10 @@ import com.liuzhenlin.videos.view.fragment.VideoListItemDeleteOnDiskListener
 import com.liuzhenlin.videos.view.fragment.VideoListItemRenameResultCallback
 import com.liuzhenlin.videos.view.fragment.deleteOnDisk
 import com.liuzhenlin.videos.view.fragment.renameTo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * @author 刘振林
@@ -146,10 +151,11 @@ class LocalSearchedVideoListModel(context: Context)
     }
 
     override fun deleteVideo(video: Video, listener: VideoListItemDeleteOnDiskListener<Video>?) {
+        val video1 = video.shallowCopy<Video>()
         listener?.onItemsDeleteStart(video)
-        Executors.THREAD_POOL_EXECUTOR.execute {
-            arrayOf(video).deleteOnDisk()
-            Executors.MAIN_EXECUTOR.execute {
+        AppScope.launch(Dispatchers.IO) {
+            arrayOf(video1).deleteOnDisk()
+            withContext(Dispatchers.Main) {
                 listener?.onItemsDeleteFinish(video)
             }
         }
@@ -164,27 +170,38 @@ class LocalSearchedVideoListModel(context: Context)
     }
 
     override fun renameVideoTo(video: Video, callback: VideoListItemRenameResultCallback<Video>?) {
-        val idx = mVideos.indexOf(video)
+        var idx = mVideos.indexOf(video)
         if (idx >= 0) {
             val v = mVideos[idx]
 
-            if (!v.renameTo(video.name, callback))
-                return
+            val v1 = v.shallowCopy<Video>()
+            val newName = video.name
+            AppScope.launch(Dispatchers.IO) {
+                if (!v1.renameTo(newName, callback))
+                    return@launch
 
-            v.name = video.name
-            mVideos.sortByElementName()
+                val v2 = v1.shallowCopy<Video>()
+                withContext(mCoroutineScope.coroutineContext[Job]!! + Dispatchers.Main) {
+                    // Use v for index search because its id might have been updated in the above
+                    // v1.renameTo() method invocation
+                    idx = mVideos.indexOf(v)
+                    if (idx >= 0) {
+                        mVideos[idx] = v2
+                        mVideos.sortByElementName()
 
-            // Use v for index search because its id might have been updated in the above
-            // v.renameTo() method invocation
-            val index = mSearchedVideos.indexOf(v)
-            if (index >= 0) {
-                mSearchedVideos[index].name = video.name
-                if (mSearchText.length == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
-                    mSearchedVideos.sortByElementName()
-                    mCallback?.onSearchedVideoRenamed(index, mSearchedVideos.indexOf(v))
-                } else {
-                    mSearchedVideos.removeAt(index)
-                    mCallback?.onSearchedVideoDeleted(index)
+                        val index = mSearchedVideos.indexOf(v)
+                        if (index >= 0) {
+                            mSearchedVideos[index] = v2
+                            if (mSearchText.length
+                                    == AlgorithmUtil.lcs(video.name, mSearchText, true).length) {
+                                mSearchedVideos.sortByElementName()
+                                mCallback?.onSearchedVideoRenamed(index, mSearchedVideos.indexOf(v2))
+                            } else {
+                                mSearchedVideos.removeAt(index)
+                                mCallback?.onSearchedVideoDeleted(index)
+                            }
+                        }
+                    }
                 }
             }
         }

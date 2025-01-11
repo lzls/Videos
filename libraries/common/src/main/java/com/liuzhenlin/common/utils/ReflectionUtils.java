@@ -5,6 +5,8 @@
 
 package com.liuzhenlin.common.utils;
 
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -103,6 +105,18 @@ public class ReflectionUtils {
             return constructor;
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Class<?> getDeclaredClass(@NonNull Class<?> clazz, @Nullable String className) {
+        if (!TextUtils.isEmpty(className)) {
+            for (Class<?> c : clazz.getDeclaredClasses()) {
+                if (c.getName().equals(className)) {
+                    return c;
+                }
+            }
         }
         return null;
     }

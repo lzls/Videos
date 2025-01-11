@@ -6,7 +6,7 @@
 package com.liuzhenlin.videos.model
 
 import android.content.Context
-import com.liuzhenlin.common.utils.Executors
+import com.liuzhenlin.common.utils.AppScope
 import com.liuzhenlin.common.utils.FileUtils
 import com.liuzhenlin.common.utils.Regex
 import com.liuzhenlin.videos.bean.Video
@@ -18,6 +18,9 @@ import com.liuzhenlin.videos.insertVideoDir
 import com.liuzhenlin.videos.suffix
 import com.liuzhenlin.videos.title
 import com.liuzhenlin.videos.videoCount
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -115,9 +118,9 @@ private class VideoMoveRepositoryImpl(
 
     override fun moveVideosToCheckedDir() {
         mCallback?.onVideoMoveStart()
-        Executors.THREAD_POOL_EXECUTOR.execute {
+        AppScope.launch(Dispatchers.IO) {
             val moved = moveVideosToCheckedDirSync()
-            Executors.MAIN_EXECUTOR.execute {
+            withContext(Dispatchers.Main) {
                 mCallback?.onVideoMoveFinish(moved)
             }
         }

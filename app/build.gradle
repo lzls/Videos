@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 apply from: "$rootDir/common_build.gradle"
 
@@ -41,7 +40,6 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.core:core-splashscreen:1.0.1'
 

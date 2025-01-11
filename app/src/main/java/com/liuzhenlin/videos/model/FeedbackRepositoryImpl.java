@@ -15,8 +15,7 @@ import androidx.core.util.Consumer;
 
 import com.liuzhenlin.common.Consts;
 import com.liuzhenlin.common.utils.BitmapUtils;
-import com.liuzhenlin.common.utils.Executors;
-import com.liuzhenlin.common.utils.Utils;
+import com.liuzhenlin.common.utils.JCoroutine;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.FeedbackInfo;
 import com.liuzhenlin.videos.dao.FeedbackSavedPrefs;
@@ -26,7 +25,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.Dispatchers;
 
 class FeedbackRepositoryImpl extends BaseRepository<FeedbackRepository.Callback>
         implements FeedbackRepository {
@@ -54,7 +55,8 @@ class FeedbackRepositoryImpl extends BaseRepository<FeedbackRepository.Callback>
 
     @Override
     public void loadSavedFeedbackInfo(@NonNull Consumer<FeedbackInfo> callback) {
-        Executors.THREAD_POOL_EXECUTOR.execute(() -> {
+        CoroutineScope coroutineScope = mCoroutineScope.get();
+        JCoroutine.launch(coroutineScope, () -> {
             String feedbackText = mFeedbackSPs.getText();
             String contactWay = mFeedbackSPs.getContactWay();
             List<String> picturePaths = mFeedbackSPs.getPicturePaths();
@@ -73,7 +75,7 @@ class FeedbackRepositoryImpl extends BaseRepository<FeedbackRepository.Callback>
                     mFeedbackSPs.edit().setPicturePaths(picturePaths).apply();
                 }
             }
-            Executors.MAIN_EXECUTOR.post(
+            JCoroutine.launch(coroutineScope, Dispatchers.getMain(),
                     () -> callback.accept(new FeedbackInfo(feedbackText, contactWay, picturePaths)));
         });
     }
@@ -123,20 +125,14 @@ class FeedbackRepositoryImpl extends BaseRepository<FeedbackRepository.Callback>
         final List<String> picturePaths = mPicturePaths;
         if (picturePath != null && !picturePaths.contains(picturePath)) {
             picturePaths.add(picturePath);
-            Executors.SERIAL_EXECUTOR.execute(() -> {
-                final AtomicBoolean pictureRemoved = new AtomicBoolean();
-                Utils.runOnHandlerSync(Executors.MAIN_EXECUTOR.getHandler(),
-                        () -> {
-                            if (!picturePaths.contains(picturePath)) {
-                                pictureRemoved.set(true);
-                            }
-                        });
-                if (pictureRemoved.get()) {
+            JCoroutine.launch(mCoroutineScope.get(), JCoroutine.SingleDispatcher, () -> {
+                if (JCoroutine.runBlocking(
+                        Dispatchers.getMain(), () -> !picturePaths.contains(picturePath), false)) {
                     return;
                 }
                 final Bitmap bitmap = BitmapUtils.decodeRotatedBitmapFormFile(picturePath);
                 if (bitmap != null) {
-                    Executors.MAIN_EXECUTOR.post(() -> {
+                    JCoroutine.launch(mCoroutineScope.get(), Dispatchers.getMain(), () -> {
                         if (picturePaths.contains(picturePath)) {
                             List<String> loadedPicturePaths = mLoadedPicturePaths;
                             List<Bitmap> pictures = mPictures;

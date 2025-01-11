@@ -11,10 +11,14 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.liuzhenlin.common.utils.AppScope;
 import com.liuzhenlin.common.utils.FileUtils;
+import com.liuzhenlin.common.utils.JCoroutine;
 import com.liuzhenlin.videos.ExtentionsKt;
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.dao.VideoListItemDao;
+
+import kotlinx.coroutines.Dispatchers;
 
 import static com.liuzhenlin.common.Consts.NO_ID;
 
@@ -134,7 +138,8 @@ class VideoRepositoryImpl extends BaseRepository<VideoRepository.Callback>
         if (updateDB) {
             final long id = video.getId();
             if (id != NO_ID) {
-                VideoListItemDao.getSingleton(mContext).setVideoProgress(id, progress);
+                JCoroutine.launch(AppScope.INSTANCE, Dispatchers.getIO(),
+                        () -> VideoListItemDao.getSingleton(mContext).setVideoProgress(id, progress));
             }
         }
     }

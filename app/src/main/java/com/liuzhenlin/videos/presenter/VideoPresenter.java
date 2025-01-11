@@ -16,6 +16,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.liuzhenlin.common.utils.Coroutines;
+import com.liuzhenlin.common.utils.JCoroutine;
 import com.liuzhenlin.common.utils.ShareUtils;
 import com.liuzhenlin.common.utils.Synthetic;
 import com.liuzhenlin.texturevideoview.TextureVideoView;
@@ -31,6 +33,9 @@ import com.liuzhenlin.videos.view.fragment.VideoListItemOpsKt;
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
+
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.Dispatchers;
 
 import static com.liuzhenlin.common.Consts.NO_ID;
 
@@ -77,65 +82,26 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter,
 
     private void initPlaylist(
             Bundle savedInstanceState, Intent intent, Runnable runOnInitialized) {
-        VideoRepository repository = mVideoRepository;
-        if (repository == null) return;
+        VideoRepository repo = mVideoRepository;
+        if (repo == null) return;
 
-        final boolean stateRestore = savedInstanceState != null;
-        Video[] videos = null;
-        int videoIndex = -1;
-        Video video;
-        boolean initSuceess = false;
+        CoroutineScope viewModelScope = Coroutines.getViewModelScope(this);
+        JCoroutine.launch(viewModelScope, Dispatchers.getIO(), () -> {
+            final boolean stateRestore = savedInstanceState != null;
+            Video[] videos = null;
+            int videoIndex = -1;
+            Video video;
+            boolean initSuceess = false;
 
-        Parcelable[] parcelables = intent.getParcelableArrayExtra(Consts.KEY_VIDEOS);
-        if (parcelables != null) {
-            final int length = parcelables.length;
-            if (length > 0) {
-                videos = new Video[length];
-                for (int i = 0; i < length; i++) {
-                    video = (Video) parcelables[i];
-                    if (stateRestore) {
-                        video.setProgress(repository.getVideoProgressFromDB(video));
-                    }
-                    videos[i] = video;
-                }
-                if (stateRestore) {
-                    videoIndex = savedInstanceState.getInt(KEY_VIDEO_INDEX);
-                } else {
-                    videoIndex = intent.getIntExtra(Consts.KEY_SELECTION, 0);
-                    if (videoIndex < 0 || videoIndex >= length) {
-                        videoIndex = 0;
-                    }
-                }
-                initSuceess = true;
-            }
-        }
-
-        if (!initSuceess) {
-            video = intent.getParcelableExtra(Consts.KEY_VIDEO);
-            if (video != null) {
-                if (stateRestore) {
-                    video.setProgress(repository.getVideoProgressFromDB(video));
-                }
-                videos = new Video[]{video};
-                videoIndex = 0;
-                initSuceess = true;
-            }
-        }
-
-        if (!initSuceess) {
-            Parcelable[] videoUriParcels = (Parcelable[])
-                    intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
-            Serializable[] videoTitleSerials = (Serializable[])
-                    intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
-            if (videoUriParcels != null) {
-                final int length = videoUriParcels.length;
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(Consts.KEY_VIDEOS);
+            if (parcelables != null) {
+                final int length = parcelables.length;
                 if (length > 0) {
                     videos = new Video[length];
                     for (int i = 0; i < length; i++) {
-                        video = repository.getVideoForUri((Uri) videoUriParcels[i],
-                                (String) (videoTitleSerials != null ? videoTitleSerials[i] : null));
-                        if (stateRestore && video.getId() != NO_ID) {
-                            video.setProgress(repository.getVideoProgressFromDB(video));
+                        video = (Video) parcelables[i];
+                        if (stateRestore) {
+                            video.setProgress(repo.getVideoProgressFromDB(video));
                         }
                         videos[i] = video;
                     }
@@ -150,40 +116,88 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter,
                     initSuceess = true;
                 }
             }
-        }
 
-        if (!initSuceess) {
-            Uri uri = intent.getData();
-            if (uri == null) {
-                uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-                if (uri == null) {
-                    CharSequence uriCharSequence = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
-                    if (uriCharSequence != null) {
-                        uri = Uri.parse(uriCharSequence.toString());
+            if (!initSuceess) {
+                video = intent.getParcelableExtra(Consts.KEY_VIDEO);
+                if (video != null) {
+                    if (stateRestore) {
+                        video.setProgress(repo.getVideoProgressFromDB(video));
+                    }
+                    videos = new Video[]{video};
+                    videoIndex = 0;
+                    initSuceess = true;
+                }
+            }
+
+            if (!initSuceess) {
+                Parcelable[] videoUriParcels = (Parcelable[])
+                        intent.getSerializableExtra(Consts.KEY_VIDEO_URIS);
+                Serializable[] videoTitleSerials = (Serializable[])
+                        intent.getSerializableExtra(Consts.KEY_VIDEO_TITLES);
+                if (videoUriParcels != null) {
+                    final int length = videoUriParcels.length;
+                    if (length > 0) {
+                        videos = new Video[length];
+                        for (int i = 0; i < length; i++) {
+                            video = repo.getVideoForUri((Uri) videoUriParcels[i],
+                                    (String) (videoTitleSerials != null ? videoTitleSerials[i] : null));
+                            if (stateRestore && video.getId() != NO_ID) {
+                                video.setProgress(repo.getVideoProgressFromDB(video));
+                            }
+                            videos[i] = video;
+                        }
+                        if (stateRestore) {
+                            videoIndex = savedInstanceState.getInt(KEY_VIDEO_INDEX);
+                        } else {
+                            videoIndex = intent.getIntExtra(Consts.KEY_SELECTION, 0);
+                            if (videoIndex < 0 || videoIndex >= length) {
+                                videoIndex = 0;
+                            }
+                        }
+                        initSuceess = true;
                     }
                 }
             }
-            if (uri != null) {
-                video = repository.getVideoForUri(uri, intent.getStringExtra(Consts.KEY_VIDEO_TITLE));
-                if (stateRestore && video.getId() != NO_ID) {
-                    video.setProgress(repository.getVideoProgressFromDB(video));
-                }
-                videos = new Video[]{video};
-                videoIndex = 0;
-                initSuceess = true;
-            }
-        }
 
-        if (initSuceess) {
-            if (runOnInitialized != null) {
-                runOnInitialized.run();
+            if (!initSuceess) {
+                Uri uri = intent.getData();
+                if (uri == null) {
+                    uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+                    if (uri == null) {
+                        CharSequence uriCharSequence = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+                        if (uriCharSequence != null) {
+                            uri = Uri.parse(uriCharSequence.toString());
+                        }
+                    }
+                }
+                if (uri != null) {
+                    video = repo.getVideoForUri(uri, intent.getStringExtra(Consts.KEY_VIDEO_TITLE));
+                    if (stateRestore && video.getId() != NO_ID) {
+                        video.setProgress(repo.getVideoProgressFromDB(video));
+                    }
+                    videos = new Video[]{video};
+                    videoIndex = 0;
+                    initSuceess = true;
+                }
             }
-            repository.setVideos(videos, videoIndex);
-        } else {
-            if (mView != null) {
-                mView.onPlaylistInitializationFail();
+
+            if (initSuceess) {
+                final Video[] vs = videos;
+                final int vi = videoIndex;
+                JCoroutine.launch(viewModelScope, Dispatchers.getMain(), () -> {
+                    if (runOnInitialized != null) {
+                        runOnInitialized.run();
+                    }
+                    repo.setVideos(vs, vi);
+                });
+            } else {
+                JCoroutine.launch(viewModelScope, Dispatchers.getMain(), () -> {
+                    if (mView != null) {
+                        mView.onPlaylistInitializationFail();
+                    }
+                });
             }
-        }
+        });
     }
 
     @Override
