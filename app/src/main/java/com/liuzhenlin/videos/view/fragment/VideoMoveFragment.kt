@@ -33,6 +33,7 @@ import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
 import com.liuzhenlin.videos.contextThemedFirst
 import com.liuzhenlin.videos.presenter.IVideoMovePresenter
+import com.liuzhenlin.videos.presenter.Presenter
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.videoCount
 import com.liuzhenlin.videos.view.IView
@@ -73,32 +74,33 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
 
     private var mVideoMovingDialog: Dialog? = null
 
-    private val mPresenter = IVideoMovePresenter.newInstance()
+    private var mPresenter: IVideoMovePresenter? = null
 
     init {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) =
-                    mPresenter.onViewStart(this@VideoMoveFragment)
+                    mPresenter?.onViewStart(this@VideoMoveFragment) ?: Unit
 
             override fun onResume(owner: LifecycleOwner) =
-                    mPresenter.onViewResume(this@VideoMoveFragment)
+                    mPresenter?.onViewResume(this@VideoMoveFragment) ?: Unit
 
             override fun onPause(owner: LifecycleOwner) =
-                    mPresenter.onViewPaused(this@VideoMoveFragment)
+                    mPresenter?.onViewPaused(this@VideoMoveFragment) ?: Unit
 
             override fun onStop(owner: LifecycleOwner) =
-                    mPresenter.onViewStopped(this@VideoMoveFragment)
+                    mPresenter?.onViewStopped(this@VideoMoveFragment) ?: Unit
         })
     }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        mPresenter.attachToView(this)
+        mPresenter = Presenter.Provider(this).get(IVideoMovePresenter.getImplClass())
+        mPresenter?.attachToView(this)
     }
 
     override fun onDetach() {
         super.onDetach()
-        mPresenter.detachFromView(this)
+        mPresenter?.detachFromView(this)
     }
 
     override fun onReturnResult(resultCode: Int, data: Intent?) {
@@ -113,7 +115,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
 
     override fun onDialogCreated(dialog: Dialog, savedInstanceState: Bundle?) {
         super.onDialogCreated(dialog, savedInstanceState)
-        mPresenter.onViewCreated(this, savedInstanceState)
+        mPresenter?.onViewCreated(this, savedInstanceState)
     }
 
     override fun init(adapter: TargetDirListAdapter, videoQuantity: Int) {
@@ -140,18 +142,18 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         super.onRestoreInstanceState(savedInstanceState)
-        mPresenter.restoreInstanceState(savedInstanceState)
+        mPresenter?.restoreInstanceState(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mPresenter.saveInstanceState(outState)
+        mPresenter?.saveInstanceState(outState)
     }
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         mVideoMovingDialog?.dismiss()
-        mPresenter.onViewDestroyed(this)
+        mPresenter?.onViewDestroyed(this)
         mVideoDirList = null
         mTitleText = null
         mOkayButton = null
@@ -159,7 +161,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
 
     override fun onClick(v: View) {
         when (v.id) {
-            R.id.btn_ok -> mPresenter.moveVideosToCheckedDir()
+            R.id.btn_ok -> mPresenter?.moveVideosToCheckedDir()
             R.id.btn_cancel -> dismiss()
 
             R.id.btn_ok_vmpd -> {
@@ -167,7 +169,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
                 val checkbox = promptDialog.findViewById<CheckBox>(R.id.checkbox)
                 val neverPromptAgain = checkbox!!.isChecked
                 promptDialog.cancel()
-                mPresenter.onVideoMovePromptConfirmed(neverPromptAgain)
+                mPresenter?.onVideoMovePromptConfirmed(neverPromptAgain)
             }
             R.id.btn_cancel_vmpd -> {
                 val promptDialog = v.tag as AppCompatDialog
@@ -280,7 +282,7 @@ class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout
 
         override fun onClick(v: View) {
             val position = v.tag as Int
-            mPresenter.toggleTargetDirChecked(position)
+            mPresenter?.toggleTargetDirChecked(position)
         }
     }
 }

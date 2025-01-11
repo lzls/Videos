@@ -25,4 +25,9 @@ public abstract class BaseRepository<C extends Repository.Callback> implements R
     public void setCallback(@Nullable C callback) {
         mCallback = callback;
     }
+
+    @Override
+    public void dispose() {
+        mCallback = null;
+    }
 }

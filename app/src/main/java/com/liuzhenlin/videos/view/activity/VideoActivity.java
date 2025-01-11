@@ -62,6 +62,7 @@ import com.liuzhenlin.videos.Files;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.bean.Video;
 import com.liuzhenlin.videos.presenter.IVideoPresenter;
+import com.liuzhenlin.videos.presenter.Presenter;
 import com.liuzhenlin.videos.utils.VideoUtils2;
 import com.liuzhenlin.videos.web.youtube.WebService;
 
@@ -98,7 +99,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
     private ImageView mLockUnlockOrientationButton;
 
     @Synthetic IVideoPlayer mVideoPlayer;
-    @Synthetic final IVideoPresenter mPresenter = IVideoPresenter.newInstance();
+    @Synthetic IVideoPresenter mPresenter;
 
     @Synthetic int mVideoWidth;
     @Synthetic int mVideoHeight;
@@ -259,6 +260,7 @@ public class VideoActivity extends BaseActivity implements IVideoView,
         setContentView(R.layout.activity_video);
         initViews();
         mPrivateFlags |= PFLAG_VIEW_CREATED;
+        mPresenter = new Presenter.Provider(this).get(IVideoPresenter.getImplClass());
         mPresenter.attachToView(this);
         mPresenter.onViewCreated(this, savedInstanceState);
         mPresenter.initPlaylist(savedInstanceState, mIntent = getIntent());

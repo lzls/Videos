@@ -8,6 +8,7 @@ package com.liuzhenlin.common.utils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -87,6 +88,19 @@ public class ReflectionUtils {
             Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
             method.setAccessible(true);
             return method;
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static <T> Constructor<T> getDeclaredConstructor(
+            @NonNull Class<T> clazz, @Nullable Class<?>... parameterTypes) {
+        try {
+            Constructor<T> constructor = clazz.getDeclaredConstructor(parameterTypes);
+            constructor.setAccessible(true);
+            return constructor;
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }

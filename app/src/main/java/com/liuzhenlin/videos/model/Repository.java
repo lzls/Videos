@@ -9,6 +9,8 @@ import androidx.annotation.Nullable;
 
 public interface Repository<C extends Repository.Callback> {
 
+    void dispose();
+
     void setCallback(@Nullable C callback);
 
     interface Callback {

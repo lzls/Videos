@@ -58,6 +58,7 @@ import com.liuzhenlin.videos.App;
 import com.liuzhenlin.videos.Consts;
 import com.liuzhenlin.videos.R;
 import com.liuzhenlin.videos.presenter.IFeedbackPresenter;
+import com.liuzhenlin.videos.presenter.Presenter;
 import com.liuzhenlin.videos.view.adapter.GalleryPagerAdapter;
 
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
 
     @Synthetic boolean mShouldSaveDataOnDestroy;
 
-    @Synthetic final IFeedbackPresenter mPresenter = IFeedbackPresenter.newInstance();
+    @Synthetic IFeedbackPresenter mPresenter;
 
     @Nullable
     @Override
@@ -195,6 +196,7 @@ public class FeedbackActivity extends BaseActivity implements IFeedbackView, Vie
             return false;
         });
 
+        mPresenter = new Presenter.Provider(this).get(IFeedbackPresenter.getImplClass());
         mPresenter.attachToView(this);
 
         BaseAdapter adapter = mPresenter.getPictureGridAdapter();

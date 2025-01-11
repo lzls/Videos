@@ -41,8 +41,10 @@ interface ILocalSearchedVideosPresenter : IPresenter<ILocalSearchedVideosView>,
 
     companion object {
         @JvmStatic
-        fun newInstance(): ILocalSearchedVideosPresenter {
-            return LocalSearchedVideosPresenter()
+        fun <T> getImplClass(): Class<T> where T : Presenter<ILocalSearchedVideosView>,
+                                               T : ILocalSearchedVideosPresenter {
+            @Suppress("UNCHECKED_CAST")
+            return LocalSearchedVideosPresenter::class.java as Class<T>
         }
     }
 }
@@ -50,7 +52,9 @@ interface ILocalSearchedVideosPresenter : IPresenter<ILocalSearchedVideosView>,
 class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
         ILocalSearchedVideosPresenter, ILocalSearchedVideoListModel.Callback {
 
-    private val mAdapterWrapper = HeaderAndFooterWrapper(SearchedVideoListAdapter())
+    // Must be set to null when the associated view is destroyed, or memory leak of
+    // the view instance would occur due to ViewModel lifecycle mechanism.
+    private var mAdapterWrapper: SearchedVideoListAdapterWrapper? = null
 
     private var mModel: LocalSearchedVideoListModel? = null
 
@@ -67,24 +71,39 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
 
                 override fun onLoadCanceled() = onVideoItemsLoadCanceled()
             })
+            model.setCallback(this)
             mModel = model
         }
-        model.setCallback(this)
-        model.setVideos(view.getArguments()?.getParcelableArrayList(KEY_VIDEOS) ?: model.videos)
+        model.setVideos(view.getArguments()?.getParcelableArrayList(KEY_VIDEOS) ?: emptyList())
     }
 
     override fun detachFromView(view: ILocalSearchedVideosView) {
+        stopLoadVideos()
+        mModel?.run {
+            view.getArguments()?.putParcelableArrayList(
+                    KEY_VIDEOS, videos as? ArrayList<Video> ?: ArrayList(videos))
+        }
         super.detachFromView(view)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
         val videos = mModel?.videos ?: arrayListOf()
-        view.onReturnResult(RESULT_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT,
+        mView?.onReturnResult(RESULT_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT,
                 Intent().putParcelableArrayListExtra(
                         KEY_VIDEOS, videos as? ArrayList<Video> ?: ArrayList(videos)))
-        mModel?.setCallback(null)
+        mModel?.dispose()
+        mModel = null
     }
 
     override fun onViewCreated(view: ILocalSearchedVideosView) {
         super<Presenter>.onViewCreated(view)
-        view.init(mAdapterWrapper)
+        mAdapterWrapper = HeaderAndFooterWrapper(SearchedVideoListAdapter()).also { view.init(it) }
+    }
+
+    override fun onViewDestroyed(view: ILocalSearchedVideosView) {
+        super.onViewDestroyed(view)
+        mAdapterWrapper = null
     }
 
     override fun startLoadVideos() {
@@ -116,40 +135,52 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onAllSearchedVideosChanged() {
-        mAdapterWrapper.notifyDataSetChanged()
+        mAdapterWrapper?.notifyDataSetChanged()
         mView?.updateListVisibilityAndSearchResultText()
     }
 
-    override fun onSearchedVideoUpdated(index: Int) =
-            mAdapterWrapper.notifyItemChanged(mAdapterWrapper.headersCount + index)
+    override fun onSearchedVideoUpdated(index: Int) {
+        mAdapterWrapper?.let { adapter ->
+            adapter.notifyItemChanged(adapter.headersCount + index)
+        }
+    }
 
-    override fun onSearchedVideoProgressChanged(index: Int) =
-            mAdapterWrapper.notifyItemChanged(mAdapterWrapper.headersCount + index,
-                    Payloads.PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
+    override fun onSearchedVideoProgressChanged(index: Int) {
+        mAdapterWrapper?.let { adapter ->
+            adapter.notifyItemChanged(
+                    adapter.headersCount + index, Payloads.PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
+        }
+    }
 
     override fun onSearchedVideoDeleted(index: Int) {
-        val position = mAdapterWrapper.headersCount + index
-        mAdapterWrapper.notifyItemRemoved(position)
-        mAdapterWrapper.notifyItemRangeChanged(position, mAdapterWrapper.itemCount - 1)
-        mView?.updateListVisibilityAndSearchResultText()
+        mAdapterWrapper?.let { adapter ->
+            val position = adapter.headersCount + index
+            adapter.notifyItemRemoved(position)
+            adapter.notifyItemRangeChanged(position, adapter.itemCount - 1)
+            mView?.updateListVisibilityAndSearchResultText()
+        }
     }
 
     override fun onSearchedVideoRenamed(oldIndex: Int, index: Int) {
         if (index == oldIndex) {
-            mAdapterWrapper.notifyItemChanged(mAdapterWrapper.headersCount + oldIndex,
-                    Payloads.PAYLOAD_REFRESH_ITEM_NAME)
+            mAdapterWrapper?.let { adapter ->
+                adapter.notifyItemChanged(
+                        adapter.headersCount + oldIndex, Payloads.PAYLOAD_REFRESH_ITEM_NAME)
+            }
         } else {
             onSearchedVideoMoved(oldIndex, index)
         }
     }
 
     override fun onSearchedVideoMoved(index: Int, newIndex: Int) {
-        val headersCount = mAdapterWrapper.headersCount
-        val from = headersCount + index
-        val to = headersCount + newIndex
-        mAdapterWrapper.notifyItemRemoved(from)
-        mAdapterWrapper.notifyItemInserted(to)
-        mAdapterWrapper.notifyItemRangeChanged(min(from, to), abs(to - from) + 1)
+        mAdapterWrapper?.let { adapter ->
+            val headersCount = adapter.headersCount
+            val from = headersCount + index
+            val to = headersCount + newIndex
+            adapter.notifyItemRemoved(from)
+            adapter.notifyItemInserted(to)
+            adapter.notifyItemRangeChanged(min(from, to), abs(to - from) + 1)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -220,8 +251,8 @@ class LocalSearchedVideosPresenter : Presenter<ILocalSearchedVideosView>(),
 
         override fun loadItemImages(holder: ILocalSearchedVideosView.SearchedVideoListViewHolder) {
             val searchedVideos = mModel?.searchedVideos ?: return
-            holder.loadItemImages(
-                    searchedVideos[holder.bindingAdapterPosition - mAdapterWrapper.headersCount])
+            val position = holder.bindingAdapterPosition - (mAdapterWrapper?.headersCount ?: return)
+            holder.loadItemImages(searchedVideos[position])
         }
     }
 }

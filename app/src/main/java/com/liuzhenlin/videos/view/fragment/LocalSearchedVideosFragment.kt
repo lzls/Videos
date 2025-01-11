@@ -44,6 +44,7 @@ import com.liuzhenlin.floatingmenu.FloatingMenu
 import com.liuzhenlin.videos.*
 import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.presenter.ILocalSearchedVideosPresenter
+import com.liuzhenlin.videos.presenter.Presenter
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.fragment.Payloads.*
@@ -93,7 +94,8 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
     private lateinit var mAdapterWrapper: SearchedVideoListAdapterWrapper
     private var mSelectedItemIndex = NO_POSITION
 
-    internal val presenter = ILocalSearchedVideosPresenter.newInstance()
+    internal var presenter: ILocalSearchedVideosPresenter? = null
+        private set
 
     private var mVideoOptionsMenu: FloatingMenu? = null
     private var mDownX = 0
@@ -102,16 +104,16 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
     init {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) =
-                    presenter.onViewStart(this@LocalSearchedVideosFragment)
+                    presenter?.onViewStart(this@LocalSearchedVideosFragment) ?: Unit
 
             override fun onResume(owner: LifecycleOwner) =
-                    presenter.onViewResume(this@LocalSearchedVideosFragment)
+                    presenter?.onViewResume(this@LocalSearchedVideosFragment) ?: Unit
 
             override fun onPause(owner: LifecycleOwner) =
-                    presenter.onViewPaused(this@LocalSearchedVideosFragment)
+                    presenter?.onViewPaused(this@LocalSearchedVideosFragment) ?: Unit
 
             override fun onStop(owner: LifecycleOwner) =
-                    presenter.onViewStopped(this@LocalSearchedVideosFragment)
+                    presenter?.onViewStopped(this@LocalSearchedVideosFragment) ?: Unit
         })
     }
 
@@ -123,6 +125,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         super.onAttach(context)
 
         val parent = parentFragment
+        presenter = Presenter.Provider(this).get(ILocalSearchedVideosPresenter.getImplClass())
 
         mInteractionCallback = when {
             parent is InteractionCallback -> parent
@@ -140,7 +143,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         }
         mLifecycleCallback?.onFragmentAttached(this)
 
-        presenter.attachToView(this)
+        presenter?.attachToView(this)
     }
 
     override fun onScreenWidthDpLevelChanged(
@@ -178,7 +181,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
 
                 override fun onQueryTextChange(newText: String): Boolean {
                     mSearchText = newText.trim()
-                    presenter.refreshList(mSearchText)
+                    presenter?.refreshList(mSearchText)
                     return true
                 }
             })
@@ -235,22 +238,22 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         else -> false
     }
 
-    override fun onClick(v: View) = when {
-        v.id == R.id.btn_cancelSearch -> {
-            UiUtils.hideSoftInput(mSearchSrcEditText, true)
-            requireFragmentManager().popBackStackImmediate()
-            Unit
+    override fun onClick(v: View) {
+        when {
+            v.id == R.id.btn_cancelSearch -> {
+                UiUtils.hideSoftInput(mSearchSrcEditText, true)
+                requireFragmentManager().popBackStackImmediate()
+            }
+            v.parent === mRecyclerView -> {
+                presenter?.playVideoAt(v.tag as Int)
+            }
         }
-        v.parent === mRecyclerView -> {
-            presenter.playVideoAt(v.tag as Int)
-        }
-        else -> Unit
     }
 
     override fun onLongClick(v: View) =
             if (v.parent === mRecyclerView) {
                 val index = v.tag as Int
-                presenter.showVideoOptionsMenu(index) { video ->
+                presenter?.showVideoOptionsMenu(index) { video ->
                     val headersCount = mAdapterWrapper.headersCount
                     val position = headersCount + index
                     val videoWritable = video.isWritable
@@ -263,11 +266,11 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
                     mVideoOptionsMenu!!.setItemEnabled(R.id.rename, videoWritable)
                     mVideoOptionsMenu!!.setOnItemClickListener { menuItem, _ ->
                         when (menuItem.iconResId) {
-                            R.drawable.ic_file_move_menu -> presenter.moveVideoAt(index)
-                            R.drawable.ic_delete_24dp_menu -> presenter.deleteVideoAt(index)
-                            R.drawable.ic_edit_24dp_menu -> presenter.renameVideoAt(index)
-                            R.drawable.ic_share_24dp_menu -> presenter.shareVideoAt(index)
-                            R.drawable.ic_info_24dp_menu -> presenter.viewDetailsOfVideoAt(index)
+                            R.drawable.ic_file_move_menu -> presenter?.moveVideoAt(index)
+                            R.drawable.ic_delete_24dp_menu -> presenter?.deleteVideoAt(index)
+                            R.drawable.ic_edit_24dp_menu -> presenter?.renameVideoAt(index)
+                            R.drawable.ic_share_24dp_menu -> presenter?.shareVideoAt(index)
+                            R.drawable.ic_info_24dp_menu -> presenter?.viewDetailsOfVideoAt(index)
                         }
                     }
                     mVideoOptionsMenu!!.setOnDismissListener {
@@ -289,7 +292,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mLifecycleCallback?.onFragmentViewCreated(this)
-        presenter.onViewCreated(this, savedInstanceState)
+        presenter?.onViewCreated(this, savedInstanceState)
     }
 
     override fun onDestroyView() {
@@ -299,12 +302,14 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         mSelectedItemIndex = NO_POSITION
         mVideoOptionsMenu?.dismiss()
 
-        if (mSearchText != EMPTY_STRING) {
-            mSearchText = EMPTY_STRING
-            presenter.refreshList(EMPTY_STRING)
+        val presenter = presenter
+        if (presenter != null) {
+            if (mSearchText != EMPTY_STRING) {
+                mSearchText = EMPTY_STRING
+                presenter.refreshList(EMPTY_STRING)
+            }
+            presenter.onViewDestroyed(this)
         }
-        presenter.stopLoadVideos()
-        presenter.onViewDestroyed(this)
 
         mInteractionCallback.setOnRefreshLayoutChildScrollUpCallback(null)
     }
@@ -312,7 +317,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
     override fun onDetach() {
         super.onDetach()
         mLifecycleCallback?.onFragmentDetached(this)
-        presenter.detachFromView(this)
+        presenter?.detachFromView(this)
     }
 
     override fun onReturnResult(resultCode: Int, data: Intent?) {
@@ -321,7 +326,7 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        presenter.onActivityResult(requestCode, resultCode, data)
+        presenter?.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun updateListVisibilityAndSearchResultText() {
@@ -335,7 +340,9 @@ class LocalSearchedVideosFragment : BaseFragment(), ILocalSearchedVideosView, Vi
         }
     }
 
-    override fun onRefresh() = presenter.startLoadVideos()
+    override fun onRefresh() {
+        presenter?.startLoadVideos()
+    }
 
     override fun onVideosLoadStart() {
         mVideoOptionsMenu?.dismiss()

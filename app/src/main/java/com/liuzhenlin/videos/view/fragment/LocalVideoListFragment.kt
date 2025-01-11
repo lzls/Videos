@@ -53,6 +53,7 @@ import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter
 import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.PAYLOAD_REFRESH_VIDEODIR_THUMB
 import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.VIEW_TYPE_VIDEO
 import com.liuzhenlin.videos.presenter.ILocalVideoListPresenter.VideoListAdapter.Companion.VIEW_TYPE_VIDEODIR
+import com.liuzhenlin.videos.presenter.Presenter
 import com.liuzhenlin.videos.utils.VideoUtils2
 import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.fragment.Payloads.*
@@ -60,6 +61,8 @@ import com.liuzhenlin.videos.view.fragment.Payloads.*
 /**
  * @author 刘振林
  */
+
+typealias LocalVideoListAdapter = ImageLoadingListAdapter<out ILocalVideoListView.VideoListViewHolder>
 
 interface ILocalVideoListView : IView<ILocalVideoListPresenter>, VideoListItemOpCallback<VideoListItem> {
 
@@ -69,7 +72,7 @@ interface ILocalVideoListView : IView<ILocalVideoListPresenter>, VideoListItemOp
     fun onReturnResult(resultCode: Int, data: Intent?)
 
     fun init(isSublist: Boolean, listTitle: String?, listTitleDesc: String?,
-             listAdapter: ImageLoadingListAdapter<out VideoListViewHolder>)
+             listAdapter: LocalVideoListAdapter)
 
     fun goToLocalVideoSubListFragment(args: Bundle)
     fun goToVideoMoveFragment(args: Bundle)
@@ -100,8 +103,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     private var mLifecycleCallback: FragmentPartLifecycleCallback? = null
 
     private lateinit var mRecyclerView: SlidingItemMenuRecyclerView
-    private lateinit var mAdapter
-            : ImageLoadingListAdapter<out ILocalVideoListView.VideoListViewHolder>
+    private lateinit var mAdapter: LocalVideoListAdapter
     private var mSublist: Boolean = false
     private var mListTitle: String? = null
 
@@ -122,7 +124,8 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     private var mShareButton_IOW: TextView? = null
     private var mDetailsButton_IOW: TextView? = null
 
-    internal val presenter = ILocalVideoListPresenter.newInstance()
+    internal var presenter: ILocalVideoListPresenter? = null
+        private set
 
     private var _TOP: String? = null
     private val TOP: String
@@ -170,6 +173,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         super.onAttach(context)
 
         val parent = parentFragment
+        presenter = Presenter.Provider(this).get(tag!!, ILocalVideoListPresenter.getImplClass())
 
         mInteractionCallback = when {
             parent is InteractionCallback -> parent
@@ -187,7 +191,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         }
         mLifecycleCallback?.onFragmentAttached(this)
 
-        presenter.attachToView(this)
+        presenter?.attachToView(this)
     }
 
     override fun onCreateView(
@@ -198,7 +202,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun init(
             isSublist: Boolean, listTitle: String?, listTitleDesc: String?,
-            listAdapter: ImageLoadingListAdapter<out ILocalVideoListView.VideoListViewHolder>) {
+            listAdapter: LocalVideoListAdapter) {
         mSublist = isSublist
         mListTitle = listTitle
         mAdapter = listAdapter
@@ -233,42 +237,42 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mLifecycleCallback?.onFragmentViewCreated(this)
-        presenter.onViewCreated(this, savedInstanceState)
+        presenter?.onViewCreated(this, savedInstanceState)
     }
 
     override fun onStart() {
         super.onStart()
-        presenter.onViewStart(this)
+        presenter?.onViewStart(this)
     }
 
     override fun onResume() {
         super.onResume()
-        presenter.onViewResume(this)
+        presenter?.onViewResume(this)
     }
 
     override fun onPause() {
         super.onPause()
-        presenter.onViewPaused(this)
+        presenter?.onViewPaused(this)
     }
 
     // This method can be called when a stopped activity is being recreated,
     // in which case onStop() is being called unexpectedly.
     override fun onStop() {
         super.onStop()
-        presenter.onViewStopped(this)
+        presenter?.onViewStopped(this)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         mLifecycleCallback?.onFragmentViewDestroyed(this)
         dismissAllFloatingWindows()
-        presenter.onViewDestroyed(this)
+        presenter?.onViewDestroyed(this)
     }
 
     override fun onDetach() {
         super.onDetach()
         mLifecycleCallback?.onFragmentDetached(this)
-        presenter.detachFromView(this)
+        presenter?.detachFromView(this)
     }
 
     override fun onReturnResult(resultCode: Int, data: Intent?) {
@@ -286,7 +290,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        presenter.onActivityResult(requestCode, resultCode, data)
+        presenter?.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun goToLocalVideoSubListFragment(args: Bundle) =
@@ -295,7 +299,9 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
     override fun goToVideoMoveFragment(args: Bundle) =
             mInteractionCallback.goToVideoMoveFragment(args)
 
-    override fun onRefresh() = presenter.startLoadVideos()
+    override fun onRefresh() {
+        presenter?.startLoadVideos()
+    }
 
     override fun dismissItemOptionsWindow() {
         // 1）自动刷新时隐藏弹出的多选窗口
@@ -507,29 +513,29 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 val position = v.tag as Int
                 if (mItemOptionsWindow == null) {
                     when (mAdapter.getItemViewType(position)) {
-                        VIEW_TYPE_VIDEO -> presenter.playVideoAt(position) // 播放视频
+                        VIEW_TYPE_VIDEO -> presenter?.playVideoAt(position) // 播放视频
                         VIEW_TYPE_VIDEODIR -> { // 显示指定目录的视频
-                            presenter.openVideoDirectoryAt(position)
+                            presenter?.openVideoDirectoryAt(position)
                         }
                     }
                 } else {
-                    presenter.toggleItemChecked(position)
+                    presenter?.toggleItemChecked(position)
                 }
             }
 
             R.id.checkbox -> {
                 val position = v.tag as Int
-                presenter.toggleItemChecked(position)
+                presenter?.toggleItemChecked(position)
             }
 
             // 置顶或取消置顶视频（目录）
             R.id.btn_top -> {
                 val position = v.tag as Int
-                presenter.toggleItemTopped(position)
+                presenter?.toggleItemTopped(position)
             }
 
             // 删除视频
-            R.id.btn_delete -> presenter.deleteItemAt(v.tag as Int, true)
+            R.id.btn_delete -> presenter?.deleteItemAt(v.tag as Int, true)
             R.id.btn_confirm_deleteVideoListItemDialog -> {
                 val window = mDeleteItemDialog!!.window!!
                 val decorView = window.decorView as ViewGroup
@@ -542,16 +548,16 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                 if (onDeleteAction != null) {
                     onDeleteAction()
                 } else {
-                    presenter.deleteItem(item, false)
+                    presenter?.deleteItem(item, false)
                 }
             }
             R.id.btn_cancel_deleteVideoListItemDialog -> mDeleteItemDialog!!.cancel()
 
             // 移动（多个）视频
-            R.id.btn_move -> presenter.moveCheckedItems()
+            R.id.btn_move -> presenter?.moveCheckedItems()
 
             // 删除（多个）视频
-            R.id.btn_delete_vlow -> presenter.deleteCheckedItems(true)
+            R.id.btn_delete_vlow -> presenter?.deleteCheckedItems(true)
             R.id.btn_confirm_deleteItemsWindow -> {
                 val view = mDeleteItemsWindow!!.contentView as ViewGroup
                 @Suppress("UNCHECKED_CAST")
@@ -566,9 +572,9 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                     onDeleteAction()
                 } else {
                     if (items.size == 1) {
-                        presenter.deleteItem(items[0], false)
+                        presenter?.deleteItem(items[0], false)
                     } else {
-                        presenter.deleteItems(*items, needUserConfirm = false)
+                        presenter?.deleteItems(*items, needUserConfirm = false)
                     }
                 }
             }
@@ -576,7 +582,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
 
             // 重命名视频或给视频目录取别名
             R.id.btn_rename -> {
-                presenter.renameCheckedItem()
+                presenter?.renameCheckedItem()
                 mItemOptionsWindow!!.dismiss()
             }
             R.id.btn_complete_renameVideoListItemDialog -> {
@@ -598,20 +604,20 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                     onRenameAction(newName)
                 } else {
                     item.name = newName
-                    presenter.renameItemTo(item)
+                    presenter?.renameItemTo(item)
                 }
             }
             R.id.btn_cancel_renameVideoListItemDialog -> mRenameItemDialog!!.cancel()
 
             // 分享
             R.id.btn_share -> {
-                presenter.shareCheckedVideo()
+                presenter?.shareCheckedVideo()
                 mItemOptionsWindow!!.dismiss()
             }
 
             // 显示视频（目录）详情
             R.id.btn_details -> {
-                presenter.viewCheckedItemDetails()
+                presenter?.viewCheckedItemDetails()
                 mItemOptionsWindow!!.dismiss()
             }
             R.id.btn_ok_videoListItemDetailsDialog -> mItemDetailsDialog!!.cancel()
@@ -621,10 +627,10 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
             R.id.btn_selectAll -> {
                 // 全选
                 if (SELECT_ALL == mSelectAllButton!!.text.toString()) {
-                    presenter.selectAllItems()
+                    presenter?.selectAllItems()
                     // 全不选
                 } else {
-                    presenter.unselectAllItems()
+                    presenter?.unselectAllItems()
                 }
             }
         }
@@ -741,7 +747,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                         notifyItemRangeChanged(selection + 1, itemCount - selection - 1,
                                 PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
                         // 勾选当前长按的itemView
-                        presenter.setItemChecked(selection, true)
+                        presenter?.setItemChecked(selection, true)
                         notifyItemChanged(selection,
                                 PAYLOAD_CHANGE_CHECKBOX_VISIBILITY
                                         or PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
@@ -763,7 +769,7 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
                     mRecyclerView.setPadding(0, 0, 0, 0)
 
                     for (index in 0 until mAdapter.itemCount) {
-                        presenter.setItemChecked(index, false)
+                        presenter?.setItemChecked(index, false)
                     }
                     mAdapter.notifyItemRangeChanged(0, mAdapter.itemCount,
                             PAYLOAD_CHANGE_CHECKBOX_VISIBILITY or PAYLOAD_REFRESH_CHECKBOX)
@@ -1088,7 +1094,9 @@ class LocalVideoListFragment : BaseFragment(), ILocalVideoListView,
         }
     }
 
-    override fun showVideosMovePage(vararg items: VideoListItem) = presenter.moveItems(*items)
+    override fun showVideosMovePage(vararg items: VideoListItem) {
+        presenter?.moveItems(*items)
+    }
 
     override fun onItemsDeleteStart(vararg items: VideoListItem) {
         if (mItemsDeletingDialog == null) {

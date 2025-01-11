@@ -117,17 +117,18 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
                 val sublistFragmentIndex = mLocalVideoSubListFragments?.indexOf(childFragment) ?: -1
                 if (sublistFragmentIndex >= 0) {
-                    mLocalVideoListFragment.presenter
-                            .addOnVideoItemsLoadListener(childFragment.presenter)
-                    if (childFragment.presenter is LocalVideoListPresenter) {
-                        val lastFragment =
-                                if (sublistFragmentIndex > 0)
-                                    mLocalVideoSubListFragments!![sublistFragmentIndex - 1]
-                                else
-                                    mLocalVideoListFragment
-                        val parentPresenter = lastFragment.presenter
-                        if (parentPresenter is LocalVideoListPresenter)
-                            childFragment.presenter.setParentPresenter(parentPresenter)
+                    childFragment.presenter?.let {
+                        mLocalVideoListFragment.presenter?.addOnVideoItemsLoadListener(it)
+                        if (it is LocalVideoListPresenter) {
+                            val lastFragment =
+                                    if (sublistFragmentIndex > 0)
+                                        mLocalVideoSubListFragments!![sublistFragmentIndex - 1]
+                                    else
+                                        mLocalVideoListFragment
+                            val parentPresenter = lastFragment.presenter
+                            if (parentPresenter is LocalVideoListPresenter)
+                                it.setParentPresenter(parentPresenter)
+                        }
                     }
 
                     mInteractionCallback.setSideDrawerEnabled(false)
@@ -139,7 +140,9 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
             childFragment === mLocalSearchedVideosFragment -> {
                 childFragment.setVideoOpCallback(mLocalVideoListFragment)
-                mLocalVideoListFragment.presenter.addOnVideoItemsLoadListener(childFragment.presenter)
+                childFragment.presenter?.let {
+                    mLocalVideoListFragment.presenter?.addOnVideoItemsLoadListener(it)
+                }
                 mSwipeRefreshLayout.setOnRefreshListener(childFragment)
 
                 mInteractionCallback.setSideDrawerEnabled(false)
@@ -163,8 +166,9 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                 val sublistFragmentIndex = mLocalVideoSubListFragments?.indexOf(childFragment) ?: -1
                 if (sublistFragmentIndex >= 0) {
                     mLocalVideoSubListFragments!!.removeAt(sublistFragmentIndex)
-                    mLocalVideoListFragment.presenter
-                            .removeOnVideoItemsLoadListener(childFragment.presenter)
+                    childFragment.presenter?.let {
+                        mLocalVideoListFragment.presenter?.removeOnVideoItemsLoadListener(it)
+                    }
                     if (sublistFragmentIndex == 0) {
                         mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
 
@@ -178,8 +182,9 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
                 }
             }
             childFragment === mLocalSearchedVideosFragment -> {
-                mLocalVideoListFragment.presenter
-                        .removeOnVideoItemsLoadListener(childFragment.presenter)
+                childFragment.presenter?.let {
+                    mLocalVideoListFragment.presenter?.removeOnVideoItemsLoadListener(it)
+                }
                 mLocalSearchedVideosFragment = null
                 mSwipeRefreshLayout.setOnRefreshListener(mLocalVideoListFragment)
 
@@ -216,7 +221,7 @@ class LocalVideosFragment : Fragment(), ILocalVideosFragment, FragmentPartLifecy
 
     override fun goToLocalSearchedVideosFragment() {
         mLocalSearchedVideosFragment = LocalSearchedVideosFragment()
-        mLocalVideoListFragment.presenter.setArgsForLocalSearchedVideosFragment(
+        mLocalVideoListFragment.presenter?.setArgsForLocalSearchedVideosFragment(
                 mLocalSearchedVideosFragment!!)
         mLocalSearchedVideosFragment!!.setTargetFragment(
                 mLocalVideoListFragment, REQUEST_CODE_LOCAL_SEARCHED_VIDEOS_FRAGMENT)

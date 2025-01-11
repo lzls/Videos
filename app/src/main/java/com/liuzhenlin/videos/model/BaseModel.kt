@@ -23,6 +23,12 @@ abstract class BaseModel<Progress, Result, Callback : BaseModel.Callback>(contex
     private var mOnLoadListeners: MutableList<OnLoadListener<Progress, Result>>? = null
     protected var mCallback: Callback? = null
 
+    open fun dispose() {
+        stopLoader()
+        mCallback = null
+        mOnLoadListeners?.clear()
+    }
+
     fun setCallback(callback: Callback?) {
         mCallback = callback
     }
