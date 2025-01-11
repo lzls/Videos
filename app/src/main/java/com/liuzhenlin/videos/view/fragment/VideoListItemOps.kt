@@ -20,6 +20,7 @@ import com.liuzhenlin.videos.bean.Video
 import com.liuzhenlin.videos.bean.VideoDirectory
 import com.liuzhenlin.videos.bean.VideoListItem
 import com.liuzhenlin.videos.dao.VideoListItemDao
+import com.liuzhenlin.videos.view.IView
 import com.liuzhenlin.videos.view.activity.VideoActivity
 import java.io.File
 
@@ -125,10 +126,10 @@ fun <T : VideoListItem> T.renameTo(newName: String, callback: VideoListItemRenam
     return false
 }
 
-fun Any?.shareVideo(video: Video) {
+fun IView<*>?.shareVideo(video: Video) {
     when (this) {
-        is Fragment -> shareVideo(video)
-        is Context -> shareVideo(video)
+        is Fragment -> (this as Fragment).shareVideo(video)
+        is Context -> (this as Context).shareVideo(video)
     }
 }
 
@@ -193,10 +194,10 @@ fun Context.playVideos(uris: Array<Uri>, videoTitles: Array<String?>? = null, se
                     .putExtra(KEY_SELECTION, selection))
 }
 
-fun Any?.playVideo(video: Video) {
+fun IView<*>?.playVideo(video: Video) {
     when (this) {
-        is Fragment -> playVideo(video)
-        is Activity -> playVideo(video)
+        is Fragment -> (this as Fragment).playVideo(video)
+        is Activity -> (this as Activity).playVideo(video)
     }
 }
 
@@ -214,10 +215,10 @@ fun Activity.playVideo(video: Video) {
             REQUEST_CODE_PLAY_VIDEO)
 }
 
-fun Any?.playVideos(vararg videos: Video, selection: Int) {
+fun IView<*>?.playVideos(vararg videos: Video, selection: Int) {
     when (this) {
-        is Fragment -> playVideos(*videos, selection = selection)
-        is Activity -> playVideos(*videos, selection = selection)
+        is Fragment -> (this as Fragment).playVideos(*videos, selection = selection)
+        is Activity -> (this as Activity).playVideos(*videos, selection = selection)
     }
 }
 
