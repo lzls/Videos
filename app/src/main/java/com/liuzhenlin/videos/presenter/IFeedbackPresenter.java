@@ -20,8 +20,9 @@ import com.liuzhenlin.videos.view.activity.IFeedbackView;
 public interface IFeedbackPresenter extends IPresenter<IFeedbackView> {
 
     @NonNull
-    static IFeedbackPresenter newInstance() {
-        return new FeedbackPresenter();
+    static <T extends Presenter<IFeedbackView> & IFeedbackPresenter> Class<T> getImplClass() {
+        //noinspection unchecked
+        return (Class<T>) FeedbackPresenter.class;
     }
 
     void restoreInstanceState(@NonNull Bundle savedInstanceState);

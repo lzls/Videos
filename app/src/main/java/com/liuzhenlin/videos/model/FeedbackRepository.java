@@ -39,7 +39,7 @@ public interface FeedbackRepository extends Repository<FeedbackRepository.Callba
 
     void addPicture(@Nullable String picturePath);
     void removePictureAt(int index);
-    void clearPictures(boolean includeAddPhoto);
+    void clearPictures();
 
     boolean hasUserFilledDataChanged();
     boolean persistentlySaveUserFilledData();

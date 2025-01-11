@@ -66,8 +66,7 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
 
     @Override
     public void detachFromView(@NonNull IFeedbackView view) {
-        mFeedbackRepository.clearPictures(true);
-        mFeedbackRepository.setCallback(null);
+        mFeedbackRepository.dispose();
         mFeedbackRepository = null;
         super.detachFromView(view);
     }
@@ -212,7 +211,7 @@ class FeedbackPresenter extends Presenter<IFeedbackView> implements IFeedbackPre
             if (mFeedbackRepository != null) {
                 mFeedbackRepository.setFeedbackText(EMPTY_STRING);
                 mFeedbackRepository.setContactWay(EMPTY_STRING);
-                mFeedbackRepository.clearPictures(false);
+                mFeedbackRepository.clearPictures();
                 mFeedbackRepository.persistentlySaveUserFilledData();
             }
         } else {

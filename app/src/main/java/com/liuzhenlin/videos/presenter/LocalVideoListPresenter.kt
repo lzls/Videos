@@ -78,8 +78,10 @@ interface ILocalVideoListPresenter : IPresenter<ILocalVideoListView>,
 
     companion object {
         @JvmStatic
-        fun newInstance(): ILocalVideoListPresenter {
-            return LocalVideoListPresenter()
+        fun <T> getImplClass(): Class<T> where T : Presenter<ILocalVideoListView>,
+                                               T : ILocalVideoListPresenter {
+            @Suppress("UNCHECKED_CAST")
+            return LocalVideoListPresenter::class.java as Class<T>
         }
     }
 }
@@ -91,6 +93,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
         get() = mModel.parentVideoDir != null
 
     private var mViewsCreated = false
+    private var mLoadVideosOnViewCreated = true
 
     private var _mModel: LocalVideoListModel? = null
     private val mModel: LocalVideoListModel
@@ -101,9 +104,9 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
             return _mModel!!
         }
 
-    private var mVideosLoadListener: OnLoadListener<Nothing, MutableList<VideoListItem>?>? = null
-
-    private val mAdapter = VideoListAdapter()
+    // Must be set to null when the associated view is destroyed, or memory leak of
+    // the view instance would occur due to ViewModel lifecycle mechanism.
+    private var mAdapter: LocalVideoListAdapter? = null
 
     private var mParent: LocalVideoListPresenter? = null
 
@@ -113,47 +116,55 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun attachToView(view: ILocalVideoListView) {
         super.attachToView(view)
-        if (view.getArguments()?.containsKey(KEY_VIDEODIR) == true) {
-            _mModel = LocalVideoListModel(mContext, view.getArguments()?.getParcelable(KEY_VIDEODIR))
+        val oldModel = _mModel
+        val parentVideoDir = view.getArguments()?.getParcelable<VideoDirectory>(KEY_VIDEODIR)
+        if (parentVideoDir != oldModel?.parentVideoDir) {
+            _mModel = LocalVideoListModel(mContext, parentVideoDir)
         }
-        mModel.setCallback(this)
-        mModel.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<VideoListItem>?> {
-            init {
-                mVideosLoadListener = this
-            }
+        if (oldModel == null || mModel !== oldModel) {
+            oldModel?.dispose()
+            mModel.setCallback(this)
+            mModel.addOnLoadListener(object : OnLoadListener<Nothing, MutableList<VideoListItem>?> {
+                override fun onLoadStart() {
+                    mView?.onVideosLoadStart()
+                }
 
-            override fun onLoadStart() {
-                mView?.onVideosLoadStart()
-            }
+                override fun onLoadFinish(result: MutableList<VideoListItem>?) {
+                    mModel.setVideoListItems(result)
+                    mView?.onVideosLoadFinish()
+                }
 
-            override fun onLoadFinish(result: MutableList<VideoListItem>?) {
-                mModel.setVideoListItems(result)
-                mView?.onVideosLoadFinish()
-            }
-
-            override fun onLoadCanceled() {
-                mView?.onVideosLoadCanceled()
-            }
-        })
+                override fun onLoadCanceled() {
+                    mView?.onVideosLoadCanceled()
+                }
+            })
+            mLoadVideosOnViewCreated = true
+        }
     }
 
     override fun detachFromView(view: ILocalVideoListView) {
+        stopLoadVideos()
+        view.getArguments()?.putParcelable(KEY_VIDEODIR, mModel.parentVideoDir)
         super.detachFromView(view)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
         if (mSublist) {
-            view.onReturnResult(
+            mView.onReturnResult(
                     RESULT_CODE_LOCAL_VIDEO_SUBLIST_FRAGMENT,
                     Intent().putExtra(KEY_VIDEODIR, mModel.parentVideoDir))
         }
-        mModel.setCallback(null)
-        mVideosLoadListener?.let {
-            mModel.removeOnLoadListener(it)
-            mVideosLoadListener = null
-        }
+        mModel.dispose()
+        _mModel = null
     }
 
     override fun onViewCreated(view: ILocalVideoListView) {
         super<Presenter>.onViewCreated(view)
-        view.init(mSublist, mModel.parentVideoDir?.name, mModel.parentVideoDir?.path, mAdapter)
+        mAdapter = VideoListAdapter()
+                .also {
+                    view.init(mSublist, mModel.parentVideoDir?.name, mModel.parentVideoDir?.path, it)
+                }
     }
 
     override fun onViewStart(view: ILocalVideoListView) {
@@ -163,11 +174,12 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
             // Make sure to load the videos after all restored Fragments have created their views,
             // otherwise the application will crash when the video loading callback is sent to one
             // of the upper Fragments because its UI controls will probably not have been initialized.
-            if (!mViewsCreated) {
+            if (!mViewsCreated && mLoadVideosOnViewCreated) {
                 startLoadVideos()
             }
         }
         mViewsCreated = true
+        mLoadVideosOnViewCreated = false
     }
 
     override fun onViewStopped(view: ILocalVideoListView) {
@@ -180,9 +192,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
     override fun onViewDestroyed(view: ILocalVideoListView) {
         super.onViewDestroyed(view)
         mViewsCreated = false
-        if (!mSublist)
-            mModel.stopWatchingVideos(false)
-        stopLoadVideos()
+        mAdapter = null
     }
 
     override fun startLoadVideos() = mModel.startLoader()
@@ -394,40 +404,51 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
     override fun onAllItemsRemoved() = onAllItemsChanged()
 
     @SuppressLint("NotifyDataSetChanged")
-    override fun onAllItemsChanged() = mAdapter.notifyDataSetChanged()
+    override fun onAllItemsChanged() {
+        mAdapter?.notifyDataSetChanged()
+    }
 
-    override fun onVideoDirThumbChanged(index: Int) =
-            mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEODIR_THUMB)
+    override fun onVideoDirThumbChanged(index: Int) {
+        mAdapter?.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEODIR_THUMB)
+    }
 
-    override fun onVideoDirVideoSizeOrCountChanged(index: Int) =
-            mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT)
+    override fun onVideoDirVideoSizeOrCountChanged(index: Int) {
+        mAdapter?.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEODIR_SIZE_AND_VIDEO_COUNT)
+    }
 
-    override fun onVideoProgressChanged(index: Int) =
-            mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
+    override fun onVideoProgressChanged(index: Int) {
+        mAdapter?.notifyItemChanged(index, PAYLOAD_REFRESH_VIDEO_PROGRESS_DURATION)
+    }
 
-    override fun onItemUpdated(index: Int) = mAdapter.notifyItemChanged(index)
+    override fun onItemUpdated(index: Int) {
+        mAdapter?.notifyItemChanged(index)
+    }
 
     override fun onItemRemoved(index: Int) {
-        mAdapter.notifyItemRemoved(index)
-        mAdapter.notifyItemRangeChanged(index, mAdapter.itemCount - index)
+        mAdapter?.let { adapter ->
+            adapter.notifyItemRemoved(index)
+            adapter.notifyItemRangeChanged(index, adapter.itemCount - index)
+        }
     }
 
     override fun onItemMoved(fromIndex: Int, toIndex: Int) {
-        mAdapter.notifyItemRemoved(fromIndex)
-        mAdapter.notifyItemInserted(toIndex)
-        mAdapter.notifyItemRangeChanged(min(fromIndex, toIndex), abs(toIndex - fromIndex) + 1)
+        mAdapter?.let { adapter ->
+            adapter.notifyItemRemoved(fromIndex)
+            adapter.notifyItemInserted(toIndex)
+            adapter.notifyItemRangeChanged(min(fromIndex, toIndex), abs(toIndex - fromIndex) + 1)
+        }
     }
 
     override fun onItemRenamed(oldIndex: Int, index: Int) {
         if (index == oldIndex) {
-            mAdapter.notifyItemChanged(oldIndex, PAYLOAD_REFRESH_ITEM_NAME)
+            mAdapter?.notifyItemChanged(oldIndex, PAYLOAD_REFRESH_ITEM_NAME)
         } else {
             onItemMoved(oldIndex, index)
         }
     }
 
     override fun onItemCheckedChanged(index: Int) {
-        mAdapter.notifyItemChanged(index, PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
+        mAdapter?.notifyItemChanged(index, PAYLOAD_REFRESH_CHECKBOX_WITH_ANIMATOR)
 
         var firstCheckedItem: VideoListItem? = null
         var checkedItemCount = 0
@@ -454,7 +475,7 @@ class LocalVideoListPresenter : Presenter<ILocalVideoListView>(), ILocalVideoLis
 
     override fun onItemToppedChanged(oldIndex: Int, index: Int) {
         if (index == oldIndex) {
-            mAdapter.notifyItemChanged(oldIndex, PAYLOAD_CHANGE_ITEM_LPS_AND_BG)
+            mAdapter?.notifyItemChanged(oldIndex, PAYLOAD_CHANGE_ITEM_LPS_AND_BG)
         } else {
             onItemMoved(oldIndex, index)
         }

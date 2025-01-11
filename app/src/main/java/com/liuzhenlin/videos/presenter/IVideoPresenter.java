@@ -44,7 +44,8 @@ public interface IVideoPresenter extends IPresenter<IVideoView> {
     TextureVideoView.PlayListAdapter<? extends IVideoView.PlaylistViewHolder> newPlaylistAdapter();
 
     @NonNull
-    static IVideoPresenter newInstance() {
-        return new VideoPresenter();
+    static <T extends Presenter<IVideoView> & IVideoPresenter> Class<T> getImplClass() {
+        //noinspection unchecked
+        return (Class<T>) VideoPresenter.class;
     }
 }

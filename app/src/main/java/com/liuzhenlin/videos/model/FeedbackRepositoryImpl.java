@@ -166,7 +166,11 @@ class FeedbackRepositoryImpl extends BaseRepository<FeedbackRepository.Callback>
     }
 
     @Override
-    public void clearPictures(boolean includeAddPhotoBmp) {
+    public void clearPictures() {
+        clearPictures(false);
+    }
+
+    private void clearPictures(boolean includeAddPhotoBmp) {
         for (int i = mPictures.size() - (includeAddPhotoBmp ? 1 : 2); i >= 0; i--) {
             mPictures.remove(i).recycle();
         }
@@ -175,6 +179,12 @@ class FeedbackRepositoryImpl extends BaseRepository<FeedbackRepository.Callback>
         if (mCallback != null) {
             mCallback.onPictureCleared();
         }
+    }
+
+    @Override
+    public void dispose() {
+        clearPictures(true);
+        super.dispose();
     }
 
     @Override

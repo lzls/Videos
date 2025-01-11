@@ -53,9 +53,9 @@ class VideoPresenter extends Presenter<IVideoView> implements IVideoPresenter,
 
     @Override
     public void detachFromView(@NonNull IVideoView view) {
-        super.detachFromView(view);
-        mVideoRepository.setCallback(null);
+        mVideoRepository.dispose();
         mVideoRepository = null;
+        super.detachFromView(view);
     }
 
     @Override

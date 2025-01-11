@@ -493,6 +493,11 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
         }
     }
 
+    override fun dispose() {
+        stopWatchingVideos(false)
+        super.dispose()
+    }
+
     private inner class VideoObserver(handler: Handler) : ContentObserver(handler) {
 
         override fun onChange(selfChange: Boolean) {

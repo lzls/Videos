@@ -33,8 +33,9 @@ interface IVideoMovePresenter : IPresenter<IVideoMoveView> {
 
     companion object {
         @JvmStatic
-        fun newInstance(): IVideoMovePresenter {
-            return VideoMovePresenter()
+        fun <T> getImplClass(): Class<T> where T : Presenter<IVideoMoveView>, T : IVideoMovePresenter {
+            @Suppress("UNCHECKED_CAST")
+            return VideoMovePresenter::class.java as Class<T>
         }
     }
 }
@@ -68,9 +69,9 @@ class VideoMovePresenter : Presenter<IVideoMoveView>(), IVideoMovePresenter,
     }
 
     override fun detachFromView(view: IVideoMoveView) {
-        super.detachFromView(view)
-        mVideoMoveRepository?.setCallback(null)
+        mVideoMoveRepository?.dispose()
         mVideoMoveRepository = null
+        super.detachFromView(view)
     }
 
     override fun onViewCreated(view: IVideoMoveView) {
