@@ -365,10 +365,12 @@ class LocalVideoListModel(context: Context, override val parentVideoDir: VideoDi
                         val oldFirstVideo = item.firstVideoOrNull()
                         val oldSize = item.size
                         val oldVideoCount = item.videoCount()
+                        val firstVideo = videodir.firstVideoOrNull()
 
                         item.videoListItems = videodir.videoListItems
                         item.size = videodir.size
-                        if (oldFirstVideo?.allEqual(videodir.firstVideoOrNull()) == false) {
+                        if (oldFirstVideo != null && !oldFirstVideo.allEqual(firstVideo)
+                                || oldFirstVideo == null && oldFirstVideo !== firstVideo) {
                             mCallback?.onVideoDirThumbChanged(i)
                         }
                         if (oldSize != videodir.size || oldVideoCount != videodir.videoCount()) {

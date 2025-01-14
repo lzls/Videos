@@ -192,7 +192,7 @@ fun Collection<Video>?.toVideoListItems(baseVideoDir: String? = null): MutableLi
         while (videodirCursor.moveToNext()) {
             val videodir = dao.buildVideoDir(videodirCursor)
             if ((baseVideoDir == null || videodir.path.startsWith("$baseVideoDir/", ignoreCase = true))
-                    && videodirs?.contains(videodir) == false) {
+                    && (videodirs == null || !videodirs.contains(videodir))) {
                 dao.deleteVideoDir(videodir.path)
             }
         }
