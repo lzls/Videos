@@ -168,7 +168,7 @@ fun Context.playVideo(uri: Uri, videoTitle: String? = null) {
 
 @JvmOverloads
 fun Context.playVideos(uriStrings: Array<String>, videoTitles: Array<String?>? = null, selection: Int) {
-    Preconditions.checkArgument(uriStrings.size == videoTitles?.size ?: true,
+    Preconditions.checkArgument(videoTitles == null || uriStrings.size == videoTitles.size,
             "Array 'videoTitles' can only be null or its size equals the size of Array 'uriStrings'")
 
     if (uriStrings.isEmpty()) return
@@ -182,7 +182,7 @@ fun Context.playVideos(uriStrings: Array<String>, videoTitles: Array<String?>? =
 
 @JvmOverloads
 fun Context.playVideos(uris: Array<Uri>, videoTitles: Array<String?>? = null, selection: Int) {
-    Preconditions.checkArgument(uris.size == videoTitles?.size ?: true,
+    Preconditions.checkArgument(videoTitles == null || uris.size == videoTitles.size,
             "Array 'videoTitles' can only be null or its size equals the size of Array 'uris'")
 
     if (uris.isEmpty()) return
