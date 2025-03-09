@@ -65,8 +65,8 @@ interface IVideoMoveView : IView<IVideoMovePresenter> {
 
 private const val PAYLOAD_REFRESH_VIDEODIR_THUMB = Payloads.PAYLOAD_LAST shl 1
 
-class VideoMoveFragment : FullscreenDialogFragment<IVideoMovePresenter>(R.layout.fragment_video_move),
-        IVideoMoveView, View.OnClickListener {
+class VideoMoveFragment : FullscreenDialogFragment(R.layout.fragment_video_move), IVideoMoveView,
+        View.OnClickListener {
 
     private var mVideoDirList: RecyclerView? = null
     private var mTitleText: TextView? = null
