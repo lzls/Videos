@@ -12,6 +12,8 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
 import androidx.annotation.IdRes
@@ -24,16 +26,12 @@ import com.liuzhenlin.common.utils.ThemeUtils
 import com.liuzhenlin.common.utils.UiUtils
 import com.liuzhenlin.videos.R
 import com.liuzhenlin.videos.contextThemedFirst
-import com.liuzhenlin.videos.presenter.IPresenter
-import com.liuzhenlin.videos.view.IView
 
 /**
  * @author 刘振林
  */
-@Suppress("FINITE_BOUNDS_VIOLATION_IN_JAVA")
-abstract class FullscreenDialogFragment<P : IPresenter<*>>(
-    @LayoutRes protected val contentLayoutId: Int = 0
-) : AppCompatDialogFragment(), IView<P> {
+abstract class FullscreenDialogFragment(@LayoutRes protected val contentLayoutId: Int)
+    : AppCompatDialogFragment() {
 
     private var mLifecycleCallback: FragmentPartLifecycleCallback? = null
 
@@ -91,17 +89,19 @@ abstract class FullscreenDialogFragment<P : IPresenter<*>>(
     @SuppressLint("RestrictedApi")
     override fun setupDialog(dialog: Dialog, style: Int) {
         super.setupDialog(dialog, style)
-        setupContentView(dialog)
+        val context: Context = contextThemedFirst
+        val contentParent =
+                dialog.window!!.decorView.findViewById<ViewGroup>(Window.ID_ANDROID_CONTENT)
+        setupContentView(
+                dialog, LayoutInflater.from(context).inflate(contentLayoutId, contentParent, false))
         onDialogCreated(dialog, mTmpBundle)
         mTmpBundle = null
         mLifecycleCallback?.onFragmentViewCreated(this)
     }
 
-    protected open fun setupContentView(dialog: Dialog) {
+    protected open fun setupContentView(dialog: Dialog, contentView: View) {
         val context: Context = contextThemedFirst
-        val window = dialog.window
-        val contentView = LayoutInflater.from(context).inflate(
-                contentLayoutId, window!!.decorView.findViewById(Window.ID_ANDROID_CONTENT), false)
+        val window = dialog.window!!
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                     && SystemBarUtils.setLightStatusCompat(window, isStatusBarBackgroundLight)) {
