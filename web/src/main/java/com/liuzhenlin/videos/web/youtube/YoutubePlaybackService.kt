@@ -6,7 +6,6 @@ package com.liuzhenlin.videos.web.youtube
 
 import android.annotation.SuppressLint
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.ComponentName
@@ -27,6 +26,7 @@ import android.webkit.WebView
 import android.widget.RemoteViews
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.util.Consumer
 import com.liuzhenlin.common.Consts
 import com.liuzhenlin.common.compat.AudioManagerCompat
@@ -36,6 +36,7 @@ import com.liuzhenlin.common.receiver.HeadsetEventsReceiver
 import com.liuzhenlin.common.receiver.MediaButtonEventHandler
 import com.liuzhenlin.common.receiver.MediaButtonEventReceiver
 import com.liuzhenlin.common.utils.InternetResourceLoadTask
+import com.liuzhenlin.common.utils.ReplacingCoroutineLauncher
 import com.liuzhenlin.common.utils.ListenerSet
 import com.liuzhenlin.common.utils.NotificationChannelManager
 import com.liuzhenlin.common.utils.SerialExecutor
@@ -53,12 +54,9 @@ import com.liuzhenlin.videos.web.player.Settings
 import com.liuzhenlin.videos.web.player.WebPlayer
 import com.liuzhenlin.videos.web.youtube.Youtube.PlayingStatus
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
@@ -66,7 +64,11 @@ import kotlin.concurrent.Volatile
 
 class YoutubePlaybackService : Service(), PlayerListener {
 
-    private var mCoroutineScope: CoroutineScope? = null
+    private var mForeground: Boolean = false
+
+    // Decorator of CoroutineScope used to remove useless pending playback notifications
+    // in the middle for better performance
+    private var mCoroutineLauncher: ReplacingCoroutineLauncher? = null
 
     @JvmField
     protected var mView: PlayerWebView? = null
@@ -143,7 +145,7 @@ class YoutubePlaybackService : Service(), PlayerListener {
     override fun onCreate() {
         super.onCreate()
         mAudioManager = applicationContext.getSystemService(AUDIO_SERVICE) as AudioManager
-        mCoroutineScope = ServiceScope()
+        mCoroutineLauncher = ReplacingCoroutineLauncher(ServiceScope())
         sInstance = this
     }
 
@@ -162,11 +164,12 @@ class YoutubePlaybackService : Service(), PlayerListener {
                     val videoStartMs = bundle.getLong(Constants.Extras.VIDEO_START_MS)
                     val fromPlaybackView = bundle.getBoolean(Constants.Extras.FROM_PLAYBACK_VIEW)
                     if (action == Constants.Actions.START_FOREGROUND) {
-                        mCoroutineScope?.launch(NotificationDispatcher) {
+                        mCoroutineLauncher?.launch(NotificationDispatcher) {
                             val notification =
                                     createNotification(videoId, SystemClock.elapsedRealtime(), false)
                             withContext(Dispatchers.Main) {
                                 startForeground(ID_NOTIFICATION, notification)
+                                mForeground = true
                             }
                         }
                     }
@@ -222,9 +225,9 @@ class YoutubePlaybackService : Service(), PlayerListener {
     override fun onDestroy() {
         super.onDestroy()
         sInstance = null
-        mCoroutineScope?.let {
+        mCoroutineLauncher?.let {
             it.cancel()
-            mCoroutineScope = null
+            mCoroutineLauncher = null
         }
         mHeadsetEventsReceiver?.let {
             it.unregister()
@@ -250,8 +253,9 @@ class YoutubePlaybackService : Service(), PlayerListener {
     }
 
     fun stop() {
-        mCoroutineScope?.cancel()
-        mCoroutineScope = null
+        mCoroutineLauncher?.cancel()
+        mCoroutineLauncher = null
+        mForeground = false
         stopForeground(true)
         stopSelf()
     }
@@ -515,12 +519,15 @@ class YoutubePlaybackService : Service(), PlayerListener {
 
     private fun refreshNotification(showVideoInfo: Boolean) {
         val elapsedTime = SystemClock.elapsedRealtime()
-        mCoroutineScope?.launch(NotificationDispatcher) {
-            val notificationManager =
-                    applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        mCoroutineLauncher?.launch(NotificationDispatcher) {
             val notification = createNotification(mVideoId, elapsedTime, showVideoInfo)
             withContext(Dispatchers.Main) {
-                notificationManager.notify(ID_NOTIFICATION, notification)
+                if (mForeground) {
+                    NotificationManagerCompat.from(applicationContext)
+                            .notify(ID_NOTIFICATION, notification)
+                } else {
+                    startForeground(ID_NOTIFICATION, notification)
+                }
             }
         }
     }
@@ -703,15 +710,7 @@ class YoutubePlaybackService : Service(), PlayerListener {
         protected val EMPTY_VIDEO: Video = Video()
 
         private val NotificationDispatcher: CoroutineDispatcher =
-                object : SerialExecutor() {
-                    @Synchronized
-                    override fun execute(r: Runnable) {
-                        // Removes useless pending playback notifications in the middle
-                        // for better performance
-                        clear()
-                        super.execute(r)
-                    }
-                }.asCoroutineDispatcher()
+                SerialExecutor().asCoroutineDispatcher()
 
         @JvmStatic
         fun peekIfNonnullThenDo(consumer: Consumer<YoutubePlaybackService>) {
