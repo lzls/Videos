@@ -37,7 +37,7 @@ task clean(type: Delete) {
 
 ext {
     compileSdkVersion = 34
-    targetSdkVersion = 34
+    targetSdkVersion = gradle.ext.buildWebModuleAsApp ? 32 : 34
 
     appcompatVersion = '1.6.1'
 

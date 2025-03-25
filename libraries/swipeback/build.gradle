@@ -11,6 +11,5 @@ android {
 }
 
 dependencies {
-    api 'androidx.preference:preference:1.2.1'
     api project(libraryModulesPrefix + ':common')
 }
