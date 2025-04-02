@@ -17,6 +17,7 @@ dependencies {
     // TODO: Remove this dependency once its version from the material lib is upgraded to the latest.
     //       The version 2.0.1 in the current material lib (v1.6.1) will cause a bug on the
     //       TextureVideoView's resizing.
+    //noinspection GradleDependency (limited by the minimum SDK version (16) supported by this app)
     api 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     api "androidx.media3:media3-exoplayer:$rootProject.ext.androidxMedia3Version"
@@ -31,7 +32,7 @@ dependencies {
 
     api project(libraryModulesPrefix + ':ijkplayer')
 
-    api 'org.videolan.android:libvlc-all:3.5.1'
+    api 'org.videolan.android:libvlc-all:3.6.1'
 
 //    api 'com.danikula:videocache:2.7.1'
 

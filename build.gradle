@@ -1,7 +1,8 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.9.24'
+    //noinspection GradleDependency (higer version results in compilation error)
+    ext.kotlin_version = '2.0.21'
 
     repositories {
         google()
@@ -9,7 +10,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.4.2'
-        classpath 'com.guardsquare:proguard-gradle:7.4.2'
+        classpath 'com.guardsquare:proguard-gradle:7.7.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -39,6 +40,7 @@ ext {
     compileSdkVersion = 34
     targetSdkVersion = gradle.ext.buildWebModuleAsApp ? 32 : 34
 
+    //noinspection GradleDependency (limited by the minimum SDK version (16) supported by this app)
     appcompatVersion = '1.6.1'
 
     // Limited by used AGP version 7.4.2. However, we cannot update it now because the
@@ -47,7 +49,7 @@ ext {
     androidxMedia3Version = '1.2.1'
 
     testJunitVersion = '4.13.2'
-    androidTestJunitVersion = '1.1.5'
+    androidTestJunitVersion = '1.2.1'
 
     proguardRulesFileName = 'proguard-rules.pro'
 }

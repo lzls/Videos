@@ -12,6 +12,7 @@ android {
 }
 
 dependencies {
+    //noinspection GradleDependency (limited by the minimum SDK version (16) supported by this app)
     api 'androidx.recyclerview:recyclerview:1.3.2'
     api project(libraryModulesPrefix + ':common')
 }
