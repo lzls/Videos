@@ -94,11 +94,11 @@
       "2. Optimized the display size of the video list thumbnails on different screens."
     ],
     "beta": {
-      "versionCode": 71,
-      "versionName": "2.5-beta02",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.5-beta02.apk",
-      "appLength": 71743841,
-      "appSha1": "f3801dfa5d5106e26bc949cc8ba66bd97fe39d8c",
+      "versionCode": 72,
+      "versionName": "2.5-beta03",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.5-beta03.apk",
+      "appLength": 72067974,
+      "appSha1": "43ad67fd0820532a294b8901e6b8550462ebd5c1",
       "updateLogs": [
         "1. 修复挖孔屏同比例本地视频在全屏下无法完整显示的问题",
         "2. 增加用户可选择是否将媒体内容扩展显示至屏幕挖孔区域的设置开关",
@@ -107,7 +107,8 @@
         "5. 修复在 Android 4.1 上开始剪辑视频时，应用崩溃的问题",
         "6. 现在，列表滚动时也会加载列表中的视频缩略图啦~",
         "7. 将每个搜索到的视频的名称显示行数增加到2",
-        "8. 优化视频名称与搜索关键字的匹配逻辑"
+        "8. 优化视频名称与搜索关键字的匹配逻辑",
+        "9. 优化视频移动页面的窗口过渡动画"
       ],
       "updateLogs-en": [
         "1. Fixed the issue where local videos with the same ratio as the punch hole screen could not be fully displayed in fullscreen.",
@@ -117,7 +118,8 @@
         "5. Fixed an app crash occurred on Android 4.1 when video clip started.",
         "6. Now, video thumbnails in list will also be loaded if the list is scrolling.",
         "7. Increase the number of lines displayed for each searched video's name to 2.",
-        "8. Optimize the matching logic between video names and search keywords."
+        "8. Optimize the matching logic between video names and search keywords.",
+        "9. Optimize the window transition animations of the video move page."
       ]
     },
     "dev": "beta",
