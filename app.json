@@ -5,9 +5,9 @@
     "applicationId": "com.liuzhenlin.videos",
     "minSdkVersion": 16,
     "targetSdkVersion": 34,
-    "versionCode": 48,
-    "versionName": "2.4.1",
-    "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.4.1.apk",
+    "versionCode": 49,
+    "versionName": "2.5",
+    "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.5.apk",
     "appPartLinks": [
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release1.apk",
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release2.apk",
@@ -83,22 +83,36 @@
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release72.apk",
       "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/app-release73.apk"
     ],
-    "appLength": 72471989,
-    "appSha1": "3716135731d1b496fd336d36eea74cafb807c022",
+    "appLength": 72067975,
+    "appSha1": "bc7e51f00b0120304826b808c4d0df4cd4b67060",
     "updateLogs": [
-      "1. 修复应用无法在仅支持64位的设备上安装的问题",
-      "2. 优化不同屏幕上的视频列表缩略图显示大小"
+      "1. 修复挖孔屏同比例本地视频在全屏下无法完整显示的问题",
+      "2. 增加用户可选择是否将媒体内容扩展显示至屏幕挖孔区域的设置开关",
+      "3. 本地视频列表支持多种排序方式",
+      "4. 修复未提前授予所有文件访问权限导致视频剪辑结束时，应用崩溃，之后首页不显示任何视频，并不断刷新的问题",
+      "5. 修复在 Android 4.1 上开始剪辑视频时，应用崩溃的问题",
+      "6. 现在，列表滚动时也会加载列表中的视频缩略图啦~",
+      "7. 将每个搜索到的视频的名称显示行数增加到2",
+      "8. 优化视频名称与搜索关键字的匹配逻辑",
+      "9. 优化视频移动页面的窗口过渡动画"
     ],
     "updateLogs-en": [
-      "1. Fixed the issue where the app could not be installed on devices with only 64-bit support.",
-      "2. Optimized the display size of the video list thumbnails on different screens."
+      "1. Fixed the issue where local videos with the same ratio as the punch hole screen could not be fully displayed in fullscreen.",
+      "2. Added a settings switch for user to choose whether to extend the media content display to the screen cutout area.",
+      "3. Various sorting support for local video lists.",
+      "4. Fixed the issue where the home page would not display any videos and would keep refreshing after the app crashed due to video clip finished without the All Files Access permission granted in advance.",
+      "5. Fixed an app crash occurred on Android 4.1 when video clip started.",
+      "6. Now, video thumbnails in list will also be loaded if the list is scrolling.",
+      "7. Increase the number of lines displayed for each searched video's name to 2.",
+      "8. Optimize the matching logic between video names and search keywords.",
+      "9. Optimize the window transition animations of the video move page."
     ],
     "beta": {
-      "versionCode": 72,
-      "versionName": "2.5-beta03",
-      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.5-beta03.apk",
-      "appLength": 72067974,
-      "appSha1": "43ad67fd0820532a294b8901e6b8550462ebd5c1",
+      "versionCode": 73,
+      "versionName": "2.5",
+      "appLink": "https://gitlab.com/lzls/Videos-Server/-/raw/master/app/Android/Videos_v2.5.apk",
+      "appLength": 72067975,
+      "appSha1": "bc7e51f00b0120304826b808c4d0df4cd4b67060",
       "updateLogs": [
         "1. 修复挖孔屏同比例本地视频在全屏下无法完整显示的问题",
         "2. 增加用户可选择是否将媒体内容扩展显示至屏幕挖孔区域的设置开关",
